@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       .select('id')
       .eq('course_type', courseType)
 
-    const categoryIds = existingCategories?.map(c => c.id) || []
+    const categoryIds = (existingCategories || []).map((c: any) => c.id)
     
     if (categoryIds.length > 0) {
       const { data: existingSections } = await supabaseAdmin
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         .select('id')
         .in('category_id', categoryIds)
 
-      const sectionIds = existingSections?.map(s => s.id) || []
+      const sectionIds = (existingSections || []).map((s: any) => s.id)
       
       if (sectionIds.length > 0) {
         await supabaseAdmin.from('course_videos').delete().in('section_id', sectionIds)
