@@ -6,7 +6,7 @@ import { createConnectAccount, createConnectOnboardingLink } from '@/lib/stripe'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, password, payout_method, paypal_email } = body
+    const { name, email, password, payout_method, paypal_email, referral_code } = body
 
     // Validate input
     if (!name || !email || !password) {
@@ -75,6 +75,28 @@ export async function POST(request: NextRequest) {
       trial_ends_at: string | null
     }
 
+    // Handle referral code if provided
+    if (referral_code) {
+      const { data: referrerCode } = await supabaseAdmin
+        .from('referral_codes')
+        .select('affiliate_id')
+        .eq('code', referral_code.toUpperCase())
+        .eq('is_active', true)
+        .single()
+
+      if (referrerCode && referrerCode.affiliate_id !== affiliateData.id) {
+        // Create referral record
+        await (supabaseAdmin as any)
+          .from('subscription_referrals')
+          .insert({
+            referrer_id: referrerCode.affiliate_id,
+            referred_id: affiliateData.id,
+            referral_code: referral_code.toUpperCase(),
+            status: 'pending' // Will become active when they subscribe
+          })
+      }
+    }
+
     // Generate auth token
     const token = generateToken({
       affiliateId: affiliateData.id,
@@ -99,8 +121,8 @@ export async function POST(request: NextRequest) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
         const onboardingLink = await createConnectOnboardingLink(
           connectAccount.id,
-          `${appUrl}/portal/payout-setup`,
-          `${appUrl}/portal`
+          `${appUrl}/affiliate/payout-setup`,
+          `${appUrl}/onboarding`
         )
 
         response = NextResponse.json({
