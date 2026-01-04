@@ -14,9 +14,9 @@ export async function POST(request: NextRequest) {
     const { type, categoryId, sectionId, videoId, updates } = await request.json()
 
     if (type === 'category') {
-      const { error } = await supabaseAdmin
+      const { error } = await (supabaseAdmin as any)
         .from('course_categories')
-        .update({ title: updates.title, updated_at: new Date().toISOString() } as any)
+        .update({ title: updates.title, updated_at: new Date().toISOString() })
         .eq('category_id', categoryId)
 
       if (error) throw error
@@ -32,13 +32,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Category not found' }, { status: 404 })
       }
 
-      const { error } = await supabaseAdmin
+      const { error } = await (supabaseAdmin as any)
         .from('course_sections')
         .update({ 
           title: updates.title, 
           description: updates.description,
           updated_at: new Date().toISOString() 
-        } as any)
+        })
         .eq('category_id', (category as any).id)
         .eq('section_id', sectionId)
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       if (updates.youtubeId !== undefined) updateData.youtube_id = updates.youtubeId
       if (updates.loomId !== undefined) updateData.loom_id = updates.loomId
 
-      const { error } = await supabaseAdmin
+      const { error } = await (supabaseAdmin as any)
         .from('course_videos')
         .update(updateData)
         .eq('section_id', (section as any).id)
