@@ -1,0 +1,110 @@
+import { redirect } from 'next/navigation'
+import { getCurrentAffiliate } from '@/lib/auth'
+import { supabaseAdmin } from '@/lib/supabase'
+import { formatDistanceToNow, differenceInDays, format } from 'date-fns'
+import { SubscriptionPaywall } from './components/SubscriptionPaywall'
+import { StatsCards } from './components/StatsCards'
+import { ProductList } from './components/ProductList'
+import { ReferralSection } from './components/ReferralSection'
+
+async function getAffiliateStats(affiliateId: string) {
+  const { data: stats } = await supabaseAdmin
+    .from('affiliate_stats')
+    .select('*')
+    .eq('affiliate_id', affiliateId)
+    .single()
+
+  return stats
+}
+
+async function getProducts() {
+  const { data: products } = await supabaseAdmin
+    .from('products')
+    .select(`
+      *,
+      landing_pages (
+        id,
+        name,
+        slug,
+        variant_name,
+        is_active
+      )
+    `)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+
+  return products || []
+}
+
+async function getAffiliateLinks(affiliateId: string) {
+  const { data: links } = await supabaseAdmin
+    .from('affiliate_links')
+    .select(`
+      *,
+      landing_page:landing_pages (
+        id,
+        name,
+        slug,
+        product:products (
+          id,
+          name,
+          slug
+        )
+      )
+    `)
+    .eq('affiliate_id', affiliateId)
+
+  return links || []
+}
+
+export default async function PortalPage() {
+  // Server-side auth check - trust the server
+  const affiliate = await getCurrentAffiliate()
+
+  if (!affiliate) {
+    redirect('/login')
+  }
+
+  // Check subscription status
+  const isExpired = affiliate.status === 'expired'
+  const isTrial = affiliate.status === 'trial'
+  const trialDaysLeft = isTrial
+    ? differenceInDays(new Date(affiliate.trial_ends_at), new Date())
+    : 0
+
+  // If expired, show paywall
+  if (isExpired) {
+    const stats = await getAffiliateStats(affiliate.id)
+    return <SubscriptionPaywall affiliate={affiliate} stats={stats} />
+  }
+
+  // Get data
+  const [stats, products, affiliateLinks] = await Promise.all([
+    getAffiliateStats(affiliate.id),
+    getProducts(),
+    getAffiliateLinks(affiliate.id),
+  ])
+
+  return (
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats */}
+        <StatsCards stats={stats} affiliate={affiliate} />
+
+        {/* Subscription Referrals */}
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold text-white mb-6">Affiliate this platform for recurring revenue!</h2>
+          <ReferralSection />
+        </section>
+
+        {/* Products */}
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold text-white mb-6">Available Products</h2>
+          <ProductList
+            products={products}
+            affiliateLinks={affiliateLinks}
+            affiliateId={affiliate.id}
+          />
+        </section>
+    </main>
+  )
+}
