@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get referral code
-    const { data: referralCode } = await supabaseAdmin
+    const { data: referralCode } = await (supabaseAdmin as any)
       .from('referral_codes')
       .select('code')
       .eq('affiliate_id', affiliate.id)
@@ -20,35 +20,35 @@ export async function GET(request: NextRequest) {
       .single()
 
     // Get active referrals count
-    const { count: activeReferrals } = await supabaseAdmin
+    const { count: activeReferrals } = await (supabaseAdmin as any)
       .from('subscription_referrals')
       .select('*', { count: 'exact', head: true })
       .eq('referrer_id', affiliate.id)
       .eq('status', 'active')
 
     // Get total commissions (pending + approved)
-    const { data: commissions } = await supabaseAdmin
+    const { data: commissions } = await (supabaseAdmin as any)
       .from('subscription_commissions')
       .select('amount_cents, status')
       .eq('referrer_id', affiliate.id)
       .in('status', ['pending', 'approved', 'paid'])
 
-    const totalCommissions = commissions?.reduce((sum, c) => sum + c.amount_cents, 0) || 0
-    const pendingCommissions = commissions?.filter(c => c.status === 'pending').reduce((sum, c) => sum + c.amount_cents, 0) || 0
-    const paidCommissions = commissions?.filter(c => c.status === 'paid').reduce((sum, c) => sum + c.amount_cents, 0) || 0
+    const totalCommissions = (commissions || []).reduce((sum: number, c: any) => sum + c.amount_cents, 0)
+    const pendingCommissions = (commissions || []).filter((c: any) => c.status === 'pending').reduce((sum: number, c: any) => sum + c.amount_cents, 0)
+    const paidCommissions = (commissions || []).filter((c: any) => c.status === 'paid').reduce((sum: number, c: any) => sum + c.amount_cents, 0)
 
     // Get monthly recurring revenue (MRR)
-    const { data: activeCommissions } = await supabaseAdmin
+    const { data: activeCommissions } = await (supabaseAdmin as any)
       .from('subscription_commissions')
       .select('amount_cents')
       .eq('referrer_id', affiliate.id)
       .eq('status', 'approved')
       .gte('period_start', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
 
-    const mrr = activeCommissions?.reduce((sum, c) => sum + c.amount_cents, 0) || 0
+    const mrr = (activeCommissions || []).reduce((sum: number, c: any) => sum + c.amount_cents, 0)
 
     return NextResponse.json({
-      referralCode: referralCode?.code || null,
+      referralCode: (referralCode as any)?.code || null,
       activeReferrals: activeReferrals || 0,
       totalCommissions: totalCommissions,
       pendingCommissions: pendingCommissions,
