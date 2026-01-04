@@ -1,14 +1,23 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [payoutMethod, setPayoutMethod] = useState<'paypal' | 'stripe'>('paypal')
+  const [referralCode, setReferralCode] = useState<string>('')
+
+  useEffect(() => {
+    const ref = searchParams.get('ref')
+    if (ref) {
+      setReferralCode(ref.toUpperCase())
+    }
+  }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -22,6 +31,7 @@ export default function SignupPage() {
       password: formData.get('password') as string,
       payout_method: payoutMethod,
       paypal_email: payoutMethod === 'paypal' ? formData.get('paypal_email') as string : null,
+      referral_code: referralCode || null,
     }
 
     try {
@@ -40,15 +50,14 @@ export default function SignupPage() {
       // Save token to localStorage as backup
       if (result.token) {
         localStorage.setItem('affiliate_token', result.token)
-        console.log('✅ Token saved to localStorage')
       }
 
       // If they chose Stripe, redirect to connect onboarding
       if (payoutMethod === 'stripe' && result.stripeOnboardingUrl) {
         window.location.href = result.stripeOnboardingUrl
       } else {
-        // Force full page reload to ensure cookie is available
-        window.location.href = '/portal'
+        // Redirect to onboarding flow
+        window.location.href = '/onboarding'
       }
     } catch (err: any) {
       setError(err.message)
@@ -63,7 +72,7 @@ export default function SignupPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">
-            Join the Affiliate Program
+            Join LifeDesign Platform
           </h1>
           <p className="text-gray-400">
             Start your <span className="text-green-400 font-semibold">7-day free trial</span> today
@@ -208,5 +217,17 @@ export default function SignupPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <SignupForm />
+    </Suspense>
   )
 }
