@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
         const { data: newSection, error: secError } = await supabaseAdmin
           .from('course_sections')
           .insert({
-            category_id: newCategory.id,
+            category_id: (newCategory as any).id,
             section_id: section.section_id,
             number: section.number,
             title: section.title,
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
           await supabaseAdmin
             .from('course_videos')
             .insert({
-              section_id: newSection.id,
+              section_id: (newSection as any).id,
               video_id: video.video_id,
               title: video.title,
               youtube_id: video.youtube_id,
