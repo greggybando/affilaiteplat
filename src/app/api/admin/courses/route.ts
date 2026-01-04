@@ -44,15 +44,15 @@ export async function GET(request: NextRequest) {
     if (vidError) throw vidError
 
     // Build nested structure
-    const structure = categories?.map(category => ({
+    const structure = (categories || []).map((category: any) => ({
       ...category,
-      sections: sections
-        ?.filter(s => s.category_id === category.id)
-        .map(section => ({
+      sections: (sections || [])
+        .filter((s: any) => s.category_id === category.id)
+        .map((section: any) => ({
           ...section,
-          videos: videos?.filter(v => v.section_id === section.id) || []
-        })) || []
-    })) || []
+          videos: (videos || []).filter((v: any) => v.section_id === section.id)
+        }))
+    }))
 
     return NextResponse.json({ structure })
   } catch (error: any) {
