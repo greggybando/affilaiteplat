@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if affiliate already has a referral code
-    const { data: existingCode } = await supabaseAdmin
+    const { data: existingCode } = await (supabaseAdmin as any)
       .from('referral_codes')
       .select('code')
       .eq('affiliate_id', affiliate.id)
@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
 
     if (existingCode) {
       return NextResponse.json({ 
-        code: existingCode.code,
-        url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/signup?ref=${existingCode.code}`
+        code: (existingCode as any).code,
+        url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/signup?ref=${(existingCode as any).code}`
       })
     }
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     let isUnique = false
 
     while (!isUnique && attempts < 10) {
-      const { data: existing } = await supabaseAdmin
+      const { data: existing } = await (supabaseAdmin as any)
         .from('referral_codes')
         .select('id')
         .eq('code', code)
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create referral code
-    const { data: referralCode, error } = await supabaseAdmin
+    const { data: referralCode, error } = await (supabaseAdmin as any)
       .from('referral_codes')
       .insert({
         affiliate_id: affiliate.id,
