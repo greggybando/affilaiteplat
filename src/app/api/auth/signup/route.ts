@@ -77,19 +77,19 @@ export async function POST(request: NextRequest) {
 
     // Handle referral code if provided
     if (referral_code) {
-      const { data: referrerCode } = await supabaseAdmin
+      const { data: referrerCode } = await (supabaseAdmin as any)
         .from('referral_codes')
         .select('affiliate_id')
         .eq('code', referral_code.toUpperCase())
         .eq('is_active', true)
         .single()
 
-      if (referrerCode && referrerCode.affiliate_id !== affiliateData.id) {
+      if (referrerCode && (referrerCode as any).affiliate_id !== affiliateData.id) {
         // Create referral record
         await (supabaseAdmin as any)
           .from('subscription_referrals')
           .insert({
-            referrer_id: referrerCode.affiliate_id,
+            referrer_id: (referrerCode as any).affiliate_id,
             referred_id: affiliateData.id,
             referral_code: referral_code.toUpperCase(),
             status: 'pending' // Will become active when they subscribe
