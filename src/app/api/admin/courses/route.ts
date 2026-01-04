@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
           title: category.title,
           is_start_here: category.is_start_here || false,
           display_order: catIndex
-        })
+        } as any)
         .select()
         .single()
 
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
             title: section.title,
             description: section.description,
             display_order: secIndex
-          })
+          } as any)
           .select()
           .single()
 
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
               youtube_id: video.youtube_id,
               loom_id: video.loom_id,
               display_order: vidIndex
-            })
+            } as any)
         }
       }
     }
