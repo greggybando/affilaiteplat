@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       if (error) throw error
     } else if (type === 'section') {
       // Find category first
-      const { data: category } = await supabaseAdmin
+      const { data: category } = await (supabaseAdmin as any)
         .from('course_categories')
         .select('id')
         .eq('category_id', categoryId)
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       if (error) throw error
     } else if (type === 'video') {
       // Find section first
-      const { data: category } = await supabaseAdmin
+      const { data: category } = await (supabaseAdmin as any)
         .from('course_categories')
         .select('id')
         .eq('category_id', categoryId)
@@ -55,10 +55,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Category not found' }, { status: 404 })
       }
 
-      const { data: section } = await supabaseAdmin
+      const { data: section } = await (supabaseAdmin as any)
         .from('course_sections')
         .select('id')
-        .eq('category_id', category.id)
+        .eq('category_id', (category as any).id)
         .eq('section_id', sectionId)
         .single()
 
