@@ -96,6 +96,47 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true, message: 'No affiliate_id, skipping status update' })
       }
 
+      // Check for subscription referral and activate it
+      const { data: referral } = await (supabaseAdmin as any)
+        .from('subscription_referrals')
+        .select('id, referrer_id, commission_percent')
+        .eq('referred_id', affiliate_id)
+        .eq('status', 'pending')
+        .single()
+
+      if (referral) {
+        const referralData = referral as any
+        // Activate the referral
+        await (supabaseAdmin as any)
+          .from('subscription_referrals')
+          .update({
+            status: 'active',
+            subscription_id: session.subscription as string,
+            first_commission_paid_at: new Date().toISOString()
+          })
+          .eq('id', referralData.id)
+
+        // Create first commission (50% of $40 = $20)
+        const subscriptionAmount = 4000 // $40 in cents
+        const commissionAmount = Math.floor((subscriptionAmount * (referralData.commission_percent || 50)) / 100)
+        
+        await (supabaseAdmin as any)
+          .from('subscription_commissions')
+          .insert({
+            referral_id: referralData.id,
+            referrer_id: referralData.referrer_id,
+            subscription_id: session.subscription as string,
+            amount_cents: commissionAmount,
+            subscription_amount_cents: subscriptionAmount,
+            commission_percent: referralData.commission_percent || 50,
+            period_start: new Date().toISOString(),
+            period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+            status: 'approved'
+          })
+
+        console.log('✅ Subscription referral activated and first commission created')
+      }
+
       // Update affiliate status to 'active' and store subscription info
       console.log('🔄 Updating affiliate status to active...')
       const updateData: any = {
@@ -533,6 +574,63 @@ export async function POST(request: NextRequest) {
 
       const affiliateData = affiliate as any
       affiliate_id = affiliateData.id
+    }
+
+    // Handle recurring commission for subscription referrals
+    if (subscription.status === 'active') {
+      const { data: referral } = await (supabaseAdmin as any)
+        .from('subscription_referrals')
+        .select('id, referrer_id, commission_percent')
+        .eq('referred_id', affiliate_id)
+        .eq('subscription_id', subscription.id)
+        .eq('status', 'active')
+        .single()
+
+      if (referral) {
+        const referralData = referral as any
+        const subscriptionAmount = subscription.items.data[0]?.price?.unit_amount || 4000 // Default $40
+        const commissionAmount = Math.floor((subscriptionAmount * (referralData.commission_percent || 50)) / 100)
+        
+        const periodStart = new Date(subscription.current_period_start * 1000).toISOString()
+        const periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
+
+        // Check if commission for this period already exists
+        const { data: existingCommission } = await (supabaseAdmin as any)
+          .from('subscription_commissions')
+          .select('id')
+          .eq('subscription_id', subscription.id)
+          .eq('period_start', periodStart)
+          .single()
+
+        if (!existingCommission) {
+          // Create recurring commission
+          await (supabaseAdmin as any)
+            .from('subscription_commissions')
+            .insert({
+              referral_id: referralData.id,
+              referrer_id: referralData.referrer_id,
+              subscription_id: subscription.id,
+              amount_cents: commissionAmount,
+              subscription_amount_cents: subscriptionAmount,
+              commission_percent: referralData.commission_percent || 50,
+              period_start: periodStart,
+              period_end: periodEnd,
+              status: 'approved'
+            })
+
+          // Update last commission paid date
+          await (supabaseAdmin as any)
+            .from('subscription_referrals')
+            .update({ last_commission_paid_at: new Date().toISOString() })
+            .eq('id', referralData.id)
+
+          console.log('✅ Recurring commission created:', {
+            referrer_id: referralData.referrer_id,
+            amount: `$${(commissionAmount / 100).toFixed(2)}`,
+            period: `${periodStart} to ${periodEnd}`
+          })
+        }
+      }
     }
 
     // Update affiliate with subscription info
