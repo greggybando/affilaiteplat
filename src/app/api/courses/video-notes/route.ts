@@ -51,27 +51,58 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Missing videoId or courseType' }, { status: 400 })
     }
 
-    // Upsert notes (insert or update)
-    const { data: note, error } = await supabaseAdmin
+    // Check if note exists first
+    const { data: existingNote } = await supabaseAdmin
       .from('video_notes')
-      .upsert({
-        video_id: videoId,
-        course_type: courseType,
-        notes: notes || '',
-        created_by: affiliate.id,
-        updated_at: new Date().toISOString()
-      } as any, {
-        onConflict: 'video_id,course_type',
-        ignoreDuplicates: false
-      })
-      .select()
+      .select('id')
+      .eq('video_id', videoId)
+      .eq('course_type', courseType)
       .single()
+
+    let note: any
+    let error: any
+
+    if (existingNote) {
+      // Update existing note
+      const { data: updatedNote, error: updateError } = await supabaseAdmin
+        .from('video_notes')
+        .update({
+          notes: notes || '',
+          updated_at: new Date().toISOString()
+        } as any)
+        .eq('video_id', videoId)
+        .eq('course_type', courseType)
+        .select()
+        .single()
+      
+      note = updatedNote
+      error = updateError
+    } else {
+      // Insert new note
+      const { data: insertedNote, error: insertError } = await supabaseAdmin
+        .from('video_notes')
+        .insert({
+          video_id: videoId,
+          course_type: courseType,
+          notes: notes || '',
+          created_by: affiliate.id,
+          updated_at: new Date().toISOString()
+        } as any)
+        .select()
+        .single()
+      
+      note = insertedNote
+      error = insertError
+    }
 
     if (error) {
       console.error('Error saving notes:', error)
+      console.error('Error details:', JSON.stringify(error, null, 2))
+      console.error('Video ID:', videoId, 'Course Type:', courseType)
       return NextResponse.json({ 
         error: 'Failed to save notes',
-        details: error.message || 'Unknown error'
+        details: error.message || error.code || 'Unknown error',
+        hint: 'Make sure the video_notes table exists. Run the SQL migration if needed.'
       }, { status: 500 })
     }
 
