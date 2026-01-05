@@ -220,6 +220,7 @@ export function DashboardClient({ affiliate }: DashboardClientProps) {
   const [isDMModalOpen, setIsDMModalOpen] = useState(false)
   const [isGroupChatOpen, setIsGroupChatOpen] = useState(false)
   const [glowIntensity, setGlowIntensity] = useState(50) // Default 50%
+  const [classroomResetKey, setClassroomResetKey] = useState(0)
 
   // YouTube Playlist Player State
   const [playlistUrl, setPlaylistUrl] = useState('')
@@ -806,7 +807,10 @@ export function DashboardClient({ affiliate }: DashboardClientProps) {
               Community
             </button>
             <button
-              onClick={() => setActiveTab('classroom')}
+              onClick={() => {
+                setActiveTab('classroom')
+                setClassroomResetKey(prev => prev + 1) // Force reset when button is clicked
+              }}
               className={`px-4 py-1.5 text-sm font-semibold rounded-xl transition-all ${
                 activeTab === 'classroom'
                   ? 'text-white'
@@ -842,7 +846,7 @@ export function DashboardClient({ affiliate }: DashboardClientProps) {
         {activeTab === 'community' ? (
           <CommunityTab affiliate={affiliate} activeTab={activeTab} setActiveTab={setActiveTab} setIsDMModalOpen={setIsDMModalOpen} setIsGroupChatOpen={setIsGroupChatOpen} glowIntensity={glowIntensity} />
         ) : activeTab === 'classroom' ? (
-          <ClassroomTab affiliate={affiliate} activeTab={activeTab} setActiveTab={setActiveTab} setIsDMModalOpen={setIsDMModalOpen} glowIntensity={glowIntensity} />
+          <ClassroomTab key={classroomResetKey} affiliate={affiliate} activeTab={activeTab} setActiveTab={setActiveTab} setIsDMModalOpen={setIsDMModalOpen} glowIntensity={glowIntensity} />
         ) : (
           <GroupChatTab affiliate={affiliate} setIsDMModalOpen={setIsDMModalOpen} glowIntensity={glowIntensity} />
         )}
