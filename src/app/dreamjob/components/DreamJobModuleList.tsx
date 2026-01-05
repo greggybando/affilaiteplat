@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Paperclip, X, Download, Save, Loader2, Check } from 'lucide-react'
+import { Paperclip, X, Download, Save, Loader2, Check, Edit2 } from 'lucide-react'
 
 interface Video {
   id: string
@@ -45,6 +45,8 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
   const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({})
   const [attachments, setAttachments] = useState<Record<string, any[]>>({})
   const [loadingAttachments, setLoadingAttachments] = useState<Record<string, boolean>>({})
+  const [editing, setEditing] = useState<{ type: 'module' | 'video', moduleId?: number, videoId?: string } | null>(null)
+  const [editValues, setEditValues] = useState<any>({})
 
   const toggleModule = (moduleId: number) => {
     setExpandedModule(expandedModule === moduleId ? null : moduleId)
@@ -60,6 +62,52 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
 
   const handleTitleChange = (videoId: string, newTitle: string) => {
     setVideoTitles(prev => ({ ...prev, [videoId]: newTitle }))
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editing) return
+
+    try {
+      // Extract YouTube ID from URL if provided
+      const extractYouTubeId = (url: string) => {
+        if (!url) return ''
+        if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0].split('&')[0]
+        if (url.includes('youtube.com/watch?v=')) return url.split('youtube.com/watch?v=')[1].split('&')[0]
+        if (url.includes('youtube.com/embed/')) return url.split('youtube.com/embed/')[1].split('?')[0].split('&')[0]
+        return url
+      }
+
+      const updateData: any = {}
+      if (editing.type === 'module') {
+        updateData.title = editValues.title
+        updateData.description = editValues.description
+      } else if (editing.type === 'video') {
+        updateData.title = editValues.title
+        if (editValues.youtubeId) updateData.youtubeId = extractYouTubeId(editValues.youtubeId)
+      }
+
+      // Save to database via API
+      const res = await fetch('/api/admin/courses/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: editing.type === 'module' ? 'section' : 'video', // API uses 'section' for modules
+          sectionId: editing.moduleId,
+          videoId: editing.videoId,
+          updates: updateData
+        })
+      })
+
+      if (res.ok) {
+        // Reload page to reflect changes
+        window.location.reload()
+      } else {
+        alert('Error saving changes')
+      }
+    } catch (error) {
+      console.error('Error saving:', error)
+      alert('Error saving changes')
+    }
   }
 
   const handleNotesChange = (videoId: string, newNotes: string) => {
@@ -218,15 +266,44 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
                 className="border-b-2 border-slate-700/50 last:border-b-0"
               >
                 {/* Module Header */}
-                <button
-                  onClick={() => toggleModule(module.id)}
-                  className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-slate-800/50 transition-colors border-b border-slate-700/30 bg-slate-900/20"
-                >
-                  <svg
-                    className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                <div className="w-full px-4 py-3 flex items-center gap-3 border-b border-slate-700/30 bg-slate-900/20">
+                  {editing?.type === 'module' && editing.moduleId === module.id ? (
+                    <div className="flex-1 flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editValues.title || module.title}
+                        onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
+                        className="flex-1 px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-sm"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveEdit()
+                          if (e.key === 'Escape') setEditing(null)
+                        }}
+                      />
+                      <button
+                        onClick={handleSaveEdit}
+                        className="p-1 text-cyan-400 hover:text-cyan-300"
+                      >
+                        <Save className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setEditing(null)}
+                        className="p-1 text-red-400 hover:text-red-300"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => toggleModule(module.id)}
+                        className="flex-1 flex items-center gap-3 text-left hover:bg-slate-800/50 transition-colors"
+                      >
+                        <svg
+                          className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -235,6 +312,21 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
                     <div className="text-xs text-slate-400">{module.videos.length} lessons</div>
                   </div>
                 </button>
+                {isAdmin && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditing({ type: 'module', moduleId: module.id })
+                      setEditValues({ title: module.title, description: module.description })
+                    }}
+                    className="p-1 text-slate-400 hover:text-white"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+                    </>
+                  )}
+                </div>
 
                 {/* Module Lessons */}
                 {isExpanded && (
@@ -244,17 +336,70 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
                       const displayTitle = getVideoTitle(video)
                       const isLast = index === module.videos.length - 1
                       return (
-                        <button
+                        <div
                           key={video.id}
-                          onClick={() => handleVideoSelect(module.id, video)}
-                          className={`w-full px-4 py-2.5 pl-11 text-left hover:bg-slate-800/50 transition-colors border-b border-slate-700/20 ${
+                          className={`w-full px-4 py-2.5 pl-11 flex items-center gap-2 hover:bg-slate-800/50 transition-colors border-b border-slate-700/20 ${
                             isLast ? 'border-b-0' : ''
                           } ${
                             isSelected ? 'bg-cyan-500/20 border-l-2 border-cyan-500' : ''
                           }`}
                         >
-                          <div className="text-sm text-slate-200">{index + 1}. {displayTitle}</div>
-                        </button>
+                          {editing?.type === 'video' && editing.videoId === video.id ? (
+                            <div className="flex-1 flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={editValues.title || displayTitle}
+                                onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
+                                className="flex-1 px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-xs"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveEdit()
+                                  if (e.key === 'Escape') setEditing(null)
+                                }}
+                              />
+                              <input
+                                type="text"
+                                value={editValues.youtubeId || video.youtubeId || ''}
+                                onChange={(e) => setEditValues({ ...editValues, youtubeId: e.target.value })}
+                                className="flex-1 px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-xs"
+                                placeholder="YouTube ID/URL"
+                              />
+                              <button
+                                onClick={handleSaveEdit}
+                                className="p-1 text-cyan-400 hover:text-cyan-300"
+                              >
+                                <Save className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => setEditing(null)}
+                                className="p-1 text-red-400 hover:text-red-300"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleVideoSelect(module.id, video)}
+                                className="flex-1 text-left"
+                              >
+                                <div className="text-sm text-slate-200">{index + 1}. {displayTitle}</div>
+                              </button>
+                              {isAdmin && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setEditing({ type: 'video', moduleId: module.id, videoId: video.id })
+                                    setEditValues({ title: displayTitle, youtubeId: video.youtubeId })
+                                  }}
+                                  className="p-1 text-slate-400 hover:text-white"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
                       )
                     })}
                   </div>
@@ -293,17 +438,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
             <div className="p-6 space-y-6">
               {/* Editable Title */}
               <div>
-                {isAdmin ? (
-                  <input
-                    type="text"
-                    value={getVideoTitle(selectedVideo.video)}
-                    onChange={(e) => handleTitleChange(selectedVideo.video.id, e.target.value)}
-                    className="w-full text-2xl font-bold text-white bg-transparent border-none focus:outline-none focus:ring-0 p-0"
-                    placeholder="Enter video title..."
-                  />
-                ) : (
-                  <h2 className="text-2xl font-bold text-white">{getVideoTitle(selectedVideo.video)}</h2>
-                )}
+                <h2 className="text-2xl font-bold text-white">{getVideoTitle(selectedVideo.video)}</h2>
               </div>
 
               {/* Notes/Attachments Section */}
