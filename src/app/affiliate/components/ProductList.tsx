@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, Check, ExternalLink } from 'lucide-react'
+import { Copy, Check, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react'
 import { SimpleReferralLink } from './SimpleReferralLink'
 
 type Product = {
@@ -35,6 +35,13 @@ type AffiliateLink = {
   }
 }
 
+// Get product icon/emoji based on slug
+function getProductIcon(slug: string): string {
+  if (slug === 'platform-subscription') return '💰'
+  if (slug.includes('adhd')) return '🧠'
+  return '📦'
+}
+
 export function ProductList({
   products,
   affiliateLinks,
@@ -44,7 +51,7 @@ export function ProductList({
   affiliateLinks: AffiliateLink[]
   affiliateId: string
 }) {
-  // Create platform subscription as a product-like card
+  // Create platform subscription as a product-like item
   const platformSubscriptionProduct = {
     id: 'platform-subscription',
     name: 'Platform Subscription',
@@ -59,126 +66,153 @@ export function ProductList({
   const allProducts = [platformSubscriptionProduct, ...products]
 
   return (
-    <div className="space-y-4">
-      {allProducts.map((product) => {
-        // Special handling for platform subscription
-        if (product.id === 'platform-subscription') {
-          return (
-            <div key={product.id} className="bg-gradient-to-r from-green-500/10 to-teal-500/10 border-2 border-green-500/30 rounded-xl overflow-hidden">
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white">{product.name}</h3>
-                    {product.description && (
-                      <p className="text-sm text-gray-400 mt-1">
-                        {product.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right ml-4">
-                    <div className="text-green-400 font-bold text-lg">
-                      {product.commission_percent}%
-                    </div>
-                    <div className="text-sm text-gray-500">Recurring</div>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <SimpleReferralLink />
-                </div>
-              </div>
-            </div>
-          )
-        }
-
-        // Regular product cards
-        return (
-          <ProductCard
+    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="p-5 space-y-4">
+        {allProducts.map((product, index) => (
+          <ProductRow
             key={product.id}
             product={product}
             affiliateLinks={affiliateLinks.filter(
               (link) => link.landing_page?.product?.id === product.id
             )}
             affiliateId={affiliateId}
+            isLast={index === allProducts.length - 1}
           />
-        )
-      })}
-      {allProducts.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          No products available yet. Check back soon!
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   )
 }
 
-function ProductCard({
+function ProductRow({
   product,
   affiliateLinks,
   affiliateId,
+  isLast,
 }: {
   product: Product
   affiliateLinks: AffiliateLink[]
   affiliateId: string
+  isLast: boolean
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
-
   const activePages = product.landing_pages.filter((p) => p.is_active)
-  const commission = product.commission_percent
+  const icon = getProductIcon(product.slug)
 
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-      {/* Product Header */}
-      <div
-        className="p-5 cursor-pointer hover:bg-gray-800/50 transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-white">{product.name}</h3>
-            {product.description && (
-              <p className="text-sm text-gray-400 mt-1 line-clamp-2">
-                {product.description}
-              </p>
-            )}
+  // Special handling for platform subscription
+  if (product.id === 'platform-subscription') {
+    return (
+      <>
+        <div className="flex items-start gap-4">
+          {/* Product Icon */}
+          <div className="w-10 h-10 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center text-xl flex-shrink-0">
+            {icon}
           </div>
-          <div className="text-right">
-            <div className="text-green-400 font-bold text-lg">
-              {commission}% commission
+
+          {/* Product Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-white">{product.name}</h3>
+                {product.description && (
+                  <p className="text-sm text-gray-400 mt-1">
+                    {product.description}
+                  </p>
+                )}
+              </div>
+              <div className="text-right flex-shrink-0">
+                <div className="text-green-400 font-bold text-base">
+                  {product.commission_percent}%
+                </div>
+                <div className="text-xs text-gray-500">Recurring</div>
+              </div>
             </div>
-            <div className="text-sm text-gray-500">
-              ${(product.price_cents / 100).toFixed(0)} product
+
+            {/* Referral Link */}
+            <div className="mt-3">
+              <SimpleReferralLink />
             </div>
           </div>
         </div>
-        <div className="mt-3 text-sm text-gray-500">
-          {activePages.length} landing page{activePages.length !== 1 ? 's' : ''} available
-          {' · '}
-          <span className="text-green-400">
-            Click to {isExpanded ? 'collapse' : 'get links'}
-          </span>
+        {!isLast && <div className="border-t border-gray-800 mt-4" />}
+      </>
+    )
+  }
+
+  // Regular products with landing pages
+  return (
+    <>
+      <div className="flex items-start gap-4">
+        {/* Product Icon */}
+        <div className="w-10 h-10 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-xl flex-shrink-0">
+          {icon}
+        </div>
+
+        {/* Product Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-white">{product.name}</h3>
+              {product.description && (
+                <p className="text-sm text-gray-400 mt-1 line-clamp-1">
+                  {product.description}
+                </p>
+              )}
+            </div>
+            <div className="text-right flex-shrink-0">
+              <div className="text-green-400 font-bold text-base">
+                {product.commission_percent}%
+              </div>
+              <div className="text-xs text-gray-500">
+                ${(product.price_cents / 100).toFixed(0)}
+              </div>
+            </div>
+          </div>
+
+          {/* Expandable Landing Pages */}
+          {activePages.length > 0 && (
+            <div className="mt-3">
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                {isExpanded ? (
+                  <>
+                    <ChevronUp className="w-4 h-4" />
+                    Hide {activePages.length} landing page{activePages.length !== 1 ? 's' : ''}
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-4 h-4" />
+                    Show {activePages.length} landing page{activePages.length !== 1 ? 's' : ''}
+                  </>
+                )}
+              </button>
+
+              {isExpanded && (
+                <div className="mt-3 space-y-2">
+                  {activePages.map((page) => {
+                    const existingLink = affiliateLinks.find(
+                      (link) => link.landing_page?.id === page.id
+                    )
+                    return (
+                      <LandingPageRow
+                        key={page.id}
+                        page={page}
+                        productSlug={product.slug}
+                        existingLink={existingLink}
+                        affiliateId={affiliateId}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Expanded: Landing Pages */}
-      {isExpanded && (
-        <div className="border-t border-gray-800 p-5 space-y-4">
-          {activePages.map((page) => {
-            const existingLink = affiliateLinks.find(
-              (link) => link.landing_page?.id === page.id
-            )
-            return (
-              <LandingPageRow
-                key={page.id}
-                page={page}
-                productSlug={product.slug}
-                existingLink={existingLink}
-                affiliateId={affiliateId}
-              />
-            )
-          })}
-        </div>
-      )}
-    </div>
+      {!isLast && <div className="border-t border-gray-800 mt-4" />}
+    </>
   )
 }
 
@@ -202,7 +236,6 @@ function LandingPageRow({
   const [isGenerating, setIsGenerating] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  // Use URL from API response if available, otherwise construct it
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://affiliate-platform-three.vercel.app'
   const fullUrl = link
     ? (link as any).url || `${appUrl}/go/${link.tracking_code}`
@@ -211,12 +244,6 @@ function LandingPageRow({
   async function generateLink() {
     setIsGenerating(true)
     try {
-      console.log('🔄 Generating link for landing page:', page.id)
-      console.log('👤 Affiliate ID from props:', affiliateId)
-      console.log('🍪 Cookies available:', document.cookie ? 'yes' : 'no')
-      console.log('🍪 Cookie details:', document.cookie.split(';').map(c => c.trim().split('=')[0]))
-      
-      // Get token from localStorage and send as Authorization header
       const token = localStorage.getItem('affiliate_token')
       const headers: HeadersInit = { 'Content-Type': 'application/json' }
       if (token) {
@@ -226,31 +253,27 @@ function LandingPageRow({
       const res = await fetch('/api/links/generate', {
         method: 'POST',
         headers,
-        credentials: 'include', // Ensure cookies are sent
+        credentials: 'include',
         body: JSON.stringify({
           landing_page_id: page.id,
-          affiliate_id: affiliateId, // Pass affiliate_id as fallback
+          affiliate_id: affiliateId,
         }),
       })
       
       const data = await res.json()
-      console.log('📥 Response from API:', data)
       
       if (!res.ok) {
-        console.error('❌ API error:', data.error, data.details)
         alert(`Error: ${data.error || 'Failed to generate link'}`)
         return
       }
       
       if (data.link) {
-        console.log('✅ Link generated:', data.link.url)
         setLink(data.link)
       } else {
-        console.error('❌ No link in response:', data)
         alert('Error: No link received from server')
       }
     } catch (error) {
-      console.error('❌ Error generating link:', error)
+      console.error('Error generating link:', error)
       alert('Error: Failed to generate link. Please try again.')
     } finally {
       setIsGenerating(false)
@@ -265,9 +288,9 @@ function LandingPageRow({
   }
 
   return (
-    <div className="flex items-center justify-between bg-gray-800/50 rounded-lg p-4">
-      <div>
-        <p className="text-white font-medium">{page.name}</p>
+    <div className="flex items-center justify-between bg-gray-800/50 rounded-lg p-3">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-white">{page.name}</p>
         {page.variant_name && (
           <p className="text-xs text-gray-500 mt-0.5">
             Variant: {page.variant_name}
@@ -275,34 +298,31 @@ function LandingPageRow({
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 ml-4">
         {link ? (
           <>
-            {/* Preview Link */}
             <a
               href={`${appUrl}/p/${productSlug}/${page.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white p-2"
+              className="p-1.5 text-gray-400 hover:text-white transition-colors"
               title="Preview page"
             >
               <ExternalLink className="w-4 h-4" />
             </a>
-
-            {/* Copy Link */}
-            <div className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2">
-              <code className="text-sm text-green-400 font-mono">
+            <div className="flex items-center gap-1.5 bg-gray-900 rounded px-2 py-1.5">
+              <code className="text-xs text-green-400 font-mono">
                 {link.tracking_code}
               </code>
               <button
                 onClick={copyToClipboard}
-                className="text-gray-400 hover:text-white p-1"
+                className="p-1 text-gray-400 hover:text-white transition-colors"
                 title="Copy full link"
               >
                 {copied ? (
-                  <Check className="w-4 h-4 text-green-400" />
+                  <Check className="w-3.5 h-3.5 text-green-400" />
                 ) : (
-                  <Copy className="w-4 h-4" />
+                  <Copy className="w-3.5 h-3.5" />
                 )}
               </button>
             </div>
@@ -311,7 +331,7 @@ function LandingPageRow({
           <button
             onClick={generateLink}
             disabled={isGenerating}
-            className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 text-white text-sm font-medium rounded-lg transition-colors"
+            className="px-3 py-1.5 bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 text-white text-xs font-medium rounded-lg transition-colors"
           >
             {isGenerating ? 'Generating...' : 'Get Link'}
           </button>
