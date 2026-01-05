@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Edit2, Save, X, Download, Loader2 } from 'lucide-react'
+import { Edit2, Save, X, Download, Loader2, Check } from 'lucide-react'
 
 interface Video {
   id: string
@@ -80,6 +80,7 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({})
   const [savingNotes, setSavingNotes] = useState<Record<string, boolean>>({})
+  const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({})
   const [attachments, setAttachments] = useState<Record<string, any[]>>({})
   const [loadingAttachments, setLoadingAttachments] = useState<Record<string, boolean>>({})
   const [editing, setEditing] = useState<{ type: 'category' | 'section' | 'video', categoryId?: string, sectionId?: number, videoId?: string } | null>(null)
@@ -194,6 +195,7 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
     if (!isAdmin) return
     
     setSavingNotes(prev => ({ ...prev, [videoId]: true }))
+    setNotesSaved(prev => ({ ...prev, [videoId]: false }))
     try {
       const res = await fetch('/api/courses/video-notes', {
         method: 'PUT',
@@ -206,7 +208,12 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
       })
       const data = await res.json()
       if (res.ok) {
-        // Notes saved successfully
+        // Notes saved successfully - show checkmark
+        setNotesSaved(prev => ({ ...prev, [videoId]: true }))
+        // Hide checkmark after 3 seconds
+        setTimeout(() => {
+          setNotesSaved(prev => ({ ...prev, [videoId]: false }))
+        }, 3000)
       } else {
         alert('Failed to save notes: ' + (data.error || 'Unknown error'))
       }
@@ -774,13 +781,24 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                               <button
                                 onClick={() => saveNotes(selectedVideo.video.id)}
                                 disabled={savingNotes[selectedVideo.video.id]}
-                                className="text-xs px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 text-white rounded-lg transition-colors flex items-center gap-1.5"
+                                className={`text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                                  notesSaved[selectedVideo.video.id]
+                                    ? 'bg-emerald-600 text-white'
+                                    : savingNotes[selectedVideo.video.id]
+                                    ? 'bg-emerald-800 text-white'
+                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                }`}
                                 title="Save notes"
                               >
                                 {savingNotes[selectedVideo.video.id] ? (
                                   <>
                                     <Loader2 className="w-3 h-3 animate-spin" />
                                     Saving...
+                                  </>
+                                ) : notesSaved[selectedVideo.video.id] ? (
+                                  <>
+                                    <Check className="w-3 h-3" />
+                                    Saved!
                                   </>
                                 ) : (
                                   <>
@@ -816,7 +834,8 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                         </div>
 
                       {/* Notes Content */}
-                      {(shouldAutoExpand || isExpanded || !hasNotes) && (
+                      {/* Always show textarea for admins, show read-only for regular users when expanded */}
+                      {(isAdmin || shouldAutoExpand || isExpanded || !hasNotes) && (
                         <div className="px-4 pb-4">
                           {isAdmin ? (
                             <textarea
@@ -826,12 +845,12 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                               className="w-full bg-transparent text-slate-200 placeholder-slate-500 resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50"
                               style={{ 
                                 height: 'auto',
-                                minHeight: hasNotes ? '120px' : '60px'
+                                minHeight: '120px'
                               }}
                               onInput={(e) => {
                                 const target = e.target as HTMLTextAreaElement
                                 target.style.height = 'auto'
-                                target.style.height = `${Math.max(hasNotes ? 120 : 60, target.scrollHeight)}px`
+                                target.style.height = `${Math.max(120, target.scrollHeight)}px`
                               }}
                             />
                           ) : (
@@ -841,7 +860,8 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                           )}
                         </div>
                       )}
-                      {hasNotes && !shouldAutoExpand && !isExpanded && (
+                      {/* Show collapsed preview for regular users only when collapsed */}
+                      {!isAdmin && hasNotes && !shouldAutoExpand && !isExpanded && (
                         <div className="px-4 pb-4">
                           <div className="text-sm text-slate-400 line-clamp-2 p-3 border border-slate-700/50 rounded-lg bg-slate-800/30">
                             {videoNotes}
