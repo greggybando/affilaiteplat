@@ -234,55 +234,47 @@ function LandingPageRow({
   }
 
   return (
-    <div className="flex items-center justify-between bg-gray-800/50 rounded-lg p-3">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white">{page.name}</p>
-        {page.variant_name && (
-          <p className="text-xs text-gray-500 mt-0.5">
-            Variant: {page.variant_name}
-          </p>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2 ml-4">
-        {link ? (
-          <>
-            <a
-              href={`${appUrl}/p/${productSlug}/${page.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 text-gray-400 hover:text-white transition-colors"
-              title="Preview page"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
-            <div className="flex items-center gap-1.5 bg-gray-900 rounded px-2 py-1.5">
-              <code className="text-xs text-green-400 font-mono">
-                {link.tracking_code}
-              </code>
-              <button
-                onClick={copyToClipboard}
-                className="p-1 text-gray-400 hover:text-white transition-colors"
-                title="Copy full link"
-              >
-                {copied ? (
-                  <Check className="w-3.5 h-3.5 text-green-400" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
-                )}
-              </button>
-            </div>
-          </>
-        ) : (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-white">{page.name}</p>
+      {page.variant_name && (
+        <p className="text-xs text-gray-500">
+          Variant: {page.variant_name}
+        </p>
+      )}
+      {link ? (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={fullUrl || ''}
+            readOnly
+            className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs font-mono"
+          />
           <button
-            onClick={generateLink}
-            disabled={isGenerating}
-            className="px-3 py-1.5 bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 text-white text-xs font-medium rounded-lg transition-colors"
+            onClick={copyToClipboard}
+            className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            title="Copy link"
           >
-            {isGenerating ? 'Generating...' : 'Get Link'}
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </button>
-        )}
-      </div>
+          <a
+            href={fullUrl || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            title="Open link"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        </div>
+      ) : (
+        <button
+          onClick={generateLink}
+          disabled={isGenerating}
+          className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+        >
+          {isGenerating ? 'Generating...' : 'Generate Link'}
+        </button>
+      )}
     </div>
   )
 }
