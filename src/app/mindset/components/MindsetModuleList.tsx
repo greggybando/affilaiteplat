@@ -755,54 +755,49 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                 {categoriesList.map((category) => {
               const isCategoryExpanded = expandedCategories.has(category.id)
               
-              // Sortable wrapper
-              const CategoryWrapper = () => {
-                const {
-                  attributes,
-                  listeners,
-                  setNodeRef,
-                  transform,
-                  transition,
-                  isDragging,
-                } = useSortable({ id: category.id })
-
-                const style = {
-                  transform: CSS.Transform.toString(transform),
-                  transition,
-                  opacity: isDragging ? 0.5 : 1,
-                }
-
-                return (
-                  <div
-                    ref={setNodeRef}
-                    style={style}
-                    className="border-b-2 border-slate-600/50 last:border-b-0"
-                  >
-                    {/* Category Header */}
-                    <div className={`w-full px-4 py-3 flex items-center gap-3 border-b border-slate-700/30 ${
-                      category.isStartHere 
-                        ? 'bg-gradient-to-r from-yellow-500/30 to-yellow-600/30 border-yellow-500/50' 
-                        : 'bg-slate-900/40'
-                    }`}>
-                      {isAdmin && (
-                        <div
-                          {...attributes}
-                          {...listeners}
-                          className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300"
-                        >
-                          <GripVertical className="w-4 h-4" />
-                        </div>
-                      )}
-                      <button
-                        onClick={() => toggleCategory(category.id)}
-                        onDoubleClick={() => {
-                          if (isAdmin && !editing) {
-                            setEditing({ type: 'category', categoryId: category.id })
-                            setEditValues({ title: category.title })
-                          }
-                        }}
-                        className="flex-1 flex items-center gap-3 text-left hover:bg-slate-800/50 transition-colors"
-                      >
+              return (
+                <SortableCategoryItem
+                  key={category.id}
+                  category={category}
+                  isCategoryExpanded={isCategoryExpanded}
+                  isAdmin={isAdmin}
+                  editing={editing}
+                  editValues={editValues}
+                  expandedSections={expandedSections}
+                  selectedVideo={selectedVideo}
+                  getVideoTitle={getVideoTitle}
+                  onToggleCategory={toggleCategory}
+                  onToggleSection={toggleSection}
+                  onEdit={(type, categoryId, sectionId, videoId) => {
+                    if (type === 'category') {
+                      setEditing({ type: 'category', categoryId })
+                      setEditValues({ title: category.title })
+                    } else if (type === 'section') {
+                      const section = category.sections.find(s => s.id === sectionId)
+                      if (section) {
+                        setEditing({ type: 'section', categoryId, sectionId })
+                        setEditValues({ title: section.title, description: section.description })
+                      }
+                    } else if (type === 'video') {
+                      const section = category.sections.find(s => s.id === sectionId)
+                      const video = section?.videos.find(v => v.id === videoId)
+                      if (video) {
+                        setEditing({ type: 'video', categoryId, sectionId, videoId })
+                        setEditValues({ title: getVideoTitle(video), youtubeId: video.youtubeId, loomId: video.loomId })
+                      }
+                    }
+                  }}
+                  onUpdateEditValues={setEditValues}
+                  onSaveEdit={handleSaveEdit}
+                  onCancelEdit={() => setEditing(null)}
+                  onVideoSelect={handleVideoSelect}
+                  onEditVideo={(categoryId, sectionId, video) => {
+                    setEditing({ type: 'video', categoryId, sectionId, videoId: video.id })
+                    setEditValues({ title: getVideoTitle(video), youtubeId: video.youtubeId, loomId: video.loomId })
+                  }}
+                />
+              )
+            })}
                     <svg
                       className={`w-4 h-4 ${category.isStartHere ? 'text-yellow-400' : 'text-slate-300'} transition-transform ${isCategoryExpanded ? 'rotate-90' : ''}`}
                       fill="none"
