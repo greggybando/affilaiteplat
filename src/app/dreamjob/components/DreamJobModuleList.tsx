@@ -40,6 +40,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
   )
   const [videoTitles, setVideoTitles] = useState<Record<string, string>>({})
   const [notes, setNotes] = useState<Record<string, string>>({})
+  const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({})
   const [attachments, setAttachments] = useState<Record<string, Attachment[]>>({})
 
   const toggleModule = (moduleId: number) => {
@@ -200,35 +201,78 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
               </div>
 
               {/* Notes/Attachments Section */}
-              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-white">Notes & Attachments</h3>
-                </div>
+              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+                {(() => {
+                  const videoNotes = getVideoNotes(selectedVideo.video)
+                  const hasNotes = videoNotes && videoNotes.trim().length > 0
+                  const isExpanded = notesExpanded[selectedVideo.video.id] || false
+                  const shouldAutoExpand = hasNotes && videoNotes.length > 200
+                  
+                  return (
+                    <>
+                      <div className="flex items-center justify-between p-4">
+                        <h3 className="text-sm font-semibold text-slate-300">Notes</h3>
+                        {hasNotes && (
+                          <button
+                            onClick={() => setNotesExpanded(prev => ({ ...prev, [selectedVideo.video.id]: !isExpanded }))}
+                            className="text-xs text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1"
+                          >
+                            {isExpanded ? (
+                              <>
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                                Collapse
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                                Expand
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
 
-                {/* Notes Textarea */}
-                <div>
-                  {isAdmin ? (
-                    <textarea
-                      value={getVideoNotes(selectedVideo.video)}
-                      onChange={(e) => handleNotesChange(selectedVideo.video.id, e.target.value)}
-                      placeholder="Add your notes, thoughts, or questions about this lesson. This text box will expand as you type..."
-                      className="w-full min-h-[400px] bg-transparent text-slate-200 placeholder-slate-500 resize-y focus:outline-none focus:ring-2 focus:ring-cyan-500/50 rounded-lg p-4 text-sm leading-relaxed border border-slate-700/50"
-                      style={{ 
-                        height: 'auto',
-                        minHeight: '400px'
-                      }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement
-                        target.style.height = 'auto'
-                        target.style.height = `${Math.max(400, target.scrollHeight)}px`
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full min-h-[400px] bg-transparent text-slate-200 rounded-lg p-4 text-sm leading-relaxed border border-slate-700/50 whitespace-pre-wrap">
-                      {getVideoNotes(selectedVideo.video) || <span className="text-slate-500 italic">No notes available</span>}
-                    </div>
-                  )}
-                </div>
+                      {/* Notes Content */}
+                      {(shouldAutoExpand || isExpanded || !hasNotes) && (
+                        <div className="px-4 pb-4">
+                          {isAdmin ? (
+                            <textarea
+                              value={videoNotes}
+                              onChange={(e) => handleNotesChange(selectedVideo.video.id, e.target.value)}
+                              placeholder="Add your notes, thoughts, or questions about this lesson..."
+                              className="w-full bg-transparent text-slate-200 placeholder-slate-500 resize-y focus:outline-none focus:ring-2 focus:ring-cyan-500/50 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50"
+                              style={{ 
+                                height: 'auto',
+                                minHeight: hasNotes ? '120px' : '60px'
+                              }}
+                              onInput={(e) => {
+                                const target = e.target as HTMLTextAreaElement
+                                target.style.height = 'auto'
+                                target.style.height = `${Math.max(hasNotes ? 120 : 60, target.scrollHeight)}px`
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full bg-transparent text-slate-200 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50 whitespace-pre-wrap min-h-[60px]">
+                              {videoNotes || <span className="text-slate-500 italic">No notes available</span>}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {hasNotes && !shouldAutoExpand && !isExpanded && (
+                        <div className="px-4 pb-4">
+                          <div className="text-sm text-slate-400 line-clamp-2 p-3 border border-slate-700/50 rounded-lg bg-slate-800/30">
+                            {videoNotes}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
+              </div>
 
                 {/* Attachments Section */}
                 <div className="space-y-3">
