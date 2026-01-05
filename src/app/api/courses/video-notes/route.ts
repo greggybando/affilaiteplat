@@ -51,58 +51,45 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Missing videoId or courseType' }, { status: 400 })
     }
 
-    // Check if note exists first
-    const { data: existingNote, error: checkError } = await supabaseAdmin
+    // Use upsert with proper conflict handling
+    // First try to get existing note
+    const { data: existing } = await supabaseAdmin
       .from('video_notes')
-      .select('id')
+      .select('id, created_by')
       .eq('video_id', videoId)
       .eq('course_type', courseType)
       .maybeSingle()
 
-    let note: any
-    let error: any
-
-    if (existingNote && !checkError) {
-      // Update existing note
-      const { data: updatedNote, error: updateError } = await supabaseAdmin
-        .from('video_notes')
-        .update({
-          notes: notes || '',
-          updated_at: new Date().toISOString()
-        } as any)
-        .eq('video_id', videoId)
-        .eq('course_type', courseType)
-        .select()
-        .single()
-      
-      note = updatedNote
-      error = updateError
-    } else {
-      // Insert new note
-      const { data: insertedNote, error: insertError } = await supabaseAdmin
-        .from('video_notes')
-        .insert({
-          video_id: videoId,
-          course_type: courseType,
-          notes: notes || '',
-          created_by: affiliate.id,
-          updated_at: new Date().toISOString()
-        } as any)
-        .select()
-        .single()
-      
-      note = insertedNote
-      error = insertError
+    const upsertData: any = {
+      video_id: videoId,
+      course_type: courseType,
+      notes: notes || '',
+      updated_at: new Date().toISOString()
     }
+
+    // Preserve created_by if note exists, otherwise set it
+    if (existing && existing.created_by) {
+      upsertData.created_by = existing.created_by
+    } else {
+      upsertData.created_by = affiliate.id
+    }
+
+    const { data: note, error } = await supabaseAdmin
+      .from('video_notes')
+      .upsert(upsertData, {
+        onConflict: 'video_id,course_type'
+      } as any)
+      .select()
+      .single()
 
     if (error) {
       console.error('Error saving notes:', error)
       console.error('Error details:', JSON.stringify(error, null, 2))
-      console.error('Video ID:', videoId, 'Course Type:', courseType)
+      console.error('Video ID:', videoId, 'Course Type:', courseType, 'Affiliate ID:', affiliate.id)
       return NextResponse.json({ 
         error: 'Failed to save notes',
         details: error.message || error.code || 'Unknown error',
-        hint: 'Make sure the video_notes table exists. Run the SQL migration if needed.'
+        hint: 'Make sure the video_notes table exists with UNIQUE constraint on (video_id, course_type). Run the SQL migration if needed.'
       }, { status: 500 })
     }
 
