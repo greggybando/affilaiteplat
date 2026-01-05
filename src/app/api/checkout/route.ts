@@ -1,131 +1,51 @@
-import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase'
+import { cookies } from 'next/headers'
 
-export async function POST() {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-10-16' })
+
+export async function POST(req: NextRequest) {
+  const { productId, priceId, successUrl, cancelUrl } = await req.json()
+
   const cookieStore = cookies()
-  const affCode = cookieStore.get('aff')?.value || ''
-  const visitorId = cookieStore.get('vid')?.value || ''
-  const productSlug = cookieStore.get('product')?.value || ''
+  const visitorId = cookieStore.get('visitor_id')?.value
+  const affAttr = cookieStore.get('aff_attr')?.value
 
-  // Look up affiliate information
-  let affiliateId = ''
-  let affiliateLinkId = ''
-  let clickId = ''
-  let productId = ''
+  const metadata: Record<string, string> = { product_id: productId }
 
-  if (affCode) {
-    // Look up affiliate link
-    const { data: link } = await supabaseAdmin
-      .from('affiliate_links')
-      .select('id, affiliate_id')
-      .eq('tracking_code', affCode)
-      .maybeSingle()
+  if (affAttr) {
+    try {
+      const attr = JSON.parse(affAttr)
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
+      if (attr.click_time > thirtyDaysAgo) {
+        metadata.affiliate_id = attr.affiliate_id
+        metadata.affiliate_link_id = attr.link_id
 
-    if (link) {
-      const linkData = link as { id: string; affiliate_id: string }
-      affiliateId = linkData.affiliate_id
-      affiliateLinkId = linkData.id
-
-      // Look up click record
-      if (visitorId && affiliateLinkId) {
         const { data: click } = await supabaseAdmin
           .from('clicks')
           .select('id')
-          .eq('affiliate_link_id', affiliateLinkId)
+          .eq('affiliate_link_id', attr.link_id)
           .eq('visitor_id', visitorId)
           .order('clicked_at', { ascending: false })
           .limit(1)
-          .maybeSingle()
+          .single()
 
-        if (click) {
-          clickId = (click as { id: string }).id
-        }
+        if (click) metadata.click_id = (click as any).id
       }
-    }
+    } catch {}
   }
 
-  // Look up product
-  if (productSlug) {
-    const { data: product } = await supabaseAdmin
-      .from('products')
-      .select('id')
-      .eq('slug', productSlug)
-      .eq('is_active', true)
-      .maybeSingle()
+  if (visitorId) metadata.visitor_id = visitorId
 
-    if (product) {
-      productId = (product as { id: string }).id
-    }
-  }
-
-  // Fallback to default product if none found
-  if (!productId) {
-    const { data: product } = await supabaseAdmin
-      .from('products')
-      .select('id')
-      .eq('is_active', true)
-      .limit(1)
-      .maybeSingle()
-
-    if (product) {
-      productId = (product as { id: string }).id
-    }
-  }
-
-  const successUrl = 'https://affiliate-platform-three.vercel.app/checkout/success'
-  const cancelUrl = 'https://affiliate-platform-three.vercel.app'
-
-  // Build metadata - only include non-empty values
-  const metadata: Record<string, string> = {}
-  if (affiliateId) metadata['affiliate_id'] = affiliateId
-  if (affiliateLinkId) metadata['affiliate_link_id'] = affiliateLinkId
-  if (clickId) metadata['click_id'] = clickId
-  if (visitorId) metadata['visitor_id'] = visitorId
-  if (productId) metadata['product_id'] = productId
-
-  // Build URLSearchParams with metadata
-  const params = new URLSearchParams({
-    'payment_method_types[]': 'card',
-    'line_items[0][price]': process.env.STRIPE_AFFILIATE_PRICE_ID!.trim(),
-    'line_items[0][quantity]': '1',
-    'mode': 'payment',
-    'success_url': successUrl,
-    'cancel_url': cancelUrl,
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    payment_method_types: ['card'],
+    line_items: [{ price: priceId, quantity: 1 }],
+    success_url: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/cancel`,
+    metadata,
   })
 
-  // Add metadata fields
-  Object.entries(metadata).forEach(([key, value]) => {
-    params.append(`metadata[${key}]`, value)
-  })
-
-  const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: params,
-  })
-
-  const session = await response.json()
-  
-  if (!response.ok || session.error) {
-    console.error('Stripe API error:', session)
-    return NextResponse.json({ 
-      error: session.error?.message || 'Failed to create checkout session',
-      details: session
-    }, { status: response.status || 400 })
-  }
-
-  if (!session.url) {
-    console.error('No URL in Stripe response:', session)
-    return NextResponse.json({ 
-      error: 'No checkout URL received from Stripe',
-      details: session
-    }, { status: 500 })
-  }
-
-  console.log('✅ Checkout session created:', session.id, session.url)
-  return NextResponse.json({ url: session.url })
+  return NextResponse.json({ sessionId: session.id, url: session.url })
 }

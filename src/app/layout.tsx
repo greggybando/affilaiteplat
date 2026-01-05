@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="h-screen w-screen overflow-hidden bg-gray-950 text-white antialiased" style={{ margin: 0, padding: 0 }}>
+      <body className="min-h-screen bg-gray-950 text-white antialiased">
         {children}
       </body>
     </html>

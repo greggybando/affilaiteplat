@@ -17,9 +17,9 @@ export default async function ResubscribePage() {
     redirect('/login')
   }
 
-  // If already active, redirect to portal
+  // If already active, redirect to dashboard
   if (affiliate.status === 'active') {
-    redirect('/portal')
+    redirect('/dashboard')
   }
 
   // Get frozen stats

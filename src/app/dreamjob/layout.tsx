@@ -1,0 +1,77 @@
+import { redirect } from 'next/navigation'
+import { getCurrentAffiliate } from '@/lib/auth'
+import Link from 'next/link'
+import { DreamJobNav } from './components/DreamJobNav'
+import { AIChatBot } from './components/AIChatBot'
+
+export default async function DreamJobLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const affiliate = await getCurrentAffiliate()
+
+  if (!affiliate) {
+    redirect('/login')
+  }
+
+  if (!(affiliate as any).onboarding_completed) {
+    redirect('/onboarding')
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Header */}
+      <header className="bg-slate-900/80 backdrop-blur-xl border-b border-slate-700/50 sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Link 
+                href="/dashboard" 
+                className="text-cyan-400 hover:text-cyan-300 text-sm font-medium flex items-center gap-1 transition-colors"
+              >
+                ← Back to Dashboard
+              </Link>
+              <h1 className="text-2xl font-bold text-white mt-1 tracking-tight">
+                Get Your Dream Job
+              </h1>
+              <p className="text-sm text-slate-400">
+                Welcome back, {(affiliate as any).avatar_name || affiliate.name}
+              </p>
+            </div>
+            
+            {/* Avatar */}
+            <div className="flex items-center gap-3">
+              {(affiliate as any).avatar_url ? (
+                <img 
+                  src={(affiliate as any).avatar_url} 
+                  alt={(affiliate as any).avatar_name || 'Avatar'}
+                  className="w-10 h-10 rounded-full ring-2 ring-cyan-500/20"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-semibold ring-2 ring-cyan-500/20">
+                  {((affiliate as any).avatar_name || affiliate.name || 'U')[0].toUpperCase()}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation Tabs */}
+      <DreamJobNav />
+
+      {/* Page Content */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {children}
+      </main>
+
+      {/* Floating AI Chat Bot */}
+      <AIChatBot userName={(affiliate as any).avatar_name || affiliate.name} />
+    </div>
+  )
+}
+
+
+
+

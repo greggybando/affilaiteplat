@@ -50,7 +50,7 @@ export function ResubscribeClient({
               Your Subscription Has Ended
             </h1>
             <p className="text-gray-400 text-lg">
-              Resubscribe to restore access to your affiliate portal
+              Resubscribe to restore access to LifeDesign Platform
             </p>
           </div>
 

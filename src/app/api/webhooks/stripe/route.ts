@@ -6,7 +6,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
 })
 
+// Helper function to normalize email for self-referral detection
+function normalizeEmail(email: string): string {
+  const [local, domain] = email.toLowerCase().split('@')
+  if (domain === 'gmail.com' || domain === 'googlemail.com') {
+    return local.replace(/\./g, '').split('+')[0] + '@gmail.com'
+  }
+  return local.split('+')[0] + '@' + domain
+}
+
+// Check for self-referral
+async function checkSelfReferral(affiliateId: string, customerEmail: string): Promise<boolean> {
+  const { data: affiliate } = await (supabaseAdmin as any)
+    .from('affiliates')
+    .select('email')
+    .eq('id', affiliateId)
+    .single()
+  
+  if (!affiliate?.email || !customerEmail) return false
+  return normalizeEmail(customerEmail) === normalizeEmail(affiliate.email)
+}
+
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   console.log('='.repeat(80))
   console.log('🔔 WEBHOOK RECEIVED - Starting webhook processing')
   console.log('='.repeat(80))
@@ -78,111 +100,161 @@ export async function POST(request: NextRequest) {
     }, { status: 400 })
   }
 
-  if (event.type === 'checkout.session.completed') {
+  // Idempotency check - prevent duplicate processing
+  const { data: existingEvent } = await (supabaseAdmin as any)
+    .from('webhook_events')
+    .select('id')
+    .eq('stripe_event_id', event.id)
+    .single()
+
+  if (existingEvent) {
+    console.log('⚠️  Duplicate event detected - already processed:', event.id)
+    return NextResponse.json({ received: true, status: 'duplicate' })
+  }
+
+  // Log event for idempotency and audit trail
+  await (supabaseAdmin as any).from('webhook_events').insert({
+    stripe_event_id: event.id,
+    event_type: event.type,
+    payload: event.data.object,
+    status: 'processing',
+  })
+
+  let processingError: string | null = null
+  let processingStatus = 'processed'
+
+  try {
+    // Process event based on type
+    if (event.type === 'checkout.session.completed') {
+      await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
+    } else if (event.type === 'charge.refunded') {
+      await handleChargeRefunded(event.data.object as Stripe.Charge)
+    } else if (event.type === 'charge.dispute.created') {
+      await handleDisputeCreated(event.data.object as Stripe.Dispute)
+    } else if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
+      await handleSubscriptionEvent(event.data.object as Stripe.Subscription)
+    } else if (event.type === 'customer.subscription.deleted') {
+      await handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
+    } else if (event.type === 'invoice.payment_failed') {
+      await handlePaymentFailed(event.data.object as Stripe.Invoice)
+    } else {
+      processingStatus = 'skipped'
+      console.log('ℹ️  Event type not handled:', event.type)
+    }
+  } catch (error: any) {
+    processingError = error.message
+    processingStatus = 'failed'
+    console.error('❌ Error processing webhook:', error)
+  }
+
+  // Update webhook event status
+  await (supabaseAdmin as any).from('webhook_events').update({
+    status: processingStatus,
+    error_message: processingError,
+    processing_time_ms: Date.now() - startTime,
+    processed_at: new Date().toISOString(),
+  }).eq('stripe_event_id', event.id)
+
+  return NextResponse.json({ received: true, status: processingStatus })
+}
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.log('')
     console.log('💰 Processing checkout.session.completed event')
     console.log('-'.repeat(80))
     
-    const session = event.data.object as Stripe.Checkout.Session
     const metadata = session.metadata || {}
-    let { affiliate_id, affiliate_link_id, click_id, visitor_id, product_id, affiliate_code } = metadata
+  let { affiliate_id, affiliate_link_id, click_id, visitor_id, product_id, affiliate_code } = metadata
+  const customerEmail = session.customer_email || session.customer_details?.email
 
-    // Handle subscription checkout (affiliate subscribing to platform)
-    if (session.mode === 'subscription') {
-      console.log('💳 This is a subscription checkout (affiliate subscribing)')
-      
-      if (!affiliate_id) {
-        console.log('⚠️  No affiliate_id in metadata - cannot update affiliate status')
-        return NextResponse.json({ received: true, message: 'No affiliate_id, skipping status update' })
-      }
-
-      // Check for subscription referral and activate it
-      const { data: referral } = await (supabaseAdmin as any)
-        .from('subscription_referrals')
-        .select('id, referrer_id, commission_percent')
-        .eq('referred_id', affiliate_id)
-        .eq('status', 'pending')
-        .single()
-
-      if (referral) {
-        const referralData = referral as any
-        // Activate the referral
-        await (supabaseAdmin as any)
-          .from('subscription_referrals')
-          .update({
-            status: 'active',
-            subscription_id: session.subscription as string,
-            first_commission_paid_at: new Date().toISOString()
-          })
-          .eq('id', referralData.id)
-
-        // Create first commission (50% of $40 = $20)
-        const subscriptionAmount = 4000 // $40 in cents
-        const commissionAmount = Math.floor((subscriptionAmount * (referralData.commission_percent || 50)) / 100)
-        
-        await (supabaseAdmin as any)
-          .from('subscription_commissions')
-          .insert({
-            referral_id: referralData.id,
-            referrer_id: referralData.referrer_id,
-            subscription_id: session.subscription as string,
-            amount_cents: commissionAmount,
-            subscription_amount_cents: subscriptionAmount,
-            commission_percent: referralData.commission_percent || 50,
-            period_start: new Date().toISOString(),
-            period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-            status: 'approved'
-          })
-
-        console.log('✅ Subscription referral activated and first commission created')
-      }
-
-      // Update affiliate status to 'active' and store subscription info
-      console.log('🔄 Updating affiliate status to active...')
-      const updateData: any = {
-        status: 'active',
-        subscription_started_at: new Date().toISOString(),
-      }
-
-      if (session.subscription) {
-        updateData.stripe_subscription_id = session.subscription as string
-      }
-
-      if (session.customer) {
-        updateData.stripe_customer_id = session.customer as string
-      }
-
-      const { data: updatedAffiliate, error: updateError } = await (supabaseAdmin
-        .from('affiliates') as any)
-        .update(updateData)
-        .eq('id', affiliate_id)
-        .select()
-        .single()
-
-      if (updateError) {
-        console.error('❌ Error updating affiliate status:', updateError)
-        return NextResponse.json(
-          { error: 'Failed to update affiliate status', details: updateError.message },
-          { status: 500 }
-        )
-      }
-
-      console.log('✅ Affiliate status updated to active')
-      console.log('   Affiliate ID:', affiliate_id)
-      console.log('   Subscription ID:', updateData.stripe_subscription_id || 'N/A')
-      console.log('   Customer ID:', updateData.stripe_customer_id || 'N/A')
-      console.log('')
-      return NextResponse.json({ received: true, event_type: event.type })
+  // Handle subscription checkout (affiliate subscribing to platform)
+  if (session.mode === 'subscription') {
+    console.log('💳 This is a subscription checkout (affiliate subscribing)')
+    
+    if (!affiliate_id) {
+      console.log('⚠️  No affiliate_id in metadata - cannot update affiliate status')
+      return
     }
 
-    // Handle product purchase checkout (customer buying product via affiliate)
+    // Check for subscription referral and activate it
+    const { data: referral } = await (supabaseAdmin as any)
+      .from('subscription_referrals')
+      .select('id, referrer_id, commission_percent')
+      .eq('referred_id', affiliate_id)
+      .eq('status', 'pending')
+      .single()
 
+    if (referral) {
+      const referralData = referral as any
+      // Activate the referral
+      await (supabaseAdmin as any)
+        .from('subscription_referrals')
+        .update({
+          status: 'active',
+          subscription_id: session.subscription as string,
+          first_commission_paid_at: new Date().toISOString()
+        })
+        .eq('id', referralData.id)
+
+      // Create first commission (50% of $40 = $20)
+      const subscriptionAmount = 4000 // $40 in cents
+      const commissionAmount = Math.floor((subscriptionAmount * (referralData.commission_percent || 50)) / 100)
+      
+      await (supabaseAdmin as any)
+        .from('subscription_commissions')
+        .insert({
+          referral_id: referralData.id,
+          referrer_id: referralData.referrer_id,
+          subscription_id: session.subscription as string,
+          amount_cents: commissionAmount,
+          subscription_amount_cents: subscriptionAmount,
+          commission_percent: referralData.commission_percent || 50,
+          period_start: new Date().toISOString(),
+          period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+          status: 'approved'
+        })
+
+      console.log('✅ Subscription referral activated and first commission created')
+    }
+
+    // Update affiliate status to 'active' and store subscription info
+    console.log('🔄 Updating affiliate status to active...')
+    const updateData: any = {
+      status: 'active',
+      subscription_started_at: new Date().toISOString(),
+    }
+
+    if (session.subscription) {
+      updateData.stripe_subscription_id = session.subscription as string
+    }
+
+    if (session.customer) {
+      updateData.stripe_customer_id = session.customer as string
+    }
+
+    const { data: updatedAffiliate, error: updateError } = await (supabaseAdmin
+      .from('affiliates') as any)
+      .update(updateData)
+      .eq('id', affiliate_id)
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('❌ Error updating affiliate status:', updateError)
+      throw new Error(`Failed to update affiliate status: ${updateError.message}`)
+    }
+
+    console.log('✅ Affiliate status updated to active')
+    return
+  }
+
+  // Handle product purchase checkout (customer buying product via affiliate)
     console.log('📋 Session details:', {
       session_id: session.id,
       payment_intent: session.payment_intent,
       amount_total: session.amount_total,
       currency: session.currency,
-      customer_email: session.customer_details?.email,
+    customer_email: customerEmail,
       customer_name: session.customer_details?.name,
       payment_status: session.payment_status,
       mode: session.mode,
@@ -190,7 +262,7 @@ export async function POST(request: NextRequest) {
 
     console.log('🏷️  Session metadata:', {
       affiliate_id: affiliate_id || '(not set)',
-      affiliate_code: affiliate_code || '(not set)',
+    affiliate_code: affiliate_code || '(not set)',
       affiliate_link_id: affiliate_link_id || '(not set)',
       click_id: click_id || '(not set)',
       visitor_id: visitor_id || '(not set)',
@@ -198,119 +270,134 @@ export async function POST(request: NextRequest) {
       all_metadata: metadata,
     })
 
-    // If affiliate_id is missing but affiliate_code is present, look it up
-    if (!affiliate_id && affiliate_code) {
-      console.log('🔍 Looking up affiliate from code:', affiliate_code)
-      const { data: link, error: linkError } = await supabaseAdmin
-        .from('affiliate_links')
-        .select('id, affiliate_id')
-        .eq('tracking_code', affiliate_code)
-        .maybeSingle()
+  // If affiliate_id is missing but affiliate_code is present, look it up
+  if (!affiliate_id && affiliate_code) {
+    console.log('🔍 Looking up affiliate from code:', affiliate_code)
+    const { data: link, error: linkError } = await supabaseAdmin
+      .from('affiliate_links')
+      .select('id, affiliate_id')
+      .eq('tracking_code', affiliate_code)
+      .maybeSingle()
 
-      if (linkError) {
-        console.error('❌ Error looking up affiliate link:', linkError)
-      } else if (link) {
-        const linkData = link as { id: string; affiliate_id: string }
-        affiliate_id = linkData.affiliate_id
-        affiliate_link_id = linkData.id
-        console.log('✅ Found affiliate:', {
-          affiliate_id,
-          affiliate_link_id,
-        })
+    if (linkError) {
+      console.error('❌ Error looking up affiliate link:', linkError)
+    } else if (link) {
+      const linkData = link as { id: string; affiliate_id: string }
+      affiliate_id = linkData.affiliate_id
+      affiliate_link_id = linkData.id
+      console.log('✅ Found affiliate:', {
+        affiliate_id,
+        affiliate_link_id,
+      })
 
-        // If we have visitor_id, try to find the click record
-        if (visitor_id && affiliate_link_id && !click_id) {
-          console.log('🔍 Looking up click record for visitor:', visitor_id)
-          const { data: click } = await supabaseAdmin
-            .from('clicks')
-            .select('id')
-            .eq('affiliate_link_id', affiliate_link_id)
-            .eq('visitor_id', visitor_id)
-            .order('clicked_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
+      // If we have visitor_id, try to find the click record
+      if (visitor_id && affiliate_link_id && !click_id) {
+        console.log('🔍 Looking up click record for visitor:', visitor_id)
+        const { data: click } = await supabaseAdmin
+          .from('clicks')
+          .select('id')
+          .eq('affiliate_link_id', affiliate_link_id)
+          .eq('visitor_id', visitor_id)
+          .order('clicked_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
 
-          if (click) {
-            click_id = (click as { id: string }).id
-            console.log('✅ Found click record:', click_id)
-          }
+        if (click) {
+          click_id = (click as { id: string }).id
+          console.log('✅ Found click record:', click_id)
         }
-      } else {
-        console.warn('⚠️  No affiliate link found for code:', affiliate_code)
       }
+    } else {
+      console.warn('⚠️  No affiliate link found for code:', affiliate_code)
     }
+  }
 
     if (!affiliate_id) {
-      console.log('⚠️  No affiliate_id found - this is a direct purchase (not via affiliate)')
+    console.log('⚠️  No affiliate_id found - this is a direct purchase (not via affiliate)')
       console.log('   Skipping conversion record (only tracking affiliate conversions)')
-      return NextResponse.json({ received: true, message: 'No affiliate_id, skipping conversion' })
+    return
     }
 
     if (!session.amount_total) {
       console.log('⚠️  No amount_total in session - skipping conversion record')
-      return NextResponse.json({ received: true, message: 'No amount_total, skipping conversion' })
+    return
+  }
+
+  // Fraud detection: Check for self-referral
+  if (customerEmail && affiliate_id) {
+    const isSelfReferral = await checkSelfReferral(affiliate_id, customerEmail)
+    if (isSelfReferral) {
+      console.warn('🚨 Self-referral detected! Flagging as fraud.')
+      await (supabaseAdmin as any).from('fraud_flags').insert({
+        affiliate_id: affiliate_id,
+        flag_type: 'self_referral',
+        severity: 'high',
+        details: { customer_email: customerEmail, session_id: session.id },
+      })
+      return // Don't create conversion for self-referrals
+    }
     }
 
     console.log('✅ Validation passed - proceeding with conversion recording')
 
-           // Get commission rate from product
-           let commissionPercent = 50 // default
-           if (product_id) {
-             console.log('Fetching product for commission rate:', product_id)
-             const { data: product, error: productError } = await supabaseAdmin
-               .from('products')
-               .select('commission_percent')
-               .eq('id', product_id)
-               .maybeSingle()
+    // Get commission rate from product
+    let commissionPercent = 50 // default
+    if (product_id) {
+      console.log('Fetching product for commission rate:', product_id)
+      const { data: product, error: productError } = await supabaseAdmin
+        .from('products')
+        .select('commission_percent')
+        .eq('id', product_id)
+        .maybeSingle()
 
-             if (productError) {
-               console.error('Error fetching product:', productError)
-             } else if (product) {
-               const productData = product as { commission_percent: number | null }
-               commissionPercent = productData.commission_percent || 50
-               console.log('Using commission percent from product:', commissionPercent)
-             } else {
-               console.log('Product not found, using default commission:', commissionPercent)
-             }
-           } else {
-             console.log('No product_id in metadata, using default commission:', commissionPercent)
-           }
+      if (productError) {
+        console.error('Error fetching product:', productError)
+      } else if (product) {
+      const productData = product as { commission_percent: number | null }
+      commissionPercent = productData.commission_percent || 50
+        console.log('Using commission percent from product:', commissionPercent)
+      } else {
+        console.log('Product not found, using default commission:', commissionPercent)
+      }
+    } else {
+      console.log('No product_id in metadata, using default commission:', commissionPercent)
+    }
 
-           // Check for commission boost
-           const { data: affiliateData } = await supabaseAdmin
-             .from('affiliates')
-             .select('commission_boost_percent, commission_boost_expires_at')
-             .eq('id', affiliate_id)
-             .maybeSingle()
+  // Check for commission boost
+  const { data: affiliateData } = await supabaseAdmin
+    .from('affiliates')
+    .select('commission_boost_percent, commission_boost_expires_at')
+    .eq('id', affiliate_id)
+    .maybeSingle()
 
-           let finalCommissionPercent = commissionPercent
-           if (affiliateData) {
-             const boostData = affiliateData as any
-             const now = new Date()
-             const expiresAt = boostData.commission_boost_expires_at
-               ? new Date(boostData.commission_boost_expires_at)
-               : null
+  let finalCommissionPercent = commissionPercent
+  if (affiliateData) {
+    const boostData = affiliateData as any
+    const now = new Date()
+    const expiresAt = boostData.commission_boost_expires_at
+      ? new Date(boostData.commission_boost_expires_at)
+      : null
 
-             if (
-               boostData.commission_boost_percent > 0 &&
-               expiresAt &&
-               expiresAt > now
-             ) {
-               finalCommissionPercent = commissionPercent + boostData.commission_boost_percent
-               console.log(
-                 `🔥 Commission boost active: ${commissionPercent}% + ${boostData.commission_boost_percent}% = ${finalCommissionPercent}%`
-               )
-             }
-           }
+    if (
+      boostData.commission_boost_percent > 0 &&
+      expiresAt &&
+      expiresAt > now
+    ) {
+      finalCommissionPercent = commissionPercent + boostData.commission_boost_percent
+      console.log(
+        `🔥 Commission boost active: ${commissionPercent}% + ${boostData.commission_boost_percent}% = ${finalCommissionPercent}%`
+      )
+    }
+  }
 
-           const commissionAmount = Math.floor((session.amount_total * finalCommissionPercent) / 100)
+  const commissionAmount = Math.floor((session.amount_total * finalCommissionPercent) / 100)
     console.log('Calculated commission:', {
       orderAmount: session.amount_total,
       commissionPercent,
       commissionAmount,
     })
 
-    const conversionInsertData = {
+  const conversionInsertData = {
       affiliate_id,
       affiliate_link_id: affiliate_link_id || null,
       attributed_click_id: click_id || null,
@@ -318,18 +405,19 @@ export async function POST(request: NextRequest) {
       stripe_payment_intent_id: session.payment_intent as string,
       order_amount_cents: session.amount_total,
       commission_cents: commissionAmount,
-      stripe_customer_email: session.customer_details?.email || null,
+    customer_email: customerEmail || null,
+    stripe_customer_email: customerEmail || null,
       visitor_id: visitor_id || null,
       status: 'pending' as const,
     }
 
     console.log('')
     console.log('💾 Inserting conversion into database...')
-    console.log('📊 Conversion data:', JSON.stringify(conversionInsertData, null, 2))
+  console.log('📊 Conversion data:', JSON.stringify(conversionInsertData, null, 2))
 
     const { data: conversion, error: insertError } = await supabaseAdmin
       .from('conversions')
-      .insert(conversionInsertData as any)
+    .insert(conversionInsertData as any)
       .select()
       .single()
 
@@ -340,124 +428,121 @@ export async function POST(request: NextRequest) {
       console.error('   Code:', insertError.code)
       console.error('   Details:', insertError.details)
       console.error('   Hint:', insertError.hint)
-      console.error('   Attempted data:', JSON.stringify(conversionInsertData, null, 2))
+    console.error('   Attempted data:', JSON.stringify(conversionInsertData, null, 2))
       console.error('')
-      return NextResponse.json(
-        { error: 'Failed to record conversion', details: insertError.message },
-        { status: 500 }
-      )
+    throw new Error(`Failed to record conversion: ${insertError.message}`)
+  }
+
+  const conversionResult = conversion as {
+    id: string
+    affiliate_id: string
+    order_amount_cents: number
+    commission_cents: number
+    status: string
     }
 
-    const conversionResult = conversion as {
-      id: string
-      affiliate_id: string
-      order_amount_cents: number
-      commission_cents: number
-      status: string
+    console.log('')
+    console.log('✅ CONVERSION RECORDED SUCCESSFULLY!')
+  console.log('   Conversion ID:', conversionResult.id)
+  console.log('   Affiliate ID:', conversionResult.affiliate_id)
+  console.log('   Order Amount:', `$${(conversionResult.order_amount_cents / 100).toFixed(2)}`)
+  console.log('   Commission:', `$${(conversionResult.commission_cents / 100).toFixed(2)}`)
+  console.log('   Status:', conversionResult.status)
+    console.log('')
+
+  // Update battle stats if affiliate is in an active battle for this product
+  if (product_id) {
+    try {
+      // Get affiliate's pod
+      const { data: podMember } = await supabaseAdmin
+        .from('pod_members')
+        .select('pod_id')
+        .eq('affiliate_id', affiliate_id)
+        .eq('status', 'accepted')
+        .maybeSingle()
+
+      if (podMember) {
+        const podId = (podMember as any).pod_id
+
+        // Find active battles for this pod and product
+        const { data: activeBattles } = await supabaseAdmin
+          .from('pod_battles')
+          .select('id')
+          .eq('product_id', product_id)
+          .eq('status', 'active')
+          .or(`challenger_pod_id.eq.${podId},defender_pod_id.eq.${podId}`)
+
+        if (activeBattles && activeBattles.length > 0) {
+          for (const battle of activeBattles) {
+            const battleData = battle as any
+            
+            // Get current stats
+            const { data: stats } = await supabaseAdmin
+              .from('pod_battle_stats')
+              .select('*')
+              .eq('battle_id', battleData.id)
+              .eq('pod_id', podId)
+              .maybeSingle()
+
+            if (stats) {
+              const currentStats = stats as any
+              const newTotalSales = (currentStats.total_sales || 0) + session.amount_total
+              const newTotalConversions = (currentStats.total_conversions || 0) + 1
+              
+              // Get member count for sales per member
+              const { data: members } = await supabaseAdmin
+                .from('pod_members')
+                .select('id')
+                .eq('pod_id', podId)
+                .eq('status', 'accepted')
+              
+              const memberCount = (members || []).length || 1
+              const newSalesPerMember = newTotalSales / memberCount
+
+              await (supabaseAdmin.from('pod_battle_stats') as any)
+                .update({
+                  total_sales: newTotalSales,
+                  total_conversions: newTotalConversions,
+                  sales_per_member: newSalesPerMember,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', currentStats.id)
+              
+              console.log(`⚔️  Battle stats updated: Pod ${podId}, Battle ${battleData.id}, Sales: $${(newTotalSales / 100).toFixed(2)}, Conversions: ${newTotalConversions}`)
+            } else {
+              // Stats don't exist yet - create them
+              const { data: members } = await supabaseAdmin
+                .from('pod_members')
+                .select('id')
+                .eq('pod_id', podId)
+                .eq('status', 'accepted')
+              
+              const memberCount = (members || []).length || 1
+              const salesPerMember = session.amount_total / memberCount
+
+              await (supabaseAdmin.from('pod_battle_stats') as any).insert({
+                battle_id: battleData.id,
+                pod_id: podId,
+                total_sales: session.amount_total,
+                total_conversions: 1,
+                sales_per_member: salesPerMember,
+                updated_at: new Date().toISOString(),
+              })
+              
+              console.log(`⚔️  Battle stats created: Pod ${podId}, Battle ${battleData.id}`)
+            }
+          }
+        }
+      }
+    } catch (battleError: any) {
+      console.warn('⚠️  Error updating battle stats (non-critical):', battleError.message)
     }
-
-           console.log('')
-           console.log('✅ CONVERSION RECORDED SUCCESSFULLY!')
-           console.log('   Conversion ID:', conversionResult.id)
-           console.log('   Affiliate ID:', conversionResult.affiliate_id)
-           console.log('   Order Amount:', `$${(conversionResult.order_amount_cents / 100).toFixed(2)}`)
-           console.log('   Commission:', `$${(conversionResult.commission_cents / 100).toFixed(2)}`)
-           console.log('   Status:', conversionResult.status)
-           console.log('')
-
-           // Update battle stats if affiliate is in an active battle for this product
-           if (product_id) {
-             try {
-               // Get affiliate's pod
-               const { data: podMember } = await supabaseAdmin
-                 .from('pod_members')
-                 .select('pod_id')
-                 .eq('affiliate_id', affiliate_id)
-                 .eq('status', 'accepted')
-                 .maybeSingle()
-
-               if (podMember) {
-                 const podId = (podMember as any).pod_id
-
-                 // Find active battles for this pod and product
-                 const { data: activeBattles } = await supabaseAdmin
-                   .from('pod_battles')
-                   .select('id')
-                   .eq('product_id', product_id)
-                   .eq('status', 'active')
-                   .or(`challenger_pod_id.eq.${podId},defender_pod_id.eq.${podId}`)
-
-                 if (activeBattles && activeBattles.length > 0) {
-                   for (const battle of activeBattles) {
-                     const battleData = battle as any
-                     
-                     // Get current stats
-                     const { data: stats } = await supabaseAdmin
-                       .from('pod_battle_stats')
-                       .select('*')
-                       .eq('battle_id', battleData.id)
-                       .eq('pod_id', podId)
-                       .maybeSingle()
-
-                     if (stats) {
-                       const currentStats = stats as any
-                       const newTotalSales = (currentStats.total_sales || 0) + session.amount_total
-                       const newTotalConversions = (currentStats.total_conversions || 0) + 1
-                       
-                       // Get member count for sales per member
-                       const { data: members } = await supabaseAdmin
-                         .from('pod_members')
-                         .select('id')
-                         .eq('pod_id', podId)
-                         .eq('status', 'accepted')
-                       
-                       const memberCount = (members || []).length || 1
-                       const newSalesPerMember = newTotalSales / memberCount
-
-                       await (supabaseAdmin.from('pod_battle_stats') as any)
-                         .update({
-                           total_sales: newTotalSales,
-                           total_conversions: newTotalConversions,
-                           sales_per_member: newSalesPerMember,
-                           updated_at: new Date().toISOString(),
-                         })
-                         .eq('id', currentStats.id)
-                       
-                       console.log(`⚔️  Battle stats updated: Pod ${podId}, Battle ${battleData.id}, Sales: $${(newTotalSales / 100).toFixed(2)}, Conversions: ${newTotalConversions}`)
-                     } else {
-                       // Stats don't exist yet - create them
-                       const { data: members } = await supabaseAdmin
-                         .from('pod_members')
-                         .select('id')
-                         .eq('pod_id', podId)
-                         .eq('status', 'accepted')
-                       
-                       const memberCount = (members || []).length || 1
-                       const salesPerMember = session.amount_total / memberCount
-
-                       await (supabaseAdmin.from('pod_battle_stats') as any).insert({
-                         battle_id: battleData.id,
-                         pod_id: podId,
-                         total_sales: session.amount_total,
-                         total_conversions: 1,
-                         sales_per_member: salesPerMember,
-                         updated_at: new Date().toISOString(),
-                       })
-                       
-                       console.log(`⚔️  Battle stats created: Pod ${podId}, Battle ${battleData.id}`)
-                     }
-                   }
-                 }
-               }
-             } catch (battleError: any) {
-               console.warn('⚠️  Error updating battle stats (non-critical):', battleError.message)
-             }
-           }
+  }
 
     // Update affiliate stats if RPC function exists
     console.log('📈 Attempting to update affiliate stats...')
     try {
-      const { error: statsError } = await (supabaseAdmin.rpc as any)('increment_affiliate_stats', {
+    const { error: statsError } = await (supabaseAdmin.rpc as any)('increment_affiliate_stats', {
         p_affiliate_id: affiliate_id,
         p_conversions: 1,
         p_commission: commissionAmount,
@@ -478,253 +563,284 @@ export async function POST(request: NextRequest) {
     console.log('✅ WEBHOOK PROCESSING COMPLETE')
     console.log('='.repeat(80))
     console.log('')
-  } else if (event.type === 'customer.subscription.deleted') {
-    // Handle subscription deleted event (cancellation)
-    console.log('')
-    console.log('🗑️  Processing customer.subscription.deleted event')
-    console.log('-'.repeat(80))
-    
-    const subscription = event.data.object as Stripe.Subscription
-    const affiliate_id = subscription.metadata?.affiliate_id
+}
 
-    console.log('📋 Subscription details:', {
-      subscription_id: subscription.id,
-      customer: subscription.customer,
-      status: subscription.status,
-    })
-
-    if (!affiliate_id) {
-      // Try to find affiliate by subscription_id
-      const { data: affiliate } = await supabaseAdmin
-        .from('affiliates')
-        .select('id')
-        .eq('stripe_subscription_id', subscription.id)
-        .maybeSingle()
-
-      if (affiliate) {
-        const affiliateData = affiliate as any
-        const { error: updateError } = await (supabaseAdmin
-          .from('affiliates') as any)
-          .update({ status: 'expired' })
-          .eq('id', affiliateData.id)
-
-        if (updateError) {
-          console.error('❌ Error updating affiliate status:', updateError)
-          return NextResponse.json(
-            { error: 'Failed to update affiliate status', details: updateError.message },
-            { status: 500 }
-          )
-        }
-
-        console.log('✅ Affiliate status updated to expired')
-        console.log('   Affiliate ID:', affiliateData.id)
-        return NextResponse.json({ received: true, event_type: event.type })
-      }
-
-      console.log('⚠️  No affiliate_id in subscription metadata and could not find affiliate by subscription_id')
-      return NextResponse.json({ received: true, message: 'No affiliate_id, skipping update' })
-    }
-
-    // Update affiliate status to expired
-    const { error: updateError } = await (supabaseAdmin
-      .from('affiliates') as any)
-      .update({ status: 'expired' })
-      .eq('id', affiliate_id)
-
-    if (updateError) {
-      console.error('❌ Error updating affiliate status:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to update affiliate status', details: updateError.message },
-        { status: 500 }
-      )
-    }
-
-    console.log('✅ Affiliate status updated to expired')
-    console.log('   Affiliate ID:', affiliate_id)
-    console.log('')
-  } else if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
-    // Handle subscription created/updated events
-    console.log('')
-    console.log(`🔄 Processing ${event.type} event`)
-    console.log('-'.repeat(80))
-    
-    const subscription = event.data.object as Stripe.Subscription
-    let affiliate_id = subscription.metadata?.affiliate_id
-
-    console.log('📋 Subscription details:', {
-      subscription_id: subscription.id,
-      customer: subscription.customer,
-      status: subscription.status,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-    })
-
-    if (!affiliate_id) {
-      // Try to find affiliate by subscription_id
-      const { data: affiliate } = await supabaseAdmin
-        .from('affiliates')
-        .select('id')
-        .eq('stripe_subscription_id', subscription.id)
-        .maybeSingle()
-
-      if (!affiliate) {
-        console.log('⚠️  No affiliate_id in subscription metadata and could not find affiliate by subscription_id')
-        return NextResponse.json({ received: true, message: 'No affiliate_id, skipping update' })
-      }
-
-      const affiliateData = affiliate as any
-      affiliate_id = affiliateData.id
-    }
-
-    // Handle recurring commission for subscription referrals
-    if (subscription.status === 'active') {
-      const { data: referral } = await (supabaseAdmin as any)
-        .from('subscription_referrals')
-        .select('id, referrer_id, commission_percent')
-        .eq('referred_id', affiliate_id)
-        .eq('subscription_id', subscription.id)
-        .eq('status', 'active')
-        .single()
-
-      if (referral) {
-        const referralData = referral as any
-        const subscriptionAmount = subscription.items.data[0]?.price?.unit_amount || 4000 // Default $40
-        const commissionAmount = Math.floor((subscriptionAmount * (referralData.commission_percent || 50)) / 100)
-        
-        const periodStart = new Date(subscription.current_period_start * 1000).toISOString()
-        const periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
-
-        // Check if commission for this period already exists
-        const { data: existingCommission } = await (supabaseAdmin as any)
-          .from('subscription_commissions')
-          .select('id')
-          .eq('subscription_id', subscription.id)
-          .eq('period_start', periodStart)
-          .single()
-
-        if (!existingCommission) {
-          // Create recurring commission
-          await (supabaseAdmin as any)
-            .from('subscription_commissions')
-            .insert({
-              referral_id: referralData.id,
-              referrer_id: referralData.referrer_id,
-              subscription_id: subscription.id,
-              amount_cents: commissionAmount,
-              subscription_amount_cents: subscriptionAmount,
-              commission_percent: referralData.commission_percent || 50,
-              period_start: periodStart,
-              period_end: periodEnd,
-              status: 'approved'
-            })
-
-          // Update last commission paid date
-          await (supabaseAdmin as any)
-            .from('subscription_referrals')
-            .update({ last_commission_paid_at: new Date().toISOString() })
-            .eq('id', referralData.id)
-
-          console.log('✅ Recurring commission created:', {
-            referrer_id: referralData.referrer_id,
-            amount: `$${(commissionAmount / 100).toFixed(2)}`,
-            period: `${periodStart} to ${periodEnd}`
-          })
-        }
-      }
-    }
-
-    // Update affiliate with subscription info
-    const updateData: any = {
-      stripe_subscription_id: subscription.id,
-      stripe_customer_id: subscription.customer as string,
-    }
-
-    // Handle different subscription statuses
-    if (subscription.status === 'active') {
-      updateData.status = 'active'
-      if (!subscription.metadata?.subscription_started_at) {
-        updateData.subscription_started_at = new Date().toISOString()
-      }
-    } else if (subscription.status === 'canceled') {
-      updateData.status = 'cancelled'
-    } else if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
-      updateData.status = 'past_due'
-    }
-
-    const { error: updateError } = await (supabaseAdmin
-      .from('affiliates') as any)
-      .update(updateData)
-      .eq('id', affiliate_id)
-
-    if (updateError) {
-      console.error('❌ Error updating affiliate subscription:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to update affiliate subscription', details: updateError.message },
-        { status: 500 }
-      )
-    }
-
-    console.log('✅ Affiliate subscription updated')
-    console.log('   Affiliate ID:', affiliate_id)
-    console.log('   Subscription Status:', subscription.status)
-    console.log('   New Affiliate Status:', updateData.status)
-    console.log('')
-  } else if (event.type === 'invoice.payment_failed') {
-    // Handle payment failed event
-    console.log('')
-    console.log('💳 Processing invoice.payment_failed event')
-    console.log('-'.repeat(80))
-    
-    const invoice = event.data.object as Stripe.Invoice
-    const subscriptionId = invoice.subscription as string | null
-
-    console.log('📋 Invoice details:', {
-      invoice_id: invoice.id,
-      customer: invoice.customer,
-      subscription: subscriptionId,
-      amount_due: invoice.amount_due,
-    })
-
-    if (!subscriptionId) {
-      console.log('⚠️  No subscription_id in invoice - cannot update affiliate')
-      return NextResponse.json({ received: true, message: 'No subscription_id, skipping update' })
-    }
-
-    // Find affiliate by subscription_id
-    const { data: affiliate, error: findError } = await (supabaseAdmin
-      .from('affiliates') as any)
-      .select('id')
-      .eq('stripe_subscription_id', subscriptionId)
-      .maybeSingle()
-
-    if (findError || !affiliate) {
-      console.log('⚠️  Could not find affiliate with subscription_id:', subscriptionId)
-      return NextResponse.json({ received: true, message: 'Affiliate not found, skipping update' })
-    }
-
-    const affiliateData = affiliate as any
-
-    // Update affiliate status to past_due
-    const { error: updateError } = await (supabaseAdmin
-      .from('affiliates') as any)
-      .update({ status: 'past_due' })
-      .eq('id', affiliateData.id)
-
-    if (updateError) {
-      console.error('❌ Error updating affiliate status:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to update affiliate status', details: updateError.message },
-        { status: 500 }
-      )
-    }
-
-    console.log('✅ Affiliate status updated to past_due')
-    console.log('   Affiliate ID:', affiliateData.id)
-    console.log('')
-  } else {
-    console.log('ℹ️  Event type not handled:', event.type)
-    console.log('   Event ID:', event.id)
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  console.log('')
+  console.log('💸 Processing charge.refunded event')
+  console.log('-'.repeat(80))
+  
+  const paymentIntentId = charge.payment_intent as string
+  if (!paymentIntentId) {
+    console.log('⚠️  No payment_intent_id in charge')
+    return
   }
 
-  return NextResponse.json({ received: true, event_type: event.type })
+  const { data: conversion } = await (supabaseAdmin as any)
+    .from('conversions')
+    .select('*')
+    .eq('stripe_payment_intent_id', paymentIntentId)
+    .single()
+
+  if (!conversion) {
+    console.log('⚠️  No conversion found for payment intent:', paymentIntentId)
+    return
+  }
+
+  const isFullRefund = charge.amount_refunded >= charge.amount
+
+  if (isFullRefund) {
+    await (supabaseAdmin as any).from('conversions').update({
+      status: 'refunded',
+      refund_amount_cents: charge.amount_refunded,
+      commission_clawback_cents: conversion.commission_cents,
+      refund_type: 'full',
+      refunded_at: new Date().toISOString(),
+    }).eq('id', conversion.id)
+    
+    console.log('✅ Full refund processed - commission clawed back')
+  } else {
+    const refundPercentage = charge.amount_refunded / charge.amount
+    const commissionClawback = Math.round(conversion.commission_cents * refundPercentage)
+    await (supabaseAdmin as any).from('conversions').update({
+      refund_amount_cents: charge.amount_refunded,
+      commission_cents: conversion.commission_cents - commissionClawback,
+      commission_clawback_cents: commissionClawback,
+      refund_type: 'partial',
+      refunded_at: new Date().toISOString(),
+    }).eq('id', conversion.id)
+    
+    console.log('✅ Partial refund processed - proportional commission clawed back')
+  }
+}
+
+async function handleDisputeCreated(dispute: Stripe.Dispute) {
+  console.log('')
+  console.log('⚖️  Processing charge.dispute.created event')
+  console.log('-'.repeat(80))
+  
+  const charge = await stripe.charges.retrieve(dispute.charge as string)
+  const paymentIntentId = charge.payment_intent as string
+  if (!paymentIntentId) {
+    console.log('⚠️  No payment_intent_id in charge')
+    return
+  }
+
+  const { data: conversion } = await (supabaseAdmin as any)
+    .from('conversions')
+    .select('*')
+    .eq('stripe_payment_intent_id', paymentIntentId)
+    .single()
+
+  if (!conversion) {
+    console.log('⚠️  No conversion found for payment intent:', paymentIntentId)
+    return
+  }
+
+  // Mark conversion as refunded and claw back commission
+  await (supabaseAdmin as any).from('conversions').update({
+    status: 'refunded',
+    refund_amount_cents: dispute.amount,
+    commission_clawback_cents: conversion.commission_cents,
+    refund_type: 'full',
+    refunded_at: new Date().toISOString(),
+  }).eq('id', conversion.id)
+
+  // Flag as fraud
+  await (supabaseAdmin as any).from('fraud_flags').insert({
+    affiliate_id: conversion.affiliate_id,
+    conversion_id: conversion.id,
+    flag_type: 'suspicious_conversion',
+    severity: 'critical',
+    details: { reason: 'chargeback', dispute_id: dispute.id },
+  })
+
+  console.log('✅ Dispute processed - conversion refunded and flagged as fraud')
+}
+
+async function handleSubscriptionEvent(subscription: Stripe.Subscription) {
+  console.log('')
+  console.log(`🔄 Processing subscription event: ${subscription.status}`)
+  console.log('-'.repeat(80))
+  
+  const { data: referral } = await (supabaseAdmin as any)
+    .from('subscription_referrals')
+    .select('*')
+    .eq('subscription_id', subscription.id)
+    .single()
+
+  if (!referral) {
+    console.log('⚠️  No referral found for subscription:', subscription.id)
+    return
+  }
+
+  if (subscription.status === 'canceled' || subscription.cancel_at_period_end) {
+    await (supabaseAdmin as any).from('subscription_referrals').update({ status: 'cancelled' }).eq('id', referral.id)
+    await (supabaseAdmin as any).from('subscription_commissions').update({ status: 'cancelled' }).eq('referral_id', referral.id).eq('status', 'pending')
+    console.log('✅ Subscription cancelled - referral and pending commissions updated')
+    return
+  }
+
+  if (subscription.status === 'active') {
+    const periodStart = new Date(subscription.current_period_start * 1000).toISOString()
+    const { data: existing } = await (supabaseAdmin as any)
+      .from('subscription_commissions')
+      .select('id')
+      .eq('referral_id', referral.id)
+      .eq('period_start', periodStart)
+      .single()
+    
+    if (!existing) {
+      const amount = subscription.items.data[0]?.price?.unit_amount || 4000
+      const commission = Math.round((amount * referral.commission_percent) / 100)
+      await (supabaseAdmin as any).from('subscription_commissions').insert({
+        referral_id: referral.id,
+        referrer_id: referral.referrer_id,
+        subscription_id: subscription.id,
+        amount_cents: commission,
+        subscription_amount_cents: amount,
+        commission_percent: referral.commission_percent,
+        period_start: periodStart,
+        period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        status: 'pending',
+      })
+      
+      // Update last commission paid date
+      await (supabaseAdmin as any)
+        .from('subscription_referrals')
+        .update({ last_commission_paid_at: new Date().toISOString() })
+        .eq('id', referral.id)
+      
+      console.log('✅ Recurring commission created for subscription period')
+    }
+  }
+
+  // Update affiliate with subscription info
+  const updateData: any = {
+    stripe_subscription_id: subscription.id,
+    stripe_customer_id: subscription.customer as string,
+  }
+
+  if (subscription.status === 'active') {
+    updateData.status = 'active'
+    if (!subscription.metadata?.subscription_started_at) {
+      updateData.subscription_started_at = new Date().toISOString()
+    }
+  } else if (subscription.status === 'canceled') {
+    updateData.status = 'cancelled'
+  } else if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
+    updateData.status = 'past_due'
+  }
+
+  await (supabaseAdmin as any)
+    .from('affiliates')
+    .update(updateData)
+    .eq('id', referral.referred_id)
+
+  console.log('✅ Affiliate subscription updated')
+}
+
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  console.log('')
+  console.log('🗑️  Processing customer.subscription.deleted event')
+  console.log('-'.repeat(80))
+  
+  const affiliate_id = subscription.metadata?.affiliate_id
+
+  console.log('📋 Subscription details:', {
+    subscription_id: subscription.id,
+    customer: subscription.customer,
+    status: subscription.status,
+  })
+
+  if (!affiliate_id) {
+    // Try to find affiliate by subscription_id
+    const { data: affiliate } = await supabaseAdmin
+      .from('affiliates')
+      .select('id')
+      .eq('stripe_subscription_id', subscription.id)
+      .maybeSingle()
+
+    if (affiliate) {
+      const affiliateData = affiliate as any
+      const { error: updateError } = await (supabaseAdmin
+        .from('affiliates') as any)
+        .update({ status: 'expired' })
+        .eq('id', affiliateData.id)
+
+      if (updateError) {
+        console.error('❌ Error updating affiliate status:', updateError)
+        throw new Error(`Failed to update affiliate status: ${updateError.message}`)
+      }
+
+      console.log('✅ Affiliate status updated to expired')
+      console.log('   Affiliate ID:', affiliateData.id)
+      return
+    }
+
+    console.log('⚠️  No affiliate_id in subscription metadata and could not find affiliate by subscription_id')
+    return
+  }
+
+  // Update affiliate status to expired
+  const { error: updateError } = await (supabaseAdmin
+    .from('affiliates') as any)
+    .update({ status: 'expired' })
+    .eq('id', affiliate_id)
+
+  if (updateError) {
+    console.error('❌ Error updating affiliate status:', updateError)
+    throw new Error(`Failed to update affiliate status: ${updateError.message}`)
+  }
+
+  console.log('✅ Affiliate status updated to expired')
+  console.log('   Affiliate ID:', affiliate_id)
+}
+
+async function handlePaymentFailed(invoice: Stripe.Invoice) {
+  console.log('')
+  console.log('💳 Processing invoice.payment_failed event')
+  console.log('-'.repeat(80))
+  
+  const subscriptionId = invoice.subscription as string | null
+
+  console.log('📋 Invoice details:', {
+    invoice_id: invoice.id,
+    customer: invoice.customer,
+    subscription: subscriptionId,
+    amount_due: invoice.amount_due,
+  })
+
+  if (!subscriptionId) {
+    console.log('⚠️  No subscription_id in invoice - cannot update affiliate')
+    return
+  }
+
+  // Find affiliate by subscription_id
+  const { data: affiliate, error: findError } = await (supabaseAdmin
+    .from('affiliates') as any)
+    .select('id')
+    .eq('stripe_subscription_id', subscriptionId)
+    .maybeSingle()
+
+  if (findError || !affiliate) {
+    console.log('⚠️  Could not find affiliate with subscription_id:', subscriptionId)
+    return
+  }
+
+  const affiliateData = affiliate as any
+
+  // Update affiliate status to past_due
+  const { error: updateError } = await (supabaseAdmin
+    .from('affiliates') as any)
+    .update({ status: 'past_due' })
+    .eq('id', affiliateData.id)
+
+  if (updateError) {
+    console.error('❌ Error updating affiliate status:', updateError)
+    throw new Error(`Failed to update affiliate status: ${updateError.message}`)
+  }
+
+  console.log('✅ Affiliate status updated to past_due')
+  console.log('   Affiliate ID:', affiliateData.id)
 }

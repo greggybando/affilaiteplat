@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
 
     // Determine redirect URLs based on current status
     const isResubscribing = affiliate.status === 'expired' || affiliate.status === 'cancelled' || affiliate.status === 'past_due'
-    const successUrl = isResubscribing ? `${appUrl}/portal` : `${appUrl}/portal?subscribed=true`
-    const cancelUrl = isResubscribing ? `${appUrl}/resubscribe` : `${appUrl}/portal`
+    const successUrl = isResubscribing ? `${appUrl}/dashboard` : `${appUrl}/dashboard?subscribed=true`
+    const cancelUrl = isResubscribing ? `${appUrl}/resubscribe` : `${appUrl}/dashboard`
 
     console.log('Creating checkout session:', {
       plan,

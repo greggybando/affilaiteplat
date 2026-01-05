@@ -28,11 +28,16 @@ export async function POST(request: NextRequest) {
       { expiresIn: '24h' }
     )
 
+    // Determine redirect path based on onboarding status
+    const onboardingCompleted = (affiliate as any).onboarding_completed
+    const redirectTo = onboardingCompleted ? '/dashboard' : '/onboarding'
+
     const isProduction = !!process.env.VERCEL || process.env.NODE_ENV === 'production'
     const response = NextResponse.json({ 
       success: true, 
       token: token, // Include token for client-side backup
-      affiliate: { id: affiliate.id, email: affiliate.email } 
+      affiliate: { id: affiliate.id, email: affiliate.email },
+      redirectTo: redirectTo
     })
     
     // Set cookie with explicit options

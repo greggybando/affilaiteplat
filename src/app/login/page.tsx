@@ -9,28 +9,18 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Debug: Log when component mounts
-  if (typeof window !== 'undefined') {
-    console.log('🔍 Login page loaded')
-  }
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    console.log('🚀 Form submitted!')
     setIsLoading(true)
     setError('')
 
     const formData = new FormData(e.currentTarget)
     const email = formData.get('email') as string
     const password = formData.get('password') as string
-    
-    console.log('📧 Email:', email ? 'provided' : 'missing')
-    console.log('🔑 Password:', password ? 'provided' : 'missing')
 
     const data = { email, password }
 
     try {
-      console.log('🔄 Attempting login...', { email, hasPassword: !!password })
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -38,38 +28,28 @@ export default function LoginPage() {
         body: JSON.stringify(data),
       })
 
-      console.log('📥 Login response status:', res.status)
       const result = await res.json()
-      console.log('📥 Login response:', result)
 
       if (!res.ok) {
         throw new Error(result.error || 'Login failed')
       }
 
       if (result.success) {
-        console.log('✅ Login successful')
-        
         // Set cookie client-side as backup (in case server-set cookie fails)
         if (result.token) {
           const isProduction = window.location.protocol === 'https:'
           const secureFlag = isProduction ? 'secure;' : ''
           document.cookie = `affiliate_token=${result.token}; path=/; max-age=86400; ${secureFlag} samesite=lax`
-          console.log('🍪 Cookie set client-side as backup')
         }
         
-        // The cookie is also set by the server in the response
-        // We need to wait for the browser to process it
-        // Then redirect - the cookie will be sent with the redirect request
-        console.log('⏳ Waiting for cookie to be processed...')
+        // Wait for cookie to be processed, then redirect
         await new Promise(resolve => setTimeout(resolve, 300))
         
-        console.log('🔄 Redirecting to portal...')
         // Use window.location.href for full page reload
-        // This ensures the cookie is sent with the request
-        window.location.href = '/portal'
+        // The API will return the correct redirect path based on onboarding status
+        window.location.href = result.redirectTo || '/dashboard'
       }
     } catch (err: any) {
-      console.error('❌ Login error:', err)
       setError(err.message || 'Failed to login. Please try again.')
       setIsLoading(false)
     }
@@ -80,7 +60,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-400">Sign in to your affiliate dashboard</p>
+          <p className="text-gray-400">Sign in to LifeDesign Platform</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">

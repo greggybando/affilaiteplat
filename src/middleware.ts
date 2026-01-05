@@ -24,8 +24,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
   
-  // Only check auth for portal and admin routes
-  if (!pathname.startsWith('/portal') && !pathname.startsWith('/admin')) {
+  // Check auth for protected routes
+  const protectedRoutes = [
+    '/dashboard',
+    '/onboarding',
+    '/settings',
+    '/affiliate',
+    '/admin',
+    '/mindset',
+    '/dreamjob',
+    '/community',
+  ]
+  
+  const isProtected = protectedRoutes.some(route => pathname.startsWith(route))
+  
+  if (!isProtected) {
     return NextResponse.next()
   }
 
@@ -41,11 +54,20 @@ export function middleware(request: NextRequest) {
   }
 
   // Cookie exists, allow access
-  // JWT verification will happen in the page component (getCurrentAffiliate)
+  // JWT verification and onboarding check will happen in the page component (getCurrentAffiliate)
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/portal/:path*', '/admin/:path*'],
+  matcher: [
+    '/dashboard/:path*',
+    '/onboarding/:path*',
+    '/settings/:path*',
+    '/affiliate/:path*',
+    '/admin/:path*',
+    '/mindset/:path*',
+    '/dreamjob/:path*',
+    '/community/:path*',
+  ],
   // Use default Edge Runtime - no Node.js APIs needed here
 }
