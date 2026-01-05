@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Paperclip, X } from 'lucide-react'
 
 interface Video {
@@ -41,7 +41,8 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
   const [videoTitles, setVideoTitles] = useState<Record<string, string>>({})
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({})
-  const [attachments, setAttachments] = useState<Record<string, Attachment[]>>({})
+  const [attachments, setAttachments] = useState<Record<string, any[]>>({})
+  const [loadingAttachments, setLoadingAttachments] = useState<Record<string, boolean>>({})
 
   const toggleModule = (moduleId: number) => {
     setExpandedModule(expandedModule === moduleId ? null : moduleId)
@@ -63,24 +64,69 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
     setNotes(prev => ({ ...prev, [videoId]: newNotes }))
   }
 
-  const handleAddAttachment = (videoId: string, files: FileList | null) => {
-    if (!files) return
-    const newAttachments: Attachment[] = Array.from(files).map(file => ({
-      id: `${Date.now()}-${Math.random()}`,
-      name: file.name,
-      file
-    }))
-    setAttachments(prev => ({
-      ...prev,
-      [videoId]: [...(prev[videoId] || []), ...newAttachments]
-    }))
+  const fetchAttachments = async (videoId: string) => {
+    if (loadingAttachments[videoId]) return
+    setLoadingAttachments(prev => ({ ...prev, [videoId]: true }))
+    try {
+      const res = await fetch(`/api/courses/video-attachments?videoId=${videoId}&courseType=dreamjob`)
+      const data = await res.json()
+      if (res.ok && data.attachments) {
+        setAttachments(prev => ({ ...prev, [videoId]: data.attachments }))
+      }
+    } catch (error) {
+      console.error('Error fetching attachments:', error)
+    } finally {
+      setLoadingAttachments(prev => ({ ...prev, [videoId]: false }))
+    }
   }
 
-  const handleRemoveAttachment = (videoId: string, attachmentId: string) => {
-    setAttachments(prev => ({
-      ...prev,
-      [videoId]: (prev[videoId] || []).filter(att => att.id !== attachmentId)
-    }))
+  const handleAddAttachment = async (videoId: string, files: FileList | null) => {
+    if (!files || !isAdmin) return
+    
+    for (const file of Array.from(files)) {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('videoId', videoId)
+      formData.append('courseType', 'dreamjob')
+
+      try {
+        const res = await fetch('/api/courses/video-attachments', {
+          method: 'POST',
+          body: formData
+        })
+        const data = await res.json()
+        if (res.ok && data.attachment) {
+          await fetchAttachments(videoId)
+        } else {
+          alert(data.error || 'Failed to upload attachment')
+        }
+      } catch (error) {
+        console.error('Error uploading attachment:', error)
+        alert('Failed to upload attachment')
+      }
+    }
+  }
+
+  const handleRemoveAttachment = async (videoId: string, attachmentId: string) => {
+    if (!isAdmin) return
+    if (!confirm('Are you sure you want to delete this attachment?')) return
+
+    try {
+      const res = await fetch('/api/courses/video-attachments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attachmentId })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        await fetchAttachments(videoId)
+      } else {
+        alert(data.error || 'Failed to delete attachment')
+      }
+    } catch (error) {
+      console.error('Error deleting attachment:', error)
+      alert('Failed to delete attachment')
+    }
   }
 
   const getVideoTitle = (video: Video) => {
@@ -94,6 +140,13 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
   const getVideoAttachments = (video: Video) => {
     return attachments[video.id] || []
   }
+
+  // Fetch attachments when video is selected
+  useEffect(() => {
+    if (selectedVideo?.video?.id) {
+      fetchAttachments(selectedVideo.video.id)
+    }
+  }, [selectedVideo?.video?.id])
 
   return (
     <div className="flex gap-6">
@@ -274,47 +327,65 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
                 })()}
               </div>
 
-              {/* Attachments Section */}
-              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 p-4 mt-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-semibold text-slate-300">Attachments</h4>
-                    {isAdmin && (
-                      <label className="cursor-pointer">
-                        <input
-                          type="file"
-                          multiple
-                          onChange={(e) => handleAddAttachment(selectedVideo.video.id, e.target.files)}
-                          className="hidden"
-                        />
-                        <span className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm font-medium transition-colors">
-                          <Paperclip className="w-4 h-4" />
-                          Attach File
-                        </span>
-                      </label>
-                    )}
-                  </div>
+              {/* Course Materials Section */}
+              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
+                <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
+                  <h4 className="text-sm font-semibold text-slate-300">Course Materials</h4>
+                  {isAdmin && (
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        multiple
+                        onChange={(e) => handleAddAttachment(selectedVideo.video.id, e.target.files)}
+                        className="hidden"
+                      />
+                      <span className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm font-medium transition-colors">
+                        <Paperclip className="w-4 h-4" />
+                        Upload
+                      </span>
+                    </label>
+                  )}
+                </div>
 
-                  {/* Attachments List */}
-                  {getVideoAttachments(selectedVideo.video).length > 0 && (
+                {/* Attachments List */}
+                <div className="p-4">
+                  {loadingAttachments[selectedVideo.video.id] ? (
+                    <div className="text-sm text-slate-400 text-center py-4">Loading attachments...</div>
+                  ) : getVideoAttachments(selectedVideo.video).length > 0 ? (
                     <div className="space-y-2">
                       {getVideoAttachments(selectedVideo.video).map((attachment) => (
                         <div
                           key={attachment.id}
-                          className="flex items-center justify-between px-4 py-2 bg-slate-800/50 rounded-lg border border-slate-700/50"
+                          className="flex items-center justify-between px-3 py-2.5 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:bg-slate-800 transition-colors"
                         >
-                          <span className="text-sm text-slate-300 truncate flex-1">{attachment.name}</span>
+                          <a
+                            href={attachment.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 flex-1 hover:text-cyan-400 transition-colors"
+                          >
+                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span className="text-sm text-slate-300">{attachment.display_name || attachment.file_name}</span>
+                            <svg className="w-3 h-3 text-slate-500 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
                           {isAdmin && (
                             <button
                               onClick={() => handleRemoveAttachment(selectedVideo.video.id, attachment.id)}
-                              className="ml-2 p-1 hover:bg-slate-700/50 rounded transition-colors"
+                              className="ml-2 p-1 text-slate-400 hover:text-red-400 transition-colors"
+                              title="Delete attachment"
                             >
-                              <X className="w-4 h-4 text-slate-400 hover:text-red-400" />
+                              <X className="w-4 h-4" />
                             </button>
                           )}
                         </div>
                       ))}
                     </div>
+                  ) : (
+                    <div className="text-sm text-slate-500 text-center py-4 italic">No course materials available</div>
                   )}
                 </div>
               </div>
