@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAffiliate } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
@@ -124,14 +125,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { title, content, category, imageUrls, videoUrl } = body
 
-    // Title is optional - auto-generate from first line of content if not provided
-    const autoTitle = title?.trim() || content?.split('\n')[0]?.substring(0, 100)?.trim() || 'Untitled Post'
+    // Strip HTML tags to check for actual text content
+    const stripHtml = (html: string) => {
+      if (!html) return ''
+      return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+    }
+    
+    const textContent = stripHtml(content || '')
 
-    if (!content && (!imageUrls || imageUrls.length === 0) && !videoUrl) {
+    // Title is optional - auto-generate from first line of content if not provided
+    const autoTitle = title?.trim() || textContent?.split('\n')[0]?.substring(0, 100)?.trim() || 'Untitled Post'
+
+    if (!textContent && (!imageUrls || imageUrls.length === 0) && !videoUrl) {
       return NextResponse.json({ error: 'Content, images, or video is required' }, { status: 400 })
     }
 
-    if (content && content.length > 2000) {
+    if (textContent && textContent.length > 2000) {
       return NextResponse.json({ error: 'Content must be 2000 characters or less' }, { status: 400 })
     }
 
