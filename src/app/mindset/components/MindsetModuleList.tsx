@@ -798,14 +798,10 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                 />
               )
             })}
-                    <svg
-                      className={`w-4 h-4 ${category.isStartHere ? 'text-yellow-400' : 'text-slate-300'} transition-transform ${isCategoryExpanded ? 'rotate-90' : ''}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            // Fallback to old structure if categories not provided
                     <div className="flex-1 min-w-0">
                       {editing?.type === 'category' && editing.categoryId === category.id ? (
                         <input
