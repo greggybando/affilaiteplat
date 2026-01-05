@@ -10,7 +10,7 @@ const supabaseStorage = createClient(
 
 export const dynamic = 'force-dynamic'
 
-// GET - Fetch attachments for a video
+// GET - Fetch attachments for a video (public access)
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
@@ -21,10 +21,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing videoId or courseType' }, { status: 400 })
     }
 
-    // Fetch attachments for this video
+    // Fetch attachments for this video (public - all users can view)
     const { data: attachments, error } = await supabaseAdmin
       .from('course_attachments')
-      .select('*')
+      .select('id, file_name, file_url, file_size, file_type, display_name, display_order, created_at')
       .eq('parent_id', videoId)
       .eq('parent_type', 'video_id')
       .eq('course_type', courseType)
