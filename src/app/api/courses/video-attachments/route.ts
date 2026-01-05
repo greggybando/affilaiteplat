@@ -163,9 +163,13 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Error inserting attachment:', insertError)
+      console.error('Insert error details:', JSON.stringify(insertError, null, 2))
       // Try to delete uploaded file if metadata insertion fails
       await supabaseStorage.storage.from('course-files').remove([filePath])
-      return NextResponse.json({ error: 'Failed to save attachment metadata' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to save attachment metadata',
+        details: insertError.message || 'Unknown error'
+      }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, attachment })
