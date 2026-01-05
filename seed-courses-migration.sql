@@ -1,6 +1,11 @@
 -- Seed Courses Migration
 -- Migrates hardcoded course data to database structure
 -- Run this after course-management-migration.sql
+--
+-- NOTE: This script restores all course content (categories, sections, videos).
+-- Attachments are stored separately in the course_attachments table and are linked
+-- by video_id (e.g., 'v1-1', 'v2-1'), so they will remain linked after this migration.
+-- This script uses ON CONFLICT DO UPDATE, so it's safe to re-run multiple times.
 
 -- ============================================
 -- SEED MINDSET COURSE DATA
@@ -23,9 +28,9 @@ BEGIN
   ON CONFLICT (course_type, category_id) DO UPDATE SET
     title = EXCLUDED.title,
     is_start_here = EXCLUDED.is_start_here,
-    display_order = EXCLUDED.display_order
-  RETURNING id INTO starthere_cat_id WHERE category_id = 'starthere';
+    display_order = EXCLUDED.display_order;
 
+  -- Get category IDs
   SELECT id INTO starthere_cat_id FROM course_categories WHERE course_type = 'mindset' AND category_id = 'starthere';
   SELECT id INTO mindset_cat_id FROM course_categories WHERE course_type = 'mindset' AND category_id = 'mindset';
   SELECT id INTO lifedesign_cat_id FROM course_categories WHERE course_type = 'mindset' AND category_id = 'lifedesign';
@@ -289,9 +294,9 @@ BEGIN
   ('dreamjob', 'main', 'Dream Job Course', false, 0)
   ON CONFLICT (course_type, category_id) DO UPDATE SET
     title = EXCLUDED.title,
-    display_order = EXCLUDED.display_order
-  RETURNING id INTO dreamjob_cat_id;
+    display_order = EXCLUDED.display_order;
 
+  -- Get category ID
   SELECT id INTO dreamjob_cat_id FROM course_categories WHERE course_type = 'dreamjob' AND category_id = 'main';
 
   -- Module 1: INTRO
