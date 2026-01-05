@@ -104,74 +104,35 @@ function SortableModule({
     >
       {/* Module Header */}
       <div className="w-full px-4 py-3 flex items-center gap-3 border-b border-slate-700/30 bg-slate-900/20">
-        {editing?.type === 'module' && editing.moduleId === module.id ? (
-          <div className="flex-1 flex items-center gap-2">
-            <input
-              type="text"
-              value={editValues.title || module.title}
-              onChange={(e) => onUpdateEditValues({ ...editValues, title: e.target.value })}
-              className="flex-1 px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-sm"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') onSaveEdit()
-                if (e.key === 'Escape') onCancelEdit()
-              }}
-            />
-            <button
-              onClick={onSaveEdit}
-              className="p-1 text-cyan-400 hover:text-cyan-300"
-            >
-              <Save className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onCancelEdit}
-              className="p-1 text-red-400 hover:text-red-300"
-            >
-              <X className="w-4 h-4" />
-            </button>
+        {isAdmin && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-200 p-1 -ml-1"
+            title="Drag to reorder"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="w-5 h-5" />
           </div>
-        ) : (
-          <>
-            {isAdmin && (
-              <div
-                {...attributes}
-                {...listeners}
-                className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300"
-              >
-                <GripVertical className="w-4 h-4" />
-              </div>
-            )}
-            <button
-              onClick={() => onToggle(module.id)}
-              onDoubleClick={() => isAdmin && onEdit(module.id)}
-              className="flex-1 flex items-center gap-3 text-left hover:bg-slate-800/50 transition-colors"
-            >
-              <svg
-                className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-white truncate">{module.title}</div>
-                <div className="text-xs text-slate-400">{module.videos.length} lessons</div>
-              </div>
-            </button>
-            {isAdmin && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onEdit(module.id)
-                }}
-                className="p-1 text-slate-400 hover:text-white"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-            )}
-          </>
         )}
+        <button
+          type="button"
+          onClick={() => onToggle(module.id)}
+          className="flex-1 flex items-center gap-3 text-left hover:bg-slate-800/50 transition-colors"
+        >
+          <svg
+            className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-white truncate">{module.title}</div>
+            <div className="text-xs text-slate-400">{module.videos.length} lessons</div>
+          </div>
+        </button>
       </div>
 
       {/* Module Lessons */}
@@ -190,61 +151,13 @@ function SortableModule({
                   isSelected ? 'bg-cyan-500/20 border-l-2 border-cyan-500' : ''
                 }`}
               >
-                {editing?.type === 'video' && editing.videoId === video.id ? (
-                  <div className="flex-1 flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={editValues.title || displayTitle}
-                      onChange={(e) => onUpdateEditValues({ ...editValues, title: e.target.value })}
-                      className="flex-1 px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-xs"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') onSaveEdit()
-                        if (e.key === 'Escape') onCancelEdit()
-                      }}
-                    />
-                    <input
-                      type="text"
-                      value={editValues.youtubeId || video.youtubeId || ''}
-                      onChange={(e) => onUpdateEditValues({ ...editValues, youtubeId: e.target.value })}
-                      className="flex-1 px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-xs"
-                      placeholder="YouTube ID/URL"
-                    />
-                    <button
-                      onClick={onSaveEdit}
-                      className="p-1 text-cyan-400 hover:text-cyan-300"
-                    >
-                      <Save className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={onCancelEdit}
-                      className="p-1 text-red-400 hover:text-red-300"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => onVideoSelect(module.id, video)}
-                      onDoubleClick={() => isAdmin && onEditVideo(module.id, video)}
-                      className="flex-1 text-left"
-                    >
-                      <div className="text-sm text-slate-200">{index + 1}. {displayTitle}</div>
-                    </button>
-                    {isAdmin && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onEditVideo(module.id, video)
-                        }}
-                        className="p-1 text-slate-400 hover:text-white"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                      </button>
-                    )}
-                  </>
-                )}
+                <button
+                  type="button"
+                  onClick={() => onVideoSelect(module.id, video)}
+                  className="flex-1 text-left"
+                >
+                  <div className="text-sm text-slate-200">{index + 1}. {displayTitle}</div>
+                </button>
               </div>
             )
           })}
@@ -312,32 +225,70 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
         return url
       }
 
-      const updateData: any = {}
-      if (editing.type === 'module') {
-        updateData.title = editValues.title
-        updateData.description = editValues.description
-      } else if (editing.type === 'video') {
-        updateData.title = editValues.title
+      // Save video updates
+      if (editing.type === 'video') {
+        const updateData: any = {
+          title: editValues.title
+        }
         if (editValues.youtubeId) updateData.youtubeId = extractYouTubeId(editValues.youtubeId)
-      }
 
-      // Save to database via API
-      const res = await fetch('/api/admin/courses/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: editing.type === 'module' ? 'section' : 'video', // API uses 'section' for modules
-          sectionId: editing.moduleId,
-          videoId: editing.videoId,
-          updates: updateData
+        const res = await fetch('/api/admin/courses/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'video',
+            sectionId: editing.moduleId,
+            videoId: editing.videoId,
+            updates: updateData
+          })
         })
-      })
 
-      if (res.ok) {
+        if (!res.ok) {
+          alert('Error saving video changes')
+          return
+        }
+
+        // Save module title if changed
+        if (editValues.moduleTitle && editing.moduleId) {
+          const moduleRes = await fetch('/api/admin/courses/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'section',
+              sectionId: editing.moduleId,
+              updates: { title: editValues.moduleTitle }
+            })
+          })
+
+          if (!moduleRes.ok) {
+            alert('Video saved but error saving module title')
+            return
+          }
+        }
+
         // Reload page to reflect changes
         window.location.reload()
-      } else {
-        alert('Error saving changes')
+      } else if (editing.type === 'module') {
+        const updateData: any = {
+          title: editValues.title,
+          description: editValues.description
+        }
+
+        const res = await fetch('/api/admin/courses/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'section',
+            sectionId: editing.moduleId,
+            updates: updateData
+          })
+        })
+
+        if (res.ok) {
+          window.location.reload()
+        } else {
+          alert('Error saving changes')
+        }
       }
     } catch (error) {
       console.error('Error saving:', error)
@@ -371,6 +322,9 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
           // Revert on error
           setModulesList(modules)
           alert('Error saving new order')
+        } else {
+          // Refresh from server to get updated order
+          window.location.reload()
         }
       } catch (error) {
         console.error('Error saving order:', error)
@@ -595,10 +549,84 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
 
             {/* Video Info & Description */}
             <div className="p-6 space-y-6">
-              {/* Editable Title */}
-              <div>
-                <h2 className="text-2xl font-bold text-white">{getVideoTitle(selectedVideo.video)}</h2>
-              </div>
+              {/* Editable Title & Module Info */}
+              {isAdmin && editing?.type === 'video' && editing.videoId === selectedVideo.video.id ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Video Title</label>
+                    <input
+                      type="text"
+                      value={editValues.title || getVideoTitle(selectedVideo.video)}
+                      onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600 text-lg font-bold"
+                      placeholder="Video title"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">YouTube ID/URL</label>
+                    <input
+                      type="text"
+                      value={editValues.youtubeId || selectedVideo.video.youtubeId || ''}
+                      onChange={(e) => setEditValues({ ...editValues, youtubeId: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
+                      placeholder="YouTube ID or URL"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Module Title</label>
+                    <input
+                      type="text"
+                      value={editValues.moduleTitle || selectedVideo.module?.title || ''}
+                      onChange={(e) => setEditValues({ ...editValues, moduleTitle: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
+                      placeholder="Module title"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleSaveEdit}
+                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      Save Changes
+                    </button>
+                    <button
+                      onClick={() => setEditing(null)}
+                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg flex items-center gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-white mb-1">{getVideoTitle(selectedVideo.video)}</h2>
+                      <p className="text-sm text-slate-400">{modulesList.find(m => m.id === selectedVideo.moduleId)?.title || 'Module'}</p>
+                    </div>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const module = modulesList.find(m => m.id === selectedVideo.moduleId)
+                          setEditing({ type: 'video', moduleId: selectedVideo.moduleId, videoId: selectedVideo.video.id })
+                          setEditValues({ 
+                            title: getVideoTitle(selectedVideo.video), 
+                            youtubeId: selectedVideo.video.youtubeId || '',
+                            moduleTitle: module?.title || ''
+                          })
+                        }}
+                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
+                        title="Edit video details"
+                      >
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Notes/Attachments Section */}
               <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">

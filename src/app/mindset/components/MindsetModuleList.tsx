@@ -126,14 +126,16 @@ function SortableCategoryItem({
           <div
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300"
+            className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-200 p-1 -ml-1"
+            title="Drag to reorder"
+            onClick={(e) => e.stopPropagation()}
           >
-            <GripVertical className="w-4 h-4" />
+            <GripVertical className="w-5 h-5" />
           </div>
         )}
         <button
+          type="button"
           onClick={() => onToggleCategory(category.id)}
-          onDoubleClick={() => isAdmin && !editing && onEdit('category', category.id)}
           className="flex-1 flex items-center gap-3 text-left hover:bg-slate-800/50 transition-colors"
         >
           <svg
@@ -145,63 +147,19 @@ function SortableCategoryItem({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
           <div className="flex-1 min-w-0">
-            {editing?.type === 'category' && editing.categoryId === category.id ? (
-              <input
-                type="text"
-                value={editValues.title || category.title}
-                onChange={(e) => onUpdateEditValues({ ...editValues, title: e.target.value })}
-                className="w-full px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-sm font-bold uppercase"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') onSaveEdit()
-                  if (e.key === 'Escape') onCancelEdit()
-                }}
-              />
-            ) : (
-              <div className={`text-sm font-bold uppercase tracking-wide ${
-                category.isStartHere 
-                  ? 'text-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)]' 
-                  : 'text-white'
-              }`}>
-                {category.title}
-              </div>
-            )}
+            <div className={`text-sm font-bold uppercase tracking-wide ${
+              category.isStartHere 
+                ? 'text-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)]' 
+                : 'text-white'
+            }`}>
+              {category.title}
+            </div>
           </div>
         </button>
-        {editing?.type === 'category' && editing.categoryId === category.id ? (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={onSaveEdit}
-              className="p-1 text-emerald-400 hover:text-emerald-300"
-            >
-              <Save className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onCancelEdit}
-              className="p-1 text-red-400 hover:text-red-300"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          <>
-            {category.isStartHere && (
-              <span className="text-xs font-bold text-yellow-400 bg-yellow-500/20 px-2 py-1 rounded-full border border-yellow-500/50">
-                ⭐ FIRST
-              </span>
-            )}
-            {isAdmin && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onEdit('category', category.id)
-                }}
-                className="p-1 text-slate-400 hover:text-white ml-2"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-            )}
-          </>
+        {category.isStartHere && (
+          <span className="text-xs font-bold text-yellow-400 bg-yellow-500/20 px-2 py-1 rounded-full border border-yellow-500/50">
+            ⭐ FIRST
+          </span>
         )}
       </div>
 
@@ -237,65 +195,12 @@ function SortableCategoryItem({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                     <div className="flex-1 min-w-0">
-                      {editing?.type === 'section' && editing.sectionId === section.id ? (
-                        <div className="space-y-1">
-                          <input
-                            type="text"
-                            value={editValues.title || section.title}
-                            onChange={(e) => onUpdateEditValues({ ...editValues, title: e.target.value })}
-                            className="w-full px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-xs font-semibold"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') onSaveEdit()
-                              if (e.key === 'Escape') onCancelEdit()
-                            }}
-                          />
-                          <input
-                            type="text"
-                            value={editValues.description || section.description || ''}
-                            onChange={(e) => onUpdateEditValues({ ...editValues, description: e.target.value })}
-                            className="w-full px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-xs"
-                            placeholder="Description"
-                          />
-                        </div>
-                      ) : (
-                        <>
-                          <div className="text-xs font-semibold truncate text-slate-200">
-                            {section.title}
-                          </div>
-                          <div className="text-xs text-slate-500">{section.videos.length} lessons</div>
-                        </>
-                      )}
+                      <div className="text-xs font-semibold truncate text-slate-200">
+                        {section.title}
+                      </div>
+                      <div className="text-xs text-slate-500">{section.videos.length} lessons</div>
                     </div>
                   </button>
-                  {editing?.type === 'section' && editing.sectionId === section.id ? (
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={onSaveEdit}
-                        className="p-1 text-emerald-400 hover:text-emerald-300"
-                      >
-                        <Save className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={onCancelEdit}
-                        className="p-1 text-red-400 hover:text-red-300"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    isAdmin && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onEdit('section', category.id, section.id)
-                        }}
-                        className="p-1 text-slate-400 hover:text-white"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                      </button>
-                    )
-                  )}
                 </div>
 
                 {/* Section Videos */}
@@ -314,68 +219,13 @@ function SortableCategoryItem({
                             isSelected ? 'bg-emerald-500/20 border-l-2 border-emerald-500' : ''
                           }`}
                         >
-                          {editing?.type === 'video' && editing.videoId === video.id ? (
-                            <div className="flex-1 flex items-center gap-2">
-                              <input
-                                type="text"
-                                value={editValues.title || displayTitle}
-                                onChange={(e) => onUpdateEditValues({ ...editValues, title: e.target.value })}
-                                className="flex-1 px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-xs"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') onSaveEdit()
-                                  if (e.key === 'Escape') onCancelEdit()
-                                }}
-                              />
-                              <input
-                                type="text"
-                                value={editValues.youtubeId || video.youtubeId || ''}
-                                onChange={(e) => onUpdateEditValues({ ...editValues, youtubeId: e.target.value })}
-                                className="flex-1 px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-xs"
-                                placeholder="YouTube ID/URL"
-                              />
-                              <input
-                                type="text"
-                                value={editValues.loomId || video.loomId || ''}
-                                onChange={(e) => onUpdateEditValues({ ...editValues, loomId: e.target.value })}
-                                className="flex-1 px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-xs"
-                                placeholder="Loom ID/URL"
-                              />
-                              <button
-                                onClick={onSaveEdit}
-                                className="p-1 text-emerald-400 hover:text-emerald-300"
-                              >
-                                <Save className="w-3 h-3" />
-                              </button>
-                              <button
-                                onClick={onCancelEdit}
-                                className="p-1 text-red-400 hover:text-red-300"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => onVideoSelect(section.id, video)}
-                                onDoubleClick={() => isAdmin && onEdit('video', category.id, section.id, video.id)}
-                                className="flex-1 text-left"
-                              >
-                                <div className="text-xs text-slate-300">{index + 1}. {displayTitle}</div>
-                              </button>
-                              {isAdmin && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    onEdit('video', category.id, section.id, video.id)
-                                  }}
-                                  className="p-1 text-slate-400 hover:text-white"
-                                >
-                                  <Edit2 className="w-3 h-3" />
-                                </button>
-                              )}
-                            </>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => onVideoSelect(section.id, video)}
+                            className="flex-1 text-left"
+                          >
+                            <div className="text-xs text-slate-300">{index + 1}. {displayTitle}</div>
+                          </button>
                         </div>
                       )
                     })}
@@ -496,36 +346,88 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
         return match ? match[1] : url
       }
 
-      const updateData: any = {}
-      if (editing.type === 'category') {
-        updateData.title = editValues.title
-      } else if (editing.type === 'section') {
-        updateData.title = editValues.title
-        updateData.description = editValues.description
-      } else if (editing.type === 'video') {
-        updateData.title = editValues.title
+      // Save video updates
+      if (editing.type === 'video') {
+        const updateData: any = {
+          title: editValues.title
+        }
         if (editValues.youtubeId) updateData.youtubeId = extractYouTubeId(editValues.youtubeId)
         if (editValues.loomId) updateData.loomId = extractLoomId(editValues.loomId)
-      }
 
-      // Save to database via API
-      const res = await fetch('/api/admin/courses/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: editing.type,
-          categoryId: editing.categoryId,
-          sectionId: editing.sectionId,
-          videoId: editing.videoId,
-          updates: updateData
+        const res = await fetch('/api/admin/courses/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'video',
+            categoryId: editing.categoryId,
+            sectionId: editing.sectionId,
+            videoId: editing.videoId,
+            updates: updateData
+          })
         })
-      })
 
-      if (res.ok) {
+        if (!res.ok) {
+          alert('Error saving video changes')
+          return
+        }
+
+        // Save section title if changed
+        if (editValues.sectionTitle && editing.sectionId) {
+          const sectionRes = await fetch('/api/admin/courses/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'section',
+              categoryId: editing.categoryId,
+              sectionId: editing.sectionId,
+              updates: { title: editValues.sectionTitle }
+            })
+          })
+
+          if (!sectionRes.ok) {
+            alert('Video saved but error saving section title')
+            return
+          }
+        }
+
         // Reload page to reflect changes
         window.location.reload()
-      } else {
-        alert('Error saving changes')
+      } else if (editing.type === 'category') {
+        const updateData: any = { title: editValues.title }
+        const res = await fetch('/api/admin/courses/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'category',
+            categoryId: editing.categoryId,
+            updates: updateData
+          })
+        })
+        if (res.ok) {
+          window.location.reload()
+        } else {
+          alert('Error saving changes')
+        }
+      } else if (editing.type === 'section') {
+        const updateData: any = {
+          title: editValues.title,
+          description: editValues.description
+        }
+        const res = await fetch('/api/admin/courses/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'section',
+            categoryId: editing.categoryId,
+            sectionId: editing.sectionId,
+            updates: updateData
+          })
+        })
+        if (res.ok) {
+          window.location.reload()
+        } else {
+          alert('Error saving changes')
+        }
       }
     } catch (error) {
       console.error('Error saving:', error)
@@ -558,6 +460,9 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
         if (!res.ok) {
           setCategoriesList(categories || [])
           alert('Error saving new order')
+        } else {
+          // Refresh from server to get updated order
+          window.location.reload()
         }
       } catch (error) {
         console.error('Error saving order:', error)
@@ -907,20 +812,105 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
 
             {/* Video Info & Description */}
             <div className="p-6 space-y-6">
-              {/* Editable Title */}
-              <div>
-                {isAdmin ? (
-                  <input
-                    type="text"
-                    value={getVideoTitle(selectedVideo.video)}
-                    onChange={(e) => handleTitleChange(selectedVideo.video.id, e.target.value)}
-                    className="w-full text-2xl font-bold text-white bg-transparent border-none focus:outline-none focus:ring-0 p-0"
-                    placeholder="Enter video title..."
-                  />
-                ) : (
-                  <h2 className="text-2xl font-bold text-white">{getVideoTitle(selectedVideo.video)}</h2>
-                )}
-              </div>
+              {/* Editable Title & Video Info */}
+              {isAdmin && editing?.type === 'video' && editing.videoId === selectedVideo.video.id ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Video Title</label>
+                    <input
+                      type="text"
+                      value={editValues.title || getVideoTitle(selectedVideo.video)}
+                      onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600 text-lg font-bold"
+                      placeholder="Video title"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">YouTube ID/URL</label>
+                    <input
+                      type="text"
+                      value={editValues.youtubeId || selectedVideo.video.youtubeId || ''}
+                      onChange={(e) => setEditValues({ ...editValues, youtubeId: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
+                      placeholder="YouTube ID or URL"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Loom ID/URL</label>
+                    <input
+                      type="text"
+                      value={editValues.loomId || selectedVideo.video.loomId || ''}
+                      onChange={(e) => setEditValues({ ...editValues, loomId: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
+                      placeholder="Loom ID or URL"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Section Title</label>
+                    <input
+                      type="text"
+                      value={editValues.sectionTitle || (categoriesList.find(cat => 
+                        cat.sections.find(s => s.id === selectedVideo.moduleId)
+                      )?.sections.find(s => s.id === selectedVideo.moduleId)?.title) || ''}
+                      onChange={(e) => setEditValues({ ...editValues, sectionTitle: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
+                      placeholder="Section title"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleSaveEdit}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      Save Changes
+                    </button>
+                    <button
+                      onClick={() => setEditing(null)}
+                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg flex items-center gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-white mb-1">{getVideoTitle(selectedVideo.video)}</h2>
+                      <p className="text-sm text-slate-400">
+                        {categoriesList.find(cat => 
+                          cat.sections.find(s => s.id === selectedVideo.moduleId)
+                        )?.sections.find(s => s.id === selectedVideo.moduleId)?.title || 'Section'}
+                      </p>
+                    </div>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const section = categoriesList.find(cat => 
+                            cat.sections.find(s => s.id === selectedVideo.moduleId)
+                          )?.sections.find(s => s.id === selectedVideo.moduleId)
+                          setEditing({ type: 'video', categoryId: categoriesList.find(cat => 
+                            cat.sections.find(s => s.id === selectedVideo.moduleId)
+                          )?.id, sectionId: selectedVideo.moduleId, videoId: selectedVideo.video.id })
+                          setEditValues({ 
+                            title: getVideoTitle(selectedVideo.video), 
+                            youtubeId: selectedVideo.video.youtubeId || '',
+                            loomId: selectedVideo.video.loomId || '',
+                            sectionTitle: section?.title || ''
+                          })
+                        }}
+                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
+                        title="Edit video details"
+                      >
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Notes Section */}
               <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">

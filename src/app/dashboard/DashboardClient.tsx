@@ -1416,6 +1416,36 @@ function ClassroomTab({
     return match ? match[1] : ''
   }
   
+  const [mindsetCategories, setMindsetCategories] = useState<any[]>([])
+  const [dreamJobModules, setDreamJobModules] = useState<any[]>([])
+  const [loadingCourses, setLoadingCourses] = useState(true)
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        // Fetch Mindset course structure
+        const mindsetRes = await fetch('/api/courses/structure?courseType=mindset')
+        const mindsetData = await mindsetRes.json()
+        if (mindsetData.categories) {
+          setMindsetCategories(mindsetData.categories)
+        }
+
+        // Fetch DreamJob course structure
+        const dreamjobRes = await fetch('/api/courses/structure?courseType=dreamjob')
+        const dreamjobData = await dreamjobRes.json()
+        if (dreamjobData.modules) {
+          setDreamJobModules(dreamjobData.modules)
+        }
+      } catch (error) {
+        console.error('Error fetching courses:', error)
+      } finally {
+        setLoadingCourses(false)
+      }
+    }
+
+    fetchCourses()
+  }, [])
+
   const extractYouTubeId = (url: string): string => {
     if (!url) return ''
     if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0].split('&')[0]
@@ -1424,229 +1454,27 @@ function ClassroomTab({
     return url
   }
   
-  const mindsetCategories = [
-    {
-      id: 'starthere',
-      title: 'START HERE SO YOU KNOW WHAT TO DO',
-      isStartHere: true,
-      sections: [
-        {
-          id: 0, number: 0, title: 'Getting Started', description: 'Watch this first to understand how to navigate and use the Mindset course.',
-          videos: [
-            { id: 'v0-1', title: 'How to Use This Course', loomId: '' }, // Placeholder - user will add video
-          ]
-        },
-      ]
-    },
-    {
-      id: 'mindset',
-      title: 'Mindset',
-      sections: [
-        {
-          id: 1, number: 1, title: 'Core Re-Frames', description: 'Fundamental mindset shifts to transform how you see yourself and your potential.',
-          videos: [
-            { id: 'v1-1', title: 'You can change your life', loomId: extractLoomId('https://www.loom.com/share/9424ea6ec43e415d87ac9ee1383c404c') },
-            { id: 'v1-2', title: 'Every problem is a personal power problem', loomId: extractLoomId('https://www.loom.com/share/1d55647b1c7f4953a7718465dc2747c5') },
-            { id: 'v1-3', title: 'No such thing as wasted time', loomId: extractLoomId('https://www.loom.com/share/7388824c447b4b139be63d8cb55e8636') },
-            { id: 'v1-4', title: 'You are a problem solver', loomId: extractLoomId('https://www.loom.com/share/00b9923a57064b4bbcac9e032ce5564f') },
-            { id: 'v1-5', title: 'Balance is a lie. Obsession wins', loomId: extractLoomId('https://www.loom.com/share/ec745026fb254f548c9535bd5f4d1e46') },
-            { id: 'v1-6', title: 'You are the authority of your life', loomId: extractLoomId('https://www.loom.com/share/0207f161adaa4cd0a8a777189167425b') },
-            { id: 'v1-7', title: 'Your dreams are not distant fantasies', loomId: extractLoomId('https://www.loom.com/share/e455e6f78ca94b9db8f3bc1d6af6906e') },
-            { id: 'v1-8', title: 'Mind-based system to feel-based system', loomId: extractLoomId('https://www.loom.com/share/876677b2bbe14a4d9721ee8e3df71ac8') },
-            { id: 'v1-9', title: 'What is life directionality?', loomId: extractLoomId('https://www.loom.com/share/cad4c4eea34f4ab1936f2433d9a3dc38') },
-            { id: 'v1-10', title: 'Can\'t do anything, but can do exactly what you want', loomId: extractLoomId('https://www.loom.com/share/81c618ea1c604e65938eb368bde61e49') },
-          ]
-        },
-        {
-          id: 2, number: 2, title: 'Operational Foundations', description: 'Core principles for building a strong foundation in your life and decision-making.',
-          videos: [
-            { id: 'v2-1', title: 'Being okay with being alone', loomId: extractLoomId('https://www.loom.com/share/76bd1113ec39482abebe847a1db35016') },
-            { id: 'v2-2', title: 'Removing "right vs wrong" thinking', loomId: extractLoomId('https://www.loom.com/share/ebcb5ea388004ee185b1039c2a4d3fbc') },
-            { id: 'v2-3', title: 'The idea of "creating space"', loomId: extractLoomId('https://www.loom.com/share/c296a736abff425f864dcf736c9654ac') },
-            { id: 'v2-4', title: 'God-given niche', loomId: extractLoomId('https://www.loom.com/share/c9b1777f7965493683b341682899a27c') },
-            { id: 'v2-5', title: 'Removing the victim mindset', loomId: extractLoomId('https://www.loom.com/share/3206285ebbf64733b7d04f49713b8d44') },
-            { id: 'v2-6', title: 'Taking monstrous & absurd personal responsibility', loomId: extractLoomId('https://www.loom.com/share/aa72270f27394f46aca6181d89efb140') },
-            { id: 'v2-7', title: 'Scarcity vs abundance mindset', loomId: extractLoomId('https://www.loom.com/share/f1de5d422bf94c42be2d68b436a5fcf6') },
-          ]
-        },
-        {
-          id: 10, number: 3, title: 'Fixing Normie Thinking Errors', description: 'Identify and eliminate common thinking patterns that hold you back.',
-          videos: [
-            { id: 'v10-1', title: 'The secret formula', loomId: extractLoomId('https://www.loom.com/share/3e6f7267f80d42d28bffe1ca8637a365') },
-            { id: 'v10-2', title: 'Stats don\'t apply to you', loomId: extractLoomId('https://www.loom.com/share/3dcabbb3fd5d4b52a0dbd6878f5dc099') },
-            { id: 'v10-3', title: 'Kill entitlement', loomId: extractLoomId('https://www.loom.com/share/785eb5383e414d5cafb5ca0f98e436da') },
-            { id: 'v10-4', title: 'How the world works', loomId: extractLoomId('https://www.loom.com/share/1fbd32dbd2cd4c6db9af2a7756166872') },
-            { id: 'v10-5', title: 'Actually understanding things', loomId: extractLoomId('https://www.loom.com/share/67a971fa679249cfac13dcb187449bdd') },
-            { id: 'v10-6', title: 'Forbidden normie errors', loomId: extractLoomId('https://www.loom.com/share/4641d3510463447ca18b08c2237aae2b') },
-          ]
-        },
-      ]
-    },
-    {
-      id: 'lifedesign',
-      title: 'Life Design System',
-      sections: [
-        {
-          id: 3, number: 1, title: 'The Life Design Process', description: 'The systematic approach to designing and building the life you want.',
-          videos: [
-            { id: 'v3-1', title: 'Step 1 - Diagnosis process', youtubeId: extractYouTubeId('https://youtu.be/V2u6MtzHjlw') },
-            { id: 'v3-2', title: 'Step 2 - survival income', youtubeId: extractYouTubeId('https://youtu.be/EwaYBchD43k') },
-            { id: 'v3-3', title: '3 - running the diagnosis process', youtubeId: extractYouTubeId('https://youtu.be/mqRRHfwdeNw') },
-            { id: 'v3-4', title: '4 - Analyzing your data points + rough buildout live', youtubeId: extractYouTubeId('https://youtu.be/lNhzBOMaW0k') },
-            { id: 'v3-5', title: '5- reverse engineer + research next steps', youtubeId: extractYouTubeId('https://youtu.be/Tw_0QfukYuE') },
-            { id: 'v3-6', title: '6 - design your day system', youtubeId: extractYouTubeId('https://youtu.be/lHw76uDbdRE') },
-            { id: 'v3-7', title: 'Researching + finding people that know', youtubeId: extractYouTubeId('https://youtu.be/8s3bzEd162c') },
-          ]
-        },
-        {
-          id: 7, number: 2, title: 'The Game of Capitalism', description: 'Understand how money works and how to play the game to win.',
-          videos: [
-            { id: 'v7-1', title: 'The game + its current problems', loomId: extractLoomId('https://www.loom.com/share/5166d05c5b7a45858c98ef13ff9bbfa5') },
-            { id: 'v7-2', title: 'How money works and how to get it', loomId: extractLoomId('https://www.loom.com/share/474596192262401084262de5bde6f6b9') },
-            { id: 'v7-3', title: 'The 7 levels of capitalism', loomId: extractLoomId('https://www.loom.com/share/4805508f33f548458f75cae4a1feb447') },
-            { id: 'v7-4', title: 'Skill pack + skill-pack systems', loomId: extractLoomId('https://www.loom.com/share/9d2179b1ba554276958a2c10d273a569') },
-            { id: 'v7-5', title: 'Stored leverage', loomId: extractLoomId('https://www.loom.com/share/2a0213ed5e9346338940380504588c6b') },
-            { id: 'v7-6', title: 'Expense management', loomId: extractLoomId('https://www.loom.com/share/250cf2c657d9416495a120d4473bf822') },
-          ]
-        },
-        {
-          id: 9, number: 3, title: 'Life Directionality', description: 'Discover and align with your true life direction and purpose.',
-          videos: [
-            { id: 'v9-1', title: 'Reality/life directionality', loomId: extractLoomId('https://www.loom.com/share/aa35407c3bee4ede8791a9772331b986') },
-            { id: 'v9-2', title: 'Signal is simple, noise isn\'t', loomId: extractLoomId('https://www.loom.com/share/667e9a2769d740e0a46e83d89f6052f4') },
-            { id: 'v9-3', title: 'Barrier to life alignment', loomId: extractLoomId('https://www.loom.com/share/f129a45dbcf04f10a44a8e13fa05a66c') },
-            { id: 'v9-4', title: 'Strengthen conviction in self', loomId: extractLoomId('https://www.loom.com/share/c569894df2d448b19ab4b2de14f2e2b5') },
-            { id: 'v9-5', title: 'I will get better', loomId: extractLoomId('https://www.loom.com/share/5c3e982f1f98437e8e43e9ffde2407e2') },
-            { id: 'v9-6', title: 'Managing your energy', loomId: extractLoomId('https://www.loom.com/share/b91a491bc6334ed8960c5ffe83fc81fa') },
-          ]
-        },
-        {
-          id: 8, number: 4, title: 'Life Design Starter Packs', description: 'Pre-built templates and systems to jumpstart your life design journey.',
-          videos: [
-            { id: 'v8-1', title: 'Life Design Starter Pack Overview', loomId: extractLoomId('https://www.loom.com/share/6d20be7d84bb4a38b01d9638f6334d3f') },
-            { id: 'v8-2', title: 'Youngblood grinder template', loomId: extractLoomId('https://www.loom.com/share/19c4a63fd79c49be882966e5394cfe0c') },
-            { id: 'v8-3', title: 'Rando-job lifefloater', loomId: extractLoomId('https://www.loom.com/share/59a52110a4a340e7aa9ede851ac56255') },
-            { id: 'v8-4', title: 'Corporate sidehustler', loomId: extractLoomId('https://www.loom.com/share/c2b99ffd662c49f995c3e67ed65f5870') },
-            { id: 'v8-5', title: 'Remote dreamor', loomId: extractLoomId('https://www.loom.com/share/daacdb14a75643d2a4816887dd932e87') },
-            { id: 'v8-6', title: 'Corporate lifemaxxer', loomId: extractLoomId('https://www.loom.com/share/9a5168e5cab441f090b8f74e41505555') },
-            { id: 'v8-7', title: 'Future worldwide entrepreneur', loomId: extractLoomId('https://www.loom.com/share/349c724bfb1a45459904ce439aac9225') },
-            { id: 'v8-8', title: 'Entrepreneurial lifemaxxr', loomId: extractLoomId('https://www.loom.com/share/d6fa514553be452fb6367e2d4032c621') },
-          ]
-        },
-      ]
-    },
-    {
-      id: 'thinkingtools',
-      title: 'Thinking Tools/Models',
-      sections: [
-        {
-          id: 4, number: 1, title: 'Reverse Engineering', description: 'Learn to work backwards from your goals to create actionable steps.',
-          videos: [
-            { id: 'v4-1', title: 'Reverse engineering the steps of your life', loomId: extractLoomId('https://www.loom.com/share/693655ad78a147d6b139d55a653aa00b') },
-            { id: 'v4-2', title: 'The DESIGN YOUR DAY system', loomId: extractLoomId('https://www.loom.com/share/bfd58023e63d448392b86074f35c41d6') },
-            { id: 'v4-3', title: 'Research/finding ppl that know (hardest part)', loomId: extractLoomId('https://www.loom.com/share/9971245dfd424125a5b3c648e7fdf18f') },
-            { id: 'v4-4', title: 'ADDITIONAL reverse engineering (use as extra examples)', loomId: extractLoomId('https://www.loom.com/share/e10e99531f87484c8fa47e184a83e525') },
-            { id: 'v4-5', title: '"Don\'t know moment" = good', loomId: extractLoomId('https://www.loom.com/share/363eec37084d4650934bfb375f4c7196') },
-          ]
-        },
-        {
-          id: 6, number: 2, title: 'Decision-Making', description: 'Master the art of making confident decisions and trusting your choices.',
-          videos: [
-            { id: 'v6-1', title: 'Decision-making overview', loomId: extractLoomId('https://www.loom.com/share/c544dd89a60a456c8d20f71263fd1e93') },
-            { id: 'v6-2', title: 'Decision-making mental model', loomId: extractLoomId('https://www.loom.com/share/4dc358afda54482893b7ca73faf855c4') },
-            { id: 'v6-3', title: 'There is no \'right decision\'', loomId: extractLoomId('https://www.loom.com/share/5733ab6af0464cd5ba6b9d3c7d822da1') },
-            { id: 'v6-4', title: 'Additional decision-making idea', loomId: extractLoomId('https://www.loom.com/share/183a85dad7f24755aa2549b8c65217b0') },
-          ]
-        },
-        {
-          id: 5, number: 3, title: 'Procrastination', description: 'Systems and strategies to overcome procrastination and build consistent action.',
-          videos: [
-            { id: 'v5-1', title: 'Anti procrastination module', loomId: extractLoomId('https://www.loom.com/share/00d9d44d3dae4b1a9a612ec7c4f0559f') },
-            { id: 'v5-2', title: 'Procrastination destruction system', loomId: extractLoomId('https://www.loom.com/share/b85982d48967474c9c0882e35aca5424') },
-          ]
-        },
-      ]
-    },
-  ]
+  // Fallback to empty arrays if still loading
+  const safeMindsetCategories = loadingCourses ? [] : mindsetCategories
+  const safeDreamJobModules = loadingCourses ? [] : dreamJobModules
   
   // Flatten for backward compatibility with MindsetModuleList
-  const mindsetModules = mindsetCategories.flatMap(category => 
-    category.sections.map(section => ({
+  const mindsetModules = safeMindsetCategories.flatMap(category => 
+    category.sections.map((section: any) => ({
       ...section,
       categoryId: category.id,
       categoryTitle: category.title
     }))
   )
   
-  // Dream Job modules data
-  const dreamJobModules = [
-    {
-      id: 1, number: 1, title: 'INTRO', description: 'Get started with the Dream Job program',
-      videos: [{ id: 'v1-1', title: 'House Rules', youtubeId: extractYouTubeId('https://youtu.be/tKCQuBJcOJI') }]
-    },
-    {
-      id: 2, number: 2, title: 'THE GREAT UNLEARNING', description: 'Unlearn the broken job search advice',
-      videos: [
-        { id: 'v2-1', title: 'The great unlearning lesson 1', youtubeId: extractYouTubeId('https://youtu.be/PfgsbC2OQ3w') },
-        { id: 'v2-2', title: 'The great unlearning lesson 2', youtubeId: extractYouTubeId('https://youtu.be/9AK-qoJ4QD0') },
-        { id: 'v2-3', title: 'Great unlearning lesson 3', youtubeId: extractYouTubeId('https://youtu.be/MZZ1gnfA1Uc') },
-        { id: 'v2-4', title: 'Lesson 4', youtubeId: extractYouTubeId('https://youtu.be/a6oT475-bNA') },
-        { id: 'v2-5', title: 'Lesson 5', youtubeId: extractYouTubeId('https://youtu.be/M_IYaTtr0F0') },
-        { id: 'v2-6', title: 'Lesson 6', youtubeId: extractYouTubeId('https://youtu.be/7npWIycpkfE') },
-        { id: 'v2-7', title: 'Lesson 7', youtubeId: extractYouTubeId('https://youtu.be/ll75o_cW0uo') },
-        { id: 'v2-8', title: 'Lesson 8', youtubeId: '' },
-      ]
-    },
-    {
-      id: 3, number: 3, title: 'KNOW THYSELF', description: 'Discover your unique strengths and values',
-      videos: [
-        { id: 'v3-1', title: 'Know thyself: Lesson 1', youtubeId: extractYouTubeId('https://youtu.be/m7SE3iT41ZU') },
-        { id: 'v3-2', title: 'Lesson 2', youtubeId: extractYouTubeId('https://youtu.be/cMp3D7etkeQ') },
-        { id: 'v3-3', title: 'Lesson 3', youtubeId: extractYouTubeId('https://youtu.be/-K3KsXLHARw') },
-      ]
-    },
-    {
-      id: 4, number: 4, title: 'RESEARCH LIKE HEAVEN', description: 'Master the art of company and role research',
-      videos: [
-        { id: 'v4-1', title: 'Research like heaven: Lesson 1', youtubeId: extractYouTubeId('https://youtu.be/AJf9LB2Le3Y') },
-        { id: 'v4-2', title: 'Lesson 2', youtubeId: extractYouTubeId('https://youtu.be/ilL-E1ks8XU') },
-        { id: 'v4-3', title: '3', youtubeId: extractYouTubeId('https://youtu.be/U1RAtTAwNxA') },
-        { id: 'v4-4', title: '3 part 2', youtubeId: extractYouTubeId('https://youtu.be/QxKkCazV2NY') },
-      ]
-    },
-    {
-      id: 5, number: 5, title: 'TRIAL PROJECT', description: 'Create work samples that prove your value',
-      videos: [
-        { id: 'v5-1', title: 'Trial Project: Lesson 1', youtubeId: extractYouTubeId('https://youtu.be/z3IX2ACDXNs') },
-        { id: 'v5-2', title: 'Lesson 2', youtubeId: extractYouTubeId('https://youtu.be/E9sBYsPmhw8') },
-        { id: 'v5-3', title: 'Lesson 3', youtubeId: extractYouTubeId('https://youtu.be/jd3wQ3k7Nlk') },
-        { id: 'v5-4', title: 'Lesson 4', youtubeId: extractYouTubeId('https://youtu.be/xpcpLPdDU_A') },
-        { id: 'v5-5', title: 'Lesson 5', youtubeId: extractYouTubeId('https://youtu.be/tbWygenb3iI') },
-        { id: 'v5-6', title: 'Lesson 6', youtubeId: extractYouTubeId('https://youtu.be/GRVoPEB9yBI') },
-      ]
-    },
-    {
-      id: 6, number: 6, title: 'REACH ANYONE IN THE WORLD', description: 'Learn how to connect with decision makers',
-      videos: [
-        { id: 'v6-1', title: 'Reach Anyone In The World: Lesson 1', youtubeId: extractYouTubeId('https://youtu.be/aK45c5bjEms') },
-        { id: 'v6-2', title: 'Lesson 2', youtubeId: extractYouTubeId('https://youtu.be/FPb7qVArelg') },
-        { id: 'v6-3', title: 'Lesson 3', youtubeId: extractYouTubeId('https://youtu.be/1ehr1fk9sY8') },
-      ]
-    },
-    {
-      id: 7, number: 7, title: 'ACING EVERY INTERVIEW', description: 'Turn interviews into conversations and job offers',
-      videos: [
-        { id: 'v7-1', title: 'Acing Every Interview: Lesson 1 (master lesson)', youtubeId: extractYouTubeId('https://youtu.be/fyeoO8EzD6w') },
-      ]
-    },
-    {
-      id: 8, number: 8, title: 'FINAL FIRST IMPRESSION', description: 'Close the deal and start your dream job',
-      videos: [
-        { id: 'v8-1', title: 'Final First Impression: Master lesson', youtubeId: extractYouTubeId('https://youtu.be/AkF6LvlvroY') },
-        { id: 'v8-2', title: 'Lesson 6 final adjustment Bonus video', youtubeId: extractYouTubeId('https://youtu.be/qXjuyco6RQw') },
-      ]
-    },
-  ]
+  // Show loading state while fetching courses
+  if (loadingCourses) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="text-slate-400">Loading courses...</div>
+      </div>
+    )
+  }
   
   return (
     <div className="flex h-full w-full" style={{ display: 'flex', width: '100%', maxWidth: '100%', boxSizing: 'border-box', margin: 0, padding: 0, gap: 0, backgroundColor: '#0f0f1a' }}>
@@ -1680,373 +1508,92 @@ function ClassroomTab({
               <button
                 key={item.id}
                 onClick={() => {
-                  if (item.id === 'community' || item.id === 'classroom') {
-                    setActiveTab(item.id as 'community' | 'classroom')
-                  } else if (hasHref) {
-                    window.location.href = (item as any).href
+                  if (!hasHref) {
+                    setActiveTab(item.id as 'community' | 'classroom' | 'groupchat')
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm mb-1 text-left transition-all ${
-                  activeTab === item.id
-                    ? 'text-white'
-                    : 'text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.1)]'
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors mb-1 ${
+                  activeTab === item.id && !hasHref
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                 }`}
-                style={activeTab === item.id ? {
-                  background: 'linear-gradient(135deg, #fde047, #facc15)',
-                  boxShadow: glowShadow('0 0 20px rgba(253,224,71,0.7), 0 0 40px rgba(253,224,71,0.5), 0 8px 30px rgba(253,224,71,0.4)', glowIntensity)
-                } : {}}
               >
-                <span className="text-base">{item.icon}</span>
-                <span className="font-medium">{item.label}</span>
+                <span className="text-lg">{item.icon}</span>
+                <span className="text-sm font-medium">{item.label}</span>
               </button>
             )
           })}
-
-          <div className="mt-6 pt-6 border-t border-[rgba(255,255,255,0.1)]">
-            <button
-              onClick={() => setActiveTab('groupchat')}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm mb-1 text-left transition-all text-white"
-              style={{
-                background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                boxShadow: glowShadow('0 0 20px rgba(34,211,238,0.7), 0 0 40px rgba(34,211,238,0.5), 0 8px 30px rgba(34,211,238,0.4)', glowIntensity),
-                border: '1px solid rgba(34,211,238,0.3)'
-              }}
-            >
-              <span className="text-base">💬</span>
-              <span className="font-medium">Group Chat</span>
-              <span className="ml-auto w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-            </button>
-          </div>
-
-          <div className="mt-6 bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-4 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
-            <div className="text-xs font-semibold mb-2 text-white">Your Progress</div>
-            <div className="h-2 bg-[rgba(255,255,255,0.1)] rounded-full mb-2 overflow-hidden">
-              <div 
-                className="h-full rounded-full"
-                style={{
-                  width: '42%',
-                  background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                  boxShadow: glowShadow('0 0 12px rgba(34,211,238,0.9), 0 0 24px rgba(34,211,238,0.6)', glowIntensity)
-                }}
-              />
-            </div>
-            <div className="text-[11px] text-[rgba(255,255,255,0.6)]">15 of 36 lessons completed</div>
-          </div>
-        </div>
-
-        <div className="p-4 border-t border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px]" style={{ backdropFilter: 'blur(10px)' }}>
-          <div className="flex items-center gap-3 mb-3">
-            {affiliate.avatar_url ? (
-              <img 
-                src={affiliate.avatar_url} 
-                alt={affiliate.avatar_name || affiliate.name} 
-                className="w-10 h-10 rounded-full border-2"
-                style={{
-                  borderColor: 'rgba(34,211,238,0.5)',
-                  boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
-                }}
-              />
-            ) : (
-              <div 
-                className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold border-2"
-                style={{
-                  background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                  borderColor: 'rgba(34,211,238,0.5)',
-                  boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
-                }}
-              >
-                <span className="text-white">{(affiliate.avatar_name || affiliate.name).substring(0, 2).toUpperCase()}</span>
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold truncate text-white">{affiliate.avatar_name || affiliate.name}</div>
-              <div className="text-[10px] text-[rgba(255,255,255,0.6)]">Member</div>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setIsDMModalOpen(true)}
-              className="flex-1 px-3 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1.5 text-white"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              Messages
-            </button>
-            <Link
-              href="/settings"
-              className="px-3 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl transition-colors flex items-center justify-center"
-              title="Settings"
-            >
-              <Settings className="w-4 h-4 text-white" />
-            </Link>
-            <button
-              onClick={async () => {
-                await fetch('/api/auth/logout', { method: 'POST' })
-                window.location.href = '/login'
-              }}
-              className="px-3 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl transition-colors flex items-center justify-center"
-              title="Log out"
-            >
-              <LogOut className="w-4 h-4 text-white" />
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Main Content - Match CommunityTab styling */}
-      <div className="flex-1 flex flex-col overflow-hidden h-full w-full min-w-0 relative" style={{ flex: 1, minWidth: 0, width: '100%', maxWidth: '100%', margin: 0, padding: 0, boxSizing: 'border-box' }}>
-        {/* Color Splash Header */}
-        <div 
-          className="absolute top-0 left-0 right-0 h-[300px] z-0"
-          style={{
-            background: 'linear-gradient(135deg, #fde047 0%, #fde047 25%, #f472b6 25%, #f472b6 50%, #22d3ee 50%, #22d3ee 75%, #0ea5e9 75%, #0ea5e9 100%)'
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(15,15,26,0.5)] to-[#0f0f1a]" />
-        </div>
-
-        {/* Content Overlay */}
-        <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-          <div className="h-14 bg-[rgba(26,26,46,0.8)] backdrop-blur-[20px] border-b border-[rgba(255,255,255,0.1)] flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0" style={{ backdropFilter: 'blur(20px)' }}>
-            <div>
-              <h1 className="text-lg font-bold text-white">Classroom</h1>
-              <p className="text-xs text-[rgba(255,255,255,0.6)]">
-                {selectedWorld === 'mindset' ? 'Mindset & Foundations' : 
-                 selectedWorld === 'dreamjob' ? 'Get Your Dream Job' :
-                 selectedWorld === 'affiliate' ? 'Build Your Side Income' :
-                 'Choose a world to explore and start your journey'}
-              </p>
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        {activeTab === 'classroom' && (
+          <div className="p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Classroom</h2>
+              <p className="text-slate-400">Access all your courses and training materials</p>
             </div>
-            {selectedWorld && (
+
+            {/* Course Worlds */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <button
-                onClick={() => setSelectedWorld(null)}
-                className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-all"
-                style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255,255,255,0.2)'
-                }}
+                onClick={() => setSelectedWorld('mindset')}
+                className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-2 border-purple-500/30 rounded-xl p-6 hover:border-purple-400/50 transition-all text-left group"
               >
-                ← Back to Worlds
+                <div className="text-4xl mb-3">🧠</div>
+                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">Mindset & Foundations</h3>
+                <p className="text-slate-400 text-sm">Rewire your brain. Kill limiting beliefs. Become unstoppable.</p>
               </button>
+
+              <button
+                onClick={() => setSelectedWorld('dreamjob')}
+                className="bg-gradient-to-br from-cyan-600/20 to-cyan-800/20 border-2 border-cyan-500/30 rounded-xl p-6 hover:border-cyan-400/50 transition-all text-left group"
+              >
+                <div className="text-4xl mb-3">💼</div>
+                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">Get Your Dream Job</h3>
+                <p className="text-slate-400 text-sm">Stop applying to 100 jobs. Land the ONE you actually want.</p>
+              </button>
+
+              <button
+                onClick={() => setSelectedWorld('affiliate')}
+                className="bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 border-2 border-emerald-500/30 rounded-xl p-6 hover:border-emerald-400/50 transition-all text-left group"
+              >
+                <div className="text-4xl mb-3">💰</div>
+                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-300 transition-colors">Build Your Side Income</h3>
+                <p className="text-slate-400 text-sm">Create passive income streams through our affiliate system.</p>
+              </button>
+            </div>
+
+            {/* Course Content */}
+            {selectedWorld === 'mindset' && (
+              <MindsetModuleList
+                modules={mindsetModules}
+                categories={safeMindsetCategories}
+                affiliate={affiliate}
+              />
+            )}
+
+            {selectedWorld === 'dreamjob' && (
+              <DreamJobModuleList
+                modules={safeDreamJobModules}
+                affiliate={affiliate}
+              />
+            )}
+
+            {selectedWorld === 'affiliate' && (
+              <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-8 text-center">
+                <div className="text-6xl mb-4">💰</div>
+                <h3 className="text-2xl font-bold text-white mb-2">Affiliate Training</h3>
+                <p className="text-slate-400 mb-6">Learn how to build your affiliate business and generate passive income.</p>
+                <Link href="/affiliate" className="inline-block px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors">
+                  Go to Affiliate Portal
+                </Link>
+              </div>
             )}
           </div>
-
-          <div className="flex-1 overflow-y-auto min-h-0 w-full px-4 sm:px-6 lg:px-8 py-8" style={{ width: '100%', maxWidth: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0 }}>
-            {!selectedWorld ? (
-              /* World Selection Screen */
-              <div className="max-w-5xl mx-auto">
-                <div className="text-center mb-12">
-                  <h2 className="text-3xl font-bold text-white mb-4">
-                    Welcome back, {affiliate.avatar_name || affiliate.name}!
-                  </h2>
-                  <p className="text-[rgba(255,255,255,0.6)] text-lg">
-                    Choose a world to explore and start your journey
-                  </p>
-                </div>
-
-                {/* World Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Mindset & Foundations */}
-                  <button
-                    onClick={() => setSelectedWorld('mindset')}
-                    className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-emerald-500 rounded-2xl p-8 text-center hover:shadow-lg transition-all group"
-                    style={{
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: glowShadow('0 0 30px rgba(16,185,129,0.3), 0 0 60px rgba(16,185,129,0.2)', glowIntensity)
-                    }}
-                  >
-                    <div className="text-6xl mb-4">🧠</div>
-                    <h3 className="text-xl font-bold text-white mb-2">Mindset & Foundations</h3>
-                    <p className="text-[rgba(255,255,255,0.6)] mb-4">
-                      Build your mental foundation for success
-                    </p>
-                    <span className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-400 text-sm rounded-full font-semibold">
-                      Active
-                    </span>
-                    <div className="mt-4 text-emerald-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                      Enter World →
-                    </div>
-                  </button>
-
-                  {/* Get Your Dream Job */}
-                  <button
-                    onClick={() => setSelectedWorld('dreamjob')}
-                    className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-cyan-500 rounded-2xl p-8 text-center hover:shadow-lg transition-all group"
-                    style={{
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: glowShadow('0 0 30px rgba(6,182,212,0.3), 0 0 60px rgba(6,182,212,0.2)', glowIntensity)
-                    }}
-                  >
-                    <div className="text-6xl mb-4">💼</div>
-                    <h3 className="text-xl font-bold text-white mb-2">Get Your Dream Job</h3>
-                    <p className="text-[rgba(255,255,255,0.6)] mb-4">
-                      Land the career you've always wanted
-                    </p>
-                    <span className="inline-block px-3 py-1 bg-cyan-500/20 text-cyan-400 text-sm rounded-full font-semibold">
-                      Active
-                    </span>
-                    <div className="mt-4 text-cyan-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                      Enter World →
-                    </div>
-                  </button>
-
-                  {/* Build Your Side Income */}
-                  <Link
-                    href="/affiliate"
-                    className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-green-500 rounded-2xl p-8 text-center hover:shadow-lg transition-all group"
-                    style={{
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: glowShadow('0 0 30px rgba(34,197,94,0.3), 0 0 60px rgba(34,197,94,0.2)', glowIntensity)
-                    }}
-                  >
-                    <div className="text-6xl mb-4">💰</div>
-                    <h3 className="text-xl font-bold text-white mb-2">Build Your Side Income</h3>
-                    <p className="text-[rgba(255,255,255,0.6)] mb-4">
-                      grab our done-for-you products, take the content training & begin printing ASAP!
-                    </p>
-                    <span className="inline-block px-3 py-1 bg-green-500/20 text-green-400 text-sm rounded-full font-semibold">
-                      Active
-                    </span>
-                    <div className="mt-4 text-green-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                      Enter World →
-                    </div>
-                  </Link>
-                </div>
-              </div>
-            ) : selectedWorld === 'mindset' ? (
-              /* LD World / Mindset Content */
-              <div>
-                <MindsetModuleList 
-                  modules={mindsetModules} 
-                  categories={mindsetCategories}
-                  affiliate={affiliate}
-                />
-              </div>
-            ) : selectedWorld === 'dreamjob' ? (
-              /* Dream Job Content */
-              <div>
-                <div className="bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 mb-6 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h2 className="text-lg font-semibold text-white">Course Progress</h2>
-                      <p className="text-[rgba(255,255,255,0.6)] text-sm">Complete all 8 modules to master the Dream Job method</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">0%</span>
-                      <p className="text-[rgba(255,255,255,0.5)] text-sm">Complete</p>
-                    </div>
-                  </div>
-                  <div className="w-full bg-[rgba(255,255,255,0.1)] rounded-full h-2">
-                    <div 
-                      className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500" 
-                      style={{ width: '0%' }}
-                    />
-                  </div>
-                </div>
-                <DreamJobModuleList 
-                  modules={dreamJobModules} 
-                  affiliate={affiliate}
-                />
-              </div>
-            ) : selectedWorld === 'affiliate' ? (
-              /* Affiliate Content */
-              <div>
-                <div className="bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 mb-6 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h2 className="text-lg font-semibold text-white">Course Progress</h2>
-                      <p className="text-[rgba(255,255,255,0.6)] text-sm">Complete all 8 modules to master the Dream Job method</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">0%</span>
-                      <p className="text-[rgba(255,255,255,0.5)] text-sm">Complete</p>
-                    </div>
-                  </div>
-                  <div className="w-full bg-[rgba(255,255,255,0.1)] rounded-full h-2">
-                    <div 
-                      className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500" 
-                      style={{ width: '0%' }}
-                    />
-                  </div>
-                </div>
-                <DreamJobModuleList 
-                  modules={dreamJobModules} 
-                  affiliate={affiliate}
-                  onVideoSelect={(video, module) => {
-                    setSelectedLesson({
-                      id: video.id,
-                      title: video.title,
-                      moduleName: module.title
-                    })
-                  }}
-                />
-              </div>
-            ) : null}
-          </div>
-        </div>
+        )}
       </div>
-
-      {/* Floating Dream Job Assistant - Only show when Dream Job is active */}
-      {selectedWorld === 'dreamjob' && (
-        <>
-          {/* Floating Button */}
-          <button
-            onClick={() => setIsAssistantOpen(!isAssistantOpen)}
-            className="fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center text-white z-50 transition-all hover:scale-110 shadow-lg"
-            style={{
-              background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-              boxShadow: glowShadow('0 0 20px rgba(34,211,238,0.7), 0 0 40px rgba(34,211,238,0.5), 0 8px 30px rgba(34,211,238,0.4)', glowIntensity)
-            }}
-            title="Course Assistant"
-          >
-            {/* Robot Emoji */}
-            <span className="text-2xl">🤖</span>
-          </button>
-
-          {/* Assistant Drawer/Popup */}
-          {isAssistantOpen && (
-            <>
-              {/* Backdrop */}
-              <div
-                className="fixed inset-0 bg-black/50 z-40"
-                onClick={() => setIsAssistantOpen(false)}
-              />
-              
-              {/* Drawer */}
-              <div
-                className="fixed bottom-6 right-6 w-[400px] h-[500px] bg-[#0f0f1a] rounded-xl border-2 border-[rgba(34,211,238,0.3)] shadow-2xl z-50 flex flex-col overflow-hidden"
-                style={{
-                  boxShadow: glowShadow('0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.3), 0 20px 40px rgba(14,165,233,0.25)', glowIntensity)
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Header */}
-                <div className="p-4 border-b border-[rgba(255,255,255,0.1)] flex items-center justify-between bg-[rgba(26,26,46,0.8)]">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">🤖</span>
-                    <span className="font-semibold text-white">Course Assistant</span>
-                  </div>
-                  <button
-                    onClick={() => setIsAssistantOpen(false)}
-                    className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5 text-[rgba(255,255,255,0.6)]" />
-                  </button>
-                </div>
-
-                {/* Assistant Content */}
-                <div className="flex-1 overflow-hidden">
-                  <CourseAssistant
-                    lessonId={selectedLesson?.id}
-                    lessonTitle={selectedLesson?.title}
-                    moduleName={selectedLesson?.moduleName}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-        </>
-      )}
     </div>
   )
 }
