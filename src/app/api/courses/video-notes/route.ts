@@ -52,33 +52,17 @@ export async function PUT(request: NextRequest) {
     }
 
     // Use upsert with proper conflict handling
-    // First try to get existing note
-    const { data: existing } = await supabaseAdmin
+    const { data: note, error } = await (supabaseAdmin as any)
       .from('video_notes')
-      .select('id, created_by')
-      .eq('video_id', videoId)
-      .eq('course_type', courseType)
-      .maybeSingle()
-
-    const upsertData: any = {
-      video_id: videoId,
-      course_type: courseType,
-      notes: notes || '',
-      updated_at: new Date().toISOString()
-    }
-
-    // Preserve created_by if note exists, otherwise set it
-    if (existing && existing.created_by) {
-      upsertData.created_by = existing.created_by
-    } else {
-      upsertData.created_by = affiliate.id
-    }
-
-    const { data: note, error } = await supabaseAdmin
-      .from('video_notes')
-      .upsert(upsertData, {
+      .upsert({
+        video_id: videoId,
+        course_type: courseType,
+        notes: notes || '',
+        updated_at: new Date().toISOString(),
+        created_by: affiliate.id
+      }, {
         onConflict: 'video_id,course_type'
-      } as any)
+      })
       .select()
       .single()
 
