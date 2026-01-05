@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Copy, Check, ExternalLink } from 'lucide-react'
-import { ReferralSection } from './ReferralSection'
+import { SimpleReferralLink } from './SimpleReferralLink'
 
 type Product = {
   id: string
@@ -44,45 +44,67 @@ export function ProductList({
   affiliateLinks: AffiliateLink[]
   affiliateId: string
 }) {
-  return (
-    <div className="space-y-6">
-      {/* Recurring Monthly Subscription Product */}
-      <div className="bg-gradient-to-r from-green-500/10 to-teal-500/10 border-2 border-green-500/30 rounded-xl overflow-hidden">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <span className="text-green-400">💰</span>
-                Platform Subscription - Recurring Revenue
-              </h3>
-              <p className="text-sm text-slate-400 mt-1">
-                Earn 50% recurring commission on monthly subscriptions ($20/month per active referral)
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-green-400 font-bold text-2xl">50%</div>
-              <div className="text-sm text-slate-400">Recurring</div>
-            </div>
-          </div>
-          
-          <ReferralSection />
-        </div>
-      </div>
+  // Create platform subscription as a product-like card
+  const platformSubscriptionProduct = {
+    id: 'platform-subscription',
+    name: 'Platform Subscription',
+    slug: 'platform-subscription',
+    description: 'Earn 50% recurring commission on monthly subscriptions ($20/month per active referral)',
+    price_cents: 4000,
+    commission_percent: 50,
+    landing_pages: []
+  }
 
-      {/* Other Products */}
-      {products.map((product) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          affiliateLinks={affiliateLinks.filter(
-            (link) => link.landing_page?.product?.id === product.id
-          )}
-          affiliateId={affiliateId}
-        />
-      ))}
-      {products.length === 0 && (
+  // Combine platform subscription with other products
+  const allProducts = [platformSubscriptionProduct, ...products]
+
+  return (
+    <div className="space-y-4">
+      {allProducts.map((product) => {
+        // Special handling for platform subscription
+        if (product.id === 'platform-subscription') {
+          return (
+            <div key={product.id} className="bg-gradient-to-r from-green-500/10 to-teal-500/10 border-2 border-green-500/30 rounded-xl overflow-hidden">
+              <div className="p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-white">{product.name}</h3>
+                    {product.description && (
+                      <p className="text-sm text-gray-400 mt-1">
+                        {product.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right ml-4">
+                    <div className="text-green-400 font-bold text-lg">
+                      {product.commission_percent}%
+                    </div>
+                    <div className="text-sm text-gray-500">Recurring</div>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <SimpleReferralLink />
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        // Regular product cards
+        return (
+          <ProductCard
+            key={product.id}
+            product={product}
+            affiliateLinks={affiliateLinks.filter(
+              (link) => link.landing_page?.product?.id === product.id
+            )}
+            affiliateId={affiliateId}
+          />
+        )
+      })}
+      {allProducts.length === 0 && (
         <div className="text-center py-12 text-gray-500">
-          No other products available yet. Check back soon!
+          No products available yet. Check back soon!
         </div>
       )}
     </div>
