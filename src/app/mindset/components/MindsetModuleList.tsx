@@ -779,6 +779,7 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                           </div>
                         </div>
                       )}
+                      </div>
                     </>
                   )
                 })()}
