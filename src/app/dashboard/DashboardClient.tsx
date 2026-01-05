@@ -1399,6 +1399,13 @@ function ClassroomTab({
   const [isAssistantOpen, setIsAssistantOpen] = useState(false)
   const [selectedLesson, setSelectedLesson] = useState<{ id?: string, title?: string, moduleName?: string } | null>(null)
   
+  // Reset to world selection when Classroom tab is clicked
+  useEffect(() => {
+    if (activeTab === 'classroom') {
+      setSelectedWorld(null)
+    }
+  }, [activeTab])
+  
   // Mindset modules data
   const extractLoomId = (url: string): string => {
     const match = url.match(/loom\.com\/share\/([a-f0-9]+)/i)
