@@ -5,7 +5,7 @@ import { formatDistanceToNow, differenceInDays, format } from 'date-fns'
 import { SubscriptionPaywall } from './components/SubscriptionPaywall'
 import { StatsCards } from './components/StatsCards'
 import { ProductList } from './components/ProductList'
-import { ReferralSection } from './components/ReferralSection'
+import { VideoBanner } from './components/VideoBanner'
 
 async function getAffiliateStats(affiliateId: string) {
   const { data: stats } = await supabaseAdmin
@@ -87,14 +87,17 @@ export default async function PortalPage() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Video/Image Banner */}
+        <section className="mb-10">
+          <VideoBanner
+            videoUrl={process.env.NEXT_PUBLIC_AFFILIATE_TUTORIAL_VIDEO}
+            imageUrl={process.env.NEXT_PUBLIC_AFFILIATE_PRODUCT_IMAGE}
+            title="How to Use the Affiliate Dashboard"
+          />
+        </section>
+
         {/* Stats */}
         <StatsCards stats={stats} affiliate={affiliate} />
-
-        {/* Subscription Referrals */}
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold text-white mb-6">Affiliate this platform for recurring revenue!</h2>
-          <ReferralSection />
-        </section>
 
         {/* Products */}
         <section className="mt-10">

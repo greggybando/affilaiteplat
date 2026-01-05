@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Copy, Check, ExternalLink } from 'lucide-react'
+import { ReferralSection } from './ReferralSection'
 
 type Product = {
   id: string
@@ -45,6 +46,29 @@ export function ProductList({
 }) {
   return (
     <div className="space-y-6">
+      {/* Recurring Monthly Subscription Product */}
+      <div className="bg-gradient-to-r from-green-500/10 to-teal-500/10 border-2 border-green-500/30 rounded-xl overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <span className="text-green-400">💰</span>
+                Platform Subscription - Recurring Revenue
+              </h3>
+              <p className="text-sm text-slate-400 mt-1">
+                Earn 50% recurring commission on monthly subscriptions ($20/month per active referral)
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-green-400 font-bold text-2xl">50%</div>
+              <div className="text-sm text-slate-400">Recurring</div>
+            </div>
+          </div>
+          <ReferralSection />
+        </div>
+      </div>
+
+      {/* Other Products */}
       {products.map((product) => (
         <ProductCard
           key={product.id}
@@ -57,7 +81,7 @@ export function ProductList({
       ))}
       {products.length === 0 && (
         <div className="text-center py-12 text-gray-500">
-          No products available yet. Check back soon!
+          No other products available yet. Check back soon!
         </div>
       )}
     </div>
