@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAffiliate } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createClient } from '@supabase/supabase-js'
-import { v4 as uuidv4 } from 'uuid'
 
 const supabaseStorage = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
