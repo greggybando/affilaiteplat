@@ -14,7 +14,6 @@ import { GroupChatTab } from './components/GroupChatTab'
 import { MindsetModuleList } from '../mindset/components/MindsetModuleList'
 import { DreamJobModuleList } from '../dreamjob/components/DreamJobModuleList'
 import CourseAssistant from '@/components/CourseAssistant'
-import { InlineCourseViewer } from './components/InlineCourseViewer'
 
 interface DashboardClientProps {
   affiliate: {
@@ -23,7 +22,6 @@ interface DashboardClientProps {
     avatar_name: string | null
     avatar_url: string | null
     role?: string
-    is_admin?: boolean
   }
 }
 
@@ -1905,28 +1903,17 @@ function ClassroomTab({
                 </div>
               </div>
             ) : selectedWorld === 'mindset' ? (
-              /* LD World / Mindset Content - Using Database */
-              <div className="overflow-y-auto">
-                <InlineCourseViewer 
-                  courseSlug="mindset" 
-                  isAdmin={affiliate.is_admin || false}
-                  onLessonClick={(lessonId) => {
-                    window.open(`/training/lesson/${lessonId}`, '_blank')
-                  }}
+              /* LD World / Mindset Content */
+              <div>
+                <MindsetModuleList 
+                  modules={mindsetModules} 
+                  categories={mindsetCategories}
+                  affiliate={affiliate}
                 />
               </div>
             ) : selectedWorld === 'dreamjob' ? (
-              /* Dream Job Content - Using Database */
-              <div className="overflow-y-auto">
-                <InlineCourseViewer 
-                  courseSlug="dream-job" 
-                  isAdmin={affiliate.is_admin || false}
-                  onLessonClick={(lessonId) => {
-                    window.open(`/training/lesson/${lessonId}`, '_blank')
-                  }}
-                />
-              </div>
-            ) : selectedWorld === 'affiliate' ? (
+              /* Dream Job Content */
+              <div>
               /* Affiliate Content */
               <div>
                 <div className="bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 mb-6 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
