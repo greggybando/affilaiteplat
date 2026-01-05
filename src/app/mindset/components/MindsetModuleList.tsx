@@ -215,7 +215,10 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
           setNotesSaved(prev => ({ ...prev, [videoId]: false }))
         }, 3000)
       } else {
-        alert('Failed to save notes: ' + (data.error || 'Unknown error'))
+        const errorMsg = data.error || 'Unknown error'
+        const details = data.details ? `\n\nDetails: ${data.details}` : ''
+        const hint = data.hint ? `\n\n${data.hint}` : ''
+        alert(`Failed to save notes: ${errorMsg}${details}${hint}`)
       }
     } catch (error) {
       console.error('Error saving notes:', error)
