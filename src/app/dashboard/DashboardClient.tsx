@@ -14,6 +14,7 @@ import { GroupChatTab } from './components/GroupChatTab'
 import { MindsetModuleList } from '../mindset/components/MindsetModuleList'
 import { DreamJobModuleList } from '../dreamjob/components/DreamJobModuleList'
 import CourseAssistant from '@/components/CourseAssistant'
+import { InlineCourseViewer } from './components/InlineCourseViewer'
 
 interface DashboardClientProps {
   affiliate: {
@@ -22,6 +23,7 @@ interface DashboardClientProps {
     avatar_name: string | null
     avatar_url: string | null
     role?: string
+    is_admin?: boolean
   }
 }
 
@@ -1836,8 +1838,8 @@ function ClassroomTab({
                 {/* World Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Mindset & Foundations */}
-                  <Link
-                    href="/training/mindset"
+                  <button
+                    onClick={() => setSelectedWorld('mindset')}
                     className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-emerald-500 rounded-2xl p-8 text-center hover:shadow-lg transition-all group"
                     style={{
                       backdropFilter: 'blur(10px)',
@@ -1855,11 +1857,11 @@ function ClassroomTab({
                     <div className="mt-4 text-emerald-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                       Enter World →
                     </div>
-                  </Link>
+                  </button>
 
                   {/* Get Your Dream Job */}
-                  <Link
-                    href="/training/dream-job"
+                  <button
+                    onClick={() => setSelectedWorld('dreamjob')}
                     className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-cyan-500 rounded-2xl p-8 text-center hover:shadow-lg transition-all group"
                     style={{
                       backdropFilter: 'blur(10px)',
@@ -1877,7 +1879,7 @@ function ClassroomTab({
                     <div className="mt-4 text-cyan-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                       Enter World →
                     </div>
-                  </Link>
+                  </button>
 
                   {/* Build Your Side Income */}
                   <Link
@@ -1903,16 +1905,29 @@ function ClassroomTab({
                 </div>
               </div>
             ) : selectedWorld === 'mindset' ? (
-              /* LD World / Mindset Content */
-              <div>
-                <MindsetModuleList 
-                  modules={mindsetModules} 
-                  categories={mindsetCategories}
-                  affiliate={affiliate}
+              /* LD World / Mindset Content - Using Database */
+              <div className="overflow-y-auto">
+                <InlineCourseViewer 
+                  courseSlug="mindset" 
+                  isAdmin={affiliate.is_admin || false}
+                  onLessonClick={(lessonId) => {
+                    window.open(`/training/lesson/${lessonId}`, '_blank')
+                  }}
                 />
               </div>
             ) : selectedWorld === 'dreamjob' ? (
-              /* Dream Job Content */
+              /* Dream Job Content - Using Database */
+              <div className="overflow-y-auto">
+                <InlineCourseViewer 
+                  courseSlug="dream-job" 
+                  isAdmin={affiliate.is_admin || false}
+                  onLessonClick={(lessonId) => {
+                    window.open(`/training/lesson/${lessonId}`, '_blank')
+                  }}
+                />
+              </div>
+            ) : selectedWorld === 'affiliate' ? (
+              /* Affiliate Content */
               <div>
                 <div className="bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 mb-6 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
                   <div className="flex items-center justify-between mb-4">
