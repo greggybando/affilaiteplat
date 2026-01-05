@@ -9,8 +9,6 @@ export function PortalNav() {
   const navItems = [
     { href: '/affiliate', label: 'Dashboard' },
     { href: '/affiliate/leaderboard', label: 'Leaderboard' },
-    { href: '/affiliate/watchlist', label: 'Watch List' },
-    { href: '/affiliate/pods', label: 'Pods' },
     { href: '/affiliate/training', label: 'Training' },
     { href: '/affiliate/whats-working', label: "What's Working" },
     { href: '/affiliate/payouts', label: 'Payouts' },
