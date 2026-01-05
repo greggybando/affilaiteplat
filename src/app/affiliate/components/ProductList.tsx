@@ -56,7 +56,7 @@ export function ProductList({
     id: 'platform-subscription',
     name: 'Platform Subscription',
     slug: 'platform-subscription',
-    description: 'Earn 50% recurring commission on monthly subscriptions ($20/month per active referral)',
+    description: '10 sales = $200/month passive',
     price_cents: 4000,
     commission_percent: 50,
     landing_pages: []
