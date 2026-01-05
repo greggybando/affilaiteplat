@@ -201,10 +201,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Attachment not found' }, { status: 404 })
     }
 
+    const filePath = (attachment as any).file_path
+
     // Delete from Supabase Storage
     const { error: storageError } = await supabaseStorage.storage
       .from('course-files')
-      .remove([attachment.file_path])
+      .remove([filePath])
 
     if (storageError) {
       console.error('Storage delete error:', storageError)
