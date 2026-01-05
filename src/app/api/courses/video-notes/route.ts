@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest) {
       }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, notes: note?.notes || '' })
+    return NextResponse.json({ success: true, notes: (note as any)?.notes || '' })
   } catch (error: any) {
     console.error('Error saving notes:', error)
     return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 })
