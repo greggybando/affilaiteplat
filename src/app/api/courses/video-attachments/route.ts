@@ -59,31 +59,57 @@ export async function POST(request: NextRequest) {
     // Validate file size (max 50MB)
     const maxSize = 50 * 1024 * 1024
     if (file.size > maxSize) {
-      return NextResponse.json({ error: 'File size exceeds 50MB limit' }, { status: 400 })
+      return NextResponse.json({ 
+        error: `File size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds 50MB limit` 
+      }, { status: 400 })
     }
 
-    // Validate file type
+    // Get file extension as fallback
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || ''
+    
+    // Validate file type - expanded list with more common types
     const allowedTypes = [
       'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/msword', // .doc
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'application/vnd.ms-excel', // .xls
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-powerpoint', // .ppt
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
       'text/plain',
       'text/csv',
+      'text/markdown',
+      'text/html',
       'image/png',
       'image/jpeg',
+      'image/jpg',
       'image/gif',
       'image/webp',
+      'image/svg+xml',
       'application/zip',
-      'application/x-zip-compressed'
+      'application/x-zip-compressed',
+      'application/x-rar-compressed',
+      'application/vnd.rar',
+      'application/json',
+      'application/vnd.apple.pages',
+      'application/vnd.apple.numbers',
+      'application/vnd.apple.keynote'
     ]
 
-    if (!allowedTypes.includes(file.type)) {
+    // Also allow by extension if MIME type is missing/unknown
+    const allowedExtensions = [
+      'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+      'txt', 'csv', 'md', 'html', 'json',
+      'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg',
+      'zip', 'rar', 'pages', 'numbers', 'key'
+    ]
+
+    const hasValidMimeType = file.type && allowedTypes.includes(file.type)
+    const hasValidExtension = allowedExtensions.includes(fileExtension)
+
+    if (!hasValidMimeType && !hasValidExtension) {
       return NextResponse.json({ 
-        error: `File type not allowed. Allowed: PDF, Word, Excel, PowerPoint, Images, ZIP, Text files.` 
+        error: `File type not allowed. Detected type: "${file.type || 'unknown'}", extension: ".${fileExtension}". Allowed: PDF, Word, Excel, PowerPoint, Images, ZIP, Text files, Markdown, JSON.` 
       }, { status: 400 })
     }
 
