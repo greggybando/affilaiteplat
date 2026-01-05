@@ -14,6 +14,7 @@ import { GroupChatTab } from './components/GroupChatTab'
 import { MindsetModuleList } from '../mindset/components/MindsetModuleList'
 import { DreamJobModuleList } from '../dreamjob/components/DreamJobModuleList'
 import CourseAssistant from '@/components/CourseAssistant'
+import { SubscriptionReferralStats } from './components/SubscriptionReferralStats'
 
 interface DashboardClientProps {
   affiliate: {
@@ -1900,6 +1901,9 @@ function ClassroomTab({
                       Enter World →
                     </div>
                   </Link>
+
+                  {/* Subscription Referral Stats */}
+                  <SubscriptionReferralStats />
                 </div>
               </div>
             ) : selectedWorld === 'mindset' ? (
