@@ -696,7 +696,7 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                 )}
               </div>
 
-              {/* Notes/Attachments Section */}
+              {/* Notes Section */}
               <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
                 {(() => {
                   const videoNotes = getVideoNotes(selectedVideo.video)
@@ -706,135 +706,64 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                   
                   return (
                     <>
-                      <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
-                        <h3 className="text-sm font-semibold text-slate-300">Course Materials</h3>
-                        {isAdmin && (
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              className="hidden"
-                              multiple
-                              onChange={(e) => handleAddAttachment(selectedVideo.video.id, e.target.files)}
-                            />
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors">
-                              <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                              <span className="text-xs text-slate-300 font-medium">Upload</span>
-                            </div>
-                          </label>
-                        )}
-                      </div>
-
-                      {/* Attachments List */}
-                      <div className="px-4 pb-4 pt-4">
-                        {loadingAttachments[selectedVideo.video.id] ? (
-                          <div className="text-sm text-slate-400 text-center py-4">Loading attachments...</div>
-                        ) : getVideoAttachments(selectedVideo.video).length > 0 ? (
-                          <div className="space-y-2">
-                            {getVideoAttachments(selectedVideo.video).map((attachment) => (
-                              <div
-                                key={attachment.id}
-                                className="flex items-center justify-between px-3 py-2.5 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:bg-slate-800 transition-colors"
-                              >
-                                <a
-                                  href={attachment.file_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-2 flex-1 hover:text-emerald-400 transition-colors"
-                                >
-                                  <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <div className="flex items-center justify-between p-4">
+                        <h3 className="text-sm font-semibold text-slate-300">Notes</h3>
+                        <div className="flex items-center gap-2">
+                          {isAdmin && (
+                            <button
+                              onClick={() => saveNotes(selectedVideo.video.id)}
+                              disabled={savingNotes[selectedVideo.video.id]}
+                              className={`text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                                notesSaved[selectedVideo.video.id]
+                                  ? 'bg-emerald-600 text-white'
+                                  : savingNotes[selectedVideo.video.id]
+                                  ? 'bg-emerald-800 text-white'
+                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                              }`}
+                              title="Save notes"
+                            >
+                              {savingNotes[selectedVideo.video.id] ? (
+                                <>
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                  Saving...
+                                </>
+                              ) : notesSaved[selectedVideo.video.id] ? (
+                                <>
+                                  <Check className="w-3 h-3" />
+                                  Saved!
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="w-3 h-3" />
+                                  Save
+                                </>
+                              )}
+                            </button>
+                          )}
+                          {hasNotes && (
+                            <button
+                              onClick={() => setNotesExpanded(prev => ({ ...prev, [selectedVideo.video.id]: !isExpanded }))}
+                              className="text-xs text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1"
+                            >
+                              {isExpanded ? (
+                                <>
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                                   </svg>
-                                  <span className="text-sm text-slate-300">{attachment.display_name || attachment.file_name}</span>
-                                </a>
-                                <div className="flex items-center gap-2">
-                                  <a
-                                    href={attachment.file_url}
-                                    download
-                                    className="p-1.5 text-slate-400 hover:text-emerald-400 transition-colors"
-                                    title="Download"
-                                  >
-                                    <Download className="w-4 h-4" />
-                                  </a>
-                                  {isAdmin && (
-                                    <button
-                                      onClick={() => handleRemoveAttachment(selectedVideo.video.id, attachment.id)}
-                                      className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
-                                      title="Delete attachment"
-                                    >
-                                      <X className="w-4 h-4" />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-sm text-slate-500 text-center py-4 italic">No course materials available</div>
-                        )}
-                      </div>
-
-                      {/* Notes Section */}
-                      <div className="border-t border-slate-700/50">
-                        <div className="flex items-center justify-between p-4">
-                          <h3 className="text-sm font-semibold text-slate-300">Notes</h3>
-                          <div className="flex items-center gap-2">
-                            {isAdmin && (
-                              <button
-                                onClick={() => saveNotes(selectedVideo.video.id)}
-                                disabled={savingNotes[selectedVideo.video.id]}
-                                className={`text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-                                  notesSaved[selectedVideo.video.id]
-                                    ? 'bg-emerald-600 text-white'
-                                    : savingNotes[selectedVideo.video.id]
-                                    ? 'bg-emerald-800 text-white'
-                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                }`}
-                                title="Save notes"
-                              >
-                                {savingNotes[selectedVideo.video.id] ? (
-                                  <>
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                    Saving...
-                                  </>
-                                ) : notesSaved[selectedVideo.video.id] ? (
-                                  <>
-                                    <Check className="w-3 h-3" />
-                                    Saved!
-                                  </>
-                                ) : (
-                                  <>
-                                    <Save className="w-3 h-3" />
-                                    Save
-                                  </>
-                                )}
-                              </button>
-                            )}
-                            {hasNotes && (
-                              <button
-                                onClick={() => setNotesExpanded(prev => ({ ...prev, [selectedVideo.video.id]: !isExpanded }))}
-                                className="text-xs text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1"
-                              >
-                                {isExpanded ? (
-                                  <>
-                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                    </svg>
-                                    Collapse
-                                  </>
-                                ) : (
-                                  <>
-                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                    Expand
-                                  </>
-                                )}
-                              </button>
-                            )}
-                          </div>
+                                  Collapse
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                  Expand
+                                </>
+                              )}
+                            </button>
+                          )}
                         </div>
+                      </div>
 
                       {/* Notes Content */}
                       {/* Always show textarea for admins, show read-only for regular users when expanded */}
@@ -871,10 +800,81 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                           </div>
                         </div>
                       )}
-                      </div>
                     </>
                   )
                 })()}
+              </div>
+
+              {/* Course Materials Section */}
+              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
+                <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
+                  <h4 className="text-sm font-semibold text-slate-300">Course Materials</h4>
+                  {isAdmin && (
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        multiple
+                        onChange={(e) => handleAddAttachment(selectedVideo.video.id, e.target.files)}
+                        className="hidden"
+                      />
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span className="text-xs text-slate-300 font-medium">Upload</span>
+                      </div>
+                    </label>
+                  )}
+                </div>
+
+                {/* Attachments List */}
+                <div className="p-4">
+                  {loadingAttachments[selectedVideo.video.id] ? (
+                    <div className="text-sm text-slate-400 text-center py-4">Loading attachments...</div>
+                  ) : getVideoAttachments(selectedVideo.video).length > 0 ? (
+                    <div className="space-y-2">
+                      {getVideoAttachments(selectedVideo.video).map((attachment) => (
+                        <div
+                          key={attachment.id}
+                          className="flex items-center justify-between px-3 py-2.5 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:bg-slate-800 transition-colors"
+                        >
+                          <a
+                            href={attachment.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 flex-1 hover:text-emerald-400 transition-colors"
+                          >
+                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span className="text-sm text-slate-300">{attachment.display_name || attachment.file_name}</span>
+                          </a>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={attachment.file_url}
+                              download
+                              className="p-1.5 text-slate-400 hover:text-emerald-400 transition-colors"
+                              title="Download"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleRemoveAttachment(selectedVideo.video.id, attachment.id)}
+                                className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
+                                title="Delete attachment"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-500 text-center py-4 italic">No course materials available</div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
