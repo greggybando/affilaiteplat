@@ -5,11 +5,10 @@ import { Minimize2, Maximize2, X } from 'lucide-react'
 
 interface VideoBannerProps {
   videoUrl?: string
-  imageUrl?: string
   title?: string
 }
 
-export function VideoBanner({ videoUrl, imageUrl, title = 'How to Use the Affiliate Dashboard' }: VideoBannerProps) {
+export function VideoBanner({ videoUrl, title = 'How to Use the Affiliate Dashboard' }: VideoBannerProps) {
   const [isMinimized, setIsMinimized] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
 
@@ -48,52 +47,35 @@ export function VideoBanner({ videoUrl, imageUrl, title = 'How to Use the Affili
       
       {!isMinimized && (
         <div className="p-6">
-          {(!imageUrl && !videoUrl) ? (
+          {!videoUrl ? (
             <div className="text-center py-8 text-slate-400">
-              <p className="text-sm">Video and image will appear here once configured.</p>
+              <p className="text-sm">Tutorial video will appear here once configured.</p>
               <p className="text-xs mt-2 text-slate-500">
-                Set NEXT_PUBLIC_AFFILIATE_TUTORIAL_VIDEO and NEXT_PUBLIC_AFFILIATE_PRODUCT_IMAGE environment variables
+                Set NEXT_PUBLIC_AFFILIATE_TUTORIAL_VIDEO environment variable
               </p>
             </div>
           ) : (
-            <div className={`grid gap-6 ${imageUrl && videoUrl ? 'md:grid-cols-2' : 'md:grid-cols-1 max-w-4xl mx-auto'}`}>
-              {/* Image Section */}
-              {imageUrl && (
-                <div className="space-y-2">
-                  <label className="text-xs text-slate-400 uppercase tracking-wide">Product Image</label>
-                  <div className="aspect-video bg-slate-900/50 rounded-lg overflow-hidden border border-slate-700/50">
-                    <img
-                      src={imageUrl}
-                      alt="Product"
-                      className="w-full h-full object-cover"
+            <div className="max-w-4xl mx-auto">
+              <div className="space-y-2">
+                <label className="text-xs text-slate-400 uppercase tracking-wide">Tutorial Video</label>
+                <div className="aspect-video bg-slate-900/50 rounded-lg overflow-hidden border border-slate-700/50">
+                  {youtubeId ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${youtubeId}`}
+                      title={title}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
                     />
-                  </div>
+                  ) : (
+                    <video
+                      src={videoUrl}
+                      controls
+                      className="w-full h-full"
+                    />
+                  )}
                 </div>
-              )}
-
-              {/* Video Section */}
-              {videoUrl && (
-                <div className="space-y-2">
-                  <label className="text-xs text-slate-400 uppercase tracking-wide">Tutorial Video</label>
-                  <div className="aspect-video bg-slate-900/50 rounded-lg overflow-hidden border border-slate-700/50">
-                    {youtubeId ? (
-                      <iframe
-                        src={`https://www.youtube.com/embed/${youtubeId}`}
-                        title={title}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <video
-                        src={videoUrl}
-                        controls
-                        className="w-full h-full"
-                      />
-                    )}
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           )}
         </div>

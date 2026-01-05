@@ -87,11 +87,10 @@ export default async function PortalPage() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Video/Image Banner */}
+        {/* Tutorial Video Banner */}
         <section className="mb-10">
           <VideoBanner
             videoUrl={process.env.NEXT_PUBLIC_AFFILIATE_TUTORIAL_VIDEO}
-            imageUrl={process.env.NEXT_PUBLIC_AFFILIATE_PRODUCT_IMAGE}
             title="How to Use the Affiliate Dashboard"
           />
         </section>
@@ -100,12 +99,13 @@ export default async function PortalPage() {
         <StatsCards stats={stats} affiliate={affiliate} />
 
         {/* Products */}
-        <section className="mt-10">
+        <section className="mt-10 mb-20">
           <h2 className="text-xl font-semibold text-white mb-6">Available Products</h2>
           <ProductList
             products={products}
             affiliateLinks={affiliateLinks}
             affiliateId={affiliate.id}
+            productImageUrl={process.env.NEXT_PUBLIC_AFFILIATE_PRODUCT_IMAGE}
           />
         </section>
     </main>
