@@ -1062,11 +1062,7 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                     </div>
                   )}
                 </div>
-                  </div>
-                )
-              }
-
-              return <CategoryWrapper key={category.id} />
+              )
             })}
               </SortableContext>
             </DndContext>
