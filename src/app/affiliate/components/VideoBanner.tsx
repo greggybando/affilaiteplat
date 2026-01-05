@@ -46,7 +46,7 @@ export function VideoBanner({ videoUrl, title = 'How to Use the Affiliate Dashbo
       </div>
       
       {!isMinimized && (
-        <div className="p-6">
+        <div className="p-4">
           {!videoUrl ? (
             <div className="text-center py-8 text-slate-400">
               <p className="text-sm">Tutorial video will appear here once configured.</p>
@@ -55,10 +55,10 @@ export function VideoBanner({ videoUrl, title = 'How to Use the Affiliate Dashbo
               </p>
             </div>
           ) : (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-2xl mx-auto">
               <div className="space-y-2">
                 <label className="text-xs text-slate-400 uppercase tracking-wide">Tutorial Video</label>
-                <div className="aspect-video bg-slate-900/50 rounded-lg overflow-hidden border border-slate-700/50">
+                <div className="aspect-video bg-slate-900/50 rounded-lg overflow-hidden border border-slate-700/50 max-h-[300px]">
                   {youtubeId ? (
                     <iframe
                       src={`https://www.youtube.com/embed/${youtubeId}`}
