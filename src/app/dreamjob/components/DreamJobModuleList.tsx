@@ -146,6 +146,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
     if (selectedVideo?.video?.id) {
       fetchAttachments(selectedVideo.video.id)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVideo?.video?.id])
 
   return (
