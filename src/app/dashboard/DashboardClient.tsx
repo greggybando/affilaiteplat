@@ -1836,8 +1836,8 @@ function ClassroomTab({
                 {/* World Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Mindset & Foundations */}
-                  <button
-                    onClick={() => setSelectedWorld('mindset')}
+                  <Link
+                    href="/training/mindset"
                     className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-emerald-500 rounded-2xl p-8 text-center hover:shadow-lg transition-all group"
                     style={{
                       backdropFilter: 'blur(10px)',
@@ -1855,11 +1855,11 @@ function ClassroomTab({
                     <div className="mt-4 text-emerald-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                       Enter World →
                     </div>
-                  </button>
+                  </Link>
 
                   {/* Get Your Dream Job */}
-                  <button
-                    onClick={() => setSelectedWorld('dreamjob')}
+                  <Link
+                    href="/training/dream-job"
                     className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-cyan-500 rounded-2xl p-8 text-center hover:shadow-lg transition-all group"
                     style={{
                       backdropFilter: 'blur(10px)',
@@ -1877,7 +1877,7 @@ function ClassroomTab({
                     <div className="mt-4 text-cyan-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                       Enter World →
                     </div>
-                  </button>
+                  </Link>
 
                   {/* Build Your Side Income */}
                   <Link
