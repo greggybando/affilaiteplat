@@ -52,17 +52,17 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if note exists first
-    const { data: existingNote } = await supabaseAdmin
+    const { data: existingNote, error: checkError } = await supabaseAdmin
       .from('video_notes')
       .select('id')
       .eq('video_id', videoId)
       .eq('course_type', courseType)
-      .single()
+      .maybeSingle()
 
     let note: any
     let error: any
 
-    if (existingNote) {
+    if (existingNote && !checkError) {
       // Update existing note
       const { data: updatedNote, error: updateError } = await supabaseAdmin
         .from('video_notes')
