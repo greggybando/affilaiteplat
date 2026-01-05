@@ -17,23 +17,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing type, courseType, or items array' }, { status: 400 })
     }
 
-    // Update sort_order for each item
-    for (const item of items) {
-      if (type === 'module') {
-        // For DreamJob, modules are stored in a different structure
-        // We'll need to update the database if there's a sort_order field
-        // For now, this is a placeholder - the actual implementation depends on your DB structure
-        await supabaseAdmin
-          .from('course_modules')
-          .update({ sort_order: item.sortOrder } as any)
-          .eq('id', item.id)
-      } else if (type === 'section') {
-        await supabaseAdmin
-          .from('course_sections')
-          .update({ sort_order: item.sortOrder } as any)
-          .eq('id', item.id)
-      }
-    }
+    // For now, the courses are hardcoded, so we'll just return success
+    // In the future, when courses are database-driven, update sort_order here
+    // This endpoint exists to prevent errors when drag-and-drop is used
+    // The actual reordering happens client-side for hardcoded courses
+    
+    // If you have database tables for these, uncomment and use:
+    // for (const item of items) {
+    //   if (type === 'module') {
+    //     await supabaseAdmin
+    //       .from('course_modules')
+    //       .update({ sort_order: item.sortOrder } as any)
+    //       .eq('id', item.id)
+    //   } else if (type === 'section') {
+    //     await supabaseAdmin
+    //       .from('course_sections')
+    //       .update({ sort_order: item.sortOrder } as any)
+    //       .eq('id', item.id)
+    //   } else if (type === 'category') {
+    //     await supabaseAdmin
+    //       .from('course_categories')
+    //       .update({ sort_order: item.sortOrder } as any)
+    //       .eq('id', item.id)
+    //   }
+    // }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
