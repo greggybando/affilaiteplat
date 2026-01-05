@@ -721,14 +721,15 @@ async function handleSubscriptionEvent(subscription: Stripe.Subscription) {
     stripe_customer_id: subscription.customer as string,
   }
 
-  if (subscription.status === 'active') {
+  const status = subscription.status as string
+  if (status === 'active') {
     updateData.status = 'active'
     if (!subscription.metadata?.subscription_started_at) {
       updateData.subscription_started_at = new Date().toISOString()
     }
-  } else if (subscription.status === 'canceled') {
+  } else if (status === 'canceled') {
     updateData.status = 'cancelled'
-  } else if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
+  } else if (status === 'past_due' || status === 'unpaid') {
     updateData.status = 'past_due'
   }
 

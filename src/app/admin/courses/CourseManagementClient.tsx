@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Save, Plus, Trash2, Edit2, GripVertical, X, Check, Youtube, Video } from 'lucide-react'
+import { Save, Plus, Trash2, Edit2, GripVertical, X, Check, Youtube, Video, Paperclip } from 'lucide-react'
+import { AttachmentManager } from './components/AttachmentManager'
 
 interface Video {
+  id?: string
   video_id: string
   title: string
   youtube_id?: string
@@ -45,6 +47,7 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
   const [draggedItem, setDraggedItem] = useState<{ type: 'category' | 'section' | 'video', categoryIndex?: number, sectionIndex?: number, videoIndex?: number } | null>(null)
   const [editing, setEditing] = useState<{ type: 'category' | 'section' | 'video', categoryIndex: number, sectionIndex?: number, videoIndex?: number } | null>(null)
   const [editValues, setEditValues] = useState<any>({})
+  const [attachmentManager, setAttachmentManager] = useState<{ parentId: string, parentType: 'video_id' | 'section_id' | 'category_id' } | null>(null)
 
   // Extract YouTube ID from URL
   const extractYouTubeId = (url: string): string => {
@@ -315,6 +318,15 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
                     <button onClick={() => startEdit('category', catIndex)} className="p-2 text-slate-400 hover:text-white">
                       <Edit2 className="w-4 h-4" />
                     </button>
+                    {category.id && (
+                      <button 
+                        onClick={() => setAttachmentManager({ parentId: category.id!, parentType: 'category_id' })} 
+                        className="p-2 text-slate-400 hover:text-blue-400"
+                        title="Manage attachments"
+                      >
+                        <Paperclip className="w-4 h-4" />
+                      </button>
+                    )}
                     <button onClick={() => addSection(catIndex)} className="p-2 text-slate-400 hover:text-emerald-400">
                       <Plus className="w-4 h-4" />
                     </button>
@@ -366,6 +378,15 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
                           <button onClick={() => startEdit('section', catIndex, secIndex)} className="p-1 text-slate-400 hover:text-white">
                             <Edit2 className="w-3 h-3" />
                           </button>
+                          {section.id && (
+                            <button 
+                              onClick={() => setAttachmentManager({ parentId: section.id!, parentType: 'section_id' })} 
+                              className="p-1 text-slate-400 hover:text-blue-400"
+                              title="Manage attachments"
+                            >
+                              <Paperclip className="w-3 h-3" />
+                            </button>
+                          )}
                           <button onClick={() => addVideo(catIndex, secIndex)} className="p-1 text-slate-400 hover:text-emerald-400">
                             <Plus className="w-3 h-3" />
                           </button>
@@ -435,6 +456,15 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
                               <button onClick={() => startEdit('video', catIndex, secIndex, vidIndex)} className="p-1 text-slate-400 hover:text-white">
                                 <Edit2 className="w-3 h-3" />
                               </button>
+                              {video.id && (
+                                <button 
+                                  onClick={() => setAttachmentManager({ parentId: video.id!, parentType: 'video_id' })} 
+                                  className="p-1 text-slate-400 hover:text-blue-400"
+                                  title="Manage attachments"
+                                >
+                                  <Paperclip className="w-3 h-3" />
+                                </button>
+                              )}
                               <button onClick={() => deleteItem('video', catIndex, secIndex, vidIndex)} className="p-1 text-slate-400 hover:text-red-400">
                                 <Trash2 className="w-3 h-3" />
                               </button>
@@ -458,6 +488,16 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
           </button>
         </div>
       </div>
+
+      {/* Attachment Manager Modal */}
+      {attachmentManager && (
+        <AttachmentManager
+          parentId={attachmentManager.parentId}
+          parentType={attachmentManager.parentType}
+          courseType={courseType}
+          onClose={() => setAttachmentManager(null)}
+        />
+      )}
     </div>
   )
 }

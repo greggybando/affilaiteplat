@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     try {
       const attr = JSON.parse(affAttr)
       const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
-      if (attr.click_time > thirtyDaysAgo) {
+      if (attr.click_time > thirtyDaysAgo && visitorId) {
         metadata.affiliate_id = attr.affiliate_id
         metadata.affiliate_link_id = attr.link_id
 
