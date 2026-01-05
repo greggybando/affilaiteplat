@@ -28,8 +28,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ 
-      notes: note?.notes || '',
-      updatedAt: note?.updated_at || null
+      notes: (note as any)?.notes || '',
+      updatedAt: (note as any)?.updated_at || null
     })
   } catch (error: any) {
     console.error('Error fetching notes:', error)
