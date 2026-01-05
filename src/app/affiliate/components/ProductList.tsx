@@ -39,12 +39,10 @@ export function ProductList({
   products,
   affiliateLinks,
   affiliateId,
-  productImageUrl,
 }: {
   products: Product[]
   affiliateLinks: AffiliateLink[]
   affiliateId: string
-  productImageUrl?: string
 }) {
   return (
     <div className="space-y-6">
@@ -67,20 +65,6 @@ export function ProductList({
             </div>
           </div>
           
-          {/* Product Image */}
-          {productImageUrl && (
-            <div className="mb-6">
-              <label className="text-xs text-slate-400 uppercase tracking-wide mb-2 block">Product Image</label>
-              <div className="aspect-video bg-slate-900/50 rounded-lg overflow-hidden border border-slate-700/50">
-                <img
-                  src={productImageUrl}
-                  alt="Platform Subscription Product"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          )}
-          
           <ReferralSection />
         </div>
       </div>
@@ -94,7 +78,6 @@ export function ProductList({
             (link) => link.landing_page?.product?.id === product.id
           )}
           affiliateId={affiliateId}
-          productImageUrl={productImageUrl}
         />
       ))}
       {products.length === 0 && (
@@ -110,12 +93,10 @@ function ProductCard({
   product,
   affiliateLinks,
   affiliateId,
-  productImageUrl,
 }: {
   product: Product
   affiliateLinks: AffiliateLink[]
   affiliateId: string
-  productImageUrl?: string
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -156,22 +137,9 @@ function ProductCard({
         </div>
       </div>
 
-      {/* Expanded: Product Image and Landing Pages */}
+      {/* Expanded: Landing Pages */}
       {isExpanded && (
         <div className="border-t border-gray-800 p-5 space-y-4">
-          {/* Product Image */}
-          {productImageUrl && (
-            <div>
-              <label className="text-xs text-slate-400 uppercase tracking-wide mb-2 block">Product Image</label>
-              <div className="aspect-video bg-gray-800/50 rounded-lg overflow-hidden border border-gray-700/50">
-                <img
-                  src={productImageUrl}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          )}
           {activePages.map((page) => {
             const existingLink = affiliateLinks.find(
               (link) => link.landing_page?.id === page.id

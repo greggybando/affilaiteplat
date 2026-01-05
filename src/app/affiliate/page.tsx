@@ -105,7 +105,6 @@ export default async function PortalPage() {
             products={products}
             affiliateLinks={affiliateLinks}
             affiliateId={affiliate.id}
-            productImageUrl={process.env.NEXT_PUBLIC_AFFILIATE_PRODUCT_IMAGE}
           />
         </section>
     </main>
