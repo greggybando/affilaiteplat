@@ -433,6 +433,20 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
   const [loadingAttachments, setLoadingAttachments] = useState<Record<string, boolean>>({})
   const [editing, setEditing] = useState<{ type: 'category' | 'section' | 'video', categoryId?: string, sectionId?: number, videoId?: string } | null>(null)
   const [editValues, setEditValues] = useState<any>({})
+  const [categoriesList, setCategoriesList] = useState<Category[]>(categories || [])
+  const [sectionsList, setSectionsList] = useState<Record<string, Module[]>>({})
+
+  // Update lists when props change
+  useEffect(() => {
+    if (categories) {
+      setCategoriesList(categories)
+      const sectionsMap: Record<string, Module[]> = {}
+      categories.forEach(cat => {
+        sectionsMap[cat.id] = cat.sections
+      })
+      setSectionsList(sectionsMap)
+    }
+  }, [categories])
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => {
