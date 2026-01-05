@@ -274,7 +274,8 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
                 })()}
               </div>
 
-                {/* Attachments Section */}
+              {/* Attachments Section */}
+              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 p-4 mt-4">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold text-slate-300">Attachments</h4>
