@@ -77,9 +77,9 @@ export async function GET(request: NextRequest) {
     // Fake earnings for top 4 (in cents)
     const fakeEarnings = [
       8784800, // Rank 1: $87,848
-      6500000, // Rank 2: $65,000
-      4500000, // Rank 3: $45,000
-      3000000, // Rank 4: $30,000
+      2764800, // Rank 2: $27,648
+      2129800, // Rank 3: $21,298
+      903300,  // Rank 4: $9,033
     ]
 
     // Format data
