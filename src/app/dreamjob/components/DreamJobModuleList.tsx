@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Paperclip, X, Download } from 'lucide-react'
+import { Paperclip, X, Download, Save, Loader2 } from 'lucide-react'
 
 interface Video {
   id: string
@@ -41,6 +41,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
   const [videoTitles, setVideoTitles] = useState<Record<string, string>>({})
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({})
+  const [savingNotes, setSavingNotes] = useState<Record<string, boolean>>({})
   const [attachments, setAttachments] = useState<Record<string, any[]>>({})
   const [loadingAttachments, setLoadingAttachments] = useState<Record<string, boolean>>({})
 
@@ -62,6 +63,46 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
 
   const handleNotesChange = (videoId: string, newNotes: string) => {
     setNotes(prev => ({ ...prev, [videoId]: newNotes }))
+  }
+
+  const fetchNotes = async (videoId: string) => {
+    try {
+      const res = await fetch(`/api/courses/video-notes?videoId=${videoId}&courseType=dreamjob`)
+      const data = await res.json()
+      if (res.ok && data.notes !== undefined) {
+        setNotes(prev => ({ ...prev, [videoId]: data.notes || '' }))
+      }
+    } catch (error) {
+      console.error('Error fetching notes:', error)
+    }
+  }
+
+  const saveNotes = async (videoId: string) => {
+    if (!isAdmin) return
+    
+    setSavingNotes(prev => ({ ...prev, [videoId]: true }))
+    try {
+      const res = await fetch('/api/courses/video-notes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoId,
+          courseType: 'dreamjob',
+          notes: notes[videoId] || ''
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        // Notes saved successfully
+      } else {
+        alert('Failed to save notes: ' + (data.error || 'Unknown error'))
+      }
+    } catch (error) {
+      console.error('Error saving notes:', error)
+      alert('Failed to save notes')
+    } finally {
+      setSavingNotes(prev => ({ ...prev, [videoId]: false }))
+    }
   }
 
   const fetchAttachments = async (videoId: string) => {
@@ -141,10 +182,11 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
     return attachments[video.id] || []
   }
 
-  // Fetch attachments when video is selected
+  // Fetch attachments and notes when video is selected
   useEffect(() => {
     if (selectedVideo?.video?.id) {
       fetchAttachments(selectedVideo.video.id)
+      fetchNotes(selectedVideo.video.id)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVideo?.video?.id])
@@ -266,28 +308,50 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
                     <>
                       <div className="flex items-center justify-between p-4">
                         <h3 className="text-sm font-semibold text-slate-300">Notes</h3>
-                        {hasNotes && (
-                          <button
-                            onClick={() => setNotesExpanded(prev => ({ ...prev, [selectedVideo.video.id]: !isExpanded }))}
-                            className="text-xs text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1"
-                          >
-                            {isExpanded ? (
-                              <>
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                </svg>
-                                Collapse
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                                Expand
-                              </>
-                            )}
-                          </button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {isAdmin && (
+                            <button
+                              onClick={() => saveNotes(selectedVideo.video.id)}
+                              disabled={savingNotes[selectedVideo.video.id]}
+                              className="text-xs px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-800 text-white rounded-lg transition-colors flex items-center gap-1.5"
+                              title="Save notes"
+                            >
+                              {savingNotes[selectedVideo.video.id] ? (
+                                <>
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                  Saving...
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="w-3 h-3" />
+                                  Save
+                                </>
+                              )}
+                            </button>
+                          )}
+                          {hasNotes && (
+                            <button
+                              onClick={() => setNotesExpanded(prev => ({ ...prev, [selectedVideo.video.id]: !isExpanded }))}
+                              className="text-xs text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1"
+                            >
+                              {isExpanded ? (
+                                <>
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                  Collapse
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                  Expand
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Notes Content */}
