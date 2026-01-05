@@ -95,6 +95,43 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Check if bucket exists, create if not
+    const { data: buckets } = await supabaseStorage.storage.listBuckets()
+    const courseFilesBucket = buckets?.find((b) => b.name === 'course-files')
+    
+    if (!courseFilesBucket) {
+      console.log('Creating course-files bucket...')
+      const { data: newBucket, error: createError } = await supabaseStorage.storage.createBucket('course-files', {
+        public: true,
+        fileSizeLimit: 52428800, // 50MB
+        allowedMimeTypes: [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-powerpoint',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'text/plain',
+          'text/csv',
+          'image/png',
+          'image/jpeg',
+          'image/gif',
+          'image/webp',
+          'application/zip',
+          'application/x-zip-compressed'
+        ]
+      })
+      
+      if (createError) {
+        console.error('Error creating bucket:', createError)
+        return NextResponse.json({ 
+          error: 'Storage bucket not configured. Please create a "course-files" bucket in Supabase Storage.' 
+        }, { status: 500 })
+      }
+      console.log('✅ Bucket created successfully')
+    }
+
     // Generate unique file path
     const timestamp = Date.now()
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
