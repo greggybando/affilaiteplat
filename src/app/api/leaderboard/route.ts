@@ -74,12 +74,21 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Fake earnings for top 4 (in cents)
+    const fakeEarnings = [
+      8784800, // Rank 1: $87,848
+      6500000, // Rank 2: $65,000
+      4500000, // Rank 3: $45,000
+      3000000, // Rank 4: $30,000
+    ]
+
     // Format data
     const formatted = statsData.map((stats: any, index: number) => {
       const affiliateData = affiliatesMap.get(stats.affiliate_id) || {}
       const totalSales = stats.paid_cents || 0
       const conversions = stats.total_conversions || 0
-      const earnings = stats.approved_cents || 0
+      // Use fake earnings for top 4, otherwise use real earnings
+      const earnings = index < 4 ? fakeEarnings[index] : (stats.approved_cents || 0)
 
       const result = {
         rank: index + 1,
