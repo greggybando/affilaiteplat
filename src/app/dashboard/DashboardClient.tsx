@@ -1914,6 +1914,30 @@ function ClassroomTab({
             ) : selectedWorld === 'dreamjob' ? (
               /* Dream Job Content */
               <div>
+                <div className="bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 mb-6 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-white">Course Progress</h2>
+                      <p className="text-[rgba(255,255,255,0.6)] text-sm">Complete all 8 modules to master the Dream Job method</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">0%</span>
+                      <p className="text-[rgba(255,255,255,0.5)] text-sm">Complete</p>
+                    </div>
+                  </div>
+                  <div className="w-full bg-[rgba(255,255,255,0.1)] rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500" 
+                      style={{ width: '0%' }}
+                    />
+                  </div>
+                </div>
+                <DreamJobModuleList 
+                  modules={dreamJobModules} 
+                  affiliate={affiliate}
+                />
+              </div>
+            ) : selectedWorld === 'affiliate' ? (
               /* Affiliate Content */
               <div>
                 <div className="bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 mb-6 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
