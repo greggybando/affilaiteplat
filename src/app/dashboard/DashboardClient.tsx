@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
@@ -219,6 +219,7 @@ const glowShadow = (shadows: string, glowIntensity: number) => {
 
 export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<'community' | 'classroom' | 'groupchat'>('community')
   const [isDMModalOpen, setIsDMModalOpen] = useState(false)
   const [isGroupChatOpen, setIsGroupChatOpen] = useState(false)
@@ -237,6 +238,15 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
     setInitialDM({ id: partnerId, name: partnerName || null, avatar: partnerAvatar ?? null })
     setIsDMModalOpen(true)
   }
+
+  // Auto-open DM when ?openDM=1 is in the URL (e.g., from floating button link)
+  useEffect(() => {
+    const open = searchParams.get('openDM')
+    if (open === '1') {
+      setInitialDM(null)
+      setIsDMModalOpen(true)
+    }
+  }, [searchParams])
 
 
   return (
