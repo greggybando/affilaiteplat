@@ -47,3 +47,4 @@ CREATE INDEX idx_course_videos_section ON course_videos(section_id);
 CREATE INDEX idx_course_videos_order ON course_videos(section_id, display_order);
 
 
+

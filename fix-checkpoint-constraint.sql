@@ -16,3 +16,4 @@ ALTER TABLE checkpoints ADD CONSTRAINT checkpoints_section_video_unique
 -- Note: NULLS NOT DISTINCT treats NULL values as equal for uniqueness
 -- So (section_id='abc', video_id=NULL) can only appear once
 
+

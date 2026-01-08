@@ -56,3 +56,4 @@ CREATE INDEX idx_referral_codes_affiliate ON referral_codes(affiliate_id);
 CREATE INDEX idx_referral_codes_code ON referral_codes(code);
 
 
+

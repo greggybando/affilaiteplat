@@ -41,3 +41,4 @@ CREATE POLICY "Service role full access to module unlocks"
 GRANT ALL ON user_module_unlocks TO service_role;
 GRANT SELECT ON user_module_unlocks TO authenticated;
 
+

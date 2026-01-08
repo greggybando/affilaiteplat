@@ -36,3 +36,4 @@ Run the migration file `drop-unique-affiliate-id-constraint.sql` in your Supabas
 - The API enforces a maximum of 3 chats per user
 - Error messages will no longer show the constraint violation
 
+

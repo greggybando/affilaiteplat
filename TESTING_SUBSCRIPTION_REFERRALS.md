@@ -234,3 +234,4 @@ AND period_start >= date_trunc('month', CURRENT_DATE);
   - `customer.subscription.updated` - Subscription updated (renewals, cancellations)
 
 
+

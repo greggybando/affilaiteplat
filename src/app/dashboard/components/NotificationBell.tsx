@@ -165,13 +165,13 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-[99999]" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+        className="relative p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-xl transition-colors"
         title="Notifications"
       >
-        <Bell className="w-5 h-5 text-slate-600" />
+        <Bell className="w-5 h-5 text-[rgba(255,255,255,0.8)]" />
         {unreadCount > 0 && (
           <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -180,14 +180,14 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 max-h-96 flex flex-col">
+        <div className="fixed w-80 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl shadow-2xl border border-[rgba(255,255,255,0.2)] max-h-96 flex flex-col" style={{ right: '16rem', top: '4rem', zIndex: 99999, backdropFilter: 'blur(20px)', boxShadow: '0 0 40px rgba(6,182,212,0.3), 0 8px 32px rgba(0,0,0,0.8)' }}>
           {/* Header */}
-          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+          <div className="p-3 border-b border-[rgba(255,255,255,0.1)] flex items-center justify-between bg-gradient-to-r from-[rgba(24,24,27,0.92)] to-[rgba(12,74,110,0.85)]">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-slate-900">Notifications</h3>
+              <h3 className="font-semibold text-white">Notifications</h3>
               {/* Real-time indicator */}
               <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full ${
-                useWebSocket ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
+                useWebSocket ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
               }`}>
                 {useWebSocket ? <Wifi className="w-2.5 h-2.5" /> : <WifiOff className="w-2.5 h-2.5" />}
                 <span>{useWebSocket ? 'Live' : 'Polling'}</span>
@@ -196,7 +196,7 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                className="text-sm text-cyan-400 hover:text-cyan-300 font-medium"
               >
                 Mark all read
               </button>
@@ -204,21 +204,21 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
           </div>
 
           {/* Notifications List */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto bg-slate-900/60">
             {loading ? (
-              <div className="p-8 text-center text-slate-500">Loading...</div>
+              <div className="p-8 text-center text-slate-400">Loading...</div>
             ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-slate-500">
+              <div className="p-8 text-center text-slate-400">
                 You're all caught up!
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-[rgba(255,255,255,0.1)]">
                 {notifications.map(notification => (
                   <button
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`w-full p-4 text-left hover:bg-slate-50 transition-colors ${
-                      !notification.read ? 'bg-blue-50/50' : ''
+                    className={`w-full p-4 text-left hover:bg-[rgba(255,255,255,0.05)] transition-colors ${
+                      !notification.read ? 'bg-cyan-500/10' : ''
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -226,23 +226,23 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
                         <img
                           src={notification.actor.avatar}
                           alt={notification.actor.name}
-                          className="w-8 h-8 rounded-full shrink-0"
+                          className="w-8 h-8 rounded-full shrink-0 border border-cyan-500/50"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-xs font-semibold shrink-0 border border-cyan-500/50">
                           {notification.actor.name[0]?.toUpperCase()}
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-900">
+                        <p className="text-sm text-white">
                           {getNotificationText(notification)}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-slate-400 mt-1">
                           {formatTime(notification.createdAt)}
                         </p>
                       </div>
                       {!notification.read && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-2" />
+                        <div className="w-2 h-2 bg-cyan-500 rounded-full shrink-0 mt-2" />
                       )}
                     </div>
                   </button>

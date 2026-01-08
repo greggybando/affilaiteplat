@@ -68,3 +68,4 @@ GRANT ALL ON user_video_unlocks TO service_role;
 -- 3. Video-level checkpoints gate the NEXT video in the section
 -- 4. Section-level checkpoints still gate the NEXT section (unchanged)
 
+

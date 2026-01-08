@@ -32,3 +32,4 @@ END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_group_chat_participants_unique 
 ON group_chat_participants(affiliate_id, group_chat_id);
 
+

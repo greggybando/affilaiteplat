@@ -182,3 +182,4 @@ const progress = data.progress // { completed: 3, total: 6 }
 4. ⏳ Integrate into course UI (steps above)
 5. ⏳ Test end-to-end flow
 
+

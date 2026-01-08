@@ -24,3 +24,4 @@ CREATE INDEX IF NOT EXISTS idx_group_chat_messages_created_at ON group_chat_mess
 
 
 
+

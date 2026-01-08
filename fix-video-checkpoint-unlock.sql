@@ -119,3 +119,4 @@ $$ LANGUAGE plpgsql;
 -- Verify the function was created
 SELECT 'is_section_unlocked function updated successfully' as status;
 
+

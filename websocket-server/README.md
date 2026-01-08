@@ -50,3 +50,4 @@ Railway auto-scales. For 10k users:
 - Estimated: ~$20-50/month on Railway
 - Compare to: $500+/month for Vercel WebSockets at this scale
 
+
