@@ -1,17 +1,16 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns'
-import { DMModal } from './components/DMModal'
 import { NotificationsDropdown } from './components/NotificationsDropdown'
 import { AdminDropdown } from '@/components/AdminDropdown'
 import { GroupChatModal } from './components/GroupChatModal'
 import { CommunityFeed } from './components/CommunityFeed'
 import { NotificationBell } from './components/NotificationBell'
-import { InboxDropdown } from './components/InboxDropdown'
+import { DMInbox } from './components/DMInbox'
 import { GroupChatTab } from './components/GroupChatTab'
 import { MindsetModuleList } from '../mindset/components/MindsetModuleList'
 import { DreamJobModuleList } from '../dreamjob/components/DreamJobModuleList'
@@ -219,34 +218,15 @@ const glowShadow = (shadows: string, glowIntensity: number) => {
 
 export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<'community' | 'classroom' | 'groupchat'>('community')
-  const [isDMModalOpen, setIsDMModalOpen] = useState(false)
   const [isGroupChatOpen, setIsGroupChatOpen] = useState(false)
-  const [initialDM, setInitialDM] = useState<{ id: string; name?: string | null; avatar?: string | null } | null>(null)
   const [glowIntensity, setGlowIntensity] = useState(50) // Default 50%
   const [classroomResetKey, setClassroomResetKey] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
-
-
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
   }
-
-  const openDM = (partnerId: string, partnerName?: string, partnerAvatar?: string | null) => {
-    setInitialDM({ id: partnerId, name: partnerName || null, avatar: partnerAvatar ?? null })
-    setIsDMModalOpen(true)
-  }
-
-  // Auto-open DM when ?openDM=1 is in the URL (e.g., from floating button link)
-  useEffect(() => {
-    const open = searchParams.get('openDM')
-    if (open === '1') {
-      setInitialDM(null)
-      setIsDMModalOpen(true)
-    }
-  }, [searchParams])
 
 
   return (
@@ -413,17 +393,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                 )}
               </div>
               <NotificationBell currentUserId={affiliate.id} />
-              {/* DM Button */}
-              <button
-                onClick={() => {
-                  setInitialDM(null)
-                  setIsDMModalOpen(true)
-                }}
-                className="p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-xl transition-colors"
-                title="Direct Messages"
-              >
-                <MessageCircle className="w-5 h-5 text-[rgba(255,255,255,0.8)]" />
-              </button>
+              <DMInbox currentUserId={affiliate.id} />
               <Link
                 href="/settings"
                 className="p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-xl transition-colors"
@@ -522,28 +492,13 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden min-h-0 w-full" style={{ display: 'flex', flex: 1, minWidth: 0, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         {activeTab === 'community' ? (
-          <CommunityTab affiliate={affiliate} activeTab={activeTab} setActiveTab={setActiveTab} setIsDMModalOpen={setIsDMModalOpen} setIsGroupChatOpen={setIsGroupChatOpen} glowIntensity={glowIntensity} searchQuery={searchQuery} />
+          <CommunityTab affiliate={affiliate} activeTab={activeTab} setActiveTab={setActiveTab} setIsGroupChatOpen={setIsGroupChatOpen} glowIntensity={glowIntensity} searchQuery={searchQuery} />
         ) : activeTab === 'classroom' ? (
-          <ClassroomTab key={classroomResetKey} affiliate={affiliate} activeTab={activeTab} setActiveTab={setActiveTab} setIsDMModalOpen={setIsDMModalOpen} glowIntensity={glowIntensity} />
+          <ClassroomTab key={classroomResetKey} affiliate={affiliate} activeTab={activeTab} setActiveTab={setActiveTab} glowIntensity={glowIntensity} />
         ) : (
-          <GroupChatTab affiliate={affiliate} setIsDMModalOpen={setIsDMModalOpen} glowIntensity={glowIntensity} />
+          <GroupChatTab affiliate={affiliate} glowIntensity={glowIntensity} />
         )}
       </div>
-
-      {/* DM Modal */}
-      <DMModal
-        isOpen={isDMModalOpen}
-        onClose={() => {
-          setIsDMModalOpen(false)
-          setInitialDM(null)
-        }}
-        currentUserId={affiliate.id}
-        currentUserName={affiliate.avatar_name || affiliate.name}
-        currentUserAvatar={affiliate.avatar_url}
-        initialPartnerId={initialDM?.id || null}
-        initialPartnerName={initialDM?.name || null}
-        initialPartnerAvatar={initialDM?.avatar || null}
-      />
 
       {/* Group Chat Modal */}
       <GroupChatModal
@@ -561,7 +516,6 @@ function CommunityTab({
   affiliate, 
   activeTab, 
   setActiveTab,
-  setIsDMModalOpen,
   setIsGroupChatOpen,
   glowIntensity,
   searchQuery
@@ -569,7 +523,6 @@ function CommunityTab({
   affiliate: DashboardClientProps['affiliate']
   activeTab: 'community' | 'classroom' | 'groupchat'
   setActiveTab: (tab: 'community' | 'classroom' | 'groupchat') => void
-  setIsDMModalOpen: (open: boolean) => void
   setIsGroupChatOpen: (open: boolean) => void
   glowIntensity: number
   searchQuery: string
@@ -1169,13 +1122,6 @@ function CommunityTab({
             </div>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => setIsDMModalOpen(true)}
-              className="flex-1 px-3 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1.5 text-white"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              Messages
-            </button>
             <Link
               href="/settings"
               className="px-3 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl transition-colors flex items-center justify-center"
@@ -1291,13 +1237,11 @@ function ClassroomTab({
   affiliate, 
   activeTab, 
   setActiveTab,
-  setIsDMModalOpen,
   glowIntensity
 }: { 
   affiliate: DashboardClientProps['affiliate']
   activeTab: 'community' | 'classroom' | 'groupchat'
   setActiveTab: (tab: 'community' | 'classroom' | 'groupchat') => void
-  setIsDMModalOpen: (open: boolean) => void
   glowIntensity: number
 }) {
   const [selectedWorld, setSelectedWorld] = useState<'mindset' | 'dreamjob' | 'affiliate' | null>(null)
@@ -1663,13 +1607,6 @@ function ClassroomTab({
             </div>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => setIsDMModalOpen(true)}
-              className="flex-1 px-3 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1.5 text-white"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              Messages
-            </button>
             <Link
               href="/settings"
               className="px-3 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl transition-colors flex items-center justify-center"
