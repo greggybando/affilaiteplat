@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAffiliate } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// Force rebuild - fixes type errors
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
