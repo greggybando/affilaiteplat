@@ -412,7 +412,8 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                   </div>
                 )}
               </div>
-              {/* DM Button - Next to Notification Bell */}
+              <NotificationBell currentUserId={affiliate.id} />
+              {/* DM Button - Between Bell and Settings */}
               <button
                 onClick={() => {
                   setInitialDM(null)
@@ -423,7 +424,6 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
               >
                 <MessageCircle className="w-5 h-5 text-[rgba(255,255,255,0.85)]" />
               </button>
-              <NotificationBell currentUserId={affiliate.id} />
               <Link
                 href="/settings"
                 className="p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-xl transition-colors"
