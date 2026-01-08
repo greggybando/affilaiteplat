@@ -233,7 +233,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   return (
     <div className="w-screen h-screen flex flex-col overflow-hidden" style={{ width: '100vw', height: '100vh', maxWidth: '100vw', boxSizing: 'border-box', backgroundColor: '#0f0f1a', position: 'relative' }}>
       {/* Header with Glass Morphism */}
-      <header className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[20px] border-b border-[rgba(255,255,255,0.1)] shrink-0 relative" style={{ backdropFilter: 'blur(20px)' }}>
+      <header className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[20px] border-b border-[rgba(255,255,255,0.1)] shrink-0 relative" style={{ backdropFilter: 'blur(20px)', zIndex: 50000 }}>
         <div className="px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -266,7 +266,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                 <p className="text-[rgba(255,255,255,0.6)] text-xs">change your life, get rich, develop strong friendships, have some f****** FUN</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 relative" style={{ zIndex: 99998 }}>
               {/* Admin Button - Only show for admins */}
               {isAdmin && (
                 <div className="relative px-5 py-3 bg-gradient-to-br from-purple-900/40 via-pink-900/30 to-purple-800/40 rounded-xl border border-purple-500/40 backdrop-blur-sm overflow-hidden">

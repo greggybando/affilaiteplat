@@ -165,7 +165,7 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
   }
 
   return (
-    <div className="relative z-[99999]" ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef} style={{ zIndex: 999999 }}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-xl transition-colors"
@@ -180,7 +180,7 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
       </button>
 
       {isOpen && (
-        <div className="fixed w-80 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl shadow-2xl border border-[rgba(255,255,255,0.2)] max-h-96 flex flex-col" style={{ right: '16rem', top: '4rem', zIndex: 99999, backdropFilter: 'blur(20px)', boxShadow: '0 0 40px rgba(6,182,212,0.3), 0 8px 32px rgba(0,0,0,0.8)' }}>
+        <div className="fixed w-80 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl shadow-2xl border border-[rgba(255,255,255,0.2)] max-h-96 flex flex-col" style={{ right: '6rem', top: '4rem', zIndex: 999999, backdropFilter: 'blur(20px)', boxShadow: '0 0 40px rgba(6,182,212,0.3), 0 8px 32px rgba(0,0,0,0.8)' }}>
           {/* Header */}
           <div className="p-3 border-b border-[rgba(255,255,255,0.1)] flex items-center justify-between bg-gradient-to-r from-[rgba(24,24,27,0.92)] to-[rgba(12,74,110,0.85)]">
             <div className="flex items-center gap-2">
