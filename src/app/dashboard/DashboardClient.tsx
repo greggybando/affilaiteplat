@@ -368,27 +368,6 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                 />
                 <span className="text-white text-xs w-8 text-right">{glowIntensity}%</span>
               </div>
-              {/* DM BUTTON - GUARANTEED VISIBLE WITH INLINE STYLES */}
-              <button
-                onClick={() => setIsDMModalOpen(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 12px',
-                  background: 'linear-gradient(to right, #0891b2, #06b6d4)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  border: '2px solid #22d3ee',
-                  cursor: 'pointer',
-                  boxShadow: '0 0 20px rgba(34, 211, 238, 0.5)'
-                }}
-              >
-                <MessageCircle style={{ width: '16px', height: '16px' }} />
-                <span>DMs</span>
-              </button>
               {/* Search Bar */}
               <div className="relative hidden md:block">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[rgba(255,255,255,0.6)]" />
@@ -433,21 +412,17 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                   </div>
                 )}
               </div>
-              {/* DM Quick Open + Inbox & Notifications */}
+              {/* DM Button - Next to Notification Bell */}
               <button
                 onClick={() => {
                   setInitialDM(null)
                   setIsDMModalOpen(true)
                 }}
-                className="p-2 rounded-xl transition-all hover:scale-105 bg-[rgba(34,211,238,0.18)] border border-[rgba(34,211,238,0.7)] shadow-[0_0_14px_rgba(34,211,238,0.7)]"
+                className="p-2 rounded-xl transition-all hover:scale-105 hover:bg-[rgba(255,255,255,0.1)]"
                 title="Direct Messages"
               >
-                <MessageCircle className="w-5 h-5 text-[rgba(34,211,238,0.95)]" />
+                <MessageCircle className="w-5 h-5 text-[rgba(255,255,255,0.85)]" />
               </button>
-              <InboxDropdown
-                currentUserId={affiliate.id}
-                onOpenDM={(partnerId, partnerName, partnerAvatar) => openDM(partnerId, partnerName || undefined, partnerAvatar)}
-              />
               <NotificationBell currentUserId={affiliate.id} />
               <Link
                 href="/settings"
@@ -554,31 +529,6 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
           <GroupChatTab affiliate={affiliate} setIsDMModalOpen={setIsDMModalOpen} glowIntensity={glowIntensity} />
         )}
       </div>
-
-      {/* Fixed header DM button fallback (top-right) */}
-      <button
-        onClick={() => {
-          setInitialDM(null)
-          setIsDMModalOpen(true)
-        }}
-        className="fixed top-4 right-28 z-50 p-2 rounded-full bg-[rgba(34,211,238,0.9)] shadow-[0_10px_25px_rgba(34,211,238,0.45)] hover:scale-105 transition-transform border border-[rgba(255,255,255,0.3)]"
-        title="Direct Messages"
-      >
-        <MessageCircle className="w-5 h-5 text-slate-900" />
-      </button>
-
-      {/* Fallback floating DM button (always visible) */}
-      <button
-        onClick={() => {
-          setInitialDM(null)
-          setIsDMModalOpen(true)
-        }}
-        className="fixed bottom-6 right-6 md:right-8 md:bottom-8 z-50 p-3 rounded-full bg-[rgba(34,211,238,0.9)] shadow-[0_10px_25px_rgba(34,211,238,0.45)] hover:scale-105 transition-transform"
-        title="Direct Messages"
-      >
-        <MessageCircle className="w-6 h-6 text-slate-900" />
-      </button>
-
 
       {/* DM Modal */}
       <DMModal
