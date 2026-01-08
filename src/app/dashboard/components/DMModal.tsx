@@ -1,9 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X, Send, Search } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { useConversation, useInbox, useSendMessage } from '@/hooks/useDM'
 
 interface DMModalProps {
   isOpen: boolean
@@ -16,6 +14,25 @@ interface DMModalProps {
   initialPartnerAvatar?: string | null
 }
 
+interface Message {
+  id: string
+  sender_id: string
+  content: string
+  created_at: string
+}
+
+interface Conversation {
+  conversation_id: string
+  other_user: {
+    id: string
+    name: string
+    avatar: string | null
+  }
+  last_message: string
+  updated_at: string
+  unread_count: number
+}
+
 export function DMModal({
   isOpen,
   onClose,
@@ -26,151 +43,145 @@ export function DMModal({
   initialPartnerName,
   initialPartnerAvatar
 }: DMModalProps) {
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
-  const [sendError, setSendError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [sending, setSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { data: inbox, isLoading: inboxLoading } = useInbox(isOpen)
-  const { data: conversationData, isLoading: convoLoading } = useConversation(selectedUserId, isOpen)
-  const sendMessage = useSendMessage(selectedUserId)
-
-  // Set default selected user when opening
+  // Fetch inbox
   useEffect(() => {
     if (!isOpen) return
-    if (initialPartnerId) {
-      setSelectedUserId(initialPartnerId)
-      return
-    }
-    if (inbox && inbox.length > 0) {
-      setSelectedUserId(inbox[0].other_user.id)
-    }
-  }, [isOpen, inbox, initialPartnerId])
+    fetchInbox()
+    const interval = setInterval(fetchInbox, 10000)
+    return () => clearInterval(interval)
+  }, [isOpen])
 
-  // Scroll on new messages
+  // Fetch messages when user selected
+  useEffect(() => {
+    if (!isOpen || !selectedUserId) return
+    fetchMessages()
+    const interval = setInterval(fetchMessages, 3000)
+    return () => clearInterval(interval)
+  }, [isOpen, selectedUserId])
+
+  // Auto-select initial partner
+  useEffect(() => {
+    if (isOpen && initialPartnerId) {
+      setSelectedUserId(initialPartnerId)
+    }
+  }, [isOpen, initialPartnerId])
+
+  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [conversationData?.messages])
+  }, [messages])
 
-  const messages = useMemo(
-    () => conversationData?.messages || [],
-    [conversationData]
-  )
-
-  const filteredConversations = useMemo(() => {
-    const list = inbox || []
-    if (!searchQuery.trim()) return list
-    const q = searchQuery.toLowerCase()
-    return list.filter((c: any) =>
-      c.other_user.name.toLowerCase().includes(q) ||
-      (c.last_message || '').toLowerCase().includes(q)
-    )
-  }, [inbox, searchQuery])
-
-  const selectedPartner = useMemo(() => {
-    if (selectedUserId) {
-      const fromInbox = inbox?.find((c: any) => c.other_user.id === selectedUserId)
-      if (fromInbox) return fromInbox.other_user
-      return {
-        id: selectedUserId,
-        name: initialPartnerName || 'New chat',
-        avatar: initialPartnerAvatar || null
-      }
-    }
-    return null
-  }, [selectedUserId, inbox, initialPartnerName, initialPartnerAvatar])
-
-  const handleSend = async () => {
-    if (!selectedUserId || !newMessage.trim()) return
-    setSendError(null)
-    const content = newMessage.trim()
-    setNewMessage('')
+  async function fetchInbox() {
     try {
-      await sendMessage.mutateAsync(content)
-    } catch (err: any) {
-      setSendError(err?.message || 'Failed to send')
-      setNewMessage(content) // restore text for retry
+      const res = await fetch('/api/messages/inbox')
+      if (res.ok) {
+        const data = await res.json()
+        setConversations(data.conversations || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch inbox:', err)
     }
   }
+
+  async function fetchMessages() {
+    if (!selectedUserId) return
+    try {
+      const res = await fetch(`/api/messages/${selectedUserId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setMessages(data.messages || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch messages:', err)
+    }
+  }
+
+  async function handleSend() {
+    if (!selectedUserId || !newMessage.trim() || sending) return
+    setSending(true)
+    const content = newMessage.trim()
+    setNewMessage('')
+
+    try {
+      const res = await fetch(`/api/messages/${selectedUserId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      })
+      if (res.ok) {
+        fetchMessages()
+        fetchInbox()
+      } else {
+        setNewMessage(content) // restore on error
+      }
+    } catch (err) {
+      console.error('Failed to send:', err)
+      setNewMessage(content)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const selectedPartner = selectedUserId
+    ? conversations.find(c => c.other_user.id === selectedUserId)?.other_user || 
+      { id: selectedUserId, name: initialPartnerName || 'User', avatar: initialPartnerAvatar || null }
+    : null
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl h-[80vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+      <div className="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col border border-slate-700">
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-600 to-slate-700 px-6 py-4 flex items-center justify-between border-b-2 border-slate-800">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-white">Direct Messages</h2>
-            <div className="text-xs text-slate-200">Polling every 3s</div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-white hover:text-amber-300 transition-colors"
-          >
+        <div className="bg-gradient-to-r from-cyan-600 to-cyan-500 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <h2 className="text-xl font-bold text-white">Direct Messages</h2>
+          <button onClick={onClose} className="text-white hover:text-slate-200 transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
           {/* Conversations List */}
-          <div className="w-80 border-r border-slate-300 flex flex-col">
-            <div className="p-4 border-b border-slate-300">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search conversations..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border-2 border-slate-400 rounded bg-white text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
+          <div className="w-72 border-r border-slate-700 flex flex-col bg-slate-900/50">
+            <div className="p-3 border-b border-slate-700">
+              <div className="text-sm font-semibold text-white mb-2">Conversations</div>
             </div>
             <div className="flex-1 overflow-y-auto">
-              {inboxLoading ? (
-                <div className="p-4 text-center text-slate-600 text-sm">Loading...</div>
-              ) : filteredConversations.length === 0 ? (
-                <div className="p-4 text-center text-slate-600 text-sm">
-                  {searchQuery ? 'No conversations found' : 'No conversations yet'}
-                </div>
+              {conversations.length === 0 ? (
+                <div className="p-4 text-center text-slate-400 text-sm">No conversations yet</div>
               ) : (
-                filteredConversations.map((conv: any) => (
+                conversations.map((conv) => (
                   <button
                     key={conv.conversation_id}
                     onClick={() => setSelectedUserId(conv.other_user.id)}
-                    className={`w-full p-4 border-b border-slate-200 hover:bg-slate-100 transition-colors text-left ${
-                      selectedUserId === conv.other_user.id ? 'bg-amber-50 border-l-4 border-l-amber-500' : ''
+                    className={`w-full p-3 flex items-center gap-3 text-left hover:bg-slate-700/50 transition-colors border-b border-slate-700/50 ${
+                      selectedUserId === conv.other_user.id ? 'bg-cyan-600/20' : ''
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center text-white font-semibold">
                       {conv.other_user.avatar ? (
-                        <img
-                          src={conv.other_user.avatar}
-                          alt={conv.other_user.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
+                        <img src={conv.other_user.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white font-semibold">
-                          {conv.other_user.name[0]}
-                        </div>
+                        conv.other_user.name[0]?.toUpperCase() || '?'
                       )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="font-semibold text-slate-800 truncate">{conv.other_user.name}</div>
-                          {conv.unread_count > 0 && (
-                            <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                              {conv.unread_count}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-slate-600 truncate">{conv.last_message}</div>
-                        <div className="text-xs text-slate-500 mt-1">
-                          {conv.updated_at ? formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true }) : ''}
-                        </div>
-                      </div>
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-white truncate">{conv.other_user.name}</div>
+                      <div className="text-xs text-slate-400 truncate">{conv.last_message}</div>
+                    </div>
+                    {conv.unread_count > 0 && (
+                      <span className="w-5 h-5 bg-cyan-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                        {conv.unread_count}
+                      </span>
+                    )}
                   </button>
                 ))
               )}
@@ -178,115 +189,53 @@ export function DMModal({
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col bg-slate-800">
             {selectedUserId && selectedPartner ? (
               <>
-                {/* Messages Header */}
-                <div className="px-6 py-4 border-b border-slate-300 bg-slate-50">
-                  <div className="flex items-center gap-3">
-                    {selectedPartner.avatar ? (
-                      <img
-                        src={selectedPartner.avatar}
-                        alt={selectedPartner.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white font-semibold">
-                        {selectedPartner.name[0]}
-                      </div>
-                    )}
-                    <div>
-                      <div className="font-semibold text-slate-800">{selectedPartner.name}</div>
-                      <div className="text-xs text-slate-600">Updates every 3s</div>
-                    </div>
-                  </div>
+                {/* Chat Header */}
+                <div className="px-4 py-3 border-b border-slate-700 bg-slate-900/50">
+                  <div className="font-semibold text-white">{selectedPartner.name}</div>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
-                  {convoLoading ? (
-                    <div className="text-slate-600 text-sm">Loading messages...</div>
-                  ) : messages.length === 0 ? (
-                    <div className="text-slate-500 text-sm">No messages yet.</div>
-                  ) : (
-                    messages.map((msg: any) => {
-                      const isOwn = msg.sender_id === currentUserId
-                      const sender = isOwn
-                        ? { name: currentUserName, avatar: currentUserAvatar }
-                        : { name: selectedPartner.name, avatar: selectedPartner.avatar }
-                      return (
-                        <div
-                          key={msg.id}
-                          className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}
-                        >
-                          {!isOwn && (
-                            sender.avatar ? (
-                              <img
-                                src={sender.avatar}
-                                alt={sender.name}
-                                className="w-8 h-8 rounded-full object-cover shrink-0"
-                              />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                                {sender.name[0]}
-                              </div>
-                            )
-                          )}
-                          <div className={`max-w-[70%] ${isOwn ? 'order-2' : ''}`}>
-                            <div className={`rounded-lg px-4 py-2 ${
-                              isOwn
-                                ? 'bg-amber-500 text-white'
-                                : 'bg-white border-2 border-slate-300 text-slate-800'
-                            }`}>
-                              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                            </div>
-                            <div className={`text-xs text-slate-500 mt-1 ${isOwn ? 'text-right' : ''}`}>
-                              {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
-                            </div>
-                          </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {messages.map((msg) => {
+                    const isOwn = msg.sender_id === currentUserId
+                    return (
+                      <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                          isOwn ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-white'
+                        }`}>
+                          <p className="text-sm">{msg.content}</p>
                         </div>
-                      )
-                    })
-                  )}
+                      </div>
+                    )
+                  })}
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Error */}
-                {sendError && (
-                  <div className="px-6 py-2 text-sm text-red-600 bg-red-50 border-t border-red-200">
-                    {sendError}
-                  </div>
-                )}
-
-                {/* Message Input */}
-                <div className="px-6 py-4 border-t border-slate-300 bg-white">
+                {/* Input */}
+                <div className="p-4 border-t border-slate-700 bg-slate-900/50">
                   <div className="flex gap-3">
-                    <textarea
+                    <input
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSend()
-                        }
-                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
                       placeholder="Type a message..."
-                      rows={2}
-                      className="flex-1 px-4 py-2 border-2 border-slate-400 rounded-lg bg-white text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     />
                     <button
                       onClick={handleSend}
-                      disabled={!newMessage.trim() || sendMessage.isPending}
-                      className="px-6 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+                      disabled={!newMessage.trim() || sending}
+                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-600 text-white font-semibold rounded-xl transition-colors flex items-center gap-2"
                     >
                       <Send className="w-4 h-4" />
-                      Send
                     </button>
                   </div>
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-slate-600">
+              <div className="flex-1 flex items-center justify-center text-slate-400">
                 Select a conversation to start messaging
               </div>
             )}
@@ -296,4 +245,3 @@ export function DMModal({
     </div>
   )
 }
-
