@@ -125,26 +125,46 @@ export function ForumClient({ userAvatarUrl, userAvatarName }: ForumClientProps)
     if (!newPost.trim()) return
     setIsPosting(true)
     
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/community/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: '',
+          content: newPost,
+          category: 'Discussion'
+        })
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || errorData.message || 'Failed to create post')
+      }
+
+      const data = await res.json()
       const post: Post = {
-        id: Date.now().toString(),
+        id: data.post.id,
         author: {
-          name: userAvatarName,
-          avatar: userAvatarUrl,
+          name: data.post.user.name,
+          avatar: data.post.user.avatar,
           avatarGradient: 'from-cyan-500 to-blue-600',
           badge: 'Module 1',
           badgeType: 'module'
         },
-        content: newPost,
+        content: data.post.content,
         timestamp: 'Just now',
-        likes: 0,
-        replies: 0,
+        likes: data.post.likesCount || 0,
+        replies: data.post.repliesCount || 0,
         liked: false
       }
       setPosts([post, ...posts])
       setNewPost('')
+    } catch (error: any) {
+      console.error('Error creating post:', error)
+      alert(error?.message || 'Failed to create post. Please try again.')
+    } finally {
       setIsPosting(false)
-    }, 500)
+    }
   }
 
   return (

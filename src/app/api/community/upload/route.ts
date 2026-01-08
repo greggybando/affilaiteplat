@@ -16,20 +16,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Check file size (2MB max)
-    if (file.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File size must be less than 2MB' }, { status: 400 })
+    // Check file type
+    const isImage = file.type.startsWith('image/')
+    const isVideo = file.type.startsWith('video/')
+
+    if (!isImage && !isVideo) {
+      return NextResponse.json({ error: 'File must be an image or video' }, { status: 400 })
     }
 
-    // Check file type
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
+    // Check file size based on type
+    if (isImage) {
+      // Images: 10MB max
+      const maxImageSize = 10 * 1024 * 1024
+      if (file.size > maxImageSize) {
+        return NextResponse.json({ 
+          error: `Image size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds 10MB limit` 
+        }, { status: 400 })
+      }
+    } else if (isVideo) {
+      // Videos: 50MB max
+      const maxVideoSize = 50 * 1024 * 1024
+      if (file.size > maxVideoSize) {
+        return NextResponse.json({ 
+          error: `Video size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds 50MB limit` 
+        }, { status: 400 })
+      }
     }
 
     // Generate unique filename
     const fileExt = file.name.split('.').pop()
+    const fileType = isImage ? 'images' : 'videos'
     const fileName = `${affiliate.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-    const filePath = `community/${fileName}`
+    const filePath = `community/${fileType}/${fileName}`
 
     // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer()
@@ -52,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: publicUrl })
   } catch (error: any) {
-    console.error('Error uploading image:', error)
+    console.error('Error uploading file:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

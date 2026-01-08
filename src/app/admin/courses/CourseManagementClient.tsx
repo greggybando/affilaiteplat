@@ -3,6 +3,23 @@
 import { useState, useEffect } from 'react'
 import { Save, Plus, Trash2, Edit2, GripVertical, X, Check, Youtube, Video, Paperclip } from 'lucide-react'
 import { AttachmentManager } from './components/AttachmentManager'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface Video {
   id?: string
@@ -39,15 +56,429 @@ interface CourseManagementClientProps {
   }
 }
 
+// Sortable Video Item
+function SortableVideoItem({ 
+  video, 
+  catIndex, 
+  secIndex, 
+  vidIndex,
+  editing,
+  editValues,
+  setEditValues,
+  startEdit,
+  saveEdit,
+  setEditing,
+  deleteItem,
+  setAttachmentManager,
+  extractYouTubeId,
+  extractLoomId
+}: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `video-${catIndex}-${secIndex}-${vidIndex}` })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const isEditing = editing?.type === 'video' && editing.categoryIndex === catIndex && editing.sectionIndex === secIndex && editing.videoIndex === vidIndex
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="bg-slate-600/50 rounded border border-slate-500 p-2 flex items-center gap-2"
+    >
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+        <GripVertical className="w-3 h-3 text-slate-500" />
+      </div>
+      {isEditing ? (
+        <div className="flex-1 flex items-center gap-2">
+          <input
+            type="text"
+            value={editValues.title}
+            onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
+            className="flex-1 px-2 py-1 bg-slate-500 text-white rounded border border-slate-400 text-sm"
+            placeholder="Video title"
+          />
+          <input
+            type="text"
+            value={editValues.youtube_id || ''}
+            onChange={(e) => {
+              const value = e.target.value
+              const id = extractYouTubeId(value)
+              setEditValues({ ...editValues, youtube_id: id || value })
+            }}
+            className="flex-1 px-2 py-1 bg-slate-500 text-white rounded border border-slate-400 text-sm"
+            placeholder="YouTube URL or ID"
+          />
+          <input
+            type="text"
+            value={editValues.loom_id || ''}
+            onChange={(e) => {
+              const value = e.target.value
+              const id = extractLoomId(value)
+              setEditValues({ ...editValues, loom_id: id || value })
+            }}
+            className="flex-1 px-2 py-1 bg-slate-500 text-white rounded border border-slate-400 text-sm"
+            placeholder="Loom URL or ID"
+          />
+          <button onClick={saveEdit} className="p-1 text-emerald-400">
+            <Check className="w-3 h-3" />
+          </button>
+          <button onClick={() => setEditing(null)} className="p-1 text-red-400">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="flex-1 flex items-center gap-2">
+            <span className="text-sm text-slate-300">{video.title}</span>
+            {video.youtube_id && <Youtube className="w-3 h-3 text-red-500" />}
+            {video.loom_id && <Video className="w-3 h-3 text-purple-500" />}
+          </div>
+          <button onClick={() => startEdit('video', catIndex, secIndex, vidIndex)} className="p-1 text-slate-400 hover:text-white">
+            <Edit2 className="w-3 h-3" />
+          </button>
+          {video.id && (
+            <button 
+              onClick={() => setAttachmentManager({ parentId: video.id!, parentType: 'video_id' })} 
+              className="p-1 text-slate-400 hover:text-blue-400"
+              title="Manage attachments"
+            >
+              <Paperclip className="w-3 h-3" />
+            </button>
+          )}
+          <button onClick={() => deleteItem('video', catIndex, secIndex, vidIndex)} className="p-1 text-slate-400 hover:text-red-400">
+            <Trash2 className="w-3 h-3" />
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
+// Sortable Section Item
+function SortableSectionItem({
+  section,
+  catIndex,
+  secIndex,
+  editing,
+  editValues,
+  setEditValues,
+  startEdit,
+  saveEdit,
+  setEditing,
+  deleteItem,
+  addVideo,
+  setAttachmentManager,
+  onVideoReorder,
+  extractYouTubeId,
+  extractLoomId
+}: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `section-${catIndex}-${secIndex}` })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const isEditing = editing?.type === 'section' && editing.categoryIndex === catIndex && editing.sectionIndex === secIndex
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
+  const handleVideoDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const activeId = String(active.id)
+    const overId = String(over.id)
+    
+    const activeIndex = parseInt(activeId.split('-')[3])
+    const overIndex = parseInt(overId.split('-')[3])
+    
+    onVideoReorder(catIndex, secIndex, activeIndex, overIndex)
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="bg-slate-700/50 rounded border border-slate-600 p-3"
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+          <GripVertical className="w-4 h-4 text-slate-500" />
+        </div>
+        {isEditing ? (
+          <div className="flex-1 flex items-center gap-2">
+            <input
+              type="text"
+              value={editValues.title}
+              onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
+              className="flex-1 px-3 py-1 bg-slate-600 text-white rounded border border-slate-500"
+              placeholder="Section title"
+            />
+            <input
+              type="text"
+              value={editValues.description || ''}
+              onChange={(e) => setEditValues({ ...editValues, description: e.target.value })}
+              className="flex-1 px-3 py-1 bg-slate-600 text-white rounded border border-slate-500"
+              placeholder="Description"
+            />
+            <button onClick={saveEdit} className="p-1 text-emerald-400">
+              <Check className="w-4 h-4" />
+            </button>
+            <button onClick={() => setEditing(null)} className="p-1 text-red-400">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <h3 className="text-lg font-medium text-slate-200 flex-1">{section.title}</h3>
+            <button onClick={() => startEdit('section', catIndex, secIndex)} className="p-1 text-slate-400 hover:text-white">
+              <Edit2 className="w-3 h-3" />
+            </button>
+            {section.id && (
+              <button 
+                onClick={() => setAttachmentManager({ parentId: section.id!, parentType: 'section_id' })} 
+                className="p-1 text-slate-400 hover:text-blue-400"
+                title="Manage attachments"
+              >
+                <Paperclip className="w-3 h-3" />
+              </button>
+            )}
+            <button onClick={() => addVideo(catIndex, secIndex)} className="p-1 text-slate-400 hover:text-emerald-400">
+              <Plus className="w-3 h-3" />
+            </button>
+            <button onClick={() => deleteItem('section', catIndex, secIndex)} className="p-1 text-slate-400 hover:text-red-400">
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="ml-6 space-y-1">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleVideoDragEnd}
+        >
+          <SortableContext
+            items={section.videos.map((_: any, idx: number) => `video-${catIndex}-${secIndex}-${idx}`)}
+            strategy={verticalListSortingStrategy}
+          >
+            {section.videos.map((video: Video, vidIndex: number) => (
+              <SortableVideoItem
+                key={video.video_id}
+                video={video}
+                catIndex={catIndex}
+                secIndex={secIndex}
+                vidIndex={vidIndex}
+                editing={editing}
+                editValues={editValues}
+                setEditValues={setEditValues}
+                startEdit={startEdit}
+                saveEdit={saveEdit}
+                setEditing={setEditing}
+                deleteItem={deleteItem}
+                setAttachmentManager={setAttachmentManager}
+                extractYouTubeId={extractYouTubeId}
+                extractLoomId={extractLoomId}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+      </div>
+    </div>
+  )
+}
+
+// Sortable Category Item
+function SortableCategoryItem({
+  category,
+  catIndex,
+  editing,
+  editValues,
+  setEditValues,
+  startEdit,
+  saveEdit,
+  setEditing,
+  deleteItem,
+  addSection,
+  addVideo,
+  setAttachmentManager,
+  onSectionReorder,
+  onVideoReorder,
+  extractYouTubeId,
+  extractLoomId
+}: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `category-${catIndex}` })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const isEditing = editing?.type === 'category' && editing.categoryIndex === catIndex
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
+  const handleSectionDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const activeId = String(active.id)
+    const overId = String(over.id)
+    
+    const activeIndex = parseInt(activeId.split('-')[2])
+    const overIndex = parseInt(overId.split('-')[2])
+    
+    onSectionReorder(catIndex, activeIndex, overIndex)
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="bg-slate-800 rounded-lg border border-slate-700 p-4"
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+          <GripVertical className="w-5 h-5 text-slate-500" />
+        </div>
+        {isEditing ? (
+          <div className="flex-1 flex items-center gap-2">
+            <input
+              type="text"
+              value={editValues.title}
+              onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
+              className="flex-1 px-3 py-1 bg-slate-700 text-white rounded border border-slate-600"
+              placeholder="Category title"
+            />
+            <label className="flex items-center gap-2 text-slate-300 text-sm">
+              <input
+                type="checkbox"
+                checked={editValues.is_start_here}
+                onChange={(e) => setEditValues({ ...editValues, is_start_here: e.target.checked })}
+                className="rounded"
+              />
+              Start Here
+            </label>
+            <button onClick={saveEdit} className="p-1 text-emerald-400 hover:text-emerald-300">
+              <Check className="w-4 h-4" />
+            </button>
+            <button onClick={() => setEditing(null)} className="p-1 text-red-400 hover:text-red-300">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <h2 className="text-xl font-semibold text-white flex-1">
+              {category.title}
+              {category.is_start_here && <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">START HERE</span>}
+            </h2>
+            <button onClick={() => startEdit('category', catIndex)} className="p-2 text-slate-400 hover:text-white">
+              <Edit2 className="w-4 h-4" />
+            </button>
+            {category.id && (
+              <button 
+                onClick={() => setAttachmentManager({ parentId: category.id!, parentType: 'category_id' })} 
+                className="p-2 text-slate-400 hover:text-blue-400"
+                title="Manage attachments"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
+            )}
+            <button onClick={() => addSection(catIndex)} className="p-2 text-slate-400 hover:text-emerald-400">
+              <Plus className="w-4 h-4" />
+            </button>
+            <button onClick={() => deleteItem('category', catIndex)} className="p-2 text-slate-400 hover:text-red-400">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="ml-8 space-y-2">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleSectionDragEnd}
+        >
+          <SortableContext
+            items={category.sections.map((_: any, idx: number) => `section-${catIndex}-${idx}`)}
+            strategy={verticalListSortingStrategy}
+          >
+            {category.sections.map((section: Section, secIndex: number) => (
+              <SortableSectionItem
+                key={section.id || section.section_id}
+                section={section}
+                catIndex={catIndex}
+                secIndex={secIndex}
+                editing={editing}
+                editValues={editValues}
+                setEditValues={setEditValues}
+                startEdit={startEdit}
+                saveEdit={saveEdit}
+                setEditing={setEditing}
+                deleteItem={deleteItem}
+                addVideo={addVideo}
+                setAttachmentManager={setAttachmentManager}
+                onVideoReorder={onVideoReorder}
+                extractYouTubeId={extractYouTubeId}
+                extractLoomId={extractLoomId}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+      </div>
+    </div>
+  )
+}
+
 export function CourseManagementClient({ affiliate }: CourseManagementClientProps) {
   const [courseType, setCourseType] = useState<'mindset' | 'dreamjob' | 'affiliate'>('mindset')
   const [structure, setStructure] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [draggedItem, setDraggedItem] = useState<{ type: 'category' | 'section' | 'video', categoryIndex?: number, sectionIndex?: number, videoIndex?: number } | null>(null)
   const [editing, setEditing] = useState<{ type: 'category' | 'section' | 'video', categoryIndex: number, sectionIndex?: number, videoIndex?: number } | null>(null)
   const [editValues, setEditValues] = useState<any>({})
   const [attachmentManager, setAttachmentManager] = useState<{ parentId: string, parentType: 'video_id' | 'section_id' | 'category_id' } | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
 
   // Extract YouTube ID from URL
   const extractYouTubeId = (url: string): string => {
@@ -77,7 +508,6 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
       if (data.structure) {
         setStructure(data.structure)
       } else {
-        // If no structure in DB, load from hardcoded (for initial setup)
         setStructure([])
       }
     } catch (error) {
@@ -98,6 +528,8 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
       const data = await res.json()
       if (data.success) {
         alert('Course structure saved successfully!')
+        // Reload to get fresh data with IDs
+        await loadStructure()
       } else {
         alert('Error saving: ' + (data.error || 'Unknown error'))
       }
@@ -109,40 +541,77 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
     }
   }
 
-  const handleDragStart = (type: 'category' | 'section' | 'video', categoryIndex: number, sectionIndex?: number, videoIndex?: number) => {
-    setDraggedItem({ type, categoryIndex, sectionIndex, videoIndex })
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-  }
-
-  const handleDrop = (targetType: 'category' | 'section' | 'video', targetCategoryIndex: number, targetSectionIndex?: number, targetVideoIndex?: number) => {
-    if (!draggedItem) return
-
-    const newStructure = [...structure]
-
-    if (draggedItem.type === 'category' && targetType === 'category') {
-      // Reorder categories
-      const [moved] = newStructure.splice(draggedItem.categoryIndex!, 1)
-      newStructure.splice(targetCategoryIndex, 0, moved)
-      newStructure.forEach((cat, idx) => { cat.display_order = idx })
-    } else if (draggedItem.type === 'section' && targetType === 'section' && draggedItem.categoryIndex === targetCategoryIndex) {
-      // Reorder sections within same category
-      const category = newStructure[targetCategoryIndex]
-      const [moved] = category.sections.splice(draggedItem.sectionIndex!, 1)
-      category.sections.splice(targetSectionIndex!, 0, moved)
-      category.sections.forEach((sec, idx) => { sec.display_order = idx })
-    } else if (draggedItem.type === 'video' && targetType === 'video' && draggedItem.categoryIndex === targetCategoryIndex && draggedItem.sectionIndex === targetSectionIndex) {
-      // Reorder videos within same section
-      const section = newStructure[targetCategoryIndex].sections[targetSectionIndex!]
-      const [moved] = section.videos.splice(draggedItem.videoIndex!, 1)
-      section.videos.splice(targetVideoIndex!, 0, moved)
-      section.videos.forEach((vid, idx) => { vid.display_order = idx })
+  // Auto-save structure (silent, no alerts)
+  const autoSaveStructure = async (newStructure: Category[]) => {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/admin/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseType, structure: newStructure })
+      })
+      const data = await res.json()
+      if (!data.success) {
+        console.error('Auto-save failed:', data.error)
+      } else {
+        console.log('Auto-saved successfully')
+      }
+    } catch (error) {
+      console.error('Auto-save error:', error)
+    } finally {
+      setSaving(false)
     }
+  }
 
-    setStructure(newStructure)
-    setDraggedItem(null)
+  // Handle category reordering
+  const handleCategoryDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const activeId = String(active.id)
+    const overId = String(over.id)
+    
+    const activeIndex = parseInt(activeId.split('-')[1])
+    const overIndex = parseInt(overId.split('-')[1])
+    
+    setStructure(prev => {
+      const newStructure = arrayMove(prev, activeIndex, overIndex)
+      newStructure.forEach((cat, idx) => { cat.display_order = idx })
+      // Auto-save after reorder
+      autoSaveStructure(newStructure)
+      return newStructure
+    })
+  }
+
+  // Handle section reordering within a category
+  const handleSectionReorder = (catIndex: number, fromIndex: number, toIndex: number) => {
+    setStructure(prev => {
+      const newStructure = [...prev]
+      const category = { ...newStructure[catIndex] }
+      category.sections = arrayMove(category.sections, fromIndex, toIndex)
+      category.sections.forEach((sec, idx) => { sec.display_order = idx })
+      newStructure[catIndex] = category
+      // Auto-save after reorder
+      autoSaveStructure(newStructure)
+      return newStructure
+    })
+  }
+
+  // Handle video reordering within a section
+  const handleVideoReorder = (catIndex: number, secIndex: number, fromIndex: number, toIndex: number) => {
+    setStructure(prev => {
+      const newStructure = [...prev]
+      const category = { ...newStructure[catIndex] }
+      category.sections = [...category.sections]
+      const section = { ...category.sections[secIndex] }
+      section.videos = arrayMove(section.videos, fromIndex, toIndex)
+      section.videos.forEach((vid, idx) => { vid.display_order = idx })
+      category.sections[secIndex] = section
+      newStructure[catIndex] = category
+      // Auto-save after reorder
+      autoSaveStructure(newStructure)
+      return newStructure
+    })
   }
 
   const startEdit = (type: 'category' | 'section' | 'video', categoryIndex: number, sectionIndex?: number, videoIndex?: number) => {
@@ -261,232 +730,65 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
               <option value="dreamjob">Dream Job</option>
               <option value="affiliate">Affiliate</option>
             </select>
+            {saving && (
+              <span className="text-sm text-emerald-400 flex items-center gap-2">
+                <div className="w-3 h-3 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                Auto-saving...
+              </span>
+            )}
             <button
               onClick={saveStructure}
               disabled={saving}
               className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? 'Saving...' : 'Save All'}
             </button>
           </div>
         </div>
 
-        <div className="space-y-4">
-          {structure.map((category, catIndex) => (
-            <div
-              key={category.id || category.category_id}
-              draggable
-              onDragStart={() => handleDragStart('category', catIndex)}
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop('category', catIndex)}
-              className="bg-slate-800 rounded-lg border border-slate-700 p-4 cursor-move"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <GripVertical className="w-5 h-5 text-slate-500" />
-                {editing?.type === 'category' && editing.categoryIndex === catIndex ? (
-                  <div className="flex-1 flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={editValues.title}
-                      onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
-                      className="flex-1 px-3 py-1 bg-slate-700 text-white rounded border border-slate-600"
-                      placeholder="Category title"
-                    />
-                    <label className="flex items-center gap-2 text-slate-300 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={editValues.is_start_here}
-                        onChange={(e) => setEditValues({ ...editValues, is_start_here: e.target.checked })}
-                        className="rounded"
-                      />
-                      Start Here
-                    </label>
-                    <button onClick={saveEdit} className="p-1 text-emerald-400 hover:text-emerald-300">
-                      <Check className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => setEditing(null)} className="p-1 text-red-400 hover:text-red-300">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <h2 className="text-xl font-semibold text-white flex-1">
-                      {category.title}
-                      {category.is_start_here && <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">START HERE</span>}
-                    </h2>
-                    <button onClick={() => startEdit('category', catIndex)} className="p-2 text-slate-400 hover:text-white">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    {category.id && (
-                      <button 
-                        onClick={() => setAttachmentManager({ parentId: category.id!, parentType: 'category_id' })} 
-                        className="p-2 text-slate-400 hover:text-blue-400"
-                        title="Manage attachments"
-                      >
-                        <Paperclip className="w-4 h-4" />
-                      </button>
-                    )}
-                    <button onClick={() => addSection(catIndex)} className="p-2 text-slate-400 hover:text-emerald-400">
-                      <Plus className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => deleteItem('category', catIndex)} className="p-2 text-slate-400 hover:text-red-400">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <div className="ml-8 space-y-2">
-                {category.sections.map((section, secIndex) => (
-                  <div
-                    key={section.id || section.section_id}
-                    draggable
-                    onDragStart={() => handleDragStart('section', catIndex, secIndex)}
-                    onDragOver={handleDragOver}
-                    onDrop={() => handleDrop('section', catIndex, secIndex)}
-                    className="bg-slate-700/50 rounded border border-slate-600 p-3 cursor-move"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <GripVertical className="w-4 h-4 text-slate-500" />
-                      {editing?.type === 'section' && editing.categoryIndex === catIndex && editing.sectionIndex === secIndex ? (
-                        <div className="flex-1 flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editValues.title}
-                            onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
-                            className="flex-1 px-3 py-1 bg-slate-600 text-white rounded border border-slate-500"
-                            placeholder="Section title"
-                          />
-                          <input
-                            type="text"
-                            value={editValues.description || ''}
-                            onChange={(e) => setEditValues({ ...editValues, description: e.target.value })}
-                            className="flex-1 px-3 py-1 bg-slate-600 text-white rounded border border-slate-500"
-                            placeholder="Description"
-                          />
-                          <button onClick={saveEdit} className="p-1 text-emerald-400">
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => setEditing(null)} className="p-1 text-red-400">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <h3 className="text-lg font-medium text-slate-200 flex-1">{section.title}</h3>
-                          <button onClick={() => startEdit('section', catIndex, secIndex)} className="p-1 text-slate-400 hover:text-white">
-                            <Edit2 className="w-3 h-3" />
-                          </button>
-                          {section.id && (
-                            <button 
-                              onClick={() => setAttachmentManager({ parentId: section.id!, parentType: 'section_id' })} 
-                              className="p-1 text-slate-400 hover:text-blue-400"
-                              title="Manage attachments"
-                            >
-                              <Paperclip className="w-3 h-3" />
-                            </button>
-                          )}
-                          <button onClick={() => addVideo(catIndex, secIndex)} className="p-1 text-slate-400 hover:text-emerald-400">
-                            <Plus className="w-3 h-3" />
-                          </button>
-                          <button onClick={() => deleteItem('section', catIndex, secIndex)} className="p-1 text-slate-400 hover:text-red-400">
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="ml-6 space-y-1">
-                      {section.videos.map((video, vidIndex) => (
-                        <div
-                          key={video.video_id}
-                          draggable
-                          onDragStart={() => handleDragStart('video', catIndex, secIndex, vidIndex)}
-                          onDragOver={handleDragOver}
-                          onDrop={() => handleDrop('video', catIndex, secIndex, vidIndex)}
-                          className="bg-slate-600/50 rounded border border-slate-500 p-2 cursor-move flex items-center gap-2"
-                        >
-                          <GripVertical className="w-3 h-3 text-slate-500" />
-                          {editing?.type === 'video' && editing.categoryIndex === catIndex && editing.sectionIndex === secIndex && editing.videoIndex === vidIndex ? (
-                            <div className="flex-1 flex items-center gap-2">
-                              <input
-                                type="text"
-                                value={editValues.title}
-                                onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
-                                className="flex-1 px-2 py-1 bg-slate-500 text-white rounded border border-slate-400 text-sm"
-                                placeholder="Video title"
-                              />
-                              <input
-                                type="text"
-                                value={editValues.youtube_id || ''}
-                                onChange={(e) => {
-                                  const value = e.target.value
-                                  const id = extractYouTubeId(value)
-                                  setEditValues({ ...editValues, youtube_id: id || value })
-                                }}
-                                className="flex-1 px-2 py-1 bg-slate-500 text-white rounded border border-slate-400 text-sm"
-                                placeholder="YouTube URL or ID"
-                              />
-                              <input
-                                type="text"
-                                value={editValues.loom_id || ''}
-                                onChange={(e) => {
-                                  const value = e.target.value
-                                  const id = extractLoomId(value)
-                                  setEditValues({ ...editValues, loom_id: id || value })
-                                }}
-                                className="flex-1 px-2 py-1 bg-slate-500 text-white rounded border border-slate-400 text-sm"
-                                placeholder="Loom URL or ID"
-                              />
-                              <button onClick={saveEdit} className="p-1 text-emerald-400">
-                                <Check className="w-3 h-3" />
-                              </button>
-                              <button onClick={() => setEditing(null)} className="p-1 text-red-400">
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex-1 flex items-center gap-2">
-                                <span className="text-sm text-slate-300">{video.title}</span>
-                                {video.youtube_id && <Youtube className="w-3 h-3 text-red-500" />}
-                                {video.loom_id && <Video className="w-3 h-3 text-purple-500" />}
-                              </div>
-                              <button onClick={() => startEdit('video', catIndex, secIndex, vidIndex)} className="p-1 text-slate-400 hover:text-white">
-                                <Edit2 className="w-3 h-3" />
-                              </button>
-                              {video.id && (
-                                <button 
-                                  onClick={() => setAttachmentManager({ parentId: video.id!, parentType: 'video_id' })} 
-                                  className="p-1 text-slate-400 hover:text-blue-400"
-                                  title="Manage attachments"
-                                >
-                                  <Paperclip className="w-3 h-3" />
-                                </button>
-                              )}
-                              <button onClick={() => deleteItem('video', catIndex, secIndex, vidIndex)} className="p-1 text-slate-400 hover:text-red-400">
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          <button
-            onClick={addCategory}
-            className="w-full py-4 border-2 border-dashed border-slate-600 rounded-lg text-slate-400 hover:text-white hover:border-slate-500 flex items-center justify-center gap-2"
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleCategoryDragEnd}
+        >
+          <SortableContext
+            items={structure.map((_, idx) => `category-${idx}`)}
+            strategy={verticalListSortingStrategy}
           >
-            <Plus className="w-5 h-5" />
-            Add Category
-          </button>
-        </div>
+            <div className="space-y-4">
+              {structure.map((category, catIndex) => (
+                <SortableCategoryItem
+                  key={category.id || category.category_id}
+                  category={category}
+                  catIndex={catIndex}
+                  editing={editing}
+                  editValues={editValues}
+                  setEditValues={setEditValues}
+                  startEdit={startEdit}
+                  saveEdit={saveEdit}
+                  setEditing={setEditing}
+                  deleteItem={deleteItem}
+                  addSection={addSection}
+                  addVideo={addVideo}
+                  setAttachmentManager={setAttachmentManager}
+                  onSectionReorder={handleSectionReorder}
+                  onVideoReorder={handleVideoReorder}
+                  extractYouTubeId={extractYouTubeId}
+                  extractLoomId={extractLoomId}
+                />
+              ))}
+
+              <button
+                onClick={addCategory}
+                className="w-full py-4 border-2 border-dashed border-slate-600 rounded-lg text-slate-400 hover:text-white hover:border-slate-500 flex items-center justify-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Add Category
+              </button>
+            </div>
+          </SortableContext>
+        </DndContext>
       </div>
 
       {/* Attachment Manager Modal */}

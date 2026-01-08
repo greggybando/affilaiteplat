@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Edit2, Save, X, Download, Loader2, Check, GripVertical } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { Edit2, Save, X, Download, Loader2, Check, GripVertical, FileCheck, Lock, CheckCircle } from 'lucide-react'
+import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 import {
   DndContext,
   closestCenter,
@@ -22,6 +23,7 @@ import { CSS } from '@dnd-kit/utilities'
 
 interface Video {
   id: string
+  uuid?: string
   title: string
   loomId?: string
   youtubeId?: string
@@ -29,6 +31,7 @@ interface Video {
 
 interface Module {
   id: number
+  uuid?: string  // Section UUID for checkpoint linking
   number: number
   title: string
   description: string
@@ -57,6 +60,507 @@ interface MindsetModuleListProps {
     role?: string
     [key: string]: any
   }
+  onDataChange?: () => void
+}
+
+// Sortable Video Component
+function SortableVideoItem({
+  video,
+  index,
+  sectionId,
+  isAdmin,
+  isSelected,
+  isLast,
+  displayTitle,
+  onVideoSelect,
+  isLocked = false,
+  hasCheckpoint = false
+}: {
+  video: Video
+  index: number
+  sectionId: number
+  isAdmin: boolean
+  isSelected: boolean
+  isLast: boolean
+  displayTitle: string
+  onVideoSelect: (moduleId: number, video: Video) => void
+  isLocked?: boolean
+  hasCheckpoint?: boolean
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `video-${sectionId}-${video.id}` })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : (isLocked ? 0.5 : 1),
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        borderColor: 'rgba(34,211,238,0.05)',
+        background: isLocked 
+          ? 'rgba(15,15,18,0.4)'
+          : isSelected 
+            ? 'rgba(25,25,30,0.5)'
+            : 'rgba(20,20,25,0.3)',
+        borderLeft: isSelected ? '2px solid rgba(34,211,238,0.4)' : '2px solid transparent',
+        boxShadow: isSelected ? 'inset 0 0 15px rgba(34,211,238,0.08)' : 'none'
+      }}
+      className="w-full px-4 py-1.5 pl-12 flex items-center gap-2.5 transition-all border-b last:border-b-0"
+      onMouseEnter={(e) => {
+        if (!isSelected && !isLocked) {
+          e.currentTarget.style.background = 'rgba(25,25,30,0.4)'
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isSelected && !isLocked) {
+          e.currentTarget.style.background = 'rgba(20,20,25,0.3)'
+        }
+      }}
+    >
+      {isAdmin && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1 -ml-1"
+          style={{ color: 'rgba(90,90,95,0.3)' }}
+          title="Drag to reorder"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="w-2.5 h-2.5" />
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => !isLocked && onVideoSelect(sectionId, video)}
+        className={`flex-1 text-left ${isLocked ? 'cursor-not-allowed' : ''}`}
+        disabled={isLocked}
+      >
+        <div className="text-xs leading-relaxed flex items-center gap-2" style={{
+          color: isLocked 
+            ? 'rgba(100,100,105,0.6)' 
+            : isSelected 
+              ? 'rgba(34,211,238,0.9)' 
+              : 'rgba(170,170,175,0.85)',
+          textShadow: isSelected && !isLocked ? '0 0 6px rgba(34,211,238,0.2)' : 'none',
+          fontWeight: isSelected ? 500 : 400
+        }}>
+          {isLocked && (
+            <Lock className="w-3 h-3" style={{ color: 'rgba(100,100,105,0.6)' }} />
+          )}
+          <span style={{ 
+            color: isLocked ? 'rgba(80,80,85,0.5)' : 'rgba(110,110,115,0.5)',
+            marginRight: '8px',
+            fontSize: '10px',
+            fontVariantNumeric: 'tabular-nums'
+          }}>{index + 1}.</span>
+          {displayTitle}
+          {hasCheckpoint && !isLocked && (
+            <span title="Has checkpoint">
+              <FileCheck className="w-3 h-3 ml-1" style={{ color: 'rgba(168,85,247,0.7)' }} />
+            </span>
+          )}
+        </div>
+      </button>
+    </div>
+  )
+}
+
+// Sortable Video List Component
+function SortableVideoList({
+  videos,
+  sectionId,
+  categoryId,
+  isAdmin,
+  selectedVideo,
+  getVideoTitle,
+  onVideoSelect,
+  onVideosUpdate,
+  section,
+  isVideoUnlocked,
+  getVideoCheckpoint
+}: {
+  videos: Video[]
+  sectionId: number
+  categoryId?: string
+  isAdmin: boolean
+  selectedVideo: { moduleId: number, video: Video } | null
+  getVideoTitle: (video: Video) => string
+  onVideoSelect: (moduleId: number, video: Video) => void
+  onVideosUpdate?: (categoryId: string, sectionId: number, newVideos: Video[]) => void
+  section?: Module
+  isVideoUnlocked?: (section: Module, video: Video, videoIndex: number) => boolean
+  getVideoCheckpoint?: (videoId: string) => any
+}) {
+  const [videosList, setVideosList] = useState<Video[]>(videos)
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  useEffect(() => {
+    setVideosList(videos)
+  }, [videos])
+
+  const handleVideoDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = videosList.findIndex(v => `video-${sectionId}-${v.id}` === active.id)
+    const newIndex = videosList.findIndex(v => `video-${sectionId}-${v.id}` === over.id)
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newVideos = arrayMove(videosList, oldIndex, newIndex)
+      setVideosList(newVideos)
+      
+      // Update parent section's videos array immediately
+      if (onVideosUpdate && categoryId) {
+        onVideosUpdate(categoryId, sectionId, newVideos)
+      }
+
+      // Save new order to API (autosave without page reload)
+      try {
+        const res = await fetch('/api/admin/courses/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'video',
+            courseType: 'mindset',
+            categoryId: categoryId,
+            sectionId: sectionId,
+            items: newVideos.map((video, index) => ({
+              id: video.id,
+              sortOrder: index
+            }))
+          })
+        })
+        
+        if (!res.ok) {
+          // Revert on error
+          setVideosList(videos)
+          if (onVideosUpdate && categoryId) {
+            onVideosUpdate(categoryId, sectionId, videos)
+          }
+          alert('Error saving video order')
+        }
+        // Success - state already updated, changes are live immediately
+      } catch (error) {
+        console.error('Error reordering videos:', error)
+        // Revert on error
+        setVideosList(videos)
+        if (onVideosUpdate && categoryId) {
+          onVideosUpdate(categoryId, sectionId, videos)
+        }
+        alert('Error saving video order')
+      }
+    }
+  }
+
+  return (
+    <div className="bg-slate-900/50 border-t border-slate-700/30">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleVideoDragEnd}
+      >
+        <SortableContext
+          items={videosList.map(v => `video-${sectionId}-${v.id}`)}
+          strategy={verticalListSortingStrategy}
+        >
+          {videosList.map((video, index) => {
+            const isSelected = selectedVideo?.moduleId === sectionId && selectedVideo?.video.id === video.id
+            const displayTitle = getVideoTitle(video)
+            const isLast = index === videosList.length - 1
+            // Check if video is locked (only if section and functions are provided)
+            const isLocked = section && isVideoUnlocked && !isAdmin
+              ? !isVideoUnlocked(section, video, index)
+              : false
+            const hasCheckpoint = getVideoCheckpoint ? !!getVideoCheckpoint(video.id) : false
+            return (
+              <SortableVideoItem
+                key={video.id}
+                video={video}
+                index={index}
+                sectionId={sectionId}
+                isAdmin={isAdmin}
+                isSelected={isSelected}
+                isLast={isLast}
+                displayTitle={displayTitle}
+                onVideoSelect={onVideoSelect}
+                isLocked={isLocked}
+                hasCheckpoint={hasCheckpoint}
+              />
+            )
+          })}
+        </SortableContext>
+      </DndContext>
+    </div>
+  )
+}
+
+// Sortable Section List Component
+function SortableSectionList({
+  sections,
+  categoryId,
+  isAdmin,
+  editing,
+  expandedSections,
+  selectedVideo,
+  getVideoTitle,
+  onToggleSection,
+  onEdit,
+  onVideoSelect,
+  onEditVideo,
+  onSectionDragEnd,
+  onVideosUpdate,
+  checkpoints,
+  isModuleUnlocked,
+  isVideoUnlocked,
+  getVideoCheckpoint
+}: {
+  sections: Module[]
+  categoryId: string
+  isAdmin: boolean
+  editing: { type: 'category' | 'section' | 'video', categoryId?: string, sectionId?: number, videoId?: string } | null
+  expandedSections: Set<number>
+  selectedVideo: { moduleId: number, video: Video } | null
+  getVideoTitle: (video: Video) => string
+  onToggleSection: (id: number) => void
+  onEdit: (type: 'category' | 'section' | 'video', categoryId?: string, sectionId?: number, videoId?: string) => void
+  onVideoSelect: (moduleId: number, video: Video) => void
+  onEditVideo: (categoryId: string, sectionId: number, video: Video) => void
+  onSectionDragEnd: (event: DragEndEvent, categoryId: string) => void
+  sectionsList: Record<string, Module[]>
+  onVideosUpdate?: (categoryId: string, sectionId: number, newVideos: Video[]) => void
+  checkpoints: Record<number, any>
+  isModuleUnlocked: (moduleId: number) => boolean
+  isVideoUnlocked?: (section: Module, video: Video, videoIndex: number) => boolean
+  getVideoCheckpoint?: (videoId: string) => any
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  return (
+    <div className="bg-slate-900/30">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={(e) => onSectionDragEnd(e, categoryId)}
+      >
+        <SortableContext
+          items={sections.map(s => s.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {sections.map((section) => {
+            const isSectionExpanded = expandedSections.has(section.id)
+            const isLocked = !isModuleUnlocked(section.id)
+            
+            return (
+                  <SortableSectionItem
+                    key={section.id}
+                    section={section}
+                    categoryId={categoryId}
+                    isAdmin={isAdmin}
+                    isSectionExpanded={isSectionExpanded}
+                    editing={editing}
+                    expandedSections={expandedSections}
+                    selectedVideo={selectedVideo}
+                    getVideoTitle={getVideoTitle}
+                    onToggleSection={onToggleSection}
+                    onEdit={onEdit}
+                    onVideoSelect={onVideoSelect}
+                    onEditVideo={onEditVideo}
+                    onVideosUpdate={onVideosUpdate}
+                    checkpoint={checkpoints[section.id]}
+                    isLocked={isLocked}
+                    isVideoUnlocked={isVideoUnlocked}
+                    getVideoCheckpoint={getVideoCheckpoint}
+                  />
+            )
+          })}
+        </SortableContext>
+      </DndContext>
+    </div>
+  )
+}
+
+// Sortable Section Component
+function SortableSectionItem({
+  section,
+  categoryId,
+  isAdmin,
+  isSectionExpanded,
+  editing,
+  expandedSections,
+  selectedVideo,
+  getVideoTitle,
+  onToggleSection,
+  onEdit,
+  onVideoSelect,
+  onEditVideo,
+  onVideosUpdate,
+  checkpoint,
+  isLocked,
+  isVideoUnlocked,
+  getVideoCheckpoint
+}: {
+  section: Module
+  categoryId: string
+  isAdmin: boolean
+  isSectionExpanded: boolean
+  editing: { type: 'category' | 'section' | 'video', categoryId?: string, sectionId?: number, videoId?: string } | null
+  expandedSections: Set<number>
+  selectedVideo: { moduleId: number, video: Video } | null
+  getVideoTitle: (video: Video) => string
+  onToggleSection: (id: number) => void
+  onEdit: (type: 'category' | 'section' | 'video', categoryId?: string, sectionId?: number, videoId?: string) => void
+  onVideoSelect: (moduleId: number, video: Video) => void
+  onEditVideo: (categoryId: string, sectionId: number, video: Video) => void
+  onVideosUpdate?: (categoryId: string, sectionId: number, newVideos: Video[]) => void
+  checkpoint?: any
+  isLocked?: boolean
+  isVideoUnlocked?: (section: Module, video: Video, videoIndex: number) => boolean
+  getVideoCheckpoint?: (videoId: string) => any
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: section.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        borderColor: 'rgba(34,211,238,0.1)'
+      }}
+      className="border-b last:border-b-0"
+    >
+      {/* Section Header */}
+      <div className={`w-full px-4 py-2 pl-8 flex items-center gap-2.5 ${isLocked && !isAdmin ? 'opacity-50' : ''}`} style={{
+        background: 'rgba(20,20,25,0.5)',
+        position: 'relative'
+      }}>
+        <div className="absolute left-0 top-0 bottom-0 w-0.5" style={{
+          background: isLocked && !isAdmin 
+            ? 'linear-gradient(to bottom, rgba(100,100,100,0.4), rgba(80,80,80,0.5), rgba(100,100,100,0.4))'
+            : 'linear-gradient(to bottom, rgba(34,211,238,0.6), rgba(6,182,212,0.7), rgba(34,211,238,0.6))',
+          boxShadow: isLocked && !isAdmin ? 'none' : '0 0 6px rgba(34,211,238,0.4), 0 0 12px rgba(34,211,238,0.2)',
+          opacity: 0.8
+        }} />
+        {isAdmin && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 -ml-1"
+            style={{ color: 'rgba(100,100,105,0.3)' }}
+            title="Drag to reorder"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="w-3 h-3" />
+          </div>
+        )}
+        {/* Lock icon for locked sections */}
+        {isLocked && !isAdmin && (
+          <Lock className="w-4 h-4 text-slate-500 flex-shrink-0" />
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            if (isLocked && !isAdmin) {
+              // Show locked message
+              return
+            }
+            onToggleSection(section.id)
+          }}
+          onDoubleClick={() => isAdmin && !editing && onEdit('section', categoryId, section.id)}
+          className={`flex-1 flex items-center gap-2.5 text-left transition-all ${isLocked && !isAdmin ? 'cursor-not-allowed' : ''}`}
+          style={{ paddingLeft: '2px' }}
+        >
+          <svg
+            className="transition-transform duration-200"
+            style={{
+              width: '9px',
+              height: '9px',
+              color: isLocked && !isAdmin ? 'rgba(100,100,100,0.4)' : 'rgba(34,211,238,0.4)',
+              transform: isSectionExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+            }}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-medium truncate" style={{
+              color: isLocked && !isAdmin ? 'rgba(100,100,100,0.7)' : 'rgba(34,211,238,0.9)',
+              textShadow: isLocked && !isAdmin ? 'none' : '0 0 8px rgba(34,211,238,0.4), 0 0 15px rgba(34,211,238,0.2)',
+              letterSpacing: '0.01em',
+              fontWeight: 500
+            }}>
+              {section.title}
+              {isLocked && !isAdmin && <span className="ml-2 text-slate-500">(Locked)</span>}
+            </div>
+            <div className="text-[10px] mt-0.5" style={{
+              color: 'rgba(130,130,135,0.6)'
+            }}>{section.videos.length} lessons</div>
+          </div>
+        </button>
+      </div>
+
+      {/* Section Videos - hidden when locked (non-admin) */}
+      {isSectionExpanded && (!isLocked || isAdmin) && (
+        <>
+          <SortableVideoList
+            videos={section.videos}
+            sectionId={section.id}
+            categoryId={categoryId}
+            isAdmin={isAdmin}
+            selectedVideo={selectedVideo}
+            getVideoTitle={getVideoTitle}
+            onVideoSelect={onVideoSelect}
+            onVideosUpdate={onVideosUpdate}
+            section={section}
+            isVideoUnlocked={isVideoUnlocked}
+            getVideoCheckpoint={getVideoCheckpoint}
+          />
+        </>
+      )}
+      {/* Locked message */}
+      {isSectionExpanded && isLocked && !isAdmin && (
+        <div className="px-8 py-4 text-slate-500 text-sm flex items-center gap-2">
+          <Lock className="w-4 h-4" />
+          Complete the previous section's checkpoint to unlock this content.
+        </div>
+      )}
+    </div>
+  )
 }
 
 // Sortable Category Component
@@ -76,7 +580,14 @@ function SortableCategoryItem({
   onSaveEdit,
   onCancelEdit,
   onVideoSelect,
-  onEditVideo
+  onEditVideo,
+  onSectionDragEnd,
+  sectionsList,
+  onVideosUpdate,
+  checkpoints,
+  isModuleUnlocked,
+  isVideoUnlocked,
+  getVideoCheckpoint
 }: {
   category: Category
   isCategoryExpanded: boolean
@@ -94,6 +605,13 @@ function SortableCategoryItem({
   onCancelEdit: () => void
   onVideoSelect: (moduleId: number, video: Video) => void
   onEditVideo: (categoryId: string, sectionId: number, video: Video) => void
+  onSectionDragEnd: (event: DragEndEvent, categoryId: string) => void
+  sectionsList: Record<string, Module[]>
+  onVideosUpdate: (categoryId: string, sectionId: number, newVideos: Video[]) => void
+  checkpoints: Record<number, any>
+  isModuleUnlocked: (moduleId: number) => boolean
+  isVideoUnlocked?: (section: Module, video: Video, videoIndex: number) => boolean
+  getVideoCheckpoint?: (videoId: string) => any
 }) {
   const {
     attributes,
@@ -113,134 +631,100 @@ function SortableCategoryItem({
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className="border-b-2 border-slate-600/50 last:border-b-0"
+      style={{
+        ...style,
+        borderColor: 'rgba(34,211,238,0.15)'
+      }}
+      className="border-b last:border-b-0"
     >
       {/* Category Header */}
-      <div className={`w-full px-4 py-3 flex items-center gap-3 border-b border-slate-700/30 ${
-        category.isStartHere 
-          ? 'bg-gradient-to-r from-yellow-500/30 to-yellow-600/30 border-yellow-500/50' 
-          : 'bg-slate-900/40'
-      }`}>
+      <div className="w-full px-4 py-3 flex items-center gap-3" style={{
+        background: 'rgba(15,15,20,0.6)',
+        borderLeft: '2px solid transparent',
+        borderBottom: '1px solid rgba(34,211,238,0.1)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div className="absolute left-0 top-0 bottom-0 w-0.5" style={{
+          background: 'linear-gradient(to bottom, rgba(34,211,238,0.4), rgba(6,182,212,0.5), rgba(34,211,238,0.4))',
+          boxShadow: '0 0 4px rgba(34,211,238,0.3)',
+          opacity: 0.6
+        }} />
         {isAdmin && (
           <div
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-200 p-1 -ml-1"
+            className="cursor-grab active:cursor-grabbing p-1 -ml-1"
+            style={{ color: 'rgba(120,120,125,0.4)' }}
             title="Drag to reorder"
             onClick={(e) => e.stopPropagation()}
           >
-            <GripVertical className="w-5 h-5" />
+            <GripVertical className="w-3.5 h-3.5" />
           </div>
         )}
         <button
           type="button"
           onClick={() => onToggleCategory(category.id)}
-          className="flex-1 flex items-center gap-3 text-left hover:bg-slate-800/50 transition-colors"
+          className="flex-1 flex items-center gap-2.5 text-left transition-all"
+          style={{ 
+            paddingLeft: '2px'
+          }}
         >
           <svg
-            className={`w-4 h-4 ${category.isStartHere ? 'text-yellow-400' : 'text-slate-300'} transition-transform ${isCategoryExpanded ? 'rotate-90' : ''}`}
+            className="transition-transform duration-200"
+            style={{
+              width: '10px',
+              height: '10px',
+              color: 'rgba(34,211,238,0.5)',
+              transform: isCategoryExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+            }}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
           </svg>
           <div className="flex-1 min-w-0">
-            <div className={`text-sm font-bold uppercase tracking-wide ${
-              category.isStartHere 
-                ? 'text-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)]' 
-                : 'text-white'
-            }`}>
+            <div className="text-xs font-semibold uppercase tracking-wider" style={{
+              color: 'rgba(220,220,225,0.95)',
+              textShadow: '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3), 0 0 30px rgba(34,211,238,0.2)',
+              letterSpacing: '0.08em',
+              fontWeight: 600
+            }}>
               {category.title}
             </div>
           </div>
         </button>
-        {category.isStartHere && (
-          <span className="text-xs font-bold text-yellow-400 bg-yellow-500/20 px-2 py-1 rounded-full border border-yellow-500/50">
-            ⭐ FIRST
-          </span>
-        )}
       </div>
 
       {/* Category Sections */}
       {isCategoryExpanded && (
-        <div className="bg-slate-900/30">
-          {category.sections.map((section) => {
-            const isSectionExpanded = expandedSections.has(section.id)
-            
-            return (
-              <div
-                key={section.id}
-                className="border-b border-slate-700/30 last:border-b-0"
-              >
-                {/* Section Header */}
-                <div className="w-full px-4 py-2.5 pl-8 flex items-center gap-3 bg-slate-900/20">
-                  {isAdmin && (
-                    <div className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300">
-                      <GripVertical className="w-3 h-3" />
-                    </div>
-                  )}
-                  <button
-                    onClick={() => onToggleSection(section.id)}
-                    onDoubleClick={() => isAdmin && !editing && onEdit('section', category.id, section.id)}
-                    className="flex-1 flex items-center gap-3 text-left transition-colors hover:bg-slate-800/50"
-                  >
-                    <svg
-                      className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isSectionExpanded ? 'rotate-90' : ''}`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold truncate text-slate-200">
-                        {section.title}
-                      </div>
-                      <div className="text-xs text-slate-500">{section.videos.length} lessons</div>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Section Videos */}
-                {isSectionExpanded && (
-                  <div className="bg-slate-900/50 border-t border-slate-700/30">
-                    {section.videos.map((video, index) => {
-                      const isSelected = selectedVideo?.moduleId === section.id && selectedVideo?.video.id === video.id
-                      const displayTitle = getVideoTitle(video)
-                      const isLast = index === section.videos.length - 1
-                      return (
-                        <div
-                          key={video.id}
-                          className={`w-full px-4 py-2 pl-14 flex items-center gap-2 hover:bg-slate-800/50 transition-colors border-b border-slate-700/20 ${
-                            isLast ? 'border-b-0' : ''
-                          } ${
-                            isSelected ? 'bg-emerald-500/20 border-l-2 border-emerald-500' : ''
-                          }`}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => onVideoSelect(section.id, video)}
-                            className="flex-1 text-left"
-                          >
-                            <div className="text-xs text-slate-300">{index + 1}. {displayTitle}</div>
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
+        <SortableSectionList
+          sections={sectionsList[category.id] || category.sections}
+          categoryId={category.id}
+          isAdmin={isAdmin}
+          editing={editing}
+          expandedSections={expandedSections}
+          selectedVideo={selectedVideo}
+          getVideoTitle={getVideoTitle}
+          onToggleSection={onToggleSection}
+          onEdit={onEdit}
+          onVideoSelect={onVideoSelect}
+          onEditVideo={onEditVideo}
+          onSectionDragEnd={onSectionDragEnd}
+          sectionsList={sectionsList}
+          onVideosUpdate={onVideosUpdate}
+          checkpoints={checkpoints}
+          isModuleUnlocked={isModuleUnlocked}
+          isVideoUnlocked={isVideoUnlocked}
+          getVideoCheckpoint={getVideoCheckpoint}
+        />
       )}
     </div>
   )
 }
 
-export function MindsetModuleList({ modules, categories, affiliate }: MindsetModuleListProps) {
+export function MindsetModuleList({ modules, categories, affiliate, onDataChange }: MindsetModuleListProps) {
   const isAdmin = affiliate?.role === 'admin' || affiliate?.role === 'moderator'
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['starthere', 'mindset', 'lifedesign', 'thinkingtools']))
   const getInitialExpandedSections = () => {
@@ -255,23 +739,39 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
     modules[0]?.videos[0] ? { moduleId: modules[0].id, video: modules[0].videos[0] } : null
   )
   
-  // Ensure start here section is always expanded and video is selected
+  // Ensure selected video always exists in the current DB-backed structure.
+  // When course structure loads/reorders, the previously selected video can become stale
+  // (e.g. fallback IDs vs DB IDs), which breaks checkpoint lookup and button state.
   useEffect(() => {
-    if (categories) {
-      const startHereCategory = categories.find(cat => cat.isStartHere)
-      if (startHereCategory && startHereCategory.sections[0]) {
-        setExpandedSections(prev => {
-          const newSet = new Set(prev)
-          newSet.add(startHereCategory.sections[0].id)
-          return newSet
-        })
-        if (!selectedVideo && startHereCategory.sections[0].videos[0]) {
-          setSelectedVideo({ 
-            moduleId: startHereCategory.sections[0].id, 
-            video: startHereCategory.sections[0].videos[0] 
-          })
-        }
-      }
+    if (!categories || categories.length === 0) return
+
+    const flatSections = categories.flatMap(cat => cat.sections)
+    const startHereCategory = categories.find(cat => cat.isStartHere)
+
+    // Always keep Start Here expanded if present
+    if (startHereCategory?.sections?.[0]) {
+      setExpandedSections(prev => {
+        const newSet = new Set(prev)
+        newSet.add(startHereCategory.sections[0].id)
+        return newSet
+      })
+    }
+
+    const isSelectedValid = !!selectedVideo && flatSections.some(sec =>
+      sec.id === selectedVideo.moduleId && sec.videos.some(v => v.id === selectedVideo.video.id)
+    )
+
+    if (isSelectedValid) return
+
+    // Pick a deterministic, valid default selection
+    const fallbackSection =
+      (startHereCategory?.sections?.[0] && startHereCategory.sections[0]) ||
+      flatSections.find(s => s.videos && s.videos.length > 0) ||
+      null
+
+    const fallbackVideo = fallbackSection?.videos?.[0] || null
+    if (fallbackSection && fallbackVideo) {
+      setSelectedVideo({ moduleId: fallbackSection.id, video: fallbackVideo })
     }
   }, [categories, selectedVideo])
   const [videoTitles, setVideoTitles] = useState<Record<string, string>>({})
@@ -285,18 +785,407 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
   const [editValues, setEditValues] = useState<any>({})
   const [categoriesList, setCategoriesList] = useState<Category[]>(categories || [])
   const [sectionsList, setSectionsList] = useState<Record<string, Module[]>>({})
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [checkpoints, setCheckpoints] = useState<Record<number, any>>({}) // sectionId -> checkpoint
+  const [unlockStatus, setUnlockStatus] = useState<Record<string, { unlocked: boolean; checkpointStatus?: string; checkpointId?: string }>>({}) // sectionId -> unlock status
+  const [unlockDataState, setUnlockDataState] = useState<any>(null) // Store full unlock data
+  const [loadingCheckpoints, setLoadingCheckpoints] = useState<Record<number, boolean>>({}) // Track which checkpoints are loading
+  const [checkpointModalOpen, setCheckpointModalOpen] = useState(false) // Modal state
+  const [successModalOpen, setSuccessModalOpen] = useState(false) // Success modal
+  const [unlockedSectionId, setUnlockedSectionId] = useState<number | null>(null) // Recently unlocked section
+  const [successNextVideo, setSuccessNextVideo] = useState<{ sectionId: number, video: Video } | null>(null) // For video-level unlocks
+  // Dynamic unlock state - fetched from API
+  const [unlockedModules, setUnlockedModules] = useState<Set<number>>(new Set([1]))
+  const [defaultUnlockedIds, setDefaultUnlockedIds] = useState<number[]>([1])
+  // Video-level locking state
+  const [videoCheckpoints, setVideoCheckpoints] = useState<Record<string, any>>({}) // videoId -> checkpoint
+  const [sectionsWithVideoLocking, setSectionsWithVideoLocking] = useState<Set<string>>(new Set()) // section UUIDs that use video locking
+  const [unlockedVideos, setUnlockedVideos] = useState<Set<string>>(new Set()) // video IDs that are unlocked
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   // Update lists when props change
+  // Always use the order from the database (which reflects saved drag order)
   useEffect(() => {
-    if (categories) {
+    if (categories && categories.length > 0) {
+      // Always update from props to reflect database order
+      // This ensures real-time updates when another admin changes the order
       setCategoriesList(categories)
       const sectionsMap: Record<string, Module[]> = {}
       categories.forEach(cat => {
         sectionsMap[cat.id] = cat.sections
       })
       setSectionsList(sectionsMap)
+      setIsInitialized(true)
     }
   }, [categories])
+
+  // Fetch dynamic unlocks from API
+  useEffect(() => {
+    const fetchDynamicUnlocks = async () => {
+      try {
+        // Fetch course config to get default unlocked modules
+        const configRes = await fetch('/api/courses/config?course=mindset')
+        const configData = await configRes.json()
+        console.log('[Mindset] Course config:', configData)
+        
+        if (configData.defaultUnlockedModuleIds) {
+          setDefaultUnlockedIds(configData.defaultUnlockedModuleIds)
+        }
+        
+        // Fetch user's unlocked modules
+        const unlocksRes = await fetch('/api/user/module-unlocks?course=mindset')
+        const unlocksData = await unlocksRes.json()
+        console.log('[Mindset] User unlocks:', unlocksData)
+        
+        if (unlocksData.unlockedModules && Array.isArray(unlocksData.unlockedModules)) {
+          setUnlockedModules(new Set(unlocksData.unlockedModules))
+        }
+        
+        // Fetch user's unlocked videos
+        const videoUnlocksRes = await fetch('/api/user/video-unlocks?course=mindset')
+        const videoUnlocksData = await videoUnlocksRes.json()
+        console.log('[Mindset] User video unlocks:', videoUnlocksData)
+        
+        if (videoUnlocksData.unlockedVideos && Array.isArray(videoUnlocksData.unlockedVideos)) {
+          setUnlockedVideos(new Set(videoUnlocksData.unlockedVideos))
+        }
+      } catch (err) {
+        console.error('[Mindset] Error fetching config/unlocks:', err)
+      }
+    }
+    fetchDynamicUnlocks()
+  }, [])
+
+  // Check if a module is unlocked
+  const isModuleUnlocked = (moduleId: number) => {
+    if (defaultUnlockedIds.includes(moduleId)) return true
+    if (unlockedModules.has(moduleId)) return true
+    return false
+  }
+
+  // Check if a section uses video-level locking
+  const sectionHasVideoLocking = (section: Module) => {
+    // Check if section UUID is in the video locking set
+    if (section.uuid && sectionsWithVideoLocking.has(section.uuid)) {
+      return true
+    }
+    // Also check by checking if any video in this section has a checkpoint
+    return section.videos.some(v => (v.uuid ? videoCheckpoints[v.uuid] : null) || videoCheckpoints[v.id])
+  }
+
+  // Check if a video is unlocked (for sections with video-level locking)
+  const isVideoUnlocked = (section: Module, video: Video, videoIndex: number) => {
+    // If section doesn't use video-level locking, video is unlocked if section is unlocked
+    if (!sectionHasVideoLocking(section)) {
+      return isModuleUnlocked(section.id)
+    }
+
+    // For video-level locking:
+    // First video in section is always unlocked (if section is unlocked)
+    if (videoIndex === 0) {
+      return isModuleUnlocked(section.id)
+    }
+
+    // STRICT RULE:
+    // A video checkpoint unlocks ONLY the immediate next video.
+    // Therefore: a video is unlocked only if it is explicitly present in `unlockedVideos`.
+    const unlockKey = video.uuid || video.id
+    if (unlockedVideos.has(unlockKey)) {
+      return true
+    }
+
+    return false
+  }
+
+  // Get the checkpoint for a specific video (if any)
+  const getVideoCheckpoint = (videoId: string) => {
+    return videoCheckpoints[videoId] || null
+  }
+
+  // Fetch checkpoints and unlock status for all sections
+  useEffect(() => {
+    const fetchCheckpointsAndUnlocks = async () => {
+      try {
+        // Fetch unlock status for all sections in the mindset course
+        const unlockRes = await fetch('/api/user/unlocks?courseType=mindset')
+        const unlockData = await unlockRes.json()
+        
+        if (unlockData.sections) {
+          const unlockMap: Record<string, { unlocked: boolean; checkpointStatus?: string; checkpointId?: string; numericId?: number }> = {}
+          
+          // Create a mapping from UUID to unlock status
+          // We also need to map UUIDs to numeric section IDs
+          unlockData.sections.forEach((section: any) => {
+            unlockMap[section.id] = {
+              unlocked: section.unlocked,
+              checkpointStatus: section.checkpointStatus,
+              checkpointId: section.checkpointId,
+              numericId: section.displayOrder // Use displayOrder as a proxy for numeric ID
+            }
+          })
+          setUnlockStatus(unlockMap)
+          
+          // Also create reverse mapping: numeric ID -> UUID for easier lookup
+          // We'll fetch section details to get the mapping
+          const sectionMapping: Record<number, string> = {}
+          unlockData.sections.forEach((section: any) => {
+            // We need to match by displayOrder or title to find numeric ID
+            const matchingSection = categoriesList
+              .flatMap(cat => cat.sections)
+              .find(s => {
+                // Try to match by title or order
+                return s.title === section.title || 
+                       (categoriesList.find(cat => 
+                         cat.sections.find(sec => sec.title === section.title)
+                       )?.sections.findIndex(sec => sec.title === section.title) === section.displayOrder)
+              })
+            if (matchingSection) {
+              sectionMapping[matchingSection.id] = section.id
+            }
+          })
+          
+          // Store mapping for later use
+          ;(window as any).sectionUUIDMap = sectionMapping
+        }
+
+        // Get all sections from categories
+        const allSections = categoriesList.flatMap(cat => cat.sections)
+        console.log('[Checkpoint Fetch] All sections:', allSections.map((s: any) => ({ id: s.id, uuid: s.uuid, title: s.title })))
+        
+        const checkpointMap: Record<number, any> = {}
+        // Also store by title for fallback lookup
+        const checkpointByTitle: Record<string, any> = {}
+        
+        // Fetch all checkpoints from public API.
+        // Single source: /api/checkpoints/by-course returns checkpoints across ALL categories for a course type.
+        try {
+          const checkpointRes = await fetch('/api/checkpoints/by-course?course=mindset', {
+            credentials: 'include'
+          })
+          console.log('[Checkpoint Fetch] API status:', checkpointRes.status)
+
+          if (!checkpointRes.ok) {
+            console.error('[Checkpoint Fetch] Failed:', checkpointRes.status)
+          } else {
+            const checkpointData = await checkpointRes.json()
+            console.log('[Checkpoint Fetch] Full API response:', JSON.stringify(checkpointData, null, 2))
+
+            const {
+              byUUID,
+              byNumericId,
+              byTitle,
+              videoCheckpoints: videoCheckpointsData,
+              videoCheckpointsByDisplayId,
+              sectionsWithVideoLocking: videoLockingSections
+            } = checkpointData
+
+            // Store byTitle for later use
+            if (byTitle) {
+              Object.assign(checkpointByTitle, byTitle)
+            }
+
+            // Store video-level checkpoint data
+            const combinedVideo = {
+              ...(videoCheckpointsData || {}),
+              ...(videoCheckpointsByDisplayId || {})
+            }
+            setVideoCheckpoints(combinedVideo)
+            console.log('[Checkpoint Fetch] Video checkpoints:', Object.keys(combinedVideo).length)
+
+            // Store sections that use video-level locking
+            if (videoLockingSections && Array.isArray(videoLockingSections)) {
+              setSectionsWithVideoLocking(new Set(videoLockingSections))
+              console.log('[Checkpoint Fetch] Sections with video locking:', videoLockingSections)
+            }
+
+            // Map checkpoints to UI section IDs
+            allSections.forEach((section: any) => {
+              const sectionId = section.id
+              const sectionTitle = section.title
+              const sectionUUID = section.uuid
+
+              console.log(`[Checkpoint Fetch] Checking section: id=${sectionId}, title="${sectionTitle}", uuid=${sectionUUID}`)
+
+              // Method 1: By UUID
+              if (sectionUUID && byUUID && byUUID[sectionUUID]) {
+                checkpointMap[sectionId] = byUUID[sectionUUID]
+                console.log(`[Checkpoint Fetch] ✓ Found by UUID for "${sectionTitle}"`)
+                return
+              }
+
+              // Method 2: By numeric ID
+              if (byNumericId && byNumericId[sectionId]) {
+                checkpointMap[sectionId] = byNumericId[sectionId]
+                console.log(`[Checkpoint Fetch] ✓ Found by numeric ID for "${sectionTitle}"`)
+                return
+              }
+
+              // Method 3: By title (most reliable fallback)
+              if (sectionTitle && byTitle && byTitle[sectionTitle]) {
+                checkpointMap[sectionId] = byTitle[sectionTitle]
+                console.log(`[Checkpoint Fetch] ✓ Found by title for "${sectionTitle}"`)
+                return
+              }
+
+              console.log(`[Checkpoint Fetch] ✗ No checkpoint found for "${sectionTitle}"`)
+            })
+
+            console.log('[Checkpoint Fetch] MAPPED COUNT:', Object.keys(checkpointMap).length)
+            console.log('[Checkpoint Fetch] MAPPED SECTIONS:', Object.keys(checkpointMap))
+          }
+        } catch (error) {
+          console.error('[Checkpoint Fetch] Exception:', error)
+        }
+        
+        // Store checkpointByTitle globally for button lookup
+        ;(window as any).checkpointByTitle = checkpointByTitle
+        
+        console.log('[Checkpoint Fetch] Setting checkpoints state:', checkpointMap)
+        setCheckpoints(checkpointMap)
+      } catch (error) {
+        console.error('Error fetching checkpoints and unlocks:', error)
+      }
+    }
+    if (categoriesList.length > 0) {
+      fetchCheckpointsAndUnlocks()
+    }
+  }, [categoriesList])
+
+  // Fetch checkpoint for currently selected section if not already loaded
+  useEffect(() => {
+    if (!selectedVideo) return
+    
+    const sectionId = selectedVideo.moduleId
+    const currentCheckpoint = checkpoints[sectionId]
+    const hasCheckpoint = currentCheckpoint && currentCheckpoint.id && currentCheckpoint.title && currentCheckpoint.requirements
+    const isLoading = loadingCheckpoints[sectionId]
+    
+    // If we already have full checkpoint data, skip
+    if (hasCheckpoint) {
+      console.log('[Checkpoint Fetch Effect] Already have checkpoint for section:', sectionId)
+      return
+    }
+    
+    // If already loading, skip
+    if (isLoading) {
+      console.log('[Checkpoint Fetch Effect] Already loading checkpoint for section:', sectionId)
+      return
+    }
+    
+    console.log('[Checkpoint Fetch Effect] Fetching for section:', sectionId)
+    
+    const section = categoriesList
+      .flatMap(cat => cat.sections)
+      .find(s => s.id === sectionId)
+    
+    if (!section) {
+      console.log('[Checkpoint Fetch Effect] Section not found')
+      return
+    }
+    
+    // Try multiple methods to find checkpoint
+    const fetchCheckpoint = async () => {
+      setLoadingCheckpoints(prev => ({ ...prev, [sectionId]: true }))
+      
+      try {
+        // Method 1: Check unlock status for checkpoint ID (MOST RELIABLE)
+        if (unlockDataState?.sections) {
+          const matchingUnlock = unlockDataState.sections.find((s: any) => 
+            s.section_id === sectionId || s.title === section.title || s.id === sectionId
+          )
+          
+          console.log('[Checkpoint Fetch Effect] Matching unlock section:', matchingUnlock)
+          
+          if (matchingUnlock?.checkpointId) {
+            console.log('[Checkpoint Fetch Effect] ✅ Found checkpoint ID in unlock status:', matchingUnlock.checkpointId)
+            
+            // Try direct fetch by checkpoint ID (this is the most reliable method)
+            const res = await fetch(`/api/checkpoints/${matchingUnlock.checkpointId}`)
+            const data = await res.json()
+            
+            console.log('[Checkpoint Fetch Effect] Checkpoint fetch response:', data)
+            
+            if (data.checkpoint && data.checkpoint.id && data.checkpoint.title && data.checkpoint.requirements) {
+              console.log('[Checkpoint Fetch Effect] ✅ Successfully fetched checkpoint:', data.checkpoint)
+              setCheckpoints(prev => ({ ...prev, [sectionId]: data.checkpoint }))
+              setLoadingCheckpoints(prev => ({ ...prev, [sectionId]: false }))
+              return
+            } else {
+              console.warn('[Checkpoint Fetch Effect] Checkpoint data incomplete:', data.checkpoint)
+            }
+          } else {
+            console.log('[Checkpoint Fetch Effect] No checkpointId in unlock status for section:', section.title)
+          }
+        }
+        
+        // Method 2: Try fetching by numeric section ID
+        console.log('[Checkpoint Fetch Effect] Trying to fetch by section ID:', sectionId)
+        const res2 = await fetch(`/api/checkpoints/${sectionId}`)
+        const data2 = await res2.json()
+        
+        if (data2.checkpoint && data2.checkpoint.id && data2.checkpoint.title && data2.checkpoint.requirements) {
+          console.log('[Checkpoint Fetch Effect] Successfully fetched checkpoint by section ID:', data2.checkpoint)
+          setCheckpoints(prev => ({ ...prev, [sectionId]: data2.checkpoint }))
+          setLoadingCheckpoints(prev => ({ ...prev, [sectionId]: false }))
+          return
+        }
+        
+        // Method 3: Try admin API and match by section title
+        console.log('[Checkpoint Fetch Effect] Trying admin API')
+        const res3 = await fetch(`/api/admin/checkpoints`)
+        const data3 = await res3.json()
+        
+        if (data3.courses) {
+          // Find checkpoint by matching section title
+          for (const course of data3.courses) {
+            if (course.sections) {
+              for (const sec of course.sections) {
+                if (sec.checkpoint && sec.title === section.title) {
+                  console.log('[Checkpoint Fetch Effect] Found checkpoint by title match:', sec.checkpoint)
+                  setCheckpoints(prev => ({ ...prev, [sectionId]: sec.checkpoint }))
+                  setLoadingCheckpoints(prev => ({ ...prev, [sectionId]: false }))
+                  return
+                }
+              }
+            }
+          }
+          
+          // Also try by section UUID from unlock data
+          const matchingUnlock = unlockDataState?.sections?.find((s: any) => 
+            s.title === section.title
+          )
+          
+          if (matchingUnlock?.id) {
+            const sectionUUID = matchingUnlock.id
+            const res4 = await fetch(`/api/checkpoints/${sectionUUID}`)
+            const data4 = await res4.json()
+            
+            if (data4.checkpoint) {
+              console.log('[Checkpoint Fetch Effect] Found checkpoint by UUID:', data4.checkpoint)
+              setCheckpoints(prev => ({ ...prev, [sectionId]: data4.checkpoint }))
+              setLoadingCheckpoints(prev => ({ ...prev, [sectionId]: false }))
+              return
+            }
+          }
+        }
+        
+        console.log('[Checkpoint Fetch Effect] No checkpoint found')
+        setLoadingCheckpoints(prev => ({ ...prev, [sectionId]: false }))
+      } catch (error) {
+        console.error('[Checkpoint Fetch Effect] Error:', error)
+        setLoadingCheckpoints(prev => ({ ...prev, [sectionId]: false }))
+      }
+    }
+    
+    fetchCheckpoint()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVideo?.moduleId, unlockDataState, categoriesList.length])
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => {
@@ -323,6 +1212,22 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
   }
 
   const handleVideoSelect = (moduleId: number, video: Video) => {
+    // Check if module is unlocked (admins can bypass)
+    if (!isModuleUnlocked(moduleId) && !isAdmin) {
+      console.log('[Mindset] Cannot select video - module is locked:', moduleId)
+      return
+    }
+    // If this section uses video-level locking, also enforce per-video lock
+    if (!isAdmin) {
+      const section = categoriesList.flatMap(cat => cat.sections).find(s => s.id === moduleId)
+      if (section && sectionHasVideoLocking(section)) {
+        const videoIndex = section.videos.findIndex(v => v.id === video.id)
+        if (videoIndex >= 0 && !isVideoUnlocked(section, video, videoIndex)) {
+          console.log('[Mindset] Cannot select video - video is locked:', { moduleId, videoId: video.id })
+          return
+        }
+      }
+    }
     // Immediately update state to make switch feel instant
     setSelectedVideo({ moduleId, video })
   }
@@ -458,11 +1363,20 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
         })
 
         if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}))
+          console.error('Error saving category order:', errorData)
+          // Revert on error
           setCategoriesList(categories || [])
-          alert('Error saving new order')
+          alert('Error saving new order: ' + (errorData.error || 'Unknown error'))
         } else {
-          // Refresh from server to get updated order
-          window.location.reload()
+          // Success - order is saved to database
+          // Refresh data after a short delay to get the updated order from database
+          // This ensures other admins see the change in real-time
+          setTimeout(() => {
+            if (onDataChange) {
+              onDataChange()
+            }
+          }, 500)
         }
       } catch (error) {
         console.error('Error saving order:', error)
@@ -481,9 +1395,18 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
       const newIndex = sections.findIndex((s) => s.id === over.id)
 
       const newOrder = arrayMove(sections, oldIndex, newIndex)
+      
+      // Update local state immediately so changes are visible right away
       setSectionsList(prev => ({ ...prev, [categoryId]: newOrder }))
+      
+      // Also update categoriesList to reflect the change
+      setCategoriesList(prev => prev.map(cat => 
+        cat.id === categoryId 
+          ? { ...cat, sections: newOrder }
+          : cat
+      ))
 
-      // Save new order to API
+      // Save new order to API (autosave without page reload)
       try {
         const res = await fetch('/api/admin/courses/reorder', {
           method: 'POST',
@@ -497,15 +1420,66 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
         })
 
         if (!res.ok) {
-          setSectionsList(prev => ({ ...prev, [categoryId]: categories?.find(c => c.id === categoryId)?.sections || [] }))
-          alert('Error saving new order')
+          const errorData = await res.json().catch(() => ({}))
+          console.error('Error saving section order:', errorData, {
+            categoryId,
+            items: newOrder.map((s, index) => ({ id: s.id, sortOrder: index }))
+          })
+          // Revert on error only
+          const originalSections = categories?.find(c => c.id === categoryId)?.sections || []
+          setSectionsList(prev => ({ ...prev, [categoryId]: originalSections }))
+          setCategoriesList(prev => prev.map(cat => 
+            cat.id === categoryId 
+              ? { ...cat, sections: originalSections }
+              : cat
+          ))
+          alert('Error saving new order: ' + (errorData.error || 'Unknown error'))
+        } else {
+          console.log('Successfully saved section order:', {
+            categoryId,
+            items: newOrder.map((s, index) => ({ id: s.id, sortOrder: index }))
+          })
+          // Success - order is saved to database
+          // Refresh data after a short delay to get the updated order from database
+          // This ensures other admins see the change in real-time
+          setTimeout(() => {
+            if (onDataChange) {
+              onDataChange()
+            }
+          }, 500)
         }
       } catch (error) {
         console.error('Error saving order:', error)
-        setSectionsList(prev => ({ ...prev, [categoryId]: categories?.find(c => c.id === categoryId)?.sections || [] }))
+        // Revert on error only
+        const originalSections = categories?.find(c => c.id === categoryId)?.sections || []
+        setSectionsList(prev => ({ ...prev, [categoryId]: originalSections }))
+        setCategoriesList(prev => prev.map(cat => 
+          cat.id === categoryId 
+            ? { ...cat, sections: originalSections }
+            : cat
+        ))
         alert('Error saving new order')
       }
     }
+  }
+
+  const handleVideosUpdate = (categoryId: string, sectionId: number, newVideos: Video[]) => {
+    setSectionsList(prev => ({
+      ...prev,
+      [categoryId]: (prev[categoryId] || []).map(s => 
+        s.id === sectionId ? { ...s, videos: newVideos } : s
+      )
+    }))
+    setCategoriesList(prev => prev.map(cat => 
+      cat.id === categoryId
+        ? {
+            ...cat,
+            sections: cat.sections.map(s => 
+              s.id === sectionId ? { ...s, videos: newVideos } : s
+            )
+          }
+        : cat
+    ))
   }
 
   const handleTitleChange = (videoId: string, newTitle: string) => {
@@ -656,9 +1630,23 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
   return (
     <div className="flex gap-6">
       {/* Left Sidebar - Course Navigation */}
-      <div className="w-80 bg-slate-800/30 rounded-xl border-2 border-slate-700/50 overflow-hidden flex flex-col max-h-[calc(100vh-200px)] sticky top-4">
-        <div className="p-4 border-b-2 border-slate-700/50 shrink-0 bg-slate-900/30">
-          <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Course Modules</h3>
+      <div className="w-80 rounded-lg overflow-hidden flex flex-col max-h-[calc(100vh-200px)] sticky top-4" style={{
+        background: 'linear-gradient(135deg, rgba(35,35,40,0.95) 0%, rgba(30,30,35,0.98) 50%, rgba(25,25,30,0.95) 100%)',
+        border: '1px solid rgba(70,70,75,0.6)',
+        boxShadow: `
+          inset 0 1px 1px rgba(255,255,255,0.05),
+          inset 0 -1px 1px rgba(0,0,0,0.8),
+          0 2px 8px rgba(0,0,0,0.6)
+        `
+      }}>
+        <div className="p-3 shrink-0 border-b" style={{
+          borderColor: 'rgba(34,211,238,0.2)',
+          background: 'linear-gradient(135deg, rgba(40,40,45,0.9) 0%, rgba(35,35,40,0.95) 100%)'
+        }}>
+          <h3 className="text-xs font-semibold uppercase tracking-widest" style={{
+            color: 'rgba(34,211,238,0.9)',
+            textShadow: '0 0 8px rgba(34,211,238,0.4)'
+          }}>Course Modules</h3>
         </div>
         <div className="flex-1 overflow-y-auto">
           {categories ? (
@@ -671,7 +1659,7 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                 items={categoriesList.map(c => c.id)}
                 strategy={verticalListSortingStrategy}
               >
-                {categoriesList.map((category) => {
+                {categoriesList.filter(category => !category.isStartHere).map((category) => {
               const isCategoryExpanded = expandedCategories.has(category.id)
               
               return (
@@ -714,6 +1702,13 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                     setEditing({ type: 'video', categoryId, sectionId, videoId: video.id })
                     setEditValues({ title: getVideoTitle(video), youtubeId: video.youtubeId, loomId: video.loomId })
                   }}
+                  onSectionDragEnd={handleSectionDragEnd}
+                  sectionsList={sectionsList}
+                  onVideosUpdate={handleVideosUpdate}
+                  checkpoints={checkpoints}
+                  isModuleUnlocked={isModuleUnlocked}
+                  isVideoUnlocked={isVideoUnlocked}
+                  getVideoCheckpoint={getVideoCheckpoint}
                 />
               )
             })}
@@ -912,8 +1907,280 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                 </div>
               )}
 
+              {/* Checkpoint Button - Centered above Notes */}
+              {selectedVideo && (
+                <div className="mt-4 flex justify-center flex-col items-center gap-2">
+                  {(() => {
+                    const sectionId = selectedVideo.moduleId
+                    const currentVideoId = selectedVideo.video.id
+                    const currentVideoUuid = selectedVideo.video.uuid
+                    const section = categoriesList
+                      .flatMap(cat => cat.sections)
+                      .find(s => s.id === sectionId)
+                    const matchingUnlock = unlockDataState?.sections?.find((s: any) => 
+                      s.section_id === sectionId || s.title === section?.title
+                    )
+                    
+                    // FIRST: Check for VIDEO-LEVEL checkpoint on current video
+                    let checkpoint = (currentVideoUuid ? videoCheckpoints[currentVideoUuid] : null) || videoCheckpoints[currentVideoId]
+                    let isVideoCheckpoint = !!checkpoint
+                    
+                    if (checkpoint) {
+                      console.log(`[Checkpoint Button] Found VIDEO checkpoint for "${selectedVideo.video.title}"`)
+                    }
+                    
+                    // If no video checkpoint, look for SECTION-LEVEL checkpoint
+                    if (!checkpoint) {
+                      checkpoint = checkpoints[sectionId]
+                      
+                      // Fallback 1: Try by section title from global store
+                      if (!checkpoint && section?.title) {
+                        const globalByTitle = (window as any).checkpointByTitle
+                        if (globalByTitle && globalByTitle[section.title]) {
+                          checkpoint = globalByTitle[section.title]
+                          console.log(`[Checkpoint Button] Found by title: "${section.title}"`)
+                        }
+                      }
+                      
+                      // Fallback 2: Search all checkpoints for matching unlock ID
+                      if (!checkpoint && matchingUnlock?.checkpointId) {
+                        const allCheckpoints = Object.values(checkpoints)
+                        const matchingCheckpoint = allCheckpoints.find((cp: any) => cp?.id === matchingUnlock.checkpointId)
+                        if (matchingCheckpoint) {
+                          checkpoint = matchingCheckpoint as any
+                          console.log(`[Checkpoint Button] Found by unlock checkpointId`)
+                        }
+                      }
+                    }
+                    
+                    console.log(`[Checkpoint Button] Section "${section?.title}" (id=${sectionId}), Video "${selectedVideo.video.title}":`, checkpoint ? (isVideoCheckpoint ? 'VIDEO CHECKPOINT' : 'SECTION CHECKPOINT') : 'NOT FOUND')
+                    
+                    // Show button if checkpoint exists
+                    if (checkpoint && checkpoint.id && checkpoint.title && checkpoint.requirements) {
+                      // Store for modal use
+                      if (!checkpoints[sectionId] && !isVideoCheckpoint) {
+                        setCheckpoints(prev => ({ ...prev, [sectionId]: checkpoint }))
+                      }
+                      return (
+                        <button
+                          onClick={() => setCheckpointModalOpen(true)}
+                          className={`px-8 py-4 ${isVideoCheckpoint 
+                            ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border-purple-500/50 text-purple-400' 
+                            : 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border-cyan-500/50 text-cyan-400'
+                          } border rounded-lg font-semibold text-lg transition-all hover:scale-105 hover:shadow-lg flex items-center gap-3`}
+                        >
+                          <FileCheck className="w-6 h-6" />
+                          {isVideoCheckpoint ? 'Complete Video Checkpoint' : 'Submit Checkpoint'}
+                        </button>
+                      )
+                    }
+                    
+                    // Show loading if we're still fetching or know there should be one
+                    if (loadingCheckpoints[sectionId]) {
+                      return (
+                        <button
+                          disabled
+                          className="px-8 py-4 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-400 font-semibold text-lg flex items-center gap-3 cursor-not-allowed"
+                        >
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                          Loading Checkpoint...
+                        </button>
+                      )
+                    }
+                    
+                    // No checkpoint for this video/section
+                    return (
+                      <button
+                        disabled
+                        className="px-8 py-4 bg-slate-700/30 border border-slate-600/50 rounded-lg text-slate-500 font-semibold text-lg flex items-center gap-3 cursor-not-allowed opacity-60"
+                      >
+                        <FileCheck className="w-6 h-6" />
+                        No Checkpoint Available
+                      </button>
+                    )
+                  })()}
+                </div>
+              )}
+
+              {/* Checkpoint Modal */}
+              {checkpointModalOpen && selectedVideo && (() => {
+                // Get checkpoint with fallbacks - check VIDEO first, then SECTION
+                const moduleId = selectedVideo.moduleId
+                const currentVideoId = selectedVideo.video.id
+                const currentVideoUuid = selectedVideo.video.uuid
+                const section = categoriesList.flatMap(cat => cat.sections).find(s => s.id === moduleId)
+                
+                // First check for video-level checkpoint
+                let cp = (currentVideoUuid ? videoCheckpoints[currentVideoUuid] : null) || videoCheckpoints[currentVideoId]
+                
+                // If no video checkpoint, check section-level
+                if (!cp) {
+                  cp = checkpoints[moduleId]
+                  if (!cp && section?.title) {
+                    const globalByTitle = (window as any).checkpointByTitle
+                    if (globalByTitle && globalByTitle[section.title]) {
+                      cp = globalByTitle[section.title]
+                    }
+                  }
+                }
+                return cp
+              })() && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setCheckpointModalOpen(false)}>
+                  <div className="bg-slate-900 rounded-xl border border-slate-700/50 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
+                      <h3 className="text-xl font-bold text-white">Checkpoint Submission</h3>
+                      <button
+                        onClick={() => setCheckpointModalOpen(false)}
+                        className="text-slate-400 hover:text-white transition-colors"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                    <div className="p-6">
+                      {(() => {
+                        const moduleId = selectedVideo.moduleId
+                        const currentVideoId = selectedVideo.video.id
+                        const currentVideoUuid = selectedVideo.video.uuid
+                        const section = categoriesList.flatMap(cat => cat.sections).find(s => s.id === moduleId)
+                        
+                        // First check for video-level checkpoint
+                        let cp = (currentVideoUuid ? videoCheckpoints[currentVideoUuid] : null) || videoCheckpoints[currentVideoId]
+                        const isVideoCheckpoint = !!cp
+                        
+                        // If no video checkpoint, check section-level
+                        if (!cp) {
+                          cp = checkpoints[moduleId]
+                          if (!cp && section?.title) {
+                            const globalByTitle = (window as any).checkpointByTitle
+                            if (globalByTitle && globalByTitle[section.title]) {
+                              cp = globalByTitle[section.title]
+                            }
+                          }
+                        }
+                        if (!cp) return null
+                        return (
+                      <CheckpointSubmission
+                        checkpointId={cp.id}
+                        checkpointTitle={cp.title}
+                        requirements={cp.requirements}
+                        sectionId={selectedVideo.moduleId.toString()}
+                        onSuccess={(status) => {
+                          console.log('[Mindset] Checkpoint submission result:', status)
+                          
+                          if (status === 'approved') {
+                            const currentModuleId = selectedVideo?.moduleId
+                            
+                            // VIDEO-LEVEL: unlock next video in the same section
+                            if (isVideoCheckpoint && section) {
+                              const videoIndex = section.videos.findIndex(v => v.id === currentVideoId)
+                              const nextVideo = videoIndex >= 0 ? section.videos[videoIndex + 1] : null
+                              
+                              if (nextVideo) {
+                                setUnlockedVideos(prev => {
+                                  const nextSet = new Set(prev)
+                                  nextSet.add(nextVideo.uuid || nextVideo.id)
+                                  return nextSet
+                                })
+                                setSuccessNextVideo({ sectionId: section.id, video: nextVideo })
+                                setSuccessModalOpen(true)
+                              }
+                              
+                              setCheckpointModalOpen(false)
+                              return
+                            }
+                            
+                            // SECTION-LEVEL: unlock next section as before
+                            if (currentModuleId) {
+                              const nextModuleId = currentModuleId + 1
+                              console.log(`[Mindset] Unlocking module ${nextModuleId}`)
+                              
+                              setUnlockedModules(prev => {
+                                const newSet = new Set(prev)
+                                newSet.add(nextModuleId)
+                                return newSet
+                              })
+                              
+                              setUnlockedSectionId(nextModuleId)
+                              setCheckpointModalOpen(false)
+                              setSuccessModalOpen(true)
+                            }
+                          } else if (status === 'needs_review') {
+                            setCheckpointModalOpen(false)
+                            alert('⏳ Checkpoint submitted! Under review, you\'ll be notified within 24 hours.')
+                          } else {
+                            console.log('[Mindset] Checkpoint denied, keeping modal open')
+                          }
+                        }}
+                      />
+                        )
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Success Modal */}
+              {successModalOpen && (unlockedSectionId || successNextVideo) && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                  <div className="bg-slate-900 rounded-xl border border-green-500/50 max-w-md w-full mx-4 p-8 text-center shadow-2xl shadow-green-500/20">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                      <CheckCircle className="w-10 h-10 text-green-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Checkpoint Complete!</h2>
+                    <p className="text-slate-400 mb-6">
+                      {successNextVideo ? "You've unlocked the next lesson." : "You've unlocked the next section."}
+                    </p>
+                    <div className="flex flex-col gap-3">
+                      {successNextVideo ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSuccessModalOpen(false)
+                            setSelectedVideo({ moduleId: successNextVideo.sectionId, video: successNextVideo.video })
+                            setExpandedSections(prev => new Set([...Array.from(prev), successNextVideo.sectionId]))
+                            setSuccessNextVideo(null)
+                          }}
+                          className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 rounded-lg font-semibold text-white transition-all shadow-lg shadow-purple-500/25"
+                        >
+                          Continue to Next Lesson →
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const allSections = categoriesList.flatMap(cat => cat.sections)
+                            const nextSection = allSections.find(s => s.id === unlockedSectionId)
+                            if (nextSection && nextSection.videos.length > 0) {
+                              setSuccessModalOpen(false)
+                              setSelectedVideo({ moduleId: nextSection.id, video: nextSection.videos[0] })
+                              setExpandedSections(prev => new Set([...Array.from(prev), nextSection.id]))
+                            } else {
+                              setSuccessModalOpen(false)
+                            }
+                          }}
+                          className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-lg font-semibold text-white transition-all shadow-lg shadow-green-500/25"
+                        >
+                          Continue to Next Section →
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSuccessModalOpen(false)
+                          setSuccessNextVideo(null)
+                          setUnlockedSectionId(null)
+                        }}
+                        className="px-6 py-2 text-slate-400 hover:text-white transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Notes Section */}
-              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
                 {(() => {
                   const videoNotes = getVideoNotes(selectedVideo.video)
                   const hasNotes = videoNotes && videoNotes.trim().length > 0
@@ -1020,6 +2287,7 @@ export function MindsetModuleList({ modules, categories, affiliate }: MindsetMod
                   )
                 })()}
               </div>
+
 
               {/* Course Materials Section */}
               <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">

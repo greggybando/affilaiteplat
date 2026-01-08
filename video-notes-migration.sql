@@ -15,3 +15,4 @@ CREATE TABLE IF NOT EXISTS video_notes (
 -- Index for efficient lookup
 CREATE INDEX idx_video_notes_lookup ON video_notes(video_id, course_type);
 
+

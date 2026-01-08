@@ -58,3 +58,4 @@ COMMENT ON TABLE assistant_usage IS 'Tracks daily question usage per user for ra
 
 
 
+

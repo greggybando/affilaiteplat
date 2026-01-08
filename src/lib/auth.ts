@@ -90,9 +90,36 @@ export async function getCurrentAffiliate() {
 export async function isAdmin(): Promise<boolean> {
   const token = getAuthCookie()
   if (!token) return false
+  
   const payload = verifyToken(token)
   if (!payload) return false
-  return payload.email === process.env.ADMIN_EMAIL
+  
+  // Hardcoded admin emails (most reliable check)
+  const adminEmails = [
+    process.env.ADMIN_EMAIL,
+    'grant@reelstacks.ai'
+  ].filter(Boolean)
+  
+  if (adminEmails.includes(payload.email)) {
+    return true
+  }
+  
+  // Fallback: Check database role
+  try {
+    const { data: affiliate } = await supabaseAdmin
+      .from('affiliates')
+      .select('role')
+      .eq('id', payload.affiliateId)
+      .single()
+    
+    if ((affiliate as any)?.role === 'admin') {
+      return true
+    }
+  } catch (e) {
+    // Silent fail
+  }
+  
+  return false
 }
 
 export function generateTrackingCode(length: number = 8): string {

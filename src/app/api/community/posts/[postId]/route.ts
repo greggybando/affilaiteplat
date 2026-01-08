@@ -14,7 +14,20 @@ export async function GET(
 
     const { data: post, error } = await (supabaseAdmin.from('community_posts') as any)
       .select(`
-        *,
+        id,
+        user_id,
+        title,
+        content,
+        category,
+        image_urls,
+        pinned,
+        pinned_at,
+        created_at,
+        updated_at,
+        edited_at,
+        deleted_at,
+        locked,
+        hidden,
         user:affiliates!community_posts_user_id_fkey (
           id,
           avatar_name,

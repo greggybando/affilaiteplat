@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Bell, Settings, X, Check } from 'lucide-react'
+import { Bell, Settings, X, Check, Wifi, WifiOff } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
+import { useSocket } from '@/hooks/useSocket'
 
 interface Notification {
   id: string
@@ -34,13 +35,41 @@ export function NotificationsDropdown({ currentUserId }: NotificationsDropdownPr
     email_notifications: false
   })
   const dropdownRef = useRef<HTMLDivElement>(null)
+  
+  // WebSocket connection for real-time notifications
+  const socket = useSocket({ userId: currentUserId, enabled: true })
+  const useWebSocket = socket.isSocketEnabled && socket.connected
+
+  // Register notification handler for real-time updates
+  useEffect(() => {
+    if (socket.connected) {
+      socket.onNotification((notification) => {
+        // Add new notification to the top
+        const newNotif: Notification = {
+          id: notification.id,
+          type: notification.type,
+          title: notification.actor?.name || 'New notification',
+          message: notification.reply?.content || notification.post?.title || null,
+          link: notification.post ? `/dashboard?post=${notification.post.id}` : null,
+          read: false,
+          created_at: notification.createdAt
+        }
+        setNotifications(prev => [newNotif, ...prev])
+        setUnreadCount(prev => prev + 1)
+      })
+    }
+  }, [socket.connected])
 
   useEffect(() => {
     fetchNotifications()
     fetchPreferences()
-    const interval = setInterval(fetchNotifications, 10000) // Poll every 10 seconds
-    return () => clearInterval(interval)
-  }, [])
+    
+    // Only poll if WebSocket is not connected (reduced from 10 to 60 seconds)
+    if (!useWebSocket) {
+      const interval = setInterval(fetchNotifications, 60000)
+      return () => clearInterval(interval)
+    }
+  }, [useWebSocket])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -86,7 +115,10 @@ export function NotificationsDropdown({ currentUserId }: NotificationsDropdownPr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notificationIds: [notificationId] })
       })
-      fetchNotifications()
+      setNotifications(notifications.map(n =>
+        n.id === notificationId ? { ...n, read: true } : n
+      ))
+      setUnreadCount(Math.max(0, unreadCount - 1))
     } catch (error) {
       console.error('Error marking notification as read:', error)
     }
@@ -99,7 +131,8 @@ export function NotificationsDropdown({ currentUserId }: NotificationsDropdownPr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ markAllRead: true })
       })
-      fetchNotifications()
+      setNotifications(notifications.map(n => ({ ...n, read: true })))
+      setUnreadCount(0)
     } catch (error) {
       console.error('Error marking all as read:', error)
     }
@@ -142,7 +175,16 @@ export function NotificationsDropdown({ currentUserId }: NotificationsDropdownPr
         <div className="absolute right-0 mt-2 w-96 bg-white border-2 border-slate-400 rounded-lg shadow-2xl z-50">
           {/* Header */}
           <div className="bg-gradient-to-r from-slate-600 to-slate-700 px-4 py-3 flex items-center justify-between border-b-2 border-slate-800">
-            <h3 className="font-bold text-white">Notifications</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-white">Notifications</h3>
+              {/* Real-time indicator */}
+              <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full ${
+                useWebSocket ? 'bg-green-500/30 text-green-300' : 'bg-yellow-500/30 text-yellow-300'
+              }`}>
+                {useWebSocket ? <Wifi className="w-2.5 h-2.5" /> : <WifiOff className="w-2.5 h-2.5" />}
+                <span>{useWebSocket ? 'Live' : 'Polling'}</span>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowSettings(!showSettings)}
@@ -305,7 +347,3 @@ function ToggleOption({ label, enabled, onChange }: { label: string; enabled: bo
     </div>
   )
 }
-
-
-
-

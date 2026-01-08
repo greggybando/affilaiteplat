@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Heart, MessageCircle, Image as ImageIcon, X, Send, MoreVertical, Copy, CheckCircle2, ChevronDown, Edit, Trash2, Pin, Lock, Flag, AlertTriangle } from 'lucide-react'
+import { Heart, Star, MessageCircle, Image as ImageIcon, X, Send, MoreVertical, Copy, CheckCircle2, ChevronDown, Edit, Trash2, Pin, Lock, Flag, AlertTriangle } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 interface User {
@@ -55,6 +55,7 @@ interface CommunityFeedProps {
     role?: string
   }
   glowIntensity?: number
+  searchQuery?: string
 }
 
 // Glow utility function
@@ -80,7 +81,7 @@ const glowShadow = (shadows: string, glowIntensity: number) => {
   }).join(', ')
 }
 
-export function CommunityFeed({ currentUser, glowIntensity = 50 }: CommunityFeedProps) {
+export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '' }: CommunityFeedProps) {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('All')
@@ -114,7 +115,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50 }: CommunityFeed
   const editableRef = useRef<HTMLDivElement>(null)
   const emojiButtonRef = useRef<HTMLButtonElement>(null)
 
-  const categories = ['All', 'Discussion', 'Questions', 'Resources', 'Wins']
+  const categories = ['All', 'Discussion', 'dreamjob questions', 'lifedesign questions', 'make money questions', 'Wins']
 
   // Bold button is a toggle - stays on until clicked again
   // No need to check cursor position, just track toggle state
@@ -145,7 +146,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50 }: CommunityFeed
 
   useEffect(() => {
     fetchPosts()
-  }, [selectedCategory])
+  }, [selectedCategory, searchQuery])
 
   // Sync contentEditable with state when composer is expanded
   useEffect(() => {
@@ -210,8 +211,14 @@ export function CommunityFeed({ currentUser, glowIntensity = 50 }: CommunityFeed
 
   const fetchPosts = async () => {
     try {
-      const category = selectedCategory === 'All' ? '' : selectedCategory
-      const url = `/api/community/posts${category ? `?category=${category}` : ''}`
+      const params = new URLSearchParams()
+      if (selectedCategory !== 'All') {
+        params.append('category', selectedCategory)
+      }
+      if (searchQuery && searchQuery.trim()) {
+        params.append('search', searchQuery.trim())
+      }
+      const url = `/api/community/posts${params.toString() ? `?${params.toString()}` : ''}`
       const res = await fetch(url)
       const data = await res.json()
       setPosts(data.posts || [])
@@ -310,6 +317,64 @@ export function CommunityFeed({ currentUser, glowIntensity = 50 }: CommunityFeed
     }
   }
 
+  const handleReplyLike = async (replyId: string, isNested: boolean = false) => {
+    // Find the reply in the replies array
+    const findAndUpdateReply = (replyList: Reply[], id: string): Reply[] => {
+      return replyList.map(reply => {
+        if (reply.id === id) {
+          return {
+            ...reply,
+            isLiked: !reply.isLiked,
+            likesCount: reply.isLiked ? reply.likesCount - 1 : reply.likesCount + 1
+          }
+        }
+        if (reply.replies && reply.replies.length > 0) {
+          return {
+            ...reply,
+            replies: findAndUpdateReply(reply.replies, id)
+          }
+        }
+        return reply
+      })
+    }
+
+    // Optimistic update
+    const updatedReplies = findAndUpdateReply(replies, replyId)
+    setReplies(updatedReplies)
+
+    try {
+      const res = await fetch(`/api/community/replies/${replyId}/like`, {
+        method: 'POST'
+      })
+      const data = await res.json()
+
+      // Update with server response
+      const updateWithServerData = (replyList: Reply[], id: string): Reply[] => {
+        return replyList.map(reply => {
+          if (reply.id === id) {
+            return {
+              ...reply,
+              isLiked: data.liked,
+              likesCount: data.likesCount
+            }
+          }
+          if (reply.replies && reply.replies.length > 0) {
+            return {
+              ...reply,
+              replies: updateWithServerData(reply.replies, id)
+            }
+          }
+          return reply
+        })
+      }
+      setReplies(updateWithServerData(replies, replyId))
+    } catch (error) {
+      // Rollback on error
+      setReplies(replies)
+      console.error('Error toggling reply like:', error)
+    }
+  }
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
@@ -344,8 +409,8 @@ export function CommunityFeed({ currentUser, glowIntensity = 50 }: CommunityFeed
           alert('Maximum 4 images allowed')
           continue
         }
-        if (file.size > 2 * 1024 * 1024) {
-          alert(`${file.name} is too large. Maximum 2MB per image.`)
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`${file.name} is too large. Maximum 10MB per image.`)
           continue
         }
 
@@ -1267,8 +1332,9 @@ export function CommunityFeed({ currentUser, glowIntensity = 50 }: CommunityFeed
                 </div>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   selectedPost.category === 'Wins' ? 'bg-green-500/20 text-green-400' :
-                  selectedPost.category === 'Resources' ? 'bg-blue-500/20 text-blue-400' :
-                  selectedPost.category === 'Questions' ? 'bg-amber-500/20 text-amber-400' :
+                  selectedPost.category === 'dreamjob questions' ? 'bg-amber-500/20 text-amber-400' :
+                  selectedPost.category === 'lifedesign questions' ? 'bg-amber-500/20 text-amber-400' :
+                  selectedPost.category === 'make money questions' ? 'bg-amber-500/20 text-amber-400' :
                   'bg-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.7)]'
                 }`}>
                   {selectedPost.category}
@@ -1381,7 +1447,10 @@ export function CommunityFeed({ currentUser, glowIntensity = 50 }: CommunityFeed
                               <button className="text-sm text-[rgba(255,255,255,0.6)] hover:text-cyan-400 transition-colors">
                                 Reply
                               </button>
-                              <button className="flex items-center gap-1 text-sm text-[rgba(255,255,255,0.6)] hover:text-yellow-400 transition-colors">
+                              <button 
+                                onClick={() => handleReplyLike(reply.id)}
+                                className="flex items-center gap-1 text-sm text-[rgba(255,255,255,0.6)] hover:text-yellow-400 transition-colors"
+                              >
                                 <Heart className={`w-4 h-4 ${reply.isLiked ? 'fill-current text-yellow-400' : ''}`} style={reply.isLiked ? {
                                   filter: 'drop-shadow(0 0 6px rgba(253,224,71,0.8)) drop-shadow(0 0 12px rgba(253,224,71,0.6))'
                                 } : {}} />
@@ -1423,7 +1492,10 @@ export function CommunityFeed({ currentUser, glowIntensity = 50 }: CommunityFeed
                                     <span className="text-xs text-[rgba(255,255,255,0.6)]">{formatTime(nestedReply.createdAt)}</span>
                                   </div>
                                   <p className="text-[rgba(255,255,255,0.8)] text-sm mb-1">{nestedReply.content}</p>
-                                  <button className="flex items-center gap-1 text-xs text-[rgba(255,255,255,0.6)] hover:text-yellow-400 transition-colors">
+                                  <button 
+                                    onClick={() => handleReplyLike(nestedReply.id)}
+                                    className="flex items-center gap-1 text-xs text-[rgba(255,255,255,0.6)] hover:text-yellow-400 transition-colors"
+                                  >
                                     <Heart className={`w-3 h-3 ${nestedReply.isLiked ? 'fill-current text-yellow-400' : ''}`} style={nestedReply.isLiked ? {
                                       filter: 'drop-shadow(0 0 4px rgba(253,224,71,0.8)) drop-shadow(0 0 8px rgba(253,224,71,0.6))'
                                     } : {}} />

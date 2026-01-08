@@ -132,3 +132,4 @@ To display attachments in the course viewer:
 
 Would you like me to implement the display of attachments in the course viewer as well?
 
+

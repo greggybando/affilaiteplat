@@ -240,3 +240,4 @@ END $$;
 -- Make yourself admin (CHANGE THIS EMAIL)
 -- UPDATE affiliates SET is_admin = true WHERE email = 'YOUR_EMAIL_HERE';
 
+

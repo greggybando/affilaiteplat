@@ -172,3 +172,4 @@ function redirectToLandingPage(link: any): NextResponse {
   return NextResponse.redirect(new URL(`/p/${productSlug}/${pageSlug}`, appUrl))
 }
 
+

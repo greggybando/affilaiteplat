@@ -32,15 +32,44 @@ export async function POST(
       return NextResponse.json({ error: 'You must be a member to add others' }, { status: 403 })
     }
 
-    // Add members (skip if already members)
-    const memberInserts = memberIds
-      .filter((id: string) => id !== affiliate.id)
-      .map((id: string) => ({
+    // Check 3-chat limit for each member before adding
+    const membersToAdd: string[] = []
+    const membersAtLimit: string[] = []
+
+    for (const memberId of memberIds) {
+      if (memberId === affiliate.id) continue // Skip self
+
+      // Check if already in this chat
+      const { data: existing } = await supabaseAdmin
+        .from('group_chat_participants')
+        .select('id')
+        .eq('affiliate_id', memberId)
+        .eq('group_chat_id', chatId)
+        .maybeSingle()
+
+      if (existing) continue // Already in this chat
+
+      // Check how many chats they're in
+      const { count: chatCount } = await supabaseAdmin
+        .from('group_chat_participants')
+        .select('id', { count: 'exact', head: true })
+        .eq('affiliate_id', memberId)
+        .not('group_chat_id', 'is', null)
+
+      if ((chatCount || 0) >= 3) {
+        membersAtLimit.push(memberId)
+      } else {
+        membersToAdd.push(memberId)
+      }
+    }
+
+    // Add members that are under the limit
+    if (membersToAdd.length > 0) {
+      const memberInserts = membersToAdd.map((id: string) => ({
         affiliate_id: id,
         group_chat_id: chatId
       }))
 
-    if (memberInserts.length > 0) {
       const { error: insertError } = await (supabaseAdmin.from('group_chat_participants') as any)
         .insert(memberInserts)
         .select()
@@ -51,12 +80,23 @@ export async function POST(
       }
     }
 
+    // Return success with info about members at limit
+    if (membersAtLimit.length > 0) {
+      return NextResponse.json({ 
+        success: true,
+        warning: `${membersAtLimit.length} member(s) could not be added - they are already in 3 chats`,
+        added: membersToAdd.length,
+        skipped: membersAtLimit.length
+      })
+    }
+
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('API add members error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
 
 
 

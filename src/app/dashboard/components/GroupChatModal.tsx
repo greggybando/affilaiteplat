@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { X, Send, Users, LogOut, MessageCircle, Plus, Bell, BellOff, Trash2, MoreVertical, Search, UserPlus } from 'lucide-react'
+import { X, Send, Users, LogOut, MessageCircle, Plus, Bell, BellOff, Trash2, MoreVertical, Search, UserPlus, Wifi, WifiOff } from 'lucide-react'
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns'
+import { useSocket } from '@/hooks/useSocket'
 
 interface GroupChatMessage {
   id: string
@@ -56,6 +57,43 @@ export function GroupChatModal({ isOpen, onClose, currentUserId, currentUserName
   const [showChatMenu, setShowChatMenu] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // WebSocket connection
+  const socket = useSocket({ userId: currentUserId, enabled: isOpen })
+  const useWebSocket = socket.isSocketEnabled && socket.connected
+
+  // Register message handlers when socket is ready
+  useEffect(() => {
+    if (socket.connected) {
+      socket.onMessage((msg) => {
+        // Only add if it's for the current chat
+        if (msg.chat_id === selectedChatId) {
+          setMessages(prev => {
+            // Avoid duplicates (in case of optimistic update)
+            const exists = prev.some(m => m.id === msg.id || (m.id.startsWith('temp-') && m.message === msg.message))
+            if (exists) {
+              // Replace temp message with real one
+              return prev.map(m => 
+                m.id.startsWith('temp-') && m.message === msg.message ? {
+                  ...msg,
+                  user_avatar: msg.user_avatar || null
+                } : m
+              )
+            }
+            return [...prev, {
+              ...msg,
+              user_avatar: msg.user_avatar || null
+            }]
+          })
+        }
+      })
+      
+      socket.onMessageDeleted(({ messageId }) => {
+        setMessages(prev => prev.filter(m => m.id !== messageId))
+      })
+    }
+  }, [socket.connected, selectedChatId])
 
   useEffect(() => {
     if (isOpen) {
@@ -63,19 +101,32 @@ export function GroupChatModal({ isOpen, onClose, currentUserId, currentUserName
     }
   }, [isOpen])
 
+  // Join/leave chat room via WebSocket
   useEffect(() => {
-    if (selectedChatId) {
-      fetchMessages()
-      const interval = setInterval(fetchMessages, 2000)
-      return () => clearInterval(interval)
+    if (selectedChatId && socket.connected) {
+      socket.joinChat(selectedChatId)
+      fetchMessages() // Fetch initial messages
     }
-  }, [selectedChatId, isOpen])
+    
+    return () => {
+      if (selectedChatId && socket.connected) {
+        socket.leaveChat(selectedChatId)
+      }
+    }
+  }, [selectedChatId, socket.connected])
 
   useEffect(() => {
     if (selectedChatId) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages, selectedChatId])
+
+  // Update online count from socket
+  useEffect(() => {
+    if (socket.onlineCount > 0) {
+      setParticipants(socket.onlineCount)
+    }
+  }, [socket.onlineCount])
 
   const fetchChats = async () => {
     try {
@@ -245,14 +296,60 @@ export function GroupChatModal({ isOpen, onClose, currentUserId, currentUserName
     }
   }
 
+  // Handle typing indicator
+  const handleTyping = () => {
+    if (!selectedChatId || !socket.connected) return
+    
+    socket.startTyping(selectedChatId)
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+    
+    // Stop typing after 2 seconds of no input
+    typingTimeoutRef.current = setTimeout(() => {
+      if (selectedChatId) {
+        socket.stopTyping(selectedChatId)
+      }
+    }, 2000)
+  }
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedChatId) return
 
     const messageText = newMessage.trim()
     setNewMessage('')
     setIsLoading(true)
+    
+    // Stop typing indicator
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+    if (socket.connected) {
+      socket.stopTyping(selectedChatId)
+    }
 
-    // Optimistic update
+    // Try WebSocket first
+    if (useWebSocket) {
+      const sent = socket.sendMessage(selectedChatId, messageText)
+      if (sent) {
+        // Optimistic update
+        const tempMessage: GroupChatMessage = {
+          id: `temp-${Date.now()}`,
+          user_id: currentUserId,
+          user_name: currentUserName,
+          user_avatar: currentUserAvatar,
+          message: messageText,
+          created_at: new Date().toISOString()
+        }
+        setMessages(prev => [...prev, tempMessage])
+        setIsLoading(false)
+        return
+      }
+    }
+
+    // Fallback to HTTP
     const tempMessage: GroupChatMessage = {
       id: `temp-${Date.now()}`,
       user_id: currentUserId,
@@ -288,6 +385,9 @@ export function GroupChatModal({ isOpen, onClose, currentUserId, currentUserName
 
   const selectedChat = chats.find(c => c.id === selectedChatId)
 
+  // Get typing users (excluding self)
+  const typingUserNames = Array.from(socket.typingUsers.values()).filter(name => name !== currentUserName)
+
   if (!isOpen) return null
 
   return (
@@ -304,6 +404,13 @@ export function GroupChatModal({ isOpen, onClose, currentUserId, currentUserName
                 <span>{participants} online</span>
               </div>
             )}
+            {/* Connection status */}
+            <div className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+              useWebSocket ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+            }`}>
+              {useWebSocket ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+              <span>{useWebSocket ? 'Real-time' : 'Polling'}</span>
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -570,12 +677,27 @@ export function GroupChatModal({ isOpen, onClose, currentUserId, currentUserName
                 <div ref={messagesEndRef} />
               </div>
 
+              {/* Typing Indicator */}
+              {typingUserNames.length > 0 && (
+                <div className="px-4 py-2 text-sm text-slate-400 bg-slate-900/50 border-t border-slate-700">
+                  <span className="italic">
+                    {typingUserNames.length === 1 
+                      ? `${typingUserNames[0]} is typing...`
+                      : `${typingUserNames.slice(0, 2).join(', ')}${typingUserNames.length > 2 ? ` and ${typingUserNames.length - 2} others` : ''} are typing...`
+                    }
+                  </span>
+                </div>
+              )}
+
               {/* Message Input */}
               <div className="px-4 py-3 border-t-2 border-slate-700 bg-slate-800">
                 <div className="flex gap-3">
                   <textarea
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value)
+                      handleTyping()
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault()

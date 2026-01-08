@@ -13,12 +13,26 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams
     const category = searchParams.get('category')
+    const search = searchParams.get('search')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
 
     let query = (supabaseAdmin.from('community_posts') as any)
       .select(`
-        *,
+        id,
+        user_id,
+        title,
+        content,
+        category,
+        image_urls,
+        pinned,
+        pinned_at,
+        created_at,
+        updated_at,
+        edited_at,
+        deleted_at,
+        locked,
+        hidden,
         user:affiliates!community_posts_user_id_fkey (
           id,
           avatar_name,
@@ -36,6 +50,10 @@ export async function GET(request: NextRequest) {
 
     if (category && category !== 'All') {
       query = query.eq('category', category)
+    }
+
+    if (search && search.trim()) {
+      query = query.or(`title.ilike.%${search.trim()}%,content.ilike.%${search.trim()}%`)
     }
 
     const { data: posts, error } = await query
@@ -88,7 +106,7 @@ export async function GET(request: NextRequest) {
       content: post.content,
       category: post.category,
       imageUrls: post.image_urls || [],
-      videoUrl: post.video_url || null,
+      videoUrl: (post as any).video_url || null,
       pinned: post.pinned,
       createdAt: post.created_at,
       user: {
@@ -148,16 +166,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Maximum 4 images allowed' }, { status: 400 })
     }
 
-    const { data: post, error } = await (supabaseAdmin.from('community_posts') as any).insert({
+    const insertData: any = {
       user_id: affiliate.id,
       title: autoTitle,
       content: content || '',
       category: category || 'Discussion',
-      image_urls: imageUrls || [],
-      video_url: videoUrl || null
-    })
+      image_urls: imageUrls || []
+    }
+    
+    // Only include video_url if the column exists (will be handled by migration)
+    if (videoUrl) {
+      insertData.video_url = videoUrl
+    }
+
+    const { data: post, error } = await (supabaseAdmin.from('community_posts') as any).insert(insertData)
       .select(`
-        *,
+        id,
+        user_id,
+        title,
+        content,
+        category,
+        image_urls,
+        pinned,
+        pinned_at,
+        created_at,
+        updated_at,
+        edited_at,
+        deleted_at,
+        locked,
+        hidden,
         user:affiliates!community_posts_user_id_fkey (
           id,
           avatar_name,
@@ -175,7 +212,7 @@ export async function POST(request: NextRequest) {
       content: post.content,
       category: post.category,
       imageUrls: post.image_urls || [],
-      videoUrl: post.video_url || null,
+      videoUrl: (post as any).video_url || null,
       pinned: post.pinned,
       createdAt: post.created_at,
       user: {

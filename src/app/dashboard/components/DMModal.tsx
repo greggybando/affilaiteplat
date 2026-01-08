@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { X, Send, Search } from 'lucide-react'
+import { X, Send, Search, Wifi, WifiOff } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { useSocket } from '@/hooks/useSocket'
 
 interface Conversation {
   partnerId: string
@@ -52,6 +53,48 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
   const [isLoading, setIsLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // WebSocket connection
+  const socket = useSocket({ userId: currentUserId, enabled: isOpen })
+  const useWebSocket = socket.isSocketEnabled && socket.connected
+
+  // Register message handlers when socket is ready
+  useEffect(() => {
+    if (socket.connected && selectedConversation) {
+      socket.onMessage((msg) => {
+        // Check if this message is for the current DM conversation
+        const isRelevant = (msg.user_id === selectedConversation.partnerId) || 
+                          (msg.user_id === currentUserId)
+        if (isRelevant) {
+          setMessages(prev => {
+            // Avoid duplicates
+            const exists = prev.some(m => m.id === msg.id || (m.id.startsWith('temp-') && m.message === msg.message))
+            if (exists) {
+              return prev.map(m => 
+                m.id.startsWith('temp-') && m.message === msg.message ? {
+                  id: msg.id,
+                  sender_id: msg.user_id,
+                  recipient_id: msg.user_id === currentUserId ? selectedConversation.partnerId : currentUserId,
+                  message: msg.message,
+                  read: true,
+                  created_at: msg.created_at
+                } : m
+              )
+            }
+            return [...prev, {
+              id: msg.id,
+              sender_id: msg.user_id,
+              recipient_id: msg.user_id === currentUserId ? selectedConversation.partnerId : currentUserId,
+              message: msg.message,
+              read: true,
+              created_at: msg.created_at
+            }]
+          })
+        }
+      })
+    }
+  }, [socket.connected, selectedConversation, currentUserId])
 
   useEffect(() => {
     if (isOpen) {
@@ -59,15 +102,22 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
     }
   }, [isOpen])
 
+  // Join DM room when conversation is selected
   useEffect(() => {
-    if (selectedConversation) {
+    if (selectedConversation && socket.connected) {
+      // Use a deterministic room ID for DMs (smaller ID first)
+      const roomId = [currentUserId, selectedConversation.partnerId].sort().join('-')
+      socket.joinChat(`dm:${roomId}`)
       fetchMessages(selectedConversation.partnerId)
-      const interval = setInterval(() => {
-        fetchMessages(selectedConversation.partnerId)
-      }, 3000) // Poll every 3 seconds
-      return () => clearInterval(interval)
     }
-  }, [selectedConversation])
+    
+    return () => {
+      if (selectedConversation && socket.connected) {
+        const roomId = [currentUserId, selectedConversation.partnerId].sort().join('-')
+        socket.leaveChat(`dm:${roomId}`)
+      }
+    }
+  }, [selectedConversation, socket.connected, currentUserId])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -97,24 +147,74 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
     }
   }
 
+  // Handle typing indicator
+  const handleTyping = () => {
+    if (!selectedConversation || !socket.connected) return
+    
+    const roomId = [currentUserId, selectedConversation.partnerId].sort().join('-')
+    socket.startTyping(`dm:${roomId}`)
+    
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      if (selectedConversation) {
+        const roomId = [currentUserId, selectedConversation.partnerId].sort().join('-')
+        socket.stopTyping(`dm:${roomId}`)
+      }
+    }, 2000)
+  }
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return
 
+    const messageText = newMessage.trim()
+    setNewMessage('')
     setIsLoading(true)
+    
+    // Stop typing indicator
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+    if (socket.connected && selectedConversation) {
+      const roomId = [currentUserId, selectedConversation.partnerId].sort().join('-')
+      socket.stopTyping(`dm:${roomId}`)
+    }
+
+    // Optimistic update
+    const tempMessage: Message = {
+      id: `temp-${Date.now()}`,
+      sender_id: currentUserId,
+      recipient_id: selectedConversation.partnerId,
+      message: messageText,
+      read: false,
+      created_at: new Date().toISOString()
+    }
+    setMessages(prev => [...prev, tempMessage])
+
     try {
       const res = await fetch(`/api/messages/${selectedConversation.partnerId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: newMessage })
+        body: JSON.stringify({ message: messageText })
       })
 
       if (res.ok) {
-        setNewMessage('')
-        fetchMessages(selectedConversation.partnerId)
+        // WebSocket will handle the real message update if connected
+        if (!useWebSocket) {
+          fetchMessages(selectedConversation.partnerId)
+        }
         fetchConversations()
+      } else {
+        // Remove optimistic message on error
+        setMessages(prev => prev.filter(m => m.id !== tempMessage.id))
+        setNewMessage(messageText)
       }
     } catch (error) {
       console.error('Error sending message:', error)
+      setMessages(prev => prev.filter(m => m.id !== tempMessage.id))
+      setNewMessage(messageText)
     } finally {
       setIsLoading(false)
     }
@@ -124,6 +224,9 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
     conv.partner.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  // Get typing users (for DM it would just be the partner)
+  const partnerTyping = selectedConversation && socket.typingUsers.has(selectedConversation.partnerId)
+
   if (!isOpen) return null
 
   return (
@@ -131,7 +234,16 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-600 to-slate-700 px-6 py-4 flex items-center justify-between border-b-2 border-slate-800">
-          <h2 className="text-xl font-bold text-white">Direct Messages</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-white">Direct Messages</h2>
+            {/* Connection status */}
+            <div className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+              useWebSocket ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'
+            }`}>
+              {useWebSocket ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+              <span>{useWebSocket ? 'Real-time' : 'Polling'}</span>
+            </div>
+          </div>
           <button
             onClick={onClose}
             className="text-white hover:text-amber-300 transition-colors"
@@ -222,7 +334,9 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
                     )}
                     <div>
                       <div className="font-semibold text-slate-800">{selectedConversation.partner.name}</div>
-                      <div className="text-xs text-slate-600">Active now</div>
+                      <div className="text-xs text-slate-600">
+                        {partnerTyping ? 'Typing...' : 'Active now'}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -271,12 +385,22 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
                   <div ref={messagesEndRef} />
                 </div>
 
+                {/* Typing Indicator */}
+                {partnerTyping && (
+                  <div className="px-6 py-2 text-sm text-slate-500 bg-slate-50 border-t border-slate-200">
+                    <span className="italic">{selectedConversation.partner.name} is typing...</span>
+                  </div>
+                )}
+
                 {/* Message Input */}
                 <div className="px-6 py-4 border-t border-slate-300 bg-white">
                   <div className="flex gap-3">
                     <textarea
                       value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
+                      onChange={(e) => {
+                        setNewMessage(e.target.value)
+                        handleTyping()
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault()
@@ -309,7 +433,3 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
     </div>
   )
 }
-
-
-
-

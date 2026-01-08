@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Bell, X } from 'lucide-react'
+import { Bell, X, Wifi, WifiOff } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
+import { useSocket } from '@/hooks/useSocket'
 
 interface Notification {
   id: string
@@ -36,13 +37,38 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
   const [loading, setLoading] = useState(true)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  
+  // WebSocket connection for real-time notifications
+  const socket = useSocket({ userId: currentUserId, enabled: true })
+  const useWebSocket = socket.isSocketEnabled && socket.connected
+
+  // Register notification handler
+  useEffect(() => {
+    if (socket.connected) {
+      socket.onNotification((notification) => {
+        // Add new notification to the top
+        setNotifications(prev => [notification as unknown as Notification, ...prev])
+        setUnreadCount(prev => prev + 1)
+      })
+      
+      // Also handle chat notifications as unread indicators
+      socket.onChatNotification((data) => {
+        // You could show a toast here or update a chat badge
+        console.log('New chat message:', data.senderName, data.messagePreview)
+      })
+    }
+  }, [socket.connected])
 
   useEffect(() => {
     fetchNotifications()
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000)
-    return () => clearInterval(interval)
-  }, [])
+    
+    // Only poll if WebSocket is not connected
+    if (!useWebSocket) {
+      // Poll for new notifications every 60 seconds (reduced from 30)
+      const interval = setInterval(fetchNotifications, 60000)
+      return () => clearInterval(interval)
+    }
+  }, [useWebSocket])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -157,7 +183,16 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
         <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 max-h-96 flex flex-col">
           {/* Header */}
           <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-            <h3 className="font-semibold text-slate-900">Notifications</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-slate-900">Notifications</h3>
+              {/* Real-time indicator */}
+              <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full ${
+                useWebSocket ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
+              }`}>
+                {useWebSocket ? <Wifi className="w-2.5 h-2.5" /> : <WifiOff className="w-2.5 h-2.5" />}
+                <span>{useWebSocket ? 'Live' : 'Polling'}</span>
+              </div>
+            </div>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
@@ -220,7 +255,3 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
     </div>
   )
 }
-
-
-
-

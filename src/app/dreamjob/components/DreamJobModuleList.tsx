@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Paperclip, X, Download, Save, Loader2, Check, Edit2, GripVertical } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Paperclip, X, Download, Save, Loader2, Check, Edit2, GripVertical, FileCheck, Lock } from 'lucide-react'
+import { CheckpointSubmission } from '@/components/CheckpointSubmission'
+import { useUnlockContext } from '@/contexts/UnlockContext'
 import {
   DndContext,
   closestCenter,
@@ -47,6 +49,7 @@ interface DreamJobModuleListProps {
     [key: string]: any
   }
   onVideoSelect?: (video: Video, module: Module) => void
+  onDataChange?: () => void
 }
 
 // Sortable Module Component
@@ -58,13 +61,15 @@ function SortableModule({
   editValues,
   selectedVideo,
   getVideoTitle,
+  isUnlocked,
   onToggle,
   onEdit,
   onUpdateEditValues,
   onSaveEdit,
   onCancelEdit,
   onVideoSelect,
-  onEditVideo
+  onEditVideo,
+  onVideosUpdate
 }: {
   module: Module
   isExpanded: boolean
@@ -73,6 +78,7 @@ function SortableModule({
   editValues: any
   selectedVideo: { moduleId: number, video: Video } | null
   getVideoTitle: (video: Video) => string
+  isUnlocked: boolean
   onToggle: (id: number) => void
   onEdit: (moduleId: number) => void
   onUpdateEditValues: (values: any) => void
@@ -80,6 +86,7 @@ function SortableModule({
   onCancelEdit: () => void
   onVideoSelect: (moduleId: number, video: Video) => void
   onEditVideo: (moduleId: number, video: Video) => void
+  onVideosUpdate?: (moduleId: number, newVideos: Video[]) => void
 }) {
   const {
     attributes,
@@ -99,75 +106,310 @@ function SortableModule({
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className="border-b-2 border-slate-700/50 last:border-b-0"
+      style={{
+        ...style,
+        borderColor: 'rgba(34,211,238,0.15)'
+      }}
+      className="border-b last:border-b-0"
     >
       {/* Module Header */}
-      <div className="w-full px-4 py-3 flex items-center gap-3 border-b border-slate-700/30 bg-slate-900/20">
+      <div className="w-full px-4 py-3 flex items-center gap-3" style={{
+        background: 'rgba(15,15,20,0.6)',
+        borderLeft: '2px solid transparent',
+        borderBottom: '1px solid rgba(34,211,238,0.1)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div className="absolute left-0 top-0 bottom-0 w-0.5" style={{
+          background: 'linear-gradient(to bottom, rgba(34,211,238,0.4), rgba(6,182,212,0.5), rgba(34,211,238,0.4))',
+          boxShadow: '0 0 4px rgba(34,211,238,0.3)',
+          opacity: 0.6
+        }} />
         {isAdmin && (
           <div
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-200 p-1 -ml-1"
+            className="cursor-grab active:cursor-grabbing p-1 -ml-1"
+            style={{ color: 'rgba(120,120,125,0.4)' }}
             title="Drag to reorder"
             onClick={(e) => e.stopPropagation()}
           >
-            <GripVertical className="w-5 h-5" />
+            <GripVertical className="w-3.5 h-3.5" />
           </div>
         )}
         <button
           type="button"
-          onClick={() => onToggle(module.id)}
-          className="flex-1 flex items-center gap-3 text-left hover:bg-slate-800/50 transition-colors"
+          onClick={() => {
+            if (!isUnlocked && !isAdmin) {
+              return // Don't allow toggle if locked
+            }
+            onToggle(module.id)
+          }}
+          disabled={!isUnlocked && !isAdmin}
+          className={`flex-1 flex items-center gap-2.5 text-left transition-all ${!isUnlocked && !isAdmin ? 'cursor-not-allowed opacity-60' : ''}`}
+          style={{ 
+            paddingLeft: '2px'
+          }}
         >
+          {!isUnlocked && !isAdmin && (
+            <Lock className="w-4 h-4 text-slate-500" />
+          )}
           <svg
-            className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+            className="transition-transform duration-200"
+            style={{
+              width: '10px',
+              height: '10px',
+              color: isUnlocked || isAdmin ? 'rgba(34,211,238,0.5)' : 'rgba(100,100,105,0.5)',
+              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+            }}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
           </svg>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-white truncate">{module.title}</div>
-            <div className="text-xs text-slate-400">{module.videos.length} lessons</div>
+            <div className="text-xs font-semibold uppercase tracking-wider" style={{
+              color: isUnlocked || isAdmin ? 'rgba(220,220,225,0.95)' : 'rgba(120,120,125,0.8)',
+              textShadow: isUnlocked || isAdmin ? '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3), 0 0 30px rgba(34,211,238,0.2)' : 'none',
+              letterSpacing: '0.08em',
+              fontWeight: 600
+            }}>
+              {module.title}
+              {!isUnlocked && !isAdmin && ' 🔒'}
+            </div>
           </div>
         </button>
       </div>
 
       {/* Module Lessons */}
       {isExpanded && (
-        <div className="bg-slate-900/50 border-t border-slate-700/30">
-          {module.videos.map((video, index) => {
-            const isSelected = selectedVideo?.moduleId === module.id && selectedVideo?.video.id === video.id
-            const displayTitle = getVideoTitle(video)
-            const isLast = index === module.videos.length - 1
-            return (
-              <div
-                key={video.id}
-                className={`w-full px-4 py-2.5 pl-11 flex items-center gap-2 hover:bg-slate-800/50 transition-colors border-b border-slate-700/20 ${
-                  isLast ? 'border-b-0' : ''
-                } ${
-                  isSelected ? 'bg-cyan-500/20 border-l-2 border-cyan-500' : ''
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => onVideoSelect(module.id, video)}
-                  className="flex-1 text-left"
-                >
-                  <div className="text-sm text-slate-200">{index + 1}. {displayTitle}</div>
-                </button>
-              </div>
-            )
-          })}
-        </div>
+        <>
+          {!isUnlocked && !isAdmin ? (
+            <div className="px-4 py-6 text-center bg-slate-900/30 border-t border-slate-700/30">
+              <Lock className="w-8 h-8 text-slate-500 mx-auto mb-3" />
+              <p className="text-slate-400 text-sm mb-1">This module is locked</p>
+              <p className="text-slate-500 text-xs">Complete the previous module's checkpoint to unlock this content</p>
+            </div>
+          ) : (
+            <SortableVideoList
+              videos={module.videos}
+              moduleId={module.id}
+              isAdmin={isAdmin}
+              selectedVideo={selectedVideo}
+              getVideoTitle={getVideoTitle}
+              onVideoSelect={onVideoSelect}
+              onVideosUpdate={onVideosUpdate}
+            />
+          )}
+        </>
       )}
     </div>
   )
 }
 
-export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJobModuleListProps) {
+// Sortable Video Component
+function SortableVideoItem({
+  video,
+  index,
+  moduleId,
+  isAdmin,
+  isSelected,
+  isLast,
+  displayTitle,
+  onVideoSelect
+}: {
+  video: Video
+  index: number
+  moduleId: number
+  isAdmin: boolean
+  isSelected: boolean
+  isLast: boolean
+  displayTitle: string
+  onVideoSelect: (moduleId: number, video: Video) => void
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `video-${moduleId}-${video.id}` })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        borderColor: 'rgba(34,211,238,0.05)',
+        background: isSelected 
+          ? 'rgba(25,25,30,0.5)'
+          : 'rgba(20,20,25,0.3)',
+        borderLeft: isSelected ? '2px solid rgba(34,211,238,0.4)' : '2px solid transparent',
+        boxShadow: isSelected ? 'inset 0 0 15px rgba(34,211,238,0.08)' : 'none'
+      }}
+      className="w-full px-4 py-1.5 pl-12 flex items-center gap-2.5 transition-all border-b last:border-b-0"
+      onMouseEnter={(e) => {
+        if (!isSelected) {
+          e.currentTarget.style.background = 'rgba(25,25,30,0.4)'
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isSelected) {
+          e.currentTarget.style.background = 'rgba(20,20,25,0.3)'
+        }
+      }}
+    >
+      {isAdmin && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1 -ml-1"
+          style={{ color: 'rgba(90,90,95,0.3)' }}
+          title="Drag to reorder"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="w-2.5 h-2.5" />
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => onVideoSelect(moduleId, video)}
+        className="flex-1 text-left"
+      >
+        <div className="text-xs leading-relaxed" style={{
+          color: isSelected ? 'rgba(34,211,238,0.9)' : 'rgba(170,170,175,0.85)',
+          textShadow: isSelected ? '0 0 6px rgba(34,211,238,0.2)' : 'none',
+          fontWeight: isSelected ? 500 : 400
+        }}>
+          <span style={{ 
+            color: 'rgba(110,110,115,0.5)',
+            marginRight: '8px',
+            fontSize: '10px',
+            fontVariantNumeric: 'tabular-nums'
+          }}>{index + 1}.</span>
+          {displayTitle}
+        </div>
+      </button>
+    </div>
+  )
+}
+
+// Sortable Video List Component
+function SortableVideoList({
+  videos,
+  moduleId,
+  isAdmin,
+  selectedVideo,
+  getVideoTitle,
+  onVideoSelect,
+  onVideosUpdate
+}: {
+  videos: Video[]
+  moduleId: number
+  isAdmin: boolean
+  selectedVideo: { moduleId: number, video: Video } | null
+  getVideoTitle: (video: Video) => string
+  onVideoSelect: (moduleId: number, video: Video) => void
+  onVideosUpdate?: (moduleId: number, newVideos: Video[]) => void
+}) {
+  const [videosList, setVideosList] = useState<Video[]>(videos)
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  useEffect(() => {
+    setVideosList(videos)
+  }, [videos])
+
+  const handleVideoDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = videosList.findIndex(v => `video-${moduleId}-${v.id}` === active.id)
+    const newIndex = videosList.findIndex(v => `video-${moduleId}-${v.id}` === over.id)
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newVideos = arrayMove(videosList, oldIndex, newIndex)
+      setVideosList(newVideos)
+
+      // Save new order to API (autosave without page reload)
+      try {
+        const res = await fetch('/api/admin/courses/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'video',
+            courseType: 'dreamjob',
+            moduleId: moduleId,
+            items: newVideos.map((video, index) => ({
+              id: video.id,
+              sortOrder: index
+            }))
+          })
+        })
+        
+        if (!res.ok) {
+          // Revert on error
+          setVideosList(videos)
+          alert('Error saving video order')
+        }
+        // Success - state already updated, changes are live immediately
+      } catch (error) {
+        console.error('Error reordering videos:', error)
+        // Revert on error
+        setVideosList(videos)
+        alert('Error saving video order')
+      }
+    }
+  }
+
+  return (
+    <div className="bg-slate-900/50 border-t border-slate-700/30">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleVideoDragEnd}
+      >
+        <SortableContext
+          items={videosList.map(v => `video-${moduleId}-${v.id}`)}
+          strategy={verticalListSortingStrategy}
+        >
+          {videosList.map((video, index) => {
+            const isSelected = selectedVideo?.moduleId === moduleId && selectedVideo?.video.id === video.id
+            const displayTitle = getVideoTitle(video)
+            const isLast = index === videosList.length - 1
+            return (
+              <SortableVideoItem
+                key={video.id}
+                video={video}
+                index={index}
+                moduleId={moduleId}
+                isAdmin={isAdmin}
+                isSelected={isSelected}
+                isLast={isLast}
+                displayTitle={displayTitle}
+                onVideoSelect={onVideoSelect}
+              />
+            )
+          })}
+        </SortableContext>
+      </DndContext>
+    </div>
+  )
+}
+
+export function DreamJobModuleList({ modules, affiliate, onVideoSelect, onDataChange }: DreamJobModuleListProps) {
   const isAdmin = affiliate?.role === 'admin' || affiliate?.role === 'moderator'
   const [expandedModule, setExpandedModule] = useState<number | null>(1)
   const [selectedVideo, setSelectedVideo] = useState<{ moduleId: number, video: Video } | null>(
@@ -183,10 +425,62 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
   const [editing, setEditing] = useState<{ type: 'module' | 'video', moduleId?: number, videoId?: string } | null>(null)
   const [editValues, setEditValues] = useState<any>({})
   const [modulesList, setModulesList] = useState(modules)
-
-  // Update modulesList when modules prop changes
+  const [checkpoints, setCheckpoints] = useState<Record<number, any>>({})
+  const [unlockDataState, setUnlockDataState] = useState<any>(null)
+  const [loadingCheckpoints, setLoadingCheckpoints] = useState<Record<number, boolean>>({})
+  const [checkpointModalOpen, setCheckpointModalOpen] = useState(false)
+  const [successModalOpen, setSuccessModalOpen] = useState(false)
+  const [unlockedModuleId, setUnlockedModuleId] = useState<number | null>(null)
+  // Direct unlock state from database - single source of truth
+  const [unlockedModules, setUnlockedModules] = useState<Set<number>>(new Set([1]))
+  const [defaultUnlockedIds, setDefaultUnlockedIds] = useState<number[]>([1])
+  
+  // Use centralized unlock context as backup
+  const { markModuleUnlocked, moduleUnlockStatus, initializeForCourse } = useUnlockContext()
+  
+  // Fetch unlocks and course config from API on mount
   useEffect(() => {
-    setModulesList(modules)
+    const fetchUnlocksAndConfig = async () => {
+      try {
+        // Fetch course config to get default unlocked modules
+        const configRes = await fetch('/api/courses/config?course=dreamjob')
+        const configData = await configRes.json()
+        console.log('[DreamJob] Course config:', configData)
+        
+        if (configData.defaultUnlockedModuleIds) {
+          setDefaultUnlockedIds(configData.defaultUnlockedModuleIds)
+        }
+        
+        // Fetch user's unlocked modules
+        const unlocksRes = await fetch('/api/user/module-unlocks?course=dreamjob')
+        const unlocksData = await unlocksRes.json()
+        console.log('[DreamJob] User unlocks:', unlocksData)
+        
+        if (unlocksData.unlockedModules && Array.isArray(unlocksData.unlockedModules)) {
+          setUnlockedModules(new Set(unlocksData.unlockedModules))
+        }
+      } catch (err) {
+        console.error('[DreamJob] Error fetching config/unlocks:', err)
+      }
+    }
+    fetchUnlocksAndConfig()
+  }, [])
+  
+  // Combined unlock check: direct state OR defaults
+  const isModuleUnlocked = (moduleId: number) => {
+    // Check default unlocked IDs (from API config)
+    if (defaultUnlockedIds.includes(moduleId)) return true
+    // Check user's unlocked modules (from API)
+    if (unlockedModules.has(moduleId)) return true
+    // Check context as fallback
+    if (moduleUnlockStatus[moduleId] === true) return true
+    return false
+  }
+
+  // Update modulesList when modules prop changes, ensuring they're sorted by id
+  useEffect(() => {
+    const sortedModules = [...modules].sort((a, b) => a.id - b.id)
+    setModulesList(sortedModules)
   }, [modules])
 
   const sensors = useSensors(
@@ -201,6 +495,13 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
   }
 
   const handleVideoSelect = (moduleId: number, video: Video) => {
+    // Check if module is unlocked using centralized context (SINGLE SOURCE OF TRUTH)
+    const unlocked = isModuleUnlocked(moduleId)
+    if (!unlocked && !isAdmin) {
+      console.log('[DreamJob] Cannot select video - module is locked:', moduleId)
+      return
+    }
+    
     setSelectedVideo({ moduleId, video })
     const module = modules.find(m => m.id === moduleId)
     if (module && onVideoSelect) {
@@ -319,12 +620,20 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
         })
 
         if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}))
+          console.error('Error saving module order:', errorData)
           // Revert on error
           setModulesList(modules)
-          alert('Error saving new order')
+          alert('Error saving new order: ' + (errorData.error || 'Unknown error'))
         } else {
-          // Refresh from server to get updated order
-          window.location.reload()
+          // Success - order is saved to database
+          // Refresh data after a short delay to get the updated order from database
+          // This ensures other admins see the change in real-time
+          setTimeout(() => {
+            if (onDataChange) {
+              onDataChange()
+            }
+          }, 500)
         }
       } catch (error) {
         console.error('Error saving order:', error)
@@ -464,6 +773,187 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
     return attachments[video.id] || []
   }
 
+  // Fetch checkpoints (unlock status is managed by UnlockContext)
+  const fetchCheckpoints = async () => {
+    try {
+      // Get unlock data to map section UUIDs to module IDs
+      const unlockRes = await fetch('/api/user/unlocks?courseType=dreamjob')
+      const unlockData = await unlockRes.json()
+      
+      if (unlockData.sections) {
+        setUnlockDataState(unlockData)
+        
+        const checkpointMap: Record<number, any> = {}
+        
+        // Fetch all checkpoints from public API
+        try {
+          const checkpointRes = await fetch(`/api/checkpoints/by-course?course=dreamjob`)
+          if (checkpointRes.ok) {
+            const checkpointData = await checkpointRes.json()
+            console.log('[DreamJob] Checkpoint API response:', checkpointData)
+            
+            const { byUUID, byNumericId, byTitle } = checkpointData
+            
+            // Map checkpoints to module IDs using multiple lookup methods
+            modulesList.forEach((module: any) => {
+              // Try by UUID if module has uuid
+              if (module.uuid && byUUID && byUUID[module.uuid]) {
+                checkpointMap[module.id] = byUUID[module.uuid]
+                console.log(`[DreamJob] ✓ Mapped checkpoint to module ${module.id} via UUID`)
+              }
+              // Try by numeric ID
+              else if (byNumericId && byNumericId[module.id]) {
+                checkpointMap[module.id] = byNumericId[module.id]
+                console.log(`[DreamJob] ✓ Mapped checkpoint to module ${module.id} via numeric ID`)
+              }
+              // Try by title
+              else if (module.title && byTitle && byTitle[module.title]) {
+                checkpointMap[module.id] = byTitle[module.title]
+                console.log(`[DreamJob] ✓ Mapped checkpoint to module ${module.id} via title`)
+              }
+            })
+            
+            console.log('[DreamJob] Total checkpoints mapped:', Object.keys(checkpointMap).length)
+            setCheckpoints(checkpointMap)
+          } else {
+            console.error('[DreamJob] Checkpoint fetch failed:', checkpointRes.status)
+          }
+        } catch (error) {
+          console.error('[DreamJob] Error fetching checkpoints:', error)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching checkpoints:', error)
+    }
+  }
+
+  // Initialize unlock context and fetch checkpoints on mount
+  useEffect(() => {
+    if (modulesList.length > 0) {
+      // Initialize unlock context with module IDs
+      initializeForCourse('dreamjob', modulesList.map(m => m.id))
+      // Fetch checkpoint data (separate from unlock status)
+      fetchCheckpoints()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modulesList]) // initializeForCourse is stable, no need to depend on it
+
+  // Fetch checkpoint for currently selected section if not already loaded
+  useEffect(() => {
+    if (!selectedVideo) return
+    
+    const moduleId = selectedVideo.moduleId
+    const currentCheckpoint = checkpoints[moduleId]
+    const hasCheckpoint = currentCheckpoint && currentCheckpoint.id && currentCheckpoint.title && currentCheckpoint.requirements
+    const isLoading = loadingCheckpoints[moduleId]
+    
+    // If we already have full checkpoint data, skip
+    if (hasCheckpoint) {
+      console.log('[DreamJob Checkpoint Fetch Effect] Already have checkpoint for module:', moduleId)
+      return
+    }
+    
+    // If already loading, skip
+    if (isLoading) {
+      console.log('[DreamJob Checkpoint Fetch Effect] Already loading checkpoint for module:', moduleId)
+      return
+    }
+    
+    console.log('[DreamJob Checkpoint Fetch Effect] Fetching for module:', moduleId)
+    
+    const module = modulesList.find(m => m.id === moduleId)
+    
+    if (!module) {
+      console.log('[DreamJob Checkpoint Fetch Effect] Module not found')
+      return
+    }
+    
+    // Try multiple methods to find checkpoint
+    const fetchCheckpoint = async () => {
+      setLoadingCheckpoints(prev => ({ ...prev, [moduleId]: true }))
+      
+      try {
+        // Method 1: Check unlock status for checkpoint ID (MOST RELIABLE)
+        if (unlockDataState?.sections) {
+          const matchingUnlock = unlockDataState.sections.find((s: any) => 
+            s.section_id === moduleId || s.title === module.title || s.id === moduleId
+          )
+          
+          console.log('[DreamJob Checkpoint Fetch Effect] Matching unlock section:', matchingUnlock)
+          console.log('[DreamJob Checkpoint Fetch Effect] Looking for module:', module.title, 'ID:', moduleId)
+          
+          if (matchingUnlock?.checkpointId) {
+            console.log('[DreamJob Checkpoint Fetch Effect] ✅ Found checkpoint ID in unlock status:', matchingUnlock.checkpointId)
+            
+            // Try direct fetch by checkpoint ID (this is the most reliable method)
+            const res = await fetch(`/api/checkpoints/${matchingUnlock.checkpointId}`)
+            const data = await res.json()
+            
+            console.log('[DreamJob Checkpoint Fetch Effect] Checkpoint fetch response:', data)
+            
+            if (data.checkpoint && data.checkpoint.id && data.checkpoint.title && data.checkpoint.requirements) {
+              console.log('[DreamJob Checkpoint Fetch Effect] ✅ Successfully fetched checkpoint:', data.checkpoint)
+              setCheckpoints(prev => ({ ...prev, [moduleId]: data.checkpoint }))
+              setLoadingCheckpoints(prev => ({ ...prev, [moduleId]: false }))
+              return
+            } else {
+              console.warn('[DreamJob Checkpoint Fetch Effect] Checkpoint data incomplete:', data.checkpoint)
+            }
+          } else {
+            console.log('[DreamJob Checkpoint Fetch Effect] No checkpointId in unlock status for module:', module.title)
+          }
+        }
+        
+        // Method 2: Try fetching by numeric module ID
+        console.log('[DreamJob Checkpoint Fetch Effect] Trying to fetch by module ID:', moduleId)
+        const res2 = await fetch(`/api/checkpoints/${moduleId}`)
+        const data2 = await res2.json()
+        
+        if (data2.checkpoint && data2.checkpoint.id && data2.checkpoint.title && data2.checkpoint.requirements) {
+          console.log('[DreamJob Checkpoint Fetch Effect] Successfully fetched checkpoint by module ID:', data2.checkpoint)
+          setCheckpoints(prev => ({ ...prev, [moduleId]: data2.checkpoint }))
+          setLoadingCheckpoints(prev => ({ ...prev, [moduleId]: false }))
+          return
+        }
+        
+        // Method 3: Try public checkpoint API by title
+        console.log('[DreamJob Checkpoint Fetch Effect] Trying public checkpoint API')
+        const res3 = await fetch(`/api/checkpoints/by-course?course=dreamjob`)
+        const data3 = await res3.json()
+        
+        if (data3.byTitle && data3.byTitle[module.title]) {
+          console.log('[DreamJob Checkpoint Fetch Effect] ✅ Found checkpoint by title:', data3.byTitle[module.title])
+          setCheckpoints(prev => ({ ...prev, [moduleId]: data3.byTitle[module.title] }))
+          setLoadingCheckpoints(prev => ({ ...prev, [moduleId]: false }))
+          return
+        }
+        
+        // Also try by section UUID from unlock data
+        const matchingUnlock = unlockDataState?.sections?.find((s: any) => 
+          s.title === module.title
+        )
+        
+        console.log('[DreamJob Checkpoint Fetch Effect] Matching unlock section:', matchingUnlock)
+        
+        if (matchingUnlock?.id && data3.byUUID && data3.byUUID[matchingUnlock.id]) {
+          console.log('[DreamJob Checkpoint Fetch Effect] ✅ Found checkpoint by UUID!')
+          setCheckpoints(prev => ({ ...prev, [moduleId]: data3.byUUID[matchingUnlock.id] }))
+          setLoadingCheckpoints(prev => ({ ...prev, [moduleId]: false }))
+          return
+        }
+        
+        console.log('[DreamJob Checkpoint Fetch Effect] No checkpoint found')
+        setLoadingCheckpoints(prev => ({ ...prev, [moduleId]: false }))
+      } catch (error) {
+        console.error('[DreamJob Checkpoint Fetch Effect] Error:', error)
+        setLoadingCheckpoints(prev => ({ ...prev, [moduleId]: false }))
+      }
+    }
+    
+    fetchCheckpoint()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVideo?.moduleId, unlockDataState, modulesList.length])
+
   // Fetch attachments and notes when video is selected
   useEffect(() => {
     if (selectedVideo?.video?.id) {
@@ -476,9 +966,23 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
   return (
     <div className="flex gap-6">
       {/* Left Sidebar - Course Navigation */}
-      <div className="w-80 bg-slate-800/30 rounded-xl border-2 border-slate-700/50 overflow-hidden flex flex-col max-h-[calc(100vh-200px)] sticky top-4">
-        <div className="p-4 border-b-2 border-slate-700/50 shrink-0 bg-slate-900/30">
-          <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Course Modules</h3>
+      <div className="w-80 rounded-lg overflow-hidden flex flex-col max-h-[calc(100vh-200px)] sticky top-4" style={{
+        background: 'linear-gradient(135deg, rgba(35,35,40,0.95) 0%, rgba(30,30,35,0.98) 50%, rgba(25,25,30,0.95) 100%)',
+        border: '1px solid rgba(70,70,75,0.6)',
+        boxShadow: `
+          inset 0 1px 1px rgba(255,255,255,0.05),
+          inset 0 -1px 1px rgba(0,0,0,0.8),
+          0 2px 8px rgba(0,0,0,0.6)
+        `
+      }}>
+        <div className="p-3 shrink-0 border-b" style={{
+          borderColor: 'rgba(34,211,238,0.2)',
+          background: 'linear-gradient(135deg, rgba(40,40,45,0.9) 0%, rgba(35,35,40,0.95) 100%)'
+        }}>
+          <h3 className="text-xs font-semibold uppercase tracking-widest" style={{
+            color: 'rgba(34,211,238,0.9)',
+            textShadow: '0 0 8px rgba(34,211,238,0.4)'
+          }}>Course Modules</h3>
         </div>
         <div className="flex-1 overflow-y-auto">
           <DndContext
@@ -490,8 +994,10 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
               items={modulesList.map(m => m.id)}
               strategy={verticalListSortingStrategy}
             >
-              {modulesList.map((module) => {
+              {[...modulesList].sort((a, b) => a.id - b.id).map((module) => {
                 const isExpanded = expandedModule === module.id
+                // Use centralized unlock context (SINGLE SOURCE OF TRUTH)
+                const unlocked = isModuleUnlocked(module.id)
                 return (
                   <SortableModule
                     key={module.id}
@@ -502,6 +1008,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
                     editValues={editValues}
                     selectedVideo={selectedVideo}
                     getVideoTitle={getVideoTitle}
+                    isUnlocked={unlocked}
                     onToggle={toggleModule}
                     onEdit={(moduleId) => {
                       setEditing({ type: 'module', moduleId })
@@ -515,6 +1022,13 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
                       setEditing({ type: 'video', moduleId, videoId: video.id })
                       setEditValues({ title: getVideoTitle(video), youtubeId: video.youtubeId })
                     }}
+                    onVideosUpdate={(moduleId, newVideos) => {
+                      setModulesList(prev => prev.map(m => 
+                        m.id === moduleId 
+                          ? { ...m, videos: newVideos }
+                          : m
+                      ))
+                    }}
                   />
                 )
               })}
@@ -524,7 +1038,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
       </div>
 
       {/* Right Main Content - Video Player */}
-      <div className="flex-1 bg-slate-800/30 rounded-xl border border-slate-700/50">
+      <div className="flex-1 bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden">
         {selectedVideo ? (
           <div className="space-y-0">
             {/* Video Player */}
@@ -548,7 +1062,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
             </div>
 
             {/* Video Info & Description */}
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 relative z-0">
               {/* Editable Title & Module Info */}
               {isAdmin && editing?.type === 'video' && editing.videoId === selectedVideo.video.id ? (
                 <div className="space-y-4">
@@ -576,7 +1090,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
                     <label className="block text-xs text-slate-400 mb-1">Module Title</label>
                     <input
                       type="text"
-                      value={editValues.moduleTitle || selectedVideo.module?.title || ''}
+                      value={editValues.moduleTitle || modulesList.find(m => m.id === selectedVideo.moduleId)?.title || ''}
                       onChange={(e) => setEditValues({ ...editValues, moduleTitle: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
                       placeholder="Module title"
@@ -628,8 +1142,242 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
                 </div>
               )}
 
+              {/* Checkpoint Button - Centered above Notes */}
+              {selectedVideo && (
+                <div className="mt-4 flex justify-center relative z-10">
+                  {(() => {
+                    const moduleId = selectedVideo.moduleId
+                    const module = modulesList.find(m => m.id === moduleId)
+                    const matchingUnlock = unlockDataState?.sections?.find((s: any) => 
+                      s.section_id === moduleId || s.title === module?.title
+                    )
+                    
+                    // Debug logging
+                    console.log('[DreamJob Checkpoint Button] Module ID:', moduleId)
+                    console.log('[DreamJob Checkpoint Button] Module:', module)
+                    console.log('[DreamJob Checkpoint Button] Checkpoints map:', checkpoints)
+                    console.log('[DreamJob Checkpoint Button] Checkpoint for this module:', checkpoints[moduleId])
+                    console.log('[DreamJob Checkpoint Button] Matching unlock:', matchingUnlock)
+                    
+                    // Try to get checkpoint from map
+                    let checkpoint = checkpoints[moduleId]
+                    
+                    // Try to find checkpoint by section title if not found by ID
+                    if (!checkpoint && module?.title) {
+                      // Search all checkpoints to find one matching this module's title
+                      const allCheckpoints = Object.values(checkpoints)
+                      const matchingCheckpoint = allCheckpoints.find((cp: any) => {
+                        // Check if this checkpoint's section matches our module
+                        return matchingUnlock?.checkpointId === cp?.id
+                      })
+                      if (matchingCheckpoint) {
+                        checkpoint = matchingCheckpoint as any
+                        // Also store it in the map for future use
+                        setCheckpoints(prev => ({ ...prev, [moduleId]: checkpoint }))
+                      }
+                    }
+                    
+                    // Show button if checkpoint exists
+                    if (checkpoint && checkpoint.id && checkpoint.title && checkpoint.requirements) {
+                      return (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            console.log('[DreamJob] Opening checkpoint modal for module:', moduleId)
+                            console.log('[DreamJob] Setting checkpointModalOpen to true')
+                            setCheckpointModalOpen(true)
+                            console.log('[DreamJob] checkpointModalOpen should now be true')
+                          }}
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                          }}
+                          className="px-8 py-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 font-semibold text-lg transition-all hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/20 flex items-center gap-3 relative z-50 cursor-pointer"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          <FileCheck className="w-6 h-6" />
+                          Submit Checkpoint
+                        </button>
+                      )
+                    }
+                    
+                    // Show loading button
+                    if (loadingCheckpoints[moduleId] || (matchingUnlock?.checkpointId && !checkpoint)) {
+                      return (
+                        <button
+                          disabled
+                          className="px-8 py-4 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-400 font-semibold text-lg flex items-center gap-3 cursor-not-allowed"
+                        >
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                          Loading Checkpoint...
+                        </button>
+                      )
+                    }
+                    
+                    // Always show button, even if no checkpoint (disabled state)
+                    return (
+                      <button
+                        disabled
+                        className="px-8 py-4 bg-slate-700/30 border border-slate-600/50 rounded-lg text-slate-500 font-semibold text-lg flex items-center gap-3 cursor-not-allowed opacity-60"
+                      >
+                        <FileCheck className="w-6 h-6" />
+                        No Checkpoint Available
+                      </button>
+                    )
+                  })()}
+                </div>
+              )}
+
+              {/* Checkpoint Modal */}
+              {checkpointModalOpen && selectedVideo && checkpoints[selectedVideo.moduleId] && (
+                <div 
+                  className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" 
+                  onClick={(e) => {
+                    // Only close if clicking the backdrop, not the modal content
+                    if (e.target === e.currentTarget) {
+                      setCheckpointModalOpen(false)
+                    }
+                  }}
+                >
+                  <div className="bg-slate-900 rounded-xl border border-slate-700/50 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto relative z-[101]" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
+                      <h3 className="text-xl font-bold text-white">Checkpoint Submission</h3>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCheckpointModalOpen(false)
+                        }}
+                        className="text-slate-400 hover:text-white transition-colors"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                    <div className="p-6">
+                      <CheckpointSubmission
+                        checkpointId={checkpoints[selectedVideo.moduleId].id}
+                        checkpointTitle={checkpoints[selectedVideo.moduleId].title}
+                        requirements={checkpoints[selectedVideo.moduleId].requirements}
+                        sectionId={selectedVideo.moduleId.toString()}
+                        onSuccess={async (status) => {
+                          console.log('[DreamJob] Checkpoint submission callback triggered with status:', status)
+                          
+                          // If approved, immediately unlock next section
+                          if (status === 'approved') {
+                            console.log('[DreamJob] Checkpoint approved! Unlocking next section...')
+                            
+                            const currentModuleId = selectedVideo?.moduleId
+                            if (currentModuleId) {
+                              const nextModuleId = currentModuleId + 1
+                              console.log(`[DreamJob] Marking module ${nextModuleId} as unlocked`)
+                              
+                              // Update LOCAL state immediately (guarantees re-render)
+                              setUnlockedModules(prev => {
+                                const newSet = new Set(prev)
+                                newSet.add(nextModuleId)
+                                return newSet
+                              })
+                              
+                              // Also persist via API (backend already does this, but call context too)
+                              markModuleUnlocked(nextModuleId)
+                              
+                              // Store for success modal
+                              setUnlockedModuleId(nextModuleId)
+                              
+                              // Close checkpoint modal and show success
+                              setCheckpointModalOpen(false)
+                              setSuccessModalOpen(true)
+                            }
+                          } else if (status === 'needs_review') {
+                            setCheckpointModalOpen(false)
+                            alert('⏳ Checkpoint submitted! Under review, you\'ll be notified within 24 hours.')
+                          } else {
+                            console.log('[DreamJob] Checkpoint denied, keeping modal open for resubmission')
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Success Modal */}
+              {successModalOpen && unlockedModuleId && (
+                <div 
+                  className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm" 
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      setSuccessModalOpen(false)
+                    }
+                  }}
+                >
+                  <div className="bg-slate-900 rounded-xl border border-slate-700/50 max-w-md w-full mx-4 relative z-[201]" onClick={(e) => e.stopPropagation()}>
+                    <div className="p-8 text-center">
+                      {/* Success Icon */}
+                      <div className="mb-6 flex justify-center">
+                        <div className="w-20 h-20 rounded-full bg-green-600/20 flex items-center justify-center border-2 border-green-500/50">
+                          <Check className="w-12 h-12 text-green-400" />
+                        </div>
+                      </div>
+                      
+                      {/* Title */}
+                      <h2 className="text-2xl font-bold text-white mb-2">Checkpoint Complete!</h2>
+                      
+                      {/* Next Section Info */}
+                      {(() => {
+                        const nextModule = modulesList.find(m => m.id === unlockedModuleId)
+                        return nextModule ? (
+                          <p className="text-slate-300 mb-6">
+                            You've unlocked: <span className="font-semibold text-cyan-400">{nextModule.title}</span>
+                          </p>
+                        ) : (
+                          <p className="text-slate-300 mb-6">Next section unlocked!</p>
+                        )
+                      })()}
+                      
+                      {/* Continue Button */}
+                      <button
+                        onClick={() => {
+                          console.log('[DreamJob] Continue to next section clicked, moduleId:', unlockedModuleId)
+                          if (unlockedModuleId) {
+                            const nextModule = modulesList.find(m => m.id === unlockedModuleId)
+                            if (nextModule && nextModule.videos.length > 0) {
+                              // Close the modal first
+                              setSuccessModalOpen(false)
+                              // Direct state update - we KNOW this module is unlocked (we just unlocked it)
+                              // No need to go through handleVideoSelect which re-checks unlock status
+                              setSelectedVideo({ moduleId: unlockedModuleId, video: nextModule.videos[0] })
+                              setExpandedModule(unlockedModuleId)
+                              // Trigger parent callback if exists
+                              if (onVideoSelect) {
+                                onVideoSelect(nextModule.videos[0], nextModule)
+                              }
+                            }
+                          }
+                        }}
+                        className="w-full px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 rounded-lg text-white font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2"
+                      >
+                        Continue to Next Section
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      
+                      {/* Close button */}
+                      <button
+                        onClick={() => setSuccessModalOpen(false)}
+                        className="mt-4 text-slate-400 hover:text-white text-sm transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Notes/Attachments Section */}
-              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
                 {(() => {
                   const videoNotes = getVideoNotes(selectedVideo.video)
                   const hasNotes = videoNotes && videoNotes.trim().length > 0
@@ -706,7 +1454,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect }: DreamJ
                               value={videoNotes}
                               onChange={(e) => handleNotesChange(selectedVideo.video.id, e.target.value)}
                               placeholder="Add your notes, thoughts, or questions about this lesson..."
-                              className="w-full bg-transparent text-slate-200 placeholder-slate-500 resize-y focus:outline-none focus:ring-2 focus:ring-cyan-500/50 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50"
+                              className="w-full bg-transparent text-slate-200 placeholder-slate-500 resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50"
                               style={{ 
                                 height: 'auto',
                                 minHeight: '120px'

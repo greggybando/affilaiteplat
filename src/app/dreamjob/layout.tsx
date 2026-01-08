@@ -1,8 +1,10 @@
 import { redirect } from 'next/navigation'
-import { getCurrentAffiliate } from '@/lib/auth'
+import { getCurrentAffiliate, isAdmin } from '@/lib/auth'
 import Link from 'next/link'
 import { DreamJobNav } from './components/DreamJobNav'
 import { AIChatBot } from './components/AIChatBot'
+import { AdminDropdown } from '@/components/AdminDropdown'
+import { DreamJobProviders } from './components/DreamJobProviders'
 
 export default async function DreamJobLayout({
   children,
@@ -10,6 +12,7 @@ export default async function DreamJobLayout({
   children: React.ReactNode
 }) {
   const affiliate = await getCurrentAffiliate()
+  const admin = await isAdmin()
 
   if (!affiliate) {
     redirect('/login')
@@ -42,6 +45,9 @@ export default async function DreamJobLayout({
             
             {/* Avatar */}
             <div className="flex items-center gap-3">
+              {admin && (
+                <AdminDropdown isAdmin={true} />
+              )}
               {(affiliate as any).avatar_url ? (
                 <img 
                   src={(affiliate as any).avatar_url} 
@@ -63,7 +69,9 @@ export default async function DreamJobLayout({
 
       {/* Page Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
+        <DreamJobProviders>
+          {children}
+        </DreamJobProviders>
       </main>
 
       {/* Floating AI Chat Bot */}
@@ -71,6 +79,7 @@ export default async function DreamJobLayout({
     </div>
   )
 }
+
 
 
 

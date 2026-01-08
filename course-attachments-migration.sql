@@ -22,3 +22,4 @@ CREATE INDEX idx_course_attachments_parent ON course_attachments(parent_id, pare
 CREATE INDEX idx_course_attachments_course_type ON course_attachments(course_type);
 CREATE INDEX idx_course_attachments_type ON course_attachments(attachment_type);
 
+

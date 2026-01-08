@@ -9,3 +9,4 @@ ALTER COLUMN parent_id TYPE TEXT;
 DROP INDEX IF EXISTS idx_course_attachments_parent;
 CREATE INDEX idx_course_attachments_parent ON course_attachments(parent_id, parent_type);
 
+

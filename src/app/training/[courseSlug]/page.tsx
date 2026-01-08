@@ -56,3 +56,4 @@ export default async function CoursePage({ params }: { params: { courseSlug: str
   return <CourseContent course={course} isAdmin={isAdmin} />
 }
 
+

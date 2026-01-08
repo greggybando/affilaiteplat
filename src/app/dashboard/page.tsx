@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation'
-import { getCurrentAffiliate } from '@/lib/auth'
+import { getCurrentAffiliate, isAdmin } from '@/lib/auth'
 import { DashboardClient } from './DashboardClient'
 
 export default async function DashboardPage() {
   const affiliate = await getCurrentAffiliate()
+  const admin = await isAdmin()
 
   if (!affiliate) {
     redirect('/login')
@@ -15,7 +16,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <DashboardClient affiliate={affiliate as any} />
+    <DashboardClient affiliate={affiliate as any} isAdmin={admin} />
   )
 }
 

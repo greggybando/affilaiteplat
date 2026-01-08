@@ -87,7 +87,7 @@ export async function PATCH(
     const { data: updatedPost, error } = await (supabaseAdmin.from('community_posts') as any)
       .update(updateData)
       .eq('id', params.postId)
-      .select()
+      .select('id, user_id, title, content, category, image_urls, pinned, pinned_at, created_at, updated_at, edited_at, deleted_at, locked, hidden')
       .single()
 
     if (error) throw error
@@ -109,6 +109,7 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+
 
 
 

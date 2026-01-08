@@ -85,6 +85,18 @@ export default async function AdminPage() {
             <Link href="/admin/bounties" className="text-gray-400 hover:text-white text-sm">
               Bounties
             </Link>
+            <Link href="/admin/courses" className="text-gray-400 hover:text-white text-sm">
+              Courses
+            </Link>
+            <Link href="/admin/checkpoints" className="text-gray-400 hover:text-white text-sm">
+              Checkpoints
+            </Link>
+            <Link href="/admin/checkpoints/review" className="text-gray-400 hover:text-white text-sm">
+              Review Queue
+            </Link>
+            <Link href="/admin/unlock-rules" className="text-gray-400 hover:text-white text-sm">
+              Unlock Rules
+            </Link>
             <Link href="/api/auth/logout" prefetch={false} className="text-gray-400 hover:text-white text-sm">
               Logout
             </Link>
@@ -99,6 +111,22 @@ export default async function AdminPage() {
           <StatCard label="Paying Affiliates" value={overview?.paying_affiliates || 0} color="green" />
           <StatCard label="Clicks (30d)" value={overview?.clicks_30d || 0} />
           <StatCard label="Conversions (30d)" value={overview?.conversions_30d || 0} />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+          <Link href="/admin/checkpoints" className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-cyan-500 transition-colors">
+            <h3 className="text-lg font-semibold text-white mb-2">Manage Checkpoints</h3>
+            <p className="text-sm text-gray-400">Create and edit checkpoints for course sections</p>
+          </Link>
+          <Link href="/admin/checkpoints/review" className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-yellow-500 transition-colors">
+            <h3 className="text-lg font-semibold text-white mb-2">Review Queue</h3>
+            <p className="text-sm text-gray-400">Review pending checkpoint submissions</p>
+          </Link>
+          <Link href="/admin/unlock-rules" className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-green-500 transition-colors">
+            <h3 className="text-lg font-semibold text-white mb-2">Unlock Rules</h3>
+            <p className="text-sm text-gray-400">Configure course and section unlock rules</p>
+          </Link>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">

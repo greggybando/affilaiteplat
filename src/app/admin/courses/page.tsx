@@ -16,3 +16,4 @@ export default async function CourseManagementPage() {
   return <CourseManagementClient affiliate={affiliate as any} />
 }
 
+

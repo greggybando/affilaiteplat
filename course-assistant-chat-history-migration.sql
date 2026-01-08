@@ -47,3 +47,4 @@ CREATE TRIGGER update_course_assistant_conversation_updated_at
 
 
 
+

@@ -107,11 +107,103 @@ export async function POST(request: NextRequest) {
     }
 
     // Add creator as participant
-    await (supabaseAdmin.from('group_chat_participants') as any)
-      .insert({
-        affiliate_id: affiliate.id,
-        group_chat_id: chat.id
-      })
+    // Check if they're already in this specific chat
+    const { data: existingCreator } = await supabaseAdmin
+      .from('group_chat_participants')
+      .select('id')
+      .eq('affiliate_id', affiliate.id)
+      .eq('group_chat_id', chat.id)
+      .maybeSingle()
+
+    if (!existingCreator) {
+      // Check how many chats they're already in (max 3)
+      const { data: existingChats, count: chatCount } = await supabaseAdmin
+        .from('group_chat_participants')
+        .select('id, group_chat_id', { count: 'exact' })
+        .eq('affiliate_id', affiliate.id)
+        .not('group_chat_id', 'is', null)
+
+      const currentChatCount = chatCount || 0
+
+      // Enforce 3-chat limit
+      if (currentChatCount >= 3) {
+        await supabaseAdmin
+          .from('group_chats')
+          .delete()
+          .eq('id', chat.id)
+        return NextResponse.json({ 
+          error: 'Maximum chat limit reached',
+          details: 'You can only be in 3 group chats at a time. Please leave one before creating a new chat.'
+        }, { status: 400 })
+      }
+
+      // Insert the creator as participant
+      const { error: creatorParticipantError, data: insertedParticipant } = await (supabaseAdmin
+        .from('group_chat_participants') as any)
+        .insert({
+          affiliate_id: affiliate.id,
+          group_chat_id: chat.id
+        })
+        .select()
+        .single()
+
+      if (creatorParticipantError) {
+        console.error('Error adding creator as participant:', creatorParticipantError)
+        console.error('Error code:', creatorParticipantError.code)
+        console.error('Error message:', creatorParticipantError.message)
+        console.error('Error details:', JSON.stringify(creatorParticipantError, null, 2))
+        
+        // Check if this is a unique constraint violation
+        const isUniqueViolation = creatorParticipantError.code === '23505' || 
+                                  creatorParticipantError.message?.includes('unique') ||
+                                  creatorParticipantError.message?.includes('duplicate')
+        
+        // Double-check if participant was actually created (race condition)
+        const { data: doubleCheck } = await supabaseAdmin
+          .from('group_chat_participants')
+          .select('id')
+          .eq('affiliate_id', affiliate.id)
+          .eq('group_chat_id', chat.id)
+          .maybeSingle()
+        
+        if (!doubleCheck) {
+          // Participant still doesn't exist - real error, delete chat
+          await supabaseAdmin
+            .from('group_chats')
+            .delete()
+            .eq('id', chat.id)
+          
+          // Return detailed error for debugging
+          const errorMessage = creatorParticipantError.message || 'Unknown error'
+          const errorCode = creatorParticipantError.code || 'NO_CODE'
+          const errorDetails = creatorParticipantError.details || creatorParticipantError.hint || ''
+          
+          console.error('FINAL ERROR - Participant insert failed:', {
+            code: errorCode,
+            message: errorMessage,
+            details: errorDetails,
+            isUniqueViolation,
+            currentChatCount,
+            fullError: JSON.stringify(creatorParticipantError, null, 2)
+          })
+          
+          // If it's a unique violation, provide helpful message
+          if (isUniqueViolation) {
+            return NextResponse.json({ 
+              error: 'Database constraint: User can only be in one chat. Please run the migration file "drop-unique-affiliate-id-constraint.sql" in your Supabase SQL editor to drop the old UNIQUE(affiliate_id) constraint.',
+              details: `Error: ${errorMessage} (Code: ${errorCode}). After running the migration, users will be able to join up to 3 chats.`
+            }, { status: 500 })
+          }
+          
+          return NextResponse.json({ 
+            error: 'Failed to add creator as participant',
+            details: `${errorMessage} (Code: ${errorCode})${errorDetails ? ` - ${errorDetails}` : ''}`
+          }, { status: 500 })
+        }
+        // Participant exists now (race condition), continue
+      }
+    }
+    // If creator already exists in this chat, that's fine, continue
 
     // Add other members if provided
     if (memberIds && Array.isArray(memberIds) && memberIds.length > 0) {
@@ -123,8 +215,14 @@ export async function POST(request: NextRequest) {
         }))
 
       if (memberInserts.length > 0) {
-        await (supabaseAdmin.from('group_chat_participants') as any)
+        const { error: membersError } = await (supabaseAdmin.from('group_chat_participants') as any)
           .insert(memberInserts)
+          .select()
+
+        if (membersError && membersError.code !== '23505') { // Ignore duplicate key errors
+          console.error('Error adding members:', membersError)
+          // Don't fail the whole request if members fail to add, but log it
+        }
       }
     }
 
