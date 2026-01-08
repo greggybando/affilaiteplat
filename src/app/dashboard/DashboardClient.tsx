@@ -368,6 +368,14 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                 />
                 <span className="text-white text-xs w-8 text-right">{glowIntensity}%</span>
               </div>
+              {/* DM BUTTON - Placed here to guarantee visibility */}
+              <button
+                onClick={() => setIsDMModalOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 rounded-lg text-white text-xs font-semibold shadow-lg shadow-cyan-500/30 transition-all"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>DMs</span>
+              </button>
               {/* Search Bar */}
               <div className="relative hidden md:block">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[rgba(255,255,255,0.6)]" />
