@@ -22,7 +22,7 @@ interface Message {
   created_at: string
 }
 
-export function DMInbox({ currentUserId }: { currentUserId: string }) {
+export function DMInbox({ currentUserId, forceOpen }: { currentUserId: string; forceOpen?: boolean }) {
   const [isOpen, setIsOpen] = useState(false)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
@@ -51,6 +51,16 @@ export function DMInbox({ currentUserId }: { currentUserId: string }) {
       fetchConversations()
     }
   }, [isOpen, selectedConversation])
+
+  // External control to force open/close
+  useEffect(() => {
+    if (forceOpen !== undefined) {
+      setIsOpen(forceOpen)
+      if (!forceOpen) {
+        setSelectedConversation(null)
+      }
+    }
+  }, [forceOpen])
 
   // Fetch messages when conversation selected
   useEffect(() => {
@@ -161,8 +171,9 @@ export function DMInbox({ currentUserId }: { currentUserId: string }) {
       {/* Trigger Button - matches NotificationBell pattern */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.16)] rounded-xl border border-[rgba(255,255,255,0.18)] transition-colors"
+        className="relative z-[105] p-2 bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.16)] rounded-xl border border-[rgba(255,255,255,0.18)] transition-colors"
         title="Messages"
+        style={{ pointerEvents: 'auto' }}
       >
         <MessageCircle className="w-5 h-5 text-white" />
         {unreadTotal > 0 && (
