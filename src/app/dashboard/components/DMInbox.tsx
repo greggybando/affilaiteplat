@@ -171,10 +171,10 @@ export function DMInbox({ currentUserId, forceOpen }: { currentUserId: string; f
       {/* Trigger Button - matches NotificationBell pattern */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+        className="relative p-2 bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.16)] rounded-xl border border-[rgba(255,255,255,0.18)] transition-colors"
         title="Messages"
       >
-        <MessageCircle className="w-5 h-5 text-slate-600" />
+        <MessageCircle className="w-5 h-5 text-white" />
         {unreadTotal > 0 && (
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-semibold rounded-full flex items-center justify-center">
             {unreadTotal > 9 ? '9+' : unreadTotal}
@@ -184,21 +184,21 @@ export function DMInbox({ currentUserId, forceOpen }: { currentUserId: string; f
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50">
+        <div className="absolute right-0 top-full mt-2 w-80 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] overflow-hidden z-[9999]" style={{ backdropFilter: 'blur(20px)', boxShadow: '0 0 40px rgba(6,182,212,0.3), 0 8px 32px rgba(0,0,0,0.8)' }}>
           {/* Header */}
-          <div className="p-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div className="p-3 border-b border-[rgba(255,255,255,0.1)] flex items-center justify-between bg-[rgba(255,255,255,0.05)]">
             {selectedConversation ? (
               <>
-                <button onClick={() => setSelectedConversation(null)} className="p-1 hover:bg-slate-200 rounded" title="Back">
+                <button onClick={() => setSelectedConversation(null)} className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded text-white" title="Back">
                   <ArrowLeft className="w-4 h-4" />
                 </button>
-                <span className="font-medium truncate">{selectedConversation.participant.name}</span>
+                <span className="font-medium truncate text-white">{selectedConversation.participant.name}</span>
                 <div className="w-6" />
               </>
             ) : (
               <>
-                <span className="font-semibold text-slate-800">Messages</span>
-                <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-slate-200 rounded" title="Close">
+                <span className="font-semibold text-white">Messages</span>
+                <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded text-white" title="Close">
                   <X className="w-4 h-4" />
                 </button>
               </>
@@ -209,14 +209,14 @@ export function DMInbox({ currentUserId, forceOpen }: { currentUserId: string; f
           {selectedConversation ? (
             // Message View
             <div className="flex flex-col h-96">
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-[rgba(15,15,26,0.6)]">
                 {messages.map(msg => (
                   <div
                     key={msg.id}
                     className={`max-w-[80%] p-2 rounded-lg text-sm ${
                       msg.sender_id === currentUserId
-                        ? 'ml-auto bg-cyan-500 text-white'
-                        : 'bg-slate-100 text-slate-800'
+                        ? 'ml-auto bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-lg'
+                        : 'bg-[rgba(255,255,255,0.1)] text-white border border-[rgba(255,255,255,0.1)]'
                     }`}
                   >
                     {msg.content}
@@ -224,7 +224,7 @@ export function DMInbox({ currentUserId, forceOpen }: { currentUserId: string; f
                 ))}
                 <div ref={messagesEndRef} />
               </div>
-              <div className="p-2 border-t border-slate-200 flex gap-2">
+              <div className="p-2 border-t border-[rgba(255,255,255,0.1)] flex gap-2 bg-[rgba(255,255,255,0.05)]">
                 <input
                   type="text"
                   value={newMessage}
@@ -236,12 +236,12 @@ export function DMInbox({ currentUserId, forceOpen }: { currentUserId: string; f
                     }
                   }}
                   placeholder="Type a message..."
-                  className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500"
+                  className="flex-1 px-3 py-2 text-sm bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50"
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!newMessage.trim()}
-                  className="p-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50"
+                  className="p-2 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg hover:from-cyan-600 hover:to-cyan-700 disabled:opacity-50 shadow-lg"
                   title="Send"
                 >
                   <Send className="w-4 h-4" />
@@ -252,34 +252,34 @@ export function DMInbox({ currentUserId, forceOpen }: { currentUserId: string; f
             // Conversation List
             <div className="max-h-96 overflow-y-auto">
               {loading ? (
-                <div className="p-8 text-center text-slate-500">Loading...</div>
+                <div className="p-8 text-center text-[rgba(255,255,255,0.6)]">Loading...</div>
               ) : conversations.length === 0 ? (
-                <div className="p-8 text-center text-slate-500">No messages yet</div>
+                <div className="p-8 text-center text-[rgba(255,255,255,0.6)]">No messages yet</div>
               ) : (
                 conversations.map(conv => (
                   <button
                     key={conv.id}
                     onClick={() => setSelectedConversation(conv)}
-                    className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 border-b border-slate-100 text-left"
+                    className="w-full p-3 flex items-center gap-3 hover:bg-[rgba(255,255,255,0.1)] border-b border-[rgba(255,255,255,0.1)] text-left transition-colors"
                   >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium shadow-lg" style={{ boxShadow: '0 0 20px rgba(6,182,212,0.5)' }}>
                       {conv.participant.avatar_url ? (
-                        <img src={conv.participant.avatar_url} className="w-full h-full rounded-full object-cover" />
+                        <img src={conv.participant.avatar_url} className="w-full h-full rounded-full object-cover" alt={conv.participant.name} />
                       ) : (
                         conv.participant.name.charAt(0).toUpperCase()
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-slate-800 truncate">{conv.participant.name}</span>
+                        <span className="font-medium text-white truncate">{conv.participant.name}</span>
                         {conv.last_message_at && (
-                          <span className="text-xs text-slate-400">{formatTime(conv.last_message_at)}</span>
+                          <span className="text-xs text-[rgba(255,255,255,0.5)]">{formatTime(conv.last_message_at)}</span>
                         )}
                       </div>
-                      <p className="text-sm text-slate-500 truncate">{conv.last_message || 'No messages'}</p>
+                      <p className="text-sm text-[rgba(255,255,255,0.6)] truncate">{conv.last_message || 'No messages'}</p>
                     </div>
                     {conv.unread_count > 0 && (
-                      <span className="w-5 h-5 bg-cyan-500 text-white text-xs rounded-full flex items-center justify-center">
+                      <span className="w-5 h-5 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white text-xs rounded-full flex items-center justify-center shadow-lg">
                         {conv.unread_count > 9 ? '9+' : conv.unread_count}
                       </span>
                     )}
