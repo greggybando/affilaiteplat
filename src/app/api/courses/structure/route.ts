@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getCacheHeaders } from '@/lib/cache'
 
 export const dynamic = 'force-dynamic'
 

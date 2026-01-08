@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAffiliate } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-// GET /api/messages/inbox - inbox list
+const INBOX_LIMIT = 50
+
 export async function GET(request: NextRequest) {
   try {
     const affiliate = await getCurrentAffiliate()
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
       .select('id, participant_1, participant_2, updated_at')
       .or(`participant_1.eq.${userId},participant_2.eq.${userId}`)
       .order('updated_at', { ascending: false })
-      .limit(50)
+      .limit(INBOX_LIMIT)
 
     if (error) {
       console.error('Inbox fetch error:', error)
@@ -25,10 +26,6 @@ export async function GET(request: NextRequest) {
     }
 
     const convIds = (conversations || []).map((c: any) => c.id)
-    if (!conversations || conversations.length === 0) {
-      return NextResponse.json({ conversations: [] })
-    }
-
     const partnerIds = (conversations || []).map((c: any) =>
       c.participant_1 === userId ? c.participant_2 : c.participant_1
     )
@@ -43,31 +40,28 @@ export async function GET(request: NextRequest) {
       partnerMap.set(p.id, p)
     })
 
-    // last messages for each conversation
-    let lastMap = new Map<string, any>()
-    if (convIds.length > 0) {
-      const { data: lastMessages } = await (supabaseAdmin as any)
-        .from('dm_messages')
-        .select('conversation_id, content, created_at')
-        .in('conversation_id', convIds)
-        .order('created_at', { ascending: false })
+    const { data: lastMessages } = await (supabaseAdmin as any)
+      .from('dm_messages')
+      .select('conversation_id, content, created_at')
+      .in('conversation_id', convIds)
+      .order('created_at', { ascending: false })
 
-      lastMap = new Map<string, any>()
-      lastMessages?.forEach((m: any) => {
-        if (!lastMap.has(m.conversation_id)) {
-          lastMap.set(m.conversation_id, m)
-        }
-      })
-    }
+    const lastMap = new Map<string, any>()
+    lastMessages?.forEach((m: any) => {
+      if (!lastMap.has(m.conversation_id)) {
+        lastMap.set(m.conversation_id, m)
+      }
+    })
 
-    // unread counts (per conversation)
+    // Per-conversation unread counts
     const unreadMap = new Map<string, number>()
-    for (const conv of conversations) {
+    for (const conv of conversations || []) {
+      const otherId = conv.participant_1 === userId ? conv.participant_2 : conv.participant_1
       const { count } = await (supabaseAdmin as any)
         .from('dm_messages')
         .select('id', { count: 'exact', head: true })
         .eq('conversation_id', conv.id)
-        .neq('sender_id', userId)
+        .eq('sender_id', otherId)
         .is('read_at', null)
       unreadMap.set(conv.id, count ?? 0)
     }
@@ -95,3 +89,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+

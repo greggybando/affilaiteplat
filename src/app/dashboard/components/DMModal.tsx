@@ -1,41 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { X, Send, Search, Wifi, WifiOff } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { X, Send, Search } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import { useSocket } from '@/hooks/useSocket'
-
-interface Conversation {
-  partnerId: string
-  partner: {
-    id: string
-    name: string
-    avatar: string | null
-  }
-  lastMessage: string
-  lastMessageTime: string
-  unreadCount: number
-  messages: any[]
-}
-
-interface Message {
-  id: string
-  sender_id: string
-  recipient_id: string
-  message: string
-  read: boolean
-  created_at: string
-  sender?: {
-    id: string
-    avatar_name: string | null
-    avatar_url: string | null
-  }
-  recipient?: {
-    id: string
-    avatar_name: string | null
-    avatar_url: string | null
-  }
-}
+import { useConversation, useInbox, useSendMessage } from '@/hooks/useDM'
 
 interface DMModalProps {
   isOpen: boolean
@@ -43,206 +11,99 @@ interface DMModalProps {
   currentUserId: string
   currentUserName: string
   currentUserAvatar: string | null
+  initialPartnerId?: string | null
+  initialPartnerName?: string | null
+  initialPartnerAvatar?: string | null
 }
 
-export function DMModal({ isOpen, onClose, currentUserId, currentUserName, currentUserAvatar }: DMModalProps) {
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
-  const [messages, setMessages] = useState<Message[]>([])
-  const [newMessage, setNewMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+export function DMModal({
+  isOpen,
+  onClose,
+  currentUserId,
+  currentUserName,
+  currentUserAvatar,
+  initialPartnerId,
+  initialPartnerName,
+  initialPartnerAvatar
+}: DMModalProps) {
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [newMessage, setNewMessage] = useState('')
+  const [sendError, setSendError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  
-  // WebSocket connection
-  const socket = useSocket({ userId: currentUserId, enabled: isOpen })
-  const useWebSocket = socket.isSocketEnabled && socket.connected
 
-  // Register message handlers when socket is ready
+  const { data: inbox, isLoading: inboxLoading } = useInbox(isOpen)
+  const { data: conversationData, isLoading: convoLoading } = useConversation(selectedUserId, isOpen)
+  const sendMessage = useSendMessage(selectedUserId)
+
+  // Set default selected user when opening
   useEffect(() => {
-    if (socket.connected && selectedConversation) {
-      socket.onMessage((msg) => {
-        // Check if this message is for the current DM conversation
-        const isRelevant = (msg.user_id === selectedConversation.partnerId) || 
-                          (msg.user_id === currentUserId)
-        if (isRelevant) {
-          setMessages(prev => {
-            // Avoid duplicates
-            const exists = prev.some(m => m.id === msg.id || (m.id.startsWith('temp-') && m.message === msg.message))
-            if (exists) {
-              return prev.map(m => 
-                m.id.startsWith('temp-') && m.message === msg.message ? {
-                  id: msg.id,
-                  sender_id: msg.user_id,
-                  recipient_id: msg.user_id === currentUserId ? selectedConversation.partnerId : currentUserId,
-                  message: msg.message,
-                  read: true,
-                  created_at: msg.created_at
-                } : m
-              )
-            }
-            return [...prev, {
-              id: msg.id,
-              sender_id: msg.user_id,
-              recipient_id: msg.user_id === currentUserId ? selectedConversation.partnerId : currentUserId,
-              message: msg.message,
-              read: true,
-              created_at: msg.created_at
-            }]
-          })
-        }
-      })
+    if (!isOpen) return
+    if (initialPartnerId) {
+      setSelectedUserId(initialPartnerId)
+      return
     }
-  }, [socket.connected, selectedConversation, currentUserId])
+    if (inbox && inbox.length > 0) {
+      setSelectedUserId(inbox[0].other_user.id)
+    }
+  }, [isOpen, inbox, initialPartnerId])
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchConversations()
-    }
-  }, [isOpen])
-
-  // Join DM room when conversation is selected
-  useEffect(() => {
-    if (selectedConversation && socket.connected) {
-      // Use a deterministic room ID for DMs (smaller ID first)
-      const roomId = [currentUserId, selectedConversation.partnerId].sort().join('-')
-      socket.joinChat(`dm:${roomId}`)
-      fetchMessages(selectedConversation.partnerId)
-    }
-    
-    return () => {
-      if (selectedConversation && socket.connected) {
-        const roomId = [currentUserId, selectedConversation.partnerId].sort().join('-')
-        socket.leaveChat(`dm:${roomId}`)
-      }
-    }
-  }, [selectedConversation, socket.connected, currentUserId])
-
+  // Scroll on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [conversationData?.messages])
 
-  const fetchConversations = async () => {
-    try {
-      const res = await fetch('/api/messages')
-      const data = await res.json()
-      if (res.ok) {
-        setConversations(data.conversations || [])
-      }
-    } catch (error) {
-      console.error('Error fetching conversations:', error)
-    }
-  }
-
-  const fetchMessages = async (userId: string) => {
-    try {
-      const res = await fetch(`/api/messages/${userId}`)
-      const data = await res.json()
-      if (res.ok) {
-        setMessages(data.messages || [])
-      }
-    } catch (error) {
-      console.error('Error fetching messages:', error)
-    }
-  }
-
-  // Handle typing indicator
-  const handleTyping = () => {
-    if (!selectedConversation || !socket.connected) return
-    
-    const roomId = [currentUserId, selectedConversation.partnerId].sort().join('-')
-    socket.startTyping(`dm:${roomId}`)
-    
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-    
-    typingTimeoutRef.current = setTimeout(() => {
-      if (selectedConversation) {
-        const roomId = [currentUserId, selectedConversation.partnerId].sort().join('-')
-        socket.stopTyping(`dm:${roomId}`)
-      }
-    }, 2000)
-  }
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation) return
-
-    const messageText = newMessage.trim()
-    setNewMessage('')
-    setIsLoading(true)
-    
-    // Stop typing indicator
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-    if (socket.connected && selectedConversation) {
-      const roomId = [currentUserId, selectedConversation.partnerId].sort().join('-')
-      socket.stopTyping(`dm:${roomId}`)
-    }
-
-    // Optimistic update
-    const tempMessage: Message = {
-      id: `temp-${Date.now()}`,
-      sender_id: currentUserId,
-      recipient_id: selectedConversation.partnerId,
-      message: messageText,
-      read: false,
-      created_at: new Date().toISOString()
-    }
-    setMessages(prev => [...prev, tempMessage])
-
-    try {
-      const res = await fetch(`/api/messages/${selectedConversation.partnerId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageText })
-      })
-
-      if (res.ok) {
-        // WebSocket will handle the real message update if connected
-        if (!useWebSocket) {
-          fetchMessages(selectedConversation.partnerId)
-        }
-        fetchConversations()
-      } else {
-        // Remove optimistic message on error
-        setMessages(prev => prev.filter(m => m.id !== tempMessage.id))
-        setNewMessage(messageText)
-      }
-    } catch (error) {
-      console.error('Error sending message:', error)
-      setMessages(prev => prev.filter(m => m.id !== tempMessage.id))
-      setNewMessage(messageText)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const filteredConversations = conversations.filter(conv =>
-    conv.partner.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const messages = useMemo(
+    () => conversationData?.messages || [],
+    [conversationData]
   )
 
-  // Get typing users (for DM it would just be the partner)
-  const partnerTyping = selectedConversation && socket.typingUsers.has(selectedConversation.partnerId)
+  const filteredConversations = useMemo(() => {
+    const list = inbox || []
+    if (!searchQuery.trim()) return list
+    const q = searchQuery.toLowerCase()
+    return list.filter((c: any) =>
+      c.other_user.name.toLowerCase().includes(q) ||
+      (c.last_message || '').toLowerCase().includes(q)
+    )
+  }, [inbox, searchQuery])
+
+  const selectedPartner = useMemo(() => {
+    if (selectedUserId) {
+      const fromInbox = inbox?.find((c: any) => c.other_user.id === selectedUserId)
+      if (fromInbox) return fromInbox.other_user
+      return {
+        id: selectedUserId,
+        name: initialPartnerName || 'New chat',
+        avatar: initialPartnerAvatar || null
+      }
+    }
+    return null
+  }, [selectedUserId, inbox, initialPartnerName, initialPartnerAvatar])
+
+  const handleSend = async () => {
+    if (!selectedUserId || !newMessage.trim()) return
+    setSendError(null)
+    const content = newMessage.trim()
+    setNewMessage('')
+    try {
+      await sendMessage.mutateAsync(content)
+    } catch (err: any) {
+      setSendError(err?.message || 'Failed to send')
+      setNewMessage(content) // restore text for retry
+    }
+  }
 
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl h-[80vh] flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-600 to-slate-700 px-6 py-4 flex items-center justify-between border-b-2 border-slate-800">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-white">Direct Messages</h2>
-            {/* Connection status */}
-            <div className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
-              useWebSocket ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'
-            }`}>
-              {useWebSocket ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-              <span>{useWebSocket ? 'Real-time' : 'Polling'}</span>
-            </div>
+            <div className="text-xs text-slate-200">Polling every 3s</div>
           </div>
           <button
             onClick={onClose}
@@ -268,43 +129,45 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
-              {filteredConversations.length === 0 ? (
+              {inboxLoading ? (
+                <div className="p-4 text-center text-slate-600 text-sm">Loading...</div>
+              ) : filteredConversations.length === 0 ? (
                 <div className="p-4 text-center text-slate-600 text-sm">
                   {searchQuery ? 'No conversations found' : 'No conversations yet'}
                 </div>
               ) : (
-                filteredConversations.map((conv) => (
+                filteredConversations.map((conv: any) => (
                   <button
-                    key={conv.partnerId}
-                    onClick={() => setSelectedConversation(conv)}
+                    key={conv.conversation_id}
+                    onClick={() => setSelectedUserId(conv.other_user.id)}
                     className={`w-full p-4 border-b border-slate-200 hover:bg-slate-100 transition-colors text-left ${
-                      selectedConversation?.partnerId === conv.partnerId ? 'bg-amber-50 border-l-4 border-l-amber-500' : ''
+                      selectedUserId === conv.other_user.id ? 'bg-amber-50 border-l-4 border-l-amber-500' : ''
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      {conv.partner.avatar ? (
+                      {conv.other_user.avatar ? (
                         <img
-                          src={conv.partner.avatar}
-                          alt={conv.partner.name}
+                          src={conv.other_user.avatar}
+                          alt={conv.other_user.name}
                           className="w-12 h-12 rounded-full object-cover"
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white font-semibold">
-                          {conv.partner.name[0]}
+                          {conv.other_user.name[0]}
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <div className="font-semibold text-slate-800 truncate">{conv.partner.name}</div>
-                          {conv.unreadCount > 0 && (
+                          <div className="font-semibold text-slate-800 truncate">{conv.other_user.name}</div>
+                          {conv.unread_count > 0 && (
                             <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                              {conv.unreadCount}
+                              {conv.unread_count}
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-slate-600 truncate">{conv.lastMessage}</div>
+                        <div className="text-xs text-slate-600 truncate">{conv.last_message}</div>
                         <div className="text-xs text-slate-500 mt-1">
-                          {formatDistanceToNow(new Date(conv.lastMessageTime), { addSuffix: true })}
+                          {conv.updated_at ? formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true }) : ''}
                         </div>
                       </div>
                     </div>
@@ -316,79 +179,82 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
 
           {/* Messages Area */}
           <div className="flex-1 flex flex-col">
-            {selectedConversation ? (
+            {selectedUserId && selectedPartner ? (
               <>
                 {/* Messages Header */}
                 <div className="px-6 py-4 border-b border-slate-300 bg-slate-50">
                   <div className="flex items-center gap-3">
-                    {selectedConversation.partner.avatar ? (
+                    {selectedPartner.avatar ? (
                       <img
-                        src={selectedConversation.partner.avatar}
-                        alt={selectedConversation.partner.name}
+                        src={selectedPartner.avatar}
+                        alt={selectedPartner.name}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white font-semibold">
-                        {selectedConversation.partner.name[0]}
+                        {selectedPartner.name[0]}
                       </div>
                     )}
                     <div>
-                      <div className="font-semibold text-slate-800">{selectedConversation.partner.name}</div>
-                      <div className="text-xs text-slate-600">
-                        {partnerTyping ? 'Typing...' : 'Active now'}
-                      </div>
+                      <div className="font-semibold text-slate-800">{selectedPartner.name}</div>
+                      <div className="text-xs text-slate-600">Updates every 3s</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
-                  {messages.map((msg) => {
-                    const isOwn = msg.sender_id === currentUserId
-                    const sender = isOwn 
-                      ? { name: currentUserName, avatar: currentUserAvatar }
-                      : { name: selectedConversation.partner.name, avatar: selectedConversation.partner.avatar }
-
-                    return (
-                      <div
-                        key={msg.id}
-                        className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}
-                      >
-                        {!isOwn && (
-                          sender.avatar ? (
-                            <img
-                              src={sender.avatar}
-                              alt={sender.name}
-                              className="w-8 h-8 rounded-full object-cover shrink-0"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                              {sender.name[0]}
+                  {convoLoading ? (
+                    <div className="text-slate-600 text-sm">Loading messages...</div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-slate-500 text-sm">No messages yet.</div>
+                  ) : (
+                    messages.map((msg: any) => {
+                      const isOwn = msg.sender_id === currentUserId
+                      const sender = isOwn
+                        ? { name: currentUserName, avatar: currentUserAvatar }
+                        : { name: selectedPartner.name, avatar: selectedPartner.avatar }
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}
+                        >
+                          {!isOwn && (
+                            sender.avatar ? (
+                              <img
+                                src={sender.avatar}
+                                alt={sender.name}
+                                className="w-8 h-8 rounded-full object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                                {sender.name[0]}
+                              </div>
+                            )
+                          )}
+                          <div className={`max-w-[70%] ${isOwn ? 'order-2' : ''}`}>
+                            <div className={`rounded-lg px-4 py-2 ${
+                              isOwn
+                                ? 'bg-amber-500 text-white'
+                                : 'bg-white border-2 border-slate-300 text-slate-800'
+                            }`}>
+                              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                             </div>
-                          )
-                        )}
-                        <div className={`max-w-[70%] ${isOwn ? 'order-2' : ''}`}>
-                          <div className={`rounded-lg px-4 py-2 ${
-                            isOwn
-                              ? 'bg-amber-500 text-white'
-                              : 'bg-white border-2 border-slate-300 text-slate-800'
-                          }`}>
-                            <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                          </div>
-                          <div className={`text-xs text-slate-500 mt-1 ${isOwn ? 'text-right' : ''}`}>
-                            {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
+                            <div className={`text-xs text-slate-500 mt-1 ${isOwn ? 'text-right' : ''}`}>
+                              {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Typing Indicator */}
-                {partnerTyping && (
-                  <div className="px-6 py-2 text-sm text-slate-500 bg-slate-50 border-t border-slate-200">
-                    <span className="italic">{selectedConversation.partner.name} is typing...</span>
+                {/* Error */}
+                {sendError && (
+                  <div className="px-6 py-2 text-sm text-red-600 bg-red-50 border-t border-red-200">
+                    {sendError}
                   </div>
                 )}
 
@@ -397,14 +263,11 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
                   <div className="flex gap-3">
                     <textarea
                       value={newMessage}
-                      onChange={(e) => {
-                        setNewMessage(e.target.value)
-                        handleTyping()
-                      }}
+                      onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault()
-                          handleSendMessage()
+                          handleSend()
                         }
                       }}
                       placeholder="Type a message..."
@@ -412,8 +275,8 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
                       className="flex-1 px-4 py-2 border-2 border-slate-400 rounded-lg bg-white text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
                     />
                     <button
-                      onClick={handleSendMessage}
-                      disabled={!newMessage.trim() || isLoading}
+                      onClick={handleSend}
+                      disabled={!newMessage.trim() || sendMessage.isPending}
                       className="px-6 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
                     >
                       <Send className="w-4 h-4" />
@@ -433,3 +296,4 @@ export function DMModal({ isOpen, onClose, currentUserId, currentUserName, curre
     </div>
   )
 }
+

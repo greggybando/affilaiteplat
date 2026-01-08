@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { strictRateLimit, getRateLimitHeaders } from '@/lib/rate-limit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +11,15 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 10 attempts per minute per IP
+    const { success, limit, remaining, reset } = await strictRateLimit(request)
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again in a minute.' },
+        { status: 429, headers: getRateLimitHeaders(limit, remaining, reset) }
+      )
+    }
+
     const { email, password } = await request.json()
 
     const { data: affiliate } = await supabase
@@ -35,37 +45,19 @@ export async function POST(request: NextRequest) {
     const isProduction = !!process.env.VERCEL || process.env.NODE_ENV === 'production'
     const response = NextResponse.json({ 
       success: true, 
-      token: token, // Include token for client-side backup
+      token: token,
       affiliate: { id: affiliate.id, email: affiliate.email },
       redirectTo: redirectTo
     })
     
-    // Set cookie with explicit options
-    // In production (Vercel), always use secure: true because Vercel uses HTTPS
-    // In development, use secure: false
     const secure = isProduction
     
-    // Set cookie - ensure it works in production
-    // Use sameSite: 'none' with secure: true for cross-site, or 'lax' for same-site
-    // Since we're on the same domain, 'lax' should work
     response.cookies.set('affiliate_token', token, {
       path: '/',
       maxAge: 60 * 60 * 24, // 24 hours
-      httpOnly: false, // Allow JavaScript to read it
-      secure: secure, // true in production, false in development
-      sameSite: 'lax', // Allow cookie to be sent on same-site requests
-      // Explicitly don't set domain to use default (current domain)
-    })
-
-    console.log('✅ Cookie set in response:', {
-      hasToken: !!token,
-      tokenLength: token.length,
-      path: '/',
-      maxAge: 60 * 60 * 24,
       httpOnly: false,
       secure: secure,
       sameSite: 'lax',
-      isProduction,
     })
 
     return response

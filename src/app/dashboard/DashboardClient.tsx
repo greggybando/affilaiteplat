@@ -11,6 +11,7 @@ import { AdminDropdown } from '@/components/AdminDropdown'
 import { GroupChatModal } from './components/GroupChatModal'
 import { CommunityFeed } from './components/CommunityFeed'
 import { NotificationBell } from './components/NotificationBell'
+import { InboxDropdown } from './components/InboxDropdown'
 import { GroupChatTab } from './components/GroupChatTab'
 import { MindsetModuleList } from '../mindset/components/MindsetModuleList'
 import { DreamJobModuleList } from '../dreamjob/components/DreamJobModuleList'
@@ -221,6 +222,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   const [activeTab, setActiveTab] = useState<'community' | 'classroom' | 'groupchat'>('community')
   const [isDMModalOpen, setIsDMModalOpen] = useState(false)
   const [isGroupChatOpen, setIsGroupChatOpen] = useState(false)
+  const [initialDM, setInitialDM] = useState<{ id: string; name?: string | null; avatar?: string | null } | null>(null)
   const [glowIntensity, setGlowIntensity] = useState(50) // Default 50%
   const [classroomResetKey, setClassroomResetKey] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
@@ -229,6 +231,11 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
+  }
+
+  const openDM = (partnerId: string, partnerName?: string, partnerAvatar?: string | null) => {
+    setInitialDM({ id: partnerId, name: partnerName || null, avatar: partnerAvatar ?? null })
+    setIsDMModalOpen(true)
   }
 
 
@@ -395,7 +402,11 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                   </div>
                 )}
               </div>
-              {/* Notifications */}
+              {/* Inbox & Notifications */}
+              <InboxDropdown
+                currentUserId={affiliate.id}
+                onOpenDM={(partnerId, partnerName, partnerAvatar) => openDM(partnerId, partnerName || undefined, partnerAvatar)}
+              />
               <NotificationBell currentUserId={affiliate.id} />
               <Link
                 href="/settings"
@@ -507,10 +518,16 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
       {/* DM Modal */}
       <DMModal
         isOpen={isDMModalOpen}
-        onClose={() => setIsDMModalOpen(false)}
+        onClose={() => {
+          setIsDMModalOpen(false)
+          setInitialDM(null)
+        }}
         currentUserId={affiliate.id}
         currentUserName={affiliate.avatar_name || affiliate.name}
         currentUserAvatar={affiliate.avatar_url}
+        initialPartnerId={initialDM?.id || null}
+        initialPartnerName={initialDM?.name || null}
+        initialPartnerAvatar={initialDM?.avatar || null}
       />
 
       {/* Group Chat Modal */}

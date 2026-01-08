@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { hashPassword, generateToken, generateTrackingCode } from '@/lib/auth'
 import { createConnectAccount, createConnectOnboardingLink } from '@/lib/stripe'
+import { strictRateLimit, getRateLimitHeaders } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 10 signups per minute per IP
+    const { success, limit, remaining, reset } = await strictRateLimit(request)
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Too many signup attempts. Please try again in a minute.' },
+        { status: 429, headers: getRateLimitHeaders(limit, remaining, reset) }
+      )
+    }
+
     const body = await request.json()
     const { name, email, password, payout_method, paypal_email, referral_code } = body
 
@@ -92,7 +102,7 @@ export async function POST(request: NextRequest) {
             referrer_id: (referrerCode as any).affiliate_id,
             referred_id: affiliateData.id,
             referral_code: referral_code.toUpperCase(),
-            status: 'pending' // Will become active when they subscribe
+            status: 'pending'
           })
       }
     }
@@ -103,7 +113,7 @@ export async function POST(request: NextRequest) {
       email: affiliateData.email,
     })
 
-    // Create response object (will be used for all return paths)
+    // Create response object
     let response: NextResponse
 
     // If Stripe payout method, create Connect account and return onboarding URL
@@ -135,11 +145,10 @@ export async function POST(request: NextRequest) {
             trial_ends_at: affiliateData.trial_ends_at,
           },
           stripeOnboardingUrl: onboardingLink.url,
-          token: token, // Include token for localStorage
+          token: token,
         })
       } catch (stripeError) {
         console.error('Error creating Stripe Connect account:', stripeError)
-        // Still return success, they can set up Stripe later
         response = NextResponse.json({
           success: true,
           affiliate: {
@@ -149,7 +158,7 @@ export async function POST(request: NextRequest) {
             status: affiliateData.status,
             trial_ends_at: affiliateData.trial_ends_at,
           },
-          token: token, // Include token for localStorage
+          token: token,
         })
       }
     } else {
@@ -165,33 +174,16 @@ export async function POST(request: NextRequest) {
       })
     }
     
-    // Set cookie directly on response with explicit options
-    // In production (Vercel), always use secure: true because Vercel uses HTTPS
-    // In development, use secure: false
+    // Set cookie
     const isProduction = !!process.env.VERCEL || process.env.NODE_ENV === 'production'
     const secure = isProduction
     
     response.cookies.set('affiliate_token', token, {
       path: '/',
-      maxAge: 60 * 60 * 24, // 24 hours in seconds
-      httpOnly: false, // Allow JavaScript to read it
-      secure: secure, // true in production, false in development
+      maxAge: 60 * 60 * 24,
+      httpOnly: false,
+      secure: secure,
       sameSite: 'lax',
-      // Don't set domain - let browser use default
-    })
-    
-    console.log('✅ Auth cookie set on signup response:', {
-      cookieName: 'affiliate_token',
-      hasToken: !!token,
-      tokenLength: token.length,
-      cookieSet: true,
-      options: {
-        path: '/',
-        maxAge: 60 * 60 * 24,
-        httpOnly: false,
-        secure: true,
-        sameSite: 'lax',
-      },
     })
     
     return response

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAffiliate } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getCacheHeaders } from '@/lib/cache'
 
 export async function GET(request: NextRequest) {
   try {
@@ -110,7 +111,11 @@ export async function GET(request: NextRequest) {
       return result
     })
 
-    return NextResponse.json({ leaderboard: formatted })
+    // Cache for 5 minutes (leaderboard doesn't change that often)
+    return NextResponse.json(
+      { leaderboard: formatted },
+      { headers: getCacheHeaders('medium') }
+    )
   } catch (error: any) {
     console.error('Leaderboard error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

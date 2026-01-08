@@ -2,7 +2,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAffiliate } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-// GET /api/messages/[userId] - Get messages with a specific user
+const PAGE_SIZE = 50
+
+async function findOrCreateConversation(userA: string, userB: string): Promise<string> {
+  const sorted = [userA, userB].sort()
+  const [p1, p2] = sorted
+
+  const { data: existing, error: findErr } = await (supabaseAdmin as any)
+    .from('dm_conversations')
+    .select('id')
+    .or(`and(participant_1.eq.${p1},participant_2.eq.${p2}),and(participant_1.eq.${p2},participant_2.eq.${p1})`)
+    .maybeSingle()
+
+  if (findErr) throw findErr
+  if (existing) return existing.id
+
+  const { data: created, error: createErr } = await (supabaseAdmin as any)
+    .from('dm_conversations')
+    .insert({ participant_1: p1, participant_2: p2 })
+    .select('id')
+    .single()
+
+  if (createErr) throw createErr
+  return created.id
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
@@ -14,44 +38,45 @@ export async function GET(
     }
 
     const { userId } = await params
+    const searchParams = new URL(request.url).searchParams
+    const before = searchParams.get('before')
 
-    // Get all messages between current user and target user
-    const { data: messages, error } = await supabaseAdmin
-      .from('direct_messages')
-      .select(`
-        id,
-        sender_id,
-        recipient_id,
-        message,
-        read,
-        created_at,
-        sender:affiliates!direct_messages_sender_id_fkey(id, avatar_name, avatar_url),
-        recipient:affiliates!direct_messages_recipient_id_fkey(id, avatar_name, avatar_url)
-      `)
-      .or(`and(sender_id.eq.${affiliate.id},recipient_id.eq.${userId}),and(sender_id.eq.${userId},recipient_id.eq.${affiliate.id})`)
-      .order('created_at', { ascending: true })
+    const conversationId = await findOrCreateConversation(affiliate.id, userId)
 
-    if (error) {
-      console.error('Error fetching conversation:', error)
-      return NextResponse.json({ error: 'Failed to fetch conversation' }, { status: 500 })
+    let query = (supabaseAdmin as any)
+      .from('dm_messages')
+      .select('id, sender_id, content, created_at, read_at')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: false })
+      .limit(PAGE_SIZE)
+
+    if (before) {
+      query = query.lt('created_at', before)
     }
 
-    // Mark messages as read
-    await (supabaseAdmin
-      .from('direct_messages') as any)
-      .update({ read: true })
-      .eq('recipient_id', affiliate.id)
-      .eq('sender_id', userId)
-      .eq('read', false)
+    const { data: messages, error: msgErr } = await query
+    if (msgErr) {
+      console.error('Error fetching messages:', msgErr)
+      return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 })
+    }
 
-    return NextResponse.json({ messages: messages || [] })
+    // Mark as read
+    await (supabaseAdmin.from('dm_messages') as any)
+      .update({ read_at: new Date().toISOString() })
+      .eq('conversation_id', conversationId)
+      .eq('sender_id', userId)
+      .is('read_at', null)
+
+    return NextResponse.json({
+      conversationId,
+      messages: (messages || []).slice().reverse() // oldest -> newest
+    })
   } catch (error: any) {
-    console.error('API messages userId error:', error)
+    console.error('API messages GET userId error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// POST /api/messages/[userId] - Send a message to a user
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
@@ -63,60 +88,40 @@ export async function POST(
     }
 
     const { userId } = await params
-    const { message } = await request.json()
+    const { content } = await request.json()
 
-    if (!message || message.trim().length === 0) {
+    if (!content || content.trim().length === 0) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
-
-    if (message.length > 2000) {
+    if (content.length > 2000) {
       return NextResponse.json({ error: 'Message too long (max 2000 characters)' }, { status: 400 })
     }
 
-    // Create message
-    const { data, error } = await (supabaseAdmin
-      .from('direct_messages') as any)
+    const conversationId = await findOrCreateConversation(affiliate.id, userId)
+
+    const { data: inserted, error: insertErr } = await (supabaseAdmin
+      .from('dm_messages') as any)
       .insert({
+        conversation_id: conversationId,
         sender_id: affiliate.id,
-        recipient_id: userId,
-        message: message.trim()
+        content: content.trim()
       })
-      .select()
+      .select('id, sender_id, content, created_at, read_at')
       .single()
 
-    if (error) {
-      console.error('Error sending message:', error)
+    if (insertErr) {
+      console.error('Error sending message:', insertErr)
       return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
     }
 
-    // Create notification if recipient has DM notifications enabled
-    const { data: prefs } = await supabaseAdmin
-      .from('notification_preferences')
-      .select('dm_enabled')
-      .eq('affiliate_id', userId)
-      .single()
+    await (supabaseAdmin as any)
+      .from('dm_conversations')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', conversationId)
 
-    if (!prefs || (prefs as any).dm_enabled) {
-      const { data: sender } = await supabaseAdmin
-        .from('affiliates')
-        .select('avatar_name')
-        .eq('id', affiliate.id)
-        .single()
-
-      await (supabaseAdmin
-        .from('notifications') as any)
-        .insert({
-          affiliate_id: userId,
-          type: 'dm',
-          title: 'New Message',
-          message: `${(sender as any)?.avatar_name || 'Someone'} sent you a message`,
-          link: `/dashboard?dm=${affiliate.id}`
-        })
-    }
-
-    return NextResponse.json({ message: data })
+    return NextResponse.json({ message: inserted, conversationId })
   } catch (error: any) {
-    console.error('API messages send error:', error)
+    console.error('API messages POST userId error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

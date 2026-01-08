@@ -167,6 +167,7 @@ export function useSocket({ userId, enabled = true }: UseSocketOptions) {
       }
     })
 
+
     socket.on('error', (data: { message: string }) => {
       console.error('[Socket] Server error:', data.message)
       setState(prev => ({ ...prev, error: data.message }))
@@ -245,6 +246,7 @@ export function useSocket({ userId, enabled = true }: UseSocketOptions) {
   const onChatNotification = useCallback((handler: (data: ChatNotification) => void) => {
     chatNotificationHandlerRef.current = handler
   }, [])
+
 
   return {
     ...state,

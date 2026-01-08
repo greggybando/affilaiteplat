@@ -331,7 +331,7 @@ function sendNotificationToUser(userId, notification) {
   io.to(`user:${userId}`).emit('notification', notification)
 }
 
-// HTTP endpoint for API routes to push notifications
+// HTTP endpoint for API routes to push notifications (non-DM)
 httpServer.on('request', (req, res) => {
   if (req.method === 'POST' && req.url === '/notify') {
     let body = ''
@@ -339,7 +339,9 @@ httpServer.on('request', (req, res) => {
     req.on('end', () => {
       try {
         const { userId, notification } = JSON.parse(body)
-        sendNotificationToUser(userId, notification)
+        if (userId && notification) {
+          sendNotificationToUser(userId, notification)
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ success: true }))
       } catch (err) {
@@ -350,7 +352,7 @@ httpServer.on('request', (req, res) => {
     return
   }
   
-  // Broadcast notification to all users
+  // Broadcast notification to all users (non-DM)
   if (req.method === 'POST' && req.url === '/broadcast') {
     let body = ''
     req.on('data', chunk => { body += chunk })
