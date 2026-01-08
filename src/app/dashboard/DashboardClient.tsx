@@ -335,18 +335,17 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
               </div>
               
               {/* Lightning Glow Control */}
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-[rgba(255,255,255,0.1)] rounded-lg">
-                <Zap className="w-4 h-4 text-yellow-400" />
-                <span className="text-white text-xs font-medium">Lightning</span>
+              <div className="flex items-center gap-1.5 px-2 py-1.5 bg-[rgba(255,255,255,0.1)] rounded-lg">
+                <Zap className="w-3.5 h-3.5 text-yellow-400" />
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={glowIntensity}
                   onChange={(e) => setGlowIntensity(Number(e.target.value))}
-                  className="w-20 h-1 bg-[rgba(255,255,255,0.2)] rounded-lg appearance-none cursor-pointer accent-yellow-400"
+                  className="w-16 h-1 bg-[rgba(255,255,255,0.2)] rounded-lg appearance-none cursor-pointer accent-yellow-400"
                 />
-                <span className="text-white text-xs w-8 text-right">{glowIntensity}%</span>
+                <span className="text-white text-[10px] w-6 text-right">{glowIntensity}%</span>
               </div>
               {/* Search Bar */}
               <div className="relative hidden md:block">
