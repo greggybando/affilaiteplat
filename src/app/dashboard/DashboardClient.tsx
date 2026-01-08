@@ -233,15 +233,26 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   return (
     <div className="w-screen h-screen flex flex-col overflow-hidden" style={{ width: '100vw', height: '100vh', maxWidth: '100vw', boxSizing: 'border-box', backgroundColor: '#0f0f1a', position: 'relative' }}>
       {/* TEMP GLOBAL MARKERS FOR DM VISIBILITY */}
-      <div className="fixed top-2 right-2 z-[20000] bg-red-700 text-white text-xs font-bold px-3 py-1 rounded shadow-lg pointer-events-none">
+      <div className="fixed top-2 right-2 z-[30000] bg-red-700 text-white text-xs font-bold px-3 py-1 rounded shadow-lg pointer-events-none">
         DM HEADER MARKER
       </div>
-      <div className="fixed top-1/2 right-6 z-[20000] bg-cyan-600 text-white text-xs font-bold px-4 py-2 rounded shadow-lg pointer-events-auto flex items-center gap-2"
+      <div
+        className="fixed top-1/2 right-4 z-[30000] bg-cyan-600 text-white text-xs font-bold px-4 py-2 rounded shadow-lg pointer-events-auto flex items-center gap-2"
         onClick={() => setForceDMOpen(true)}
-        title="Open DMs (fallback)">
+        title="Open DMs (fallback)"
+      >
         <MessageCircle className="w-4 h-4" />
         <span>DM TEST BUTTON</span>
       </div>
+      {/* TEMP FIXED DM BUTTON OVER EVERYTHING */}
+      <button
+        onClick={() => setForceDMOpen(true)}
+        className="fixed top-3 right-16 z-[30000] bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-bold px-4 py-2 rounded-xl shadow-2xl flex items-center gap-2"
+        title="DM (fixed over all layers)"
+      >
+        <MessageCircle className="w-5 h-5" />
+        <span>DM (Fixed)</span>
+      </button>
       
       {/* Header with Glass Morphism */}
       <header className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[20px] border-b border-[rgba(255,255,255,0.1)] shrink-0" style={{ backdropFilter: 'blur(20px)' }}>
