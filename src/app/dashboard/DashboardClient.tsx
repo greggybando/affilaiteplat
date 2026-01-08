@@ -289,7 +289,6 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
               </div>
             </div>
             <div className="flex items-center gap-3 relative z-[4100]" style={{ pointerEvents: 'auto' }}>
-              <button onClick={() => setForceDMOpen(true)} className="px-3 py-2 bg-red-600 text-white rounded-lg font-bold">TEST DM</button>
               {/* Admin Button - Only show for admins */}
               {isAdmin && (
                 <div className="relative px-5 py-3 bg-gradient-to-br from-purple-900/40 via-pink-900/30 to-purple-800/40 rounded-xl border border-purple-500/40 backdrop-blur-sm overflow-hidden">

@@ -167,15 +167,14 @@ export function DMInbox({ currentUserId, forceOpen }: { currentUserId: string; f
   }
 
   return (
-    <div className="relative z-[4200]" ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef}>
       {/* Trigger Button - matches NotificationBell pattern */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative z-[105] p-2 bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.16)] rounded-xl border border-[rgba(255,255,255,0.18)] transition-colors"
+        className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
         title="Messages"
-        style={{ pointerEvents: 'auto' }}
       >
-        <MessageCircle className="w-5 h-5 text-white" />
+        <MessageCircle className="w-5 h-5 text-slate-600" />
         {unreadTotal > 0 && (
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-semibold rounded-full flex items-center justify-center">
             {unreadTotal > 9 ? '9+' : unreadTotal}
