@@ -534,6 +534,18 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
         )}
       </div>
 
+      {/* Fixed header DM button fallback (top-right) */}
+      <button
+        onClick={() => {
+          setInitialDM(null)
+          setIsDMModalOpen(true)
+        }}
+        className="fixed top-4 right-28 z-50 p-2 rounded-full bg-[rgba(34,211,238,0.9)] shadow-[0_10px_25px_rgba(34,211,238,0.45)] hover:scale-105 transition-transform border border-[rgba(255,255,255,0.3)]"
+        title="Direct Messages"
+      >
+        <MessageCircle className="w-5 h-5 text-slate-900" />
+      </button>
+
       {/* Fallback floating DM button (always visible) */}
       <button
         onClick={() => {
