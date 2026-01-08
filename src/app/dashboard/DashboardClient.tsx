@@ -422,14 +422,13 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                   DM MARKER INLINE
                 </div>
                 <button
-                  onClick={() => setForceDMOpen((prev) => !prev)}
-                  className="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg"
-                  title="Open DMs"
+                  onClick={() => setForceDMOpen(true)}
+                  className="p-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg flex items-center gap-1"
+                  title="Direct Messages"
+                  style={{ zIndex: 4300 }}
                 >
-                  <div className="flex items-center gap-1">
-                    <MessageCircle className="w-4 h-4" />
-                    <span>DMs</span>
-                  </div>
+                  <MessageCircle className="w-4 h-4" />
+                  <span>DM</span>
                 </button>
               </div>
               <Link
