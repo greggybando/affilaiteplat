@@ -408,7 +408,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                   setInitialDM(null)
                   setIsDMModalOpen(true)
                 }}
-                className="p-2 rounded-xl transition-all hover:scale-105 bg-[rgba(34,211,238,0.12)] border border-[rgba(34,211,238,0.55)] shadow-[0_0_12px_rgba(34,211,238,0.6)]"
+                className="p-2 rounded-xl transition-all hover:scale-105 bg-[rgba(34,211,238,0.18)] border border-[rgba(34,211,238,0.7)] shadow-[0_0_14px_rgba(34,211,238,0.7)]"
                 title="Direct Messages"
               >
                 <MessageCircle className="w-5 h-5 text-[rgba(34,211,238,0.95)]" />
@@ -523,6 +523,18 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
           <GroupChatTab affiliate={affiliate} setIsDMModalOpen={setIsDMModalOpen} glowIntensity={glowIntensity} />
         )}
       </div>
+
+      {/* Fallback floating DM button (always visible) */}
+      <button
+        onClick={() => {
+          setInitialDM(null)
+          setIsDMModalOpen(true)
+        }}
+        className="fixed bottom-6 right-6 md:right-8 md:bottom-8 z-50 p-3 rounded-full bg-[rgba(34,211,238,0.9)] shadow-[0_10px_25px_rgba(34,211,238,0.45)] hover:scale-105 transition-transform"
+        title="Direct Messages"
+      >
+        <MessageCircle className="w-6 h-6 text-slate-900" />
+      </button>
 
 
       {/* DM Modal */}
