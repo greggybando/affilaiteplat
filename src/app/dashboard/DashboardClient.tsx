@@ -368,12 +368,25 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                 />
                 <span className="text-white text-xs w-8 text-right">{glowIntensity}%</span>
               </div>
-              {/* DM BUTTON - Placed here to guarantee visibility */}
+              {/* DM BUTTON - GUARANTEED VISIBLE WITH INLINE STYLES */}
               <button
                 onClick={() => setIsDMModalOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 rounded-lg text-white text-xs font-semibold shadow-lg shadow-cyan-500/30 transition-all"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 12px',
+                  background: 'linear-gradient(to right, #0891b2, #06b6d4)',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  border: '2px solid #22d3ee',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 20px rgba(34, 211, 238, 0.5)'
+                }}
               >
-                <MessageCircle className="w-4 h-4" />
+                <MessageCircle style={{ width: '16px', height: '16px' }} />
                 <span>DMs</span>
               </button>
               {/* Search Bar */}
