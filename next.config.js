@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+// Build timestamp: 2026-01-08T12:10:00 - force fresh build
 const nextConfig = {
   webpack: (config, { isServer }) => {
     // Fix for Supabase module resolution
