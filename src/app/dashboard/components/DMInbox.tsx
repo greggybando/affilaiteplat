@@ -167,7 +167,7 @@ export function DMInbox({ currentUserId, forceOpen }: { currentUserId: string; f
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-[99999]" ref={dropdownRef}>
       {/* Trigger Button - matches NotificationBell pattern */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -184,7 +184,7 @@ export function DMInbox({ currentUserId, forceOpen }: { currentUserId: string; f
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] overflow-hidden z-[9999]" style={{ backdropFilter: 'blur(20px)', boxShadow: '0 0 40px rgba(6,182,212,0.3), 0 8px 32px rgba(0,0,0,0.8)' }}>
+        <div className="fixed right-4 top-16 w-80 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] overflow-hidden" style={{ backdropFilter: 'blur(20px)', boxShadow: '0 0 40px rgba(6,182,212,0.3), 0 8px 32px rgba(0,0,0,0.8)', zIndex: 99999 }}>
           {/* Header */}
           <div className="p-3 border-b border-[rgba(255,255,255,0.1)] flex items-center justify-between bg-[rgba(255,255,255,0.05)]">
             {selectedConversation ? (
