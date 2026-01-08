@@ -223,7 +223,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   const [glowIntensity, setGlowIntensity] = useState(50) // Default 50%
   const [classroomResetKey, setClassroomResetKey] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
-  const [forceDMOpen, setForceDMOpen] = useState(false)
+  
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
@@ -232,30 +232,8 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
 
   return (
     <div className="w-screen h-screen flex flex-col overflow-hidden" style={{ width: '100vw', height: '100vh', maxWidth: '100vw', boxSizing: 'border-box', backgroundColor: '#0f0f1a', position: 'relative' }}>
-      {/* TEMP GLOBAL MARKERS FOR DM VISIBILITY */}
-      <div className="fixed top-2 right-2 z-[30000] bg-red-700 text-white text-xs font-bold px-3 py-1 rounded shadow-lg pointer-events-none">
-        DM HEADER MARKER
-      </div>
-      <div
-        className="fixed top-1/2 right-4 z-[30000] bg-cyan-600 text-white text-xs font-bold px-4 py-2 rounded shadow-lg pointer-events-auto flex items-center gap-2"
-        onClick={() => setForceDMOpen(true)}
-        title="Open DMs (fallback)"
-      >
-        <MessageCircle className="w-4 h-4" />
-        <span>DM TEST BUTTON</span>
-      </div>
-      {/* TEMP FIXED DM BUTTON OVER EVERYTHING */}
-      <button
-        onClick={() => setForceDMOpen(true)}
-        className="fixed top-3 right-16 z-[30000] bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-bold px-4 py-2 rounded-xl shadow-2xl flex items-center gap-2"
-        title="DM (fixed over all layers)"
-      >
-        <MessageCircle className="w-5 h-5" />
-        <span>DM (Fixed)</span>
-      </button>
-      
       {/* Header with Glass Morphism */}
-      <header className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[20px] border-b border-[rgba(255,255,255,0.1)] shrink-0 relative z-[4000]" style={{ backdropFilter: 'blur(20px)' }}>
+      <header className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[20px] border-b border-[rgba(255,255,255,0.1)] shrink-0 relative" style={{ backdropFilter: 'blur(20px)' }}>
         <div className="px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -288,7 +266,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                 <p className="text-[rgba(255,255,255,0.6)] text-xs">change your life, get rich, develop strong friendships, have some f****** FUN</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 relative z-[4100]" style={{ pointerEvents: 'auto' }}>
+            <div className="flex items-center gap-3">
               {/* Admin Button - Only show for admins */}
               {isAdmin && (
                 <div className="relative px-5 py-3 bg-gradient-to-br from-purple-900/40 via-pink-900/30 to-purple-800/40 rounded-xl border border-purple-500/40 backdrop-blur-sm overflow-hidden">
@@ -414,23 +392,8 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 relative z-[4200]" style={{ pointerEvents: 'auto' }}>
-                <NotificationBell currentUserId={affiliate.id} />
-                <DMInbox currentUserId={affiliate.id} forceOpen={forceDMOpen} />
-                {/* TEMP MARKER TO CONFIRM RENDER POSITION */}
-                <div className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded z-[4300]">
-                  DM MARKER INLINE
-                </div>
-                <button
-                  onClick={() => setForceDMOpen(true)}
-                  className="p-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg flex items-center gap-1"
-                  title="Direct Messages"
-                  style={{ zIndex: 4300 }}
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>DM</span>
-                </button>
-              </div>
+              <NotificationBell currentUserId={affiliate.id} />
+              <DMInbox currentUserId={affiliate.id} />
               <Link
                 href="/settings"
                 className="p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-xl transition-colors"
