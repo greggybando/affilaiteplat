@@ -1035,9 +1035,25 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           {post.user.name[0]?.toUpperCase()}
                         </div>
                       )}
-                      <div>
-                        <div className="font-semibold text-white">{post.user.name}</div>
-                        <div className="text-sm text-[rgba(255,255,255,0.6)]">{formatTime(post.createdAt)}</div>
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <div className="font-semibold text-white">{post.user.name}</div>
+                          <div className="text-sm text-[rgba(255,255,255,0.6)]">{formatTime(post.createdAt)}</div>
+                        </div>
+                        {post.user.id !== currentUser.id && (
+                          <a
+                            href={`/messages?user=${post.user.id}`}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              window.location.href = `/dashboard?openDM=${post.user.id}`
+                            }}
+                            className="p-1.5 hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors"
+                            title={`Message ${post.user.name}`}
+                          >
+                            <MessageCircle className="w-4 h-4 text-cyan-400" />
+                          </a>
+                        )}
                       </div>
                       <span 
                         className="px-2.5 py-0.5 rounded-full text-xs font-medium text-white"

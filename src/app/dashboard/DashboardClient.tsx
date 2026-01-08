@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
@@ -218,6 +218,8 @@ const glowShadow = (shadows: string, glowIntensity: number) => {
 
 export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const openDMUserId = searchParams.get('openDM')
   const [activeTab, setActiveTab] = useState<'community' | 'classroom' | 'groupchat'>('community')
   const [isGroupChatOpen, setIsGroupChatOpen] = useState(false)
   const [glowIntensity, setGlowIntensity] = useState(50) // Default 50%
@@ -392,7 +394,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                 )}
               </div>
               <NotificationBell currentUserId={affiliate.id} />
-              <DMInbox currentUserId={affiliate.id} />
+              <DMInbox currentUserId={affiliate.id} initialUserId={openDMUserId || undefined} />
               <Link
                 href="/settings"
                 className="p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-xl transition-colors"

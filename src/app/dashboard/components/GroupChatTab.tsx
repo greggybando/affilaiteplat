@@ -1392,8 +1392,22 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                         </div>
                         <div className="flex flex-col items-start max-w-[75%]">
                           {showName && (
-                            <div className="text-xs mb-1 px-2" style={{ color: 'rgba(34,211,238,0.8)' }}>
-                              {msg.user_name}
+                            <div className="text-xs mb-1 px-2 flex items-center gap-2" style={{ color: 'rgba(34,211,238,0.8)' }}>
+                              <span>{msg.user_name}</span>
+                              {msg.user_id !== affiliate.id && (
+                                <a
+                                  href={`/messages?user=${msg.user_id}`}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    window.location.href = `/dashboard?openDM=${msg.user_id}`
+                                  }}
+                                  className="p-0.5 hover:bg-[rgba(255,255,255,0.1)] rounded transition-colors"
+                                  title={`Message ${msg.user_name}`}
+                                >
+                                  <MessageCircle className="w-3 h-3 text-cyan-400" />
+                                </a>
+                              )}
                             </div>
                           )}
                           <div className="relative group/message w-full">
