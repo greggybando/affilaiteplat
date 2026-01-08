@@ -408,10 +408,10 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                   setInitialDM(null)
                   setIsDMModalOpen(true)
                 }}
-                className="p-2 rounded-xl transition-colors hover:bg-[rgba(255,255,255,0.1)] border border-[rgba(34,211,238,0.35)] shadow-[0_0_12px_rgba(34,211,238,0.4)]"
+                className="p-2 rounded-xl transition-all hover:scale-105 bg-[rgba(34,211,238,0.12)] border border-[rgba(34,211,238,0.55)] shadow-[0_0_12px_rgba(34,211,238,0.6)]"
                 title="Direct Messages"
               >
-                <MessageCircle className="w-5 h-5 text-[rgba(34,211,238,0.9)]" />
+                <MessageCircle className="w-5 h-5 text-[rgba(34,211,238,0.95)]" />
               </button>
               <InboxDropdown
                 currentUserId={affiliate.id}
