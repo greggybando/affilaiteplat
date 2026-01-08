@@ -167,7 +167,7 @@ export function DMInbox({ currentUserId, forceOpen }: { currentUserId: string; f
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-[4200]" ref={dropdownRef}>
       {/* Trigger Button - matches NotificationBell pattern */}
       <button
         onClick={() => setIsOpen(!isOpen)}
