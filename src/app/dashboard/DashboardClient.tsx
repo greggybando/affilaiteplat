@@ -232,9 +232,15 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
 
   return (
     <div className="w-screen h-screen flex flex-col overflow-hidden" style={{ width: '100vw', height: '100vh', maxWidth: '100vw', boxSizing: 'border-box', backgroundColor: '#0f0f1a', position: 'relative' }}>
-      {/* TEMP GLOBAL MARKER FOR DM HEADER VISIBILITY */}
-      <div className="fixed top-2 right-2 z-[12000] bg-red-700 text-white text-xs font-bold px-3 py-1 rounded shadow-lg pointer-events-none">
+      {/* TEMP GLOBAL MARKERS FOR DM VISIBILITY */}
+      <div className="fixed top-2 right-2 z-[20000] bg-red-700 text-white text-xs font-bold px-3 py-1 rounded shadow-lg pointer-events-none">
         DM HEADER MARKER
+      </div>
+      <div className="fixed top-1/2 right-6 z-[20000] bg-cyan-600 text-white text-xs font-bold px-4 py-2 rounded shadow-lg pointer-events-auto flex items-center gap-2"
+        onClick={() => setForceDMOpen(true)}
+        title="Open DMs (fallback)">
+        <MessageCircle className="w-4 h-4" />
+        <span>DM TEST BUTTON</span>
       </div>
       
       {/* Header with Glass Morphism */}
@@ -271,7 +277,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                 <p className="text-[rgba(255,255,255,0.6)] text-xs">change your life, get rich, develop strong friendships, have some f****** FUN</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 relative z-[60]" style={{ pointerEvents: 'auto' }}>
+            <div className="flex items-center gap-3 relative z-[80]" style={{ pointerEvents: 'auto' }}>
               {/* Admin Button - Only show for admins */}
               {isAdmin && (
                 <div className="relative px-5 py-3 bg-gradient-to-br from-purple-900/40 via-pink-900/30 to-purple-800/40 rounded-xl border border-purple-500/40 backdrop-blur-sm overflow-hidden">
@@ -397,12 +403,12 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 relative z-[65]" style={{ pointerEvents: 'auto' }}>
+              <div className="flex items-center gap-2 relative z-[90]" style={{ pointerEvents: 'auto' }}>
                 <NotificationBell currentUserId={affiliate.id} />
                 <DMInbox currentUserId={affiliate.id} forceOpen={forceDMOpen} />
                 {/* TEMP MARKER TO CONFIRM RENDER POSITION */}
-                <div className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded">
-                  DM MARKER
+                <div className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded z-[95]">
+                  DM MARKER INLINE
                 </div>
                 <button
                   onClick={() => setForceDMOpen((prev) => !prev)}
