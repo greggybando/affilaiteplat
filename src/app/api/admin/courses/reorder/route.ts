@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         if (category) {
           const { error: updateError } = await (supabaseAdmin as any)
             .from('course_sections')
-            .update({ display_order: sortOrder })
+            .update({ display_order: sortOrder } as Record<string, unknown>)
             .eq('category_id', (category as any).id)
             .eq('section_id', item.id.toString())
           
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         for (const cat of categories) {
           const { data: updatedSection, error: updateError } = await (supabaseAdmin as any)
             .from('course_sections')
-            .update({ display_order: sortOrder })
+            .update({ display_order: sortOrder } as Record<string, unknown>)
             .eq('category_id', cat.id)
             .eq('section_id', item.id.toString())
             .select()
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
         for (const candidate of candidates) {
           const { data: updatedRows, error: updateError } = await (supabaseAdmin as any)
             .from('course_categories')
-            .update({ display_order: sortOrder })
+            .update({ display_order: sortOrder } as Record<string, unknown>)
             .eq('course_type', candidate)
             .eq('category_id', item.id.toString())
             .select('id')
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
           for (const sid of sectionDbIds) {
             const { error: updateError } = await (supabaseAdmin as any)
               .from('course_videos')
-              .update({ display_order: sortOrder })
+              .update({ display_order: sortOrder } as Record<string, unknown>)
               .eq('section_id', sid)
               .eq('video_id', item.id.toString())
             
