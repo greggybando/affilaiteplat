@@ -16,7 +16,7 @@ export function AIChatBot({ userName }: AIChatBotProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `Hey ${userName}! 👋 I'm your Dream Job AI assistant. Ask me anything about the course content, job hunting strategies, or how to land your dream role!`
+      content: `Hey ${userName}! 👋 I'm Matt's AI assistant for the Dream Job course. I'm here to help you land your dream job - no BS, just real advice. Ask me anything about the course, projects, outreach, or whatever you're stuck on. Let's get you that job!`
     }
   ])
   const [input, setInput] = useState('')
@@ -40,14 +40,34 @@ export function AIChatBot({ userName }: AIChatBotProps) {
     setMessages(prev => [...prev, { role: 'user', content: userMessage }])
     setIsLoading(true)
 
-    // TODO: Replace with actual AI API call
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/course-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, { role: 'user', content: userMessage }]
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to get response')
+      }
+
+      const data = await response.json()
+      
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: `Great question! I'm currently in demo mode, but once connected to the AI backend, I'll be able to help you with specific advice about "${userMessage}". For now, check out the course modules for comprehensive guidance!`
+        content: data.response || 'Sorry, I encountered an error. Please try again.'
       }])
+    } catch (error) {
+      console.error('Error calling AI assistant:', error)
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Sorry, I had trouble connecting. Please try again in a moment.'
+      }])
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (
