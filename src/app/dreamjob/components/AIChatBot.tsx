@@ -76,15 +76,18 @@ export function AIChatBot({ userName }: AIChatBotProps) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full 
+          fixed bottom-6 right-6 w-14 h-14 rounded-full 
           bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500
-          shadow-lg shadow-cyan-500/25
           flex items-center justify-center
-          transition-all duration-200
+          transition-all duration-200 hover:scale-110
           ${isOpen ? 'scale-0' : 'scale-100'}
         `}
+        style={{ 
+          zIndex: 999999,
+          boxShadow: '0 0 30px rgba(6,182,212,0.6), 0 8px 32px rgba(0,0,0,0.8)'
+        }}
       >
-        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
         </svg>
       </button>
@@ -92,31 +95,50 @@ export function AIChatBot({ userName }: AIChatBotProps) {
       {/* Chat Window */}
       <div
         className={`
-          fixed bottom-6 right-6 z-50
-          w-[380px] h-[500px]
-          bg-slate-900 rounded-2xl shadow-2xl
+          fixed bottom-6 right-6
+          w-[400px] h-[550px]
+          rounded-2xl shadow-2xl
           flex flex-col overflow-hidden
-          border border-slate-700/50
+          border
           transition-all duration-300 origin-bottom-right
-          ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}
+          ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}
         `}
+        style={{
+          zIndex: 999999,
+          background: 'rgba(15,23,42,0.95)',
+          backdropFilter: 'blur(20px)',
+          borderColor: 'rgba(6,182,212,0.3)',
+          boxShadow: '0 0 40px rgba(6,182,212,0.4), 0 8px 32px rgba(0,0,0,0.8)'
+        }}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div 
+          className="px-4 py-3 flex items-center justify-between border-b"
+          style={{
+            background: 'linear-gradient(135deg, rgba(6,182,212,0.3), rgba(59,130,246,0.3))',
+            borderColor: 'rgba(6,182,212,0.3)'
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, rgba(34,211,238,0.4), rgba(59,130,246,0.4))',
+                boxShadow: '0 0 20px rgba(6,182,212,0.5)'
+              }}
+            >
+              <svg className="w-5 h-5 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
             </div>
             <div>
-              <h3 className="text-white font-semibold text-sm">Dream Job AI</h3>
-              <p className="text-cyan-100 text-xs">Always here to help</p>
+              <h3 className="text-white font-bold text-sm">Matt's Dream Job AI</h3>
+              <p className="text-cyan-300 text-xs">Always here to help</p>
             </div>
           </div>
           <button
             onClick={() => setIsOpen(false)}
-            className="text-white/80 hover:text-white transition-colors"
+            className="text-[rgba(255,255,255,0.7)] hover:text-white transition-colors p-1 hover:bg-[rgba(255,255,255,0.1)] rounded"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -125,7 +147,10 @@ export function AIChatBot({ userName }: AIChatBotProps) {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-900">
+        <div 
+          className="flex-1 overflow-y-auto p-4 space-y-4"
+          style={{ background: 'rgba(15,23,42,0.6)' }}
+        >
           {messages.map((message, index) => (
             <div
               key={index}
@@ -133,24 +158,40 @@ export function AIChatBot({ userName }: AIChatBotProps) {
             >
               <div
                 className={`
-                  max-w-[80%] px-4 py-2 rounded-2xl text-sm
-                  ${message.role === 'user'
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-br-md'
-                    : 'bg-slate-800 text-slate-200 border border-slate-700/50 rounded-bl-md'
-                  }
+                  max-w-[85%] px-4 py-3 rounded-2xl text-sm
+                  ${message.role === 'user' ? 'rounded-br-md' : 'rounded-bl-md'}
                 `}
+                style={message.role === 'user' ? {
+                  background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
+                  color: '#ffffff',
+                  boxShadow: '0 4px 12px rgba(6,182,212,0.3)'
+                } : {
+                  background: 'rgba(255,255,255,0.08)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#e2e8f0'
+                }}
               >
-                {message.content}
+                <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {message.content}
+                </div>
               </div>
             </div>
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-slate-800 text-slate-400 px-4 py-2 rounded-2xl rounded-bl-md border border-slate-700/50">
+              <div 
+                className="px-4 py-3 rounded-2xl rounded-bl-md"
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}
+              >
                 <span className="flex gap-1">
-                  <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </span>
               </div>
             </div>
@@ -159,19 +200,37 @@ export function AIChatBot({ userName }: AIChatBotProps) {
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="p-3 bg-slate-800/50 border-t border-slate-700/50">
+        <form 
+          onSubmit={handleSubmit} 
+          className="p-4 border-t"
+          style={{
+            background: 'rgba(15,23,42,0.8)',
+            borderColor: 'rgba(6,182,212,0.2)'
+          }}
+        >
           <div className="flex gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask me anything..."
-              className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700/50 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50"
+              placeholder="Ask me anything about the course..."
+              disabled={isLoading}
+              className="flex-1 px-4 py-3 rounded-xl text-sm text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all disabled:opacity-50"
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                backdropFilter: 'blur(10px)'
+              }}
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed rounded-lg text-sm font-medium text-white transition-all"
+              className="px-5 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
+                color: '#ffffff',
+                boxShadow: '0 4px 12px rgba(6,182,212,0.4)'
+              }}
             >
               Send
             </button>
