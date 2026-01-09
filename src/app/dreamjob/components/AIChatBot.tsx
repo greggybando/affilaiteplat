@@ -72,41 +72,29 @@ export function AIChatBot({ userName }: AIChatBotProps) {
 
   return (
     <>
-      {/* DEBUG: Test marker */}
-      <div style={{
-        position: 'fixed',
-        bottom: '100px',
-        right: '24px',
-        background: 'red',
-        color: 'white',
-        padding: '20px',
-        zIndex: 999999,
-        fontSize: '20px',
-        fontWeight: 'bold',
-        borderRadius: '10px'
-      }}>
-        AI BOT HERE
-      </div>
-
       {/* Chat Button */}
       <button
-        onClick={() => {
-          console.log('AI Chat button clicked!')
-          setIsOpen(!isOpen)
-        }}
-        className="w-20 h-20 rounded-full animate-bounce"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`
+          w-16 h-16 rounded-full 
+          bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500
+          flex items-center justify-center
+          transition-all duration-200 hover:scale-110
+          ${isOpen ? 'scale-0' : 'scale-100'}
+        `}
         style={{ 
           position: 'fixed',
           bottom: '24px',
           right: '24px',
           zIndex: 999999,
-          background: 'linear-gradient(135deg, #ff0000, #ff6600)',
-          border: '5px solid yellow',
-          boxShadow: '0 0 60px rgba(255,0,0,1)',
-          cursor: 'pointer'
+          pointerEvents: 'auto',
+          boxShadow: '0 0 40px rgba(6,182,212,0.8), 0 8px 40px rgba(0,0,0,0.9)',
+          border: '3px solid rgba(34,211,238,0.5)'
         }}
       >
-        <div style={{ fontSize: '40px' }}>💬</div>
+        <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
       </button>
 
       {/* Chat Window */}
