@@ -61,7 +61,6 @@ export default async function PortalLayout({
             </div>
             <div className="flex items-center gap-3">
               <div className="text-4xl" style={{
-                animation: 'lightning 4s ease-in-out infinite',
                 filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.7))'
               }}>
                 ⚡
@@ -76,13 +75,6 @@ export default async function PortalLayout({
             </div>
           </div>
         </div>
-        <style jsx>{`
-          @keyframes lightning {
-            0%, 90%, 100% { opacity: 1; transform: scale(1); }
-            5%, 10% { opacity: 0.3; transform: scale(0.95); }
-            7.5% { opacity: 1; transform: scale(1.1); }
-          }
-        `}</style>
       </header>
 
       {/* Navigation */}
