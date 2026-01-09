@@ -113,7 +113,16 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
   }, [useWebSocket, socket.onlineCount])
 
   useEffect(() => {
-    fetchChats()
+    // Auto-join Main Group Chat first, then fetch chats
+    const initializeChat = async () => {
+      try {
+        await fetch('/api/group-chat/join-main', { method: 'POST' })
+      } catch (error) {
+        console.error('Error auto-joining Main Group Chat:', error)
+      }
+      await fetchChats()
+    }
+    initializeChat()
   }, [])
 
   // Auto-select main chat on first load
