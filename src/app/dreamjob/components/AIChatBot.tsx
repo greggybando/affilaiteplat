@@ -50,21 +50,23 @@ export function AIChatBot({ userName }: AIChatBotProps) {
         })
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to get response')
-      }
-
       const data = await response.json()
+      
+      if (!response.ok) {
+        console.error('API Error Response:', data)
+        throw new Error(data.message || data.error || 'Failed to get response')
+      }
       
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: data.message || 'Sorry, I encountered an error. Please try again.'
       }])
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error calling AI assistant:', error)
+      console.error('Error message:', error?.message)
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Sorry, I had trouble connecting. Please try again in a moment.'
+        content: error?.message || 'Sorry, I had trouble connecting. Please try again in a moment.'
       }])
     } finally {
       setIsLoading(false)
