@@ -16,7 +16,7 @@ export function AIChatBot({ userName }: AIChatBotProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `Hey ${userName}! 👋 I'm Matt's AI assistant for the Dream Job course. I'm here to help you land your dream job - no BS, just real advice. Ask me anything about the course, projects, outreach, or whatever you're stuck on. Let's get you that job!`
+      content: `Hello you beautiful human. Let's get you a baller job. My job is to answer any questions you have about the course or help you try and figure something out if you get stuck. I was trained by daddy on all of this content so I know every word in every module & i also may or may not know what the inside of your closet looks like. Uhhh... joking....\n\nIf you need help with something, just ask. I'm here to help you.`
     }
   ])
   const [input, setInput] = useState('')
@@ -140,7 +140,7 @@ export function AIChatBot({ userName }: AIChatBotProps) {
               </svg>
             </div>
             <div>
-              <h3 className="text-white font-bold text-sm">Matt's Dream Job AI</h3>
+              <h3 className="text-white font-bold text-sm">dreamjob bot</h3>
               <p className="text-cyan-300 text-xs">Always here to help</p>
             </div>
           </div>
