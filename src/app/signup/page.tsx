@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { Zap } from 'lucide-react'
 
 function SignupForm() {
   const router = useRouter()
@@ -67,24 +68,67 @@ function SignupForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
+    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#0f0f1a' }}>
+      {/* Animated background gradient */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
+        {/* Logo Header */}
         <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="relative" style={{
+              animation: 'lightning 4s ease-in-out infinite',
+              filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.9)) drop-shadow(0 0 16px rgba(6, 182, 212, 0.7))'
+            }}>
+              <Zap className="w-12 h-12 text-cyan-400" fill="currentColor" style={{
+                filter: 'drop-shadow(0 0 4px rgba(34, 211, 238, 1))'
+              }} />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-cyan-300" style={{
+                textShadow: '0 0 20px rgba(34, 211, 238, 0.9), 0 0 40px rgba(6, 182, 212, 0.8)',
+                letterSpacing: '0.05em',
+                fontWeight: 700
+              }}>
+                LIFE DESIGN
+              </span>
+            </div>
+          </div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            Join LifeDesign Platform
+            Join the Platform
           </h1>
-          <p className="text-gray-400">
-            Start your <span className="text-green-400 font-semibold">7-day free trial</span> today
+          <p className="text-[rgba(255,255,255,0.6)]">
+            Start your <span className="text-cyan-400 font-semibold">7-day free trial</span> today
           </p>
         </div>
 
+        <style jsx>{`
+          @keyframes lightning {
+            0%, 90%, 100% { opacity: 1; transform: scale(1); }
+            5%, 10% { opacity: 0.3; transform: scale(0.95); }
+            7.5% { opacity: 1; transform: scale(1.1); }
+          }
+        `}</style>
+
         {/* Signup Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="bg-gray-900 rounded-xl p-6 space-y-5 border border-gray-800">
+          <div 
+            className="rounded-2xl p-6 space-y-5 border relative overflow-hidden"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              borderColor: 'rgba(255,255,255,0.1)',
+              boxShadow: '0 0 40px rgba(6,182,212,0.2), 0 8px 32px rgba(0,0,0,0.8)'
+            }}
+          >
+            {/* Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
             {/* Name */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+            <div className="relative z-10">
+              <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
                 Full Name
               </label>
               <input
@@ -92,14 +136,19 @@ function SignupForm() {
                 id="name"
                 name="name"
                 required
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-4 py-3 rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)'
+                }}
                 placeholder="John Smith"
               />
             </div>
 
             {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+            <div className="relative z-10">
+              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
                 Email Address
               </label>
               <input
@@ -107,14 +156,19 @@ function SignupForm() {
                 id="email"
                 name="email"
                 required
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-4 py-3 rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)'
+                }}
                 placeholder="you@example.com"
               />
             </div>
 
             {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+            <div className="relative z-10">
+              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
                 Password
               </label>
               <input
@@ -123,14 +177,19 @@ function SignupForm() {
                 name="password"
                 required
                 minLength={8}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-4 py-3 rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)'
+                }}
                 placeholder="••••••••"
               />
             </div>
 
             {/* Payout Method */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">
+            <div className="relative z-10">
+              <label className="block text-sm font-medium text-white mb-3">
                 How would you like to get paid?
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -139,32 +198,42 @@ function SignupForm() {
                   onClick={() => setPayoutMethod('paypal')}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     payoutMethod === 'paypal'
-                      ? 'border-green-500 bg-green-500/10'
-                      : 'border-gray-700 bg-gray-800 hover:border-gray-600'
+                      ? 'border-cyan-500'
+                      : 'hover:border-[rgba(255,255,255,0.3)]'
                   }`}
+                  style={{
+                    background: payoutMethod === 'paypal' ? 'rgba(34,211,238,0.1)' : 'rgba(255,255,255,0.05)',
+                    borderColor: payoutMethod === 'paypal' ? 'rgba(34,211,238,0.6)' : 'rgba(255,255,255,0.2)',
+                    boxShadow: payoutMethod === 'paypal' ? '0 0 20px rgba(34,211,238,0.3)' : 'none'
+                  }}
                 >
                   <div className="text-lg font-semibold text-white">PayPal</div>
-                  <div className="text-xs text-gray-400 mt-1">Instant payouts</div>
+                  <div className="text-xs text-[rgba(255,255,255,0.6)] mt-1">Instant payouts</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPayoutMethod('stripe')}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     payoutMethod === 'stripe'
-                      ? 'border-green-500 bg-green-500/10'
-                      : 'border-gray-700 bg-gray-800 hover:border-gray-600'
+                      ? 'border-cyan-500'
+                      : 'hover:border-[rgba(255,255,255,0.3)]'
                   }`}
+                  style={{
+                    background: payoutMethod === 'stripe' ? 'rgba(34,211,238,0.1)' : 'rgba(255,255,255,0.05)',
+                    borderColor: payoutMethod === 'stripe' ? 'rgba(34,211,238,0.6)' : 'rgba(255,255,255,0.2)',
+                    boxShadow: payoutMethod === 'stripe' ? '0 0 20px rgba(34,211,238,0.3)' : 'none'
+                  }}
                 >
                   <div className="text-lg font-semibold text-white">Stripe</div>
-                  <div className="text-xs text-gray-400 mt-1">Bank transfer</div>
+                  <div className="text-xs text-[rgba(255,255,255,0.6)] mt-1">Bank transfer</div>
                 </button>
               </div>
             </div>
 
             {/* PayPal Email (conditional) */}
             {payoutMethod === 'paypal' && (
-              <div>
-                <label htmlFor="paypal_email" className="block text-sm font-medium text-gray-300 mb-2">
+              <div className="relative z-10">
+                <label htmlFor="paypal_email" className="block text-sm font-medium text-white mb-2">
                   PayPal Email
                 </label>
                 <input
@@ -172,14 +241,22 @@ function SignupForm() {
                   id="paypal_email"
                   name="paypal_email"
                   required
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    backdropFilter: 'blur(10px)'
+                  }}
                   placeholder="paypal@example.com"
                 />
               </div>
             )}
 
             {payoutMethod === 'stripe' && (
-              <p className="text-sm text-gray-400 bg-gray-800/50 p-3 rounded-lg">
+              <p className="text-sm text-[rgba(255,255,255,0.7)] p-3 rounded-lg relative z-10" style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
                 After signing up, you'll be redirected to Stripe to connect your bank account.
               </p>
             )}
@@ -187,7 +264,14 @@ function SignupForm() {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-red-400 text-sm">
+            <div 
+              className="rounded-lg p-4 text-red-400 text-sm border"
+              style={{
+                background: 'rgba(239,68,68,0.1)',
+                borderColor: 'rgba(239,68,68,0.5)',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
               {error}
             </div>
           )}
@@ -196,22 +280,28 @@ function SignupForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-4 px-6 bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 text-white font-semibold rounded-lg transition-colors"
+            className="w-full py-4 px-6 font-semibold rounded-xl transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 relative overflow-hidden group"
+            style={{
+              background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+              boxShadow: '0 0 20px rgba(34,211,238,0.5), 0 4px 20px rgba(0,0,0,0.3)',
+              color: '#0f0f1a'
+            }}
           >
-            {isLoading ? 'Creating account...' : 'Start Free Trial'}
+            <span className="relative z-10 font-bold">{isLoading ? 'Creating account...' : 'Start Free Trial'}</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
           </button>
 
           {/* Terms */}
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-[rgba(255,255,255,0.5)] text-center">
             By signing up, you agree to our Terms of Service. After your 7-day trial,
             you'll be charged $40/month to continue accessing the platform.
           </p>
         </form>
 
         {/* Login Link */}
-        <p className="text-center mt-6 text-gray-400">
+        <p className="text-center mt-6 text-[rgba(255,255,255,0.6)]">
           Already have an account?{' '}
-          <Link href="/login" className="text-green-400 hover:text-green-300">
+          <Link href="/login" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
             Log in
           </Link>
         </p>
@@ -223,7 +313,7 @@ function SignupForm() {
 export default function SignupPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0f0f1a' }}>
         <div className="text-white">Loading...</div>
       </div>
     }>
