@@ -257,7 +257,7 @@ export function AIChatBot({ userName }: AIChatBotProps) {
           </div>
         </form>
       </div>
-    </div>
+    </>
   )
 }
 
