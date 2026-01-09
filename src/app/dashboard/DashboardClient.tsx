@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X, User } from 'lucide-react'
+import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns'
 import { NotificationsDropdown } from './components/NotificationsDropdown'
@@ -437,14 +437,6 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
 
                     {/* Menu Items */}
                     <div className="py-2">
-                      <Link
-                        href="/settings?tab=profile"
-                        onClick={() => setIsAvatarDropdownOpen(false)}
-                        className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-3 transition-colors"
-                      >
-                        <User className="w-4 h-4 text-cyan-400" />
-                        Profile
-                      </Link>
                       <Link
                         href="/settings"
                         onClick={() => setIsAvatarDropdownOpen(false)}
