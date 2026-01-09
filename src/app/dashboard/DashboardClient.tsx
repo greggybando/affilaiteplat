@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X } from 'lucide-react'
+import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X, User } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns'
 import { NotificationsDropdown } from './components/NotificationsDropdown'
@@ -225,6 +225,21 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   const [glowIntensity, setGlowIntensity] = useState(50) // Default 50%
   const [classroomResetKey, setClassroomResetKey] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = useState(false)
+  const avatarDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close avatar dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (avatarDropdownRef.current && !avatarDropdownRef.current.contains(event.target as Node)) {
+        setIsAvatarDropdownOpen(false)
+      }
+    }
+    if (isAvatarDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isAvatarDropdownOpen])
   
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -366,49 +381,93 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                   style={{ backdropFilter: 'blur(10px)' }}
                 />
               </div>
-              {/* Profile Section */}
-              <div className="flex items-center gap-2">
-                {affiliate.avatar_url ? (
-                  <img
-                    src={affiliate.avatar_url}
-                    alt={affiliate.avatar_name || affiliate.name}
-                    className="w-8 h-8 rounded-full object-cover border-2"
-                    style={{
-                      borderColor: 'rgba(34,211,238,0.5)',
-                      boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
-                    }}
-                  />
-                ) : (
+              <NotificationBell currentUserId={affiliate.id} />
+              <DMInbox currentUserId={affiliate.id} initialUserId={openDMUserId || undefined} />
+              
+              {/* Profile Avatar Dropdown */}
+              <div className="relative" ref={avatarDropdownRef} style={{ zIndex: 999999 }}>
+                <button
+                  onClick={() => setIsAvatarDropdownOpen(!isAvatarDropdownOpen)}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                  title="Profile menu"
+                >
+                  {affiliate.avatar_url ? (
+                    <img
+                      src={affiliate.avatar_url}
+                      alt={affiliate.avatar_name || affiliate.name}
+                      className="w-8 h-8 rounded-full object-cover border-2 cursor-pointer"
+                      style={{
+                        borderColor: 'rgba(34,211,238,0.5)',
+                        boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
+                      }}
+                    />
+                  ) : (
+                    <div 
+                      className="w-8 h-8 rounded-full flex items-center justify-center border-2 cursor-pointer"
+                      style={{
+                        background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                        borderColor: 'rgba(34,211,238,0.5)',
+                        boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
+                      }}
+                    >
+                      <span className="text-white text-xs font-bold">
+                        {affiliate.avatar_name?.[0]?.toUpperCase() || affiliate.name[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </button>
+
+                {/* Dropdown Menu */}
+                {isAvatarDropdownOpen && (
                   <div 
-                    className="w-8 h-8 rounded-full flex items-center justify-center border-2"
-                    style={{
-                      background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                      borderColor: 'rgba(34,211,238,0.5)',
-                      boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
+                    className="fixed w-56 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] overflow-hidden shadow-2xl"
+                    style={{ 
+                      right: '1rem', 
+                      top: '4rem', 
+                      zIndex: 999999, 
+                      backdropFilter: 'blur(20px)', 
+                      boxShadow: '0 0 40px rgba(6,182,212,0.3), 0 8px 32px rgba(0,0,0,0.8)' 
                     }}
                   >
-                    <span className="text-white text-xs font-bold">
-                      {affiliate.avatar_name?.[0]?.toUpperCase() || affiliate.name[0]?.toUpperCase()}
-                    </span>
+                    {/* User Info Header */}
+                    <div className="p-4 border-b border-[rgba(255,255,255,0.1)] bg-gradient-to-r from-[rgba(24,24,27,0.92)] to-[rgba(12,74,110,0.85)]">
+                      <div className="text-white font-semibold truncate">{affiliate.avatar_name || affiliate.name}</div>
+                      <div className="text-xs text-[rgba(255,255,255,0.6)] truncate">{affiliate.name}</div>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="py-2">
+                      <Link
+                        href="/settings?tab=profile"
+                        onClick={() => setIsAvatarDropdownOpen(false)}
+                        className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-3 transition-colors"
+                      >
+                        <User className="w-4 h-4 text-cyan-400" />
+                        Profile
+                      </Link>
+                      <Link
+                        href="/settings"
+                        onClick={() => setIsAvatarDropdownOpen(false)}
+                        className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-3 transition-colors"
+                      >
+                        <Settings className="w-4 h-4 text-cyan-400" />
+                        Settings
+                      </Link>
+                      <div className="border-t border-[rgba(255,255,255,0.1)] my-1" />
+                      <button
+                        onClick={() => {
+                          setIsAvatarDropdownOpen(false)
+                          handleLogout()
+                        }}
+                        className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-3 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
-              <NotificationBell currentUserId={affiliate.id} />
-              <DMInbox currentUserId={affiliate.id} initialUserId={openDMUserId || undefined} />
-              <Link
-                href="/settings"
-                className="p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-xl transition-colors"
-                title="Settings"
-              >
-                <Settings className="w-5 h-5 text-[rgba(255,255,255,0.8)]" />
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-xl transition-colors"
-                title="Log out"
-              >
-                <LogOut className="w-5 h-5 text-[rgba(255,255,255,0.8)]" />
-              </button>
             </div>
           </div>
           
