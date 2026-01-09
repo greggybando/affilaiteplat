@@ -71,40 +71,49 @@ export function AIChatBot({ userName }: AIChatBotProps) {
   }
 
   return (
-    <>
+    <div style={{ position: 'fixed', bottom: 0, right: 0, zIndex: 999999, pointerEvents: 'none' }}>
       {/* Chat Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          fixed bottom-6 right-6 w-14 h-14 rounded-full 
+          w-16 h-16 rounded-full 
           bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500
           flex items-center justify-center
           transition-all duration-200 hover:scale-110
+          animate-pulse
           ${isOpen ? 'scale-0' : 'scale-100'}
         `}
         style={{ 
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
           zIndex: 999999,
-          boxShadow: '0 0 30px rgba(6,182,212,0.6), 0 8px 32px rgba(0,0,0,0.8)'
+          pointerEvents: 'auto',
+          boxShadow: '0 0 40px rgba(6,182,212,0.8), 0 8px 40px rgba(0,0,0,0.9)',
+          border: '3px solid rgba(34,211,238,0.5)'
         }}
       >
-        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
         </svg>
       </button>
 
       {/* Chat Window */}
       <div
         className={`
-          fixed bottom-6 right-6
           w-[400px] h-[550px]
           rounded-2xl shadow-2xl
           flex flex-col overflow-hidden
           border
           transition-all duration-300 origin-bottom-right
-          ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}
+          ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}
         `}
         style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
           zIndex: 999999,
+          pointerEvents: isOpen ? 'auto' : 'none',
           background: 'rgba(15,23,42,0.95)',
           backdropFilter: 'blur(20px)',
           borderColor: 'rgba(6,182,212,0.3)',
@@ -237,7 +246,7 @@ export function AIChatBot({ userName }: AIChatBotProps) {
           </div>
         </form>
       </div>
-    </>
+    </div>
   )
 }
 
