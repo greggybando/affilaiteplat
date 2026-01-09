@@ -66,8 +66,15 @@ export function ProductList({
   const allProducts = [platformSubscriptionProduct, ...products]
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-      <div className="divide-y divide-gray-800">
+    <div 
+      className="rounded-xl overflow-hidden border"
+      style={{
+        background: 'rgba(26,26,46,0.6)',
+        backdropFilter: 'blur(10px)',
+        borderColor: 'rgba(255,255,255,0.1)'
+      }}
+    >
+      <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
         {allProducts.map((product, index) => (
           <ProductRow
             key={product.id}
@@ -96,10 +103,17 @@ function ProductRow({
   const icon = getProductIcon(product.slug)
 
   return (
-    <div className="p-5 hover:bg-gray-800/30 transition-colors">
+    <div className="p-5 hover:bg-[rgba(255,255,255,0.02)] transition-colors">
       <div className="flex items-start gap-4">
         {/* Product Icon */}
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-blue-500/20 border border-green-500/30 flex items-center justify-center text-xl flex-shrink-0">
+        <div 
+          className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0 border"
+          style={{
+            background: 'linear-gradient(135deg, rgba(34,211,238,0.2), rgba(59,130,246,0.2))',
+            borderColor: 'rgba(34,211,238,0.3)',
+            boxShadow: '0 0 15px rgba(34,211,238,0.2)'
+          }}
+        >
           {icon}
         </div>
 
@@ -109,22 +123,22 @@ function ProductRow({
             <div className="flex-1">
               <h3 className="text-base font-semibold text-white">{product.name}</h3>
               {product.description && (
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-[rgba(255,255,255,0.6)] mt-1">
                   {product.description}
                 </p>
               )}
             </div>
             <div className="text-right flex-shrink-0">
-              <div className="text-green-400 font-bold text-base">
+              <div className="text-cyan-400 font-bold text-base">
                 {product.commission_percent}%
               </div>
               {product.id !== 'platform-subscription' && (
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-[rgba(255,255,255,0.5)]">
                   ${(product.price_cents / 100).toFixed(0)}
                 </div>
               )}
               {product.id === 'platform-subscription' && (
-                <div className="text-xs text-gray-500">Recurring</div>
+                <div className="text-xs text-[rgba(255,255,255,0.5)]">Recurring</div>
               )}
             </div>
           </div>
@@ -237,7 +251,7 @@ function LandingPageRow({
     <div className="space-y-2">
       <p className="text-sm font-medium text-white">{page.name}</p>
       {page.variant_name && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-[rgba(255,255,255,0.5)]">
           Variant: {page.variant_name}
         </p>
       )}
@@ -247,20 +261,32 @@ function LandingPageRow({
             type="text"
             value={fullUrl || ''}
             readOnly
-            className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs font-mono"
+            className="flex-1 px-3 py-2 rounded-lg text-white text-xs font-mono"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}
           />
           <button
             onClick={copyToClipboard}
-            className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            className="p-2 text-white rounded-lg transition-all hover:scale-105"
+            style={{
+              background: copied ? 'rgba(34,211,238,0.2)' : 'rgba(255,255,255,0.1)',
+              border: '1px solid ' + (copied ? 'rgba(34,211,238,0.4)' : 'rgba(255,255,255,0.2)')
+            }}
             title="Copy link"
           >
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {copied ? <Check className="w-4 h-4 text-cyan-400" /> : <Copy className="w-4 h-4" />}
           </button>
           <a
             href={fullUrl || '#'}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            className="p-2 text-white rounded-lg transition-all hover:scale-105"
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}
             title="Open link"
           >
             <ExternalLink className="w-4 h-4" />
@@ -270,7 +296,12 @@ function LandingPageRow({
         <button
           onClick={generateLink}
           disabled={isGenerating}
-          className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+          className="w-full px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
+          style={{
+            background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+            color: '#0f0f1a',
+            boxShadow: '0 0 15px rgba(34,211,238,0.3)'
+          }}
         >
           {isGenerating ? 'Generating...' : 'Generate Link'}
         </button>

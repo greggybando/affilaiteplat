@@ -86,7 +86,7 @@ export default async function PortalPage() {
   ])
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-1">
         {/* Tutorial Video Banner */}
         <section className="mb-6">
           <VideoBanner
@@ -100,7 +100,7 @@ export default async function PortalPage() {
 
         {/* Products */}
         <section className="mt-6 pb-8">
-          <h2 className="text-xl font-semibold text-white mb-4">Available Products</h2>
+          <h2 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-cyan-300 mb-4" style={{ textShadow: '0 0 20px rgba(34, 211, 238, 0.5)' }}>Available Products</h2>
           <ProductList
             products={products}
             affiliateLinks={affiliateLinks}

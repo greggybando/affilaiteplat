@@ -19,11 +19,19 @@ export function StatsCards({ stats, affiliate }: { stats: AffiliateStats | null;
   return (
     <>
       {hasActiveBoost && (
-        <div className="mb-4 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 rounded-lg p-4 flex items-center gap-2">
+        <div 
+          className="mb-4 rounded-xl p-4 flex items-center gap-2 border relative overflow-hidden"
+          style={{
+            background: 'rgba(251,146,60,0.1)',
+            borderColor: 'rgba(251,146,60,0.3)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 0 20px rgba(251,146,60,0.2)'
+          }}
+        >
           <span className="text-2xl">🔥</span>
           <div>
             <p className="text-white font-medium">+{boostPercent}% Commission Boost Active</p>
-            <p className="text-sm text-gray-300">{daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining</p>
+            <p className="text-sm text-[rgba(255,255,255,0.7)]">{daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining</p>
           </div>
         </div>
       )}
@@ -49,13 +57,13 @@ export function StatsCards({ stats, affiliate }: { stats: AffiliateStats | null;
         label="Ready to Pay"
         value={`$${approved.toFixed(2)}`}
         sublabel="Available for payout"
-        color="green"
+        color="cyan"
       />
       <StatCard
         label="Total Earned"
         value={`$${paid.toFixed(2)}`}
         sublabel="Lifetime earnings"
-        color="green"
+        color="cyan"
       />
     </div>
     </>
@@ -71,25 +79,45 @@ function StatCard({
   label: string
   value: string
   sublabel?: string
-  color?: 'gray' | 'yellow' | 'green'
+  color?: 'gray' | 'yellow' | 'cyan'
 }) {
-  const colorClasses = {
-    gray: 'bg-gray-800/50 border-gray-700',
-    yellow: 'bg-yellow-500/10 border-yellow-500/30',
-    green: 'bg-green-500/10 border-green-500/30',
+  const colorStyles = {
+    gray: {
+      background: 'rgba(255,255,255,0.05)',
+      borderColor: 'rgba(255,255,255,0.1)',
+      textColor: 'text-white',
+      glow: 'none'
+    },
+    yellow: {
+      background: 'rgba(251,191,36,0.1)',
+      borderColor: 'rgba(251,191,36,0.3)',
+      textColor: 'text-yellow-400',
+      glow: '0 0 15px rgba(251,191,36,0.2)'
+    },
+    cyan: {
+      background: 'rgba(34,211,238,0.1)',
+      borderColor: 'rgba(34,211,238,0.3)',
+      textColor: 'text-cyan-400',
+      glow: '0 0 15px rgba(34,211,238,0.3)'
+    },
   }
 
-  const valueClasses = {
-    gray: 'text-white',
-    yellow: 'text-yellow-400',
-    green: 'text-green-400',
-  }
+  const style = colorStyles[color]
 
   return (
-    <div className={`rounded-xl border p-4 ${colorClasses[color]}`}>
-      <p className="text-sm text-gray-400">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${valueClasses[color]}`}>{value}</p>
-      {sublabel && <p className="text-xs text-gray-500 mt-1">{sublabel}</p>}
+    <div 
+      className={`rounded-xl border p-4 relative overflow-hidden`}
+      style={{
+        background: style.background,
+        borderColor: style.borderColor,
+        backdropFilter: 'blur(10px)',
+        boxShadow: style.glow
+      }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent pointer-events-none"></div>
+      <p className="text-sm text-[rgba(255,255,255,0.6)] relative z-10">{label}</p>
+      <p className={`text-2xl font-bold mt-1 ${style.textColor} relative z-10`}>{value}</p>
+      {sublabel && <p className="text-xs text-[rgba(255,255,255,0.5)] mt-1 relative z-10">{sublabel}</p>}
     </div>
   )
 }
