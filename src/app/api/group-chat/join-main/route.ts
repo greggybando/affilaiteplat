@@ -15,23 +15,25 @@ export async function POST(request: NextRequest) {
       .from('group_chats')
       .select('id')
       .eq('name', 'Main Group Chat')
-      .maybeSingle()
+      .single() as { data: { id: string } | null, error: any }
 
     if (chatError || !mainChat) {
       console.error('Main Group Chat not found:', chatError)
       return NextResponse.json({ error: 'Main Group Chat not found' }, { status: 404 })
     }
 
+    const mainChatId = mainChat.id
+
     // Check if user is already a participant
     const { data: existing } = await supabaseAdmin
       .from('group_chat_participants')
       .select('id')
       .eq('affiliate_id', affiliate.id)
-      .eq('group_chat_id', mainChat.id)
+      .eq('group_chat_id', mainChatId)
       .maybeSingle()
 
     if (existing) {
-      return NextResponse.json({ message: 'Already a participant', chatId: mainChat.id })
+      return NextResponse.json({ message: 'Already a participant', chatId: mainChatId })
     }
 
     // Add user as participant
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
       .from('group_chat_participants') as any)
       .insert({
         affiliate_id: affiliate.id,
-        group_chat_id: mainChat.id
+        group_chat_id: mainChatId
       })
 
     if (insertError) {
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to join' }, { status: 500 })
     }
 
-    return NextResponse.json({ message: 'Successfully joined', chatId: mainChat.id })
+    return NextResponse.json({ message: 'Successfully joined', chatId: mainChatId })
   } catch (error: any) {
     console.error('API join-main error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
