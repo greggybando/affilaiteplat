@@ -1572,7 +1572,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect, onDataCh
       </div>
 
       {/* AI Chat Bot - floating in bottom right */}
-      <AIChatBot />
+      <AIChatBot userName={affiliate?.name || 'User'} />
     </div>
   )
 }
