@@ -4,7 +4,6 @@ import { TrialBanner } from './components/TrialBanner'
 import { PortalNav } from './components/PortalNav'
 import { differenceInDays } from 'date-fns'
 import Link from 'next/link'
-import { Zap } from 'lucide-react'
 
 export default async function PortalLayout({
   children,
@@ -61,11 +60,11 @@ export default async function PortalLayout({
               </Link>
             </div>
             <div className="flex items-center gap-3">
-              <div className="relative" style={{
+              <div className="text-4xl" style={{
                 animation: 'lightning 4s ease-in-out infinite',
                 filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.7))'
               }}>
-                <Zap className="w-8 h-8 text-cyan-400" fill="currentColor" />
+                ⚡
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-cyan-300" style={{
