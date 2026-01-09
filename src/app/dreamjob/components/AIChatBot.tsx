@@ -16,7 +16,7 @@ export function AIChatBot({ userName }: AIChatBotProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `Hello you beautiful human. Let's get you a baller job. My job is to answer any questions you have about the course or help you try and figure something out if you get stuck. I was trained by daddy on all of this content so I know every word in every module & i also may or may not know what the inside of your closet looks like. Uhhh... joking....\n\nIf you need help with something, just ask. I'm here to help you.`
+      content: `Hello you beautiful human. I'm here to help you get your dream job. I was trained on everything we're doing together so if you need any help with anything about the course or about what you should be doing just let me know. I'm here to be tapped in whenever you need me.`
     }
   ])
   const [input, setInput] = useState('')
