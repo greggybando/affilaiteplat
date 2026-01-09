@@ -45,7 +45,8 @@ export function AIChatBot({ userName }: AIChatBotProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [...messages, { role: 'user', content: userMessage }]
+          message: userMessage,
+          conversationHistory: messages
         })
       })
 
@@ -57,7 +58,7 @@ export function AIChatBot({ userName }: AIChatBotProps) {
       
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.response || 'Sorry, I encountered an error. Please try again.'
+        content: data.message || 'Sorry, I encountered an error. Please try again.'
       }])
     } catch (error) {
       console.error('Error calling AI assistant:', error)
