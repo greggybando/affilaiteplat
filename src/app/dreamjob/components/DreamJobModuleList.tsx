@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Paperclip, X, Download, Save, Loader2, Check, Edit2, GripVertical, FileCheck, Lock } from 'lucide-react'
 import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 import { useUnlockContext } from '@/contexts/UnlockContext'
+import { AIChatBot } from './AIChatBot'
 import {
   DndContext,
   closestCenter,
@@ -1569,6 +1570,9 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect, onDataCh
           </div>
         )}
       </div>
+
+      {/* AI Chat Bot - floating in bottom right */}
+      <AIChatBot />
     </div>
   )
 }
