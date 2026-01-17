@@ -1412,6 +1412,18 @@ function ClassroomTab({
     return url
   }
 
+  const hexToRgb = (hex: string): string => {
+    // Remove # if present
+    hex = hex.replace('#', '')
+    
+    // Parse hex to RGB
+    const r = parseInt(hex.substring(0, 2), 16)
+    const g = parseInt(hex.substring(2, 4), 16)
+    const b = parseInt(hex.substring(4, 6), 16)
+    
+    return `${r},${g},${b}`
+  }
+
   // Use database data only (no hardcoded course fallback)
   const activeMindsetCategories = mindsetCategories
   
@@ -1862,107 +1874,114 @@ function ClassroomTab({
                     <div className="text-center py-12 text-white">Loading courses...</div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {allCourses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug)).map((course) => (
-                        <div
-                          key={course.id}
-                          className={`bg-[rgba(255,255,255,0.08)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.15)] rounded-xl p-5 transition-all hover:border-cyan-500 hover:bg-[rgba(255,255,255,0.12)] ${
-                            !isAdmin && course.is_published ? 'cursor-pointer' : ''
-                          }`}
-                          style={{
-                            backdropFilter: 'blur(10px)',
-                            opacity: !course.is_published && !isAdmin ? 0.6 : 1
-                          }}
-                          onClick={!isAdmin && course.is_published ? () => window.location.href = `/courses/${course.slug}` : undefined}
-                        >
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="text-3xl">{course.emoji || '📚'}</div>
-                            {!course.is_published && (
-                              <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-semibold">
-                                Draft
-                              </span>
-                            )}
-                            {course.is_published && (
-                              <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full font-semibold">
-                                Live
-                              </span>
-                            )}
-                          </div>
-                          <h3 className="text-base font-bold text-white mb-2 line-clamp-1">{course.title}</h3>
-                          {course.description && (
-                            <p className="text-[rgba(255,255,255,0.6)] text-xs mb-3 line-clamp-2">
-                              {course.description}
-                            </p>
-                          )}
-                          {course.stats && (
-                            <div className="flex items-center gap-3 text-xs text-[rgba(255,255,255,0.5)] mb-3">
-                              <span>{course.stats.lessons} lessons</span>
-                              {course.stats.progress > 0 && (
-                                <span className="text-cyan-400">{course.stats.progress}%</span>
+                      {allCourses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug)).map((course) => {
+                        const courseColor = course.color || '#06B6D4' // Default cyan
+                        const rgbValues = hexToRgb(courseColor)
+                        const borderColor = course.is_published ? courseColor : '#FCD34D' // Yellow for drafts
+                        
+                        return (
+                          <div
+                            key={course.id}
+                            className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 rounded-2xl p-6 transition-all hover:shadow-lg group"
+                            style={{
+                              backdropFilter: 'blur(10px)',
+                              borderColor: borderColor,
+                              opacity: !course.is_published && !isAdmin ? 0.6 : 1,
+                              boxShadow: course.is_published 
+                                ? glowShadow(`0 0 30px rgba(${rgbValues},0.3), 0 0 60px rgba(${rgbValues},0.2)`, glowIntensity)
+                                : glowShadow('0 0 20px rgba(252,211,77,0.3), 0 0 40px rgba(252,211,77,0.2)', glowIntensity)
+                            }}
+                          >
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="text-4xl">{course.emoji || '📚'}</div>
+                              {!course.is_published && (
+                                <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-semibold border border-yellow-500/30">
+                                  Draft
+                                </span>
+                              )}
+                              {course.is_published && (
+                                <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full font-semibold border border-green-500/30">
+                                  Live
+                                </span>
                               )}
                             </div>
-                          )}
-                          
-                          <div className="flex gap-2 mt-4">
-                            {isAdmin ? (
-                              <>
-                                {course.is_published && (
-                                  <button
-                                    onClick={() => window.location.href = `/courses/${course.slug}`}
-                                    className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg font-semibold transition-colors"
-                                  >
-                                    View
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => window.location.href = `/admin/courses-v2/${course.id}`}
-                                  className="flex-1 px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs rounded-lg font-semibold transition-colors"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation()
-                                    try {
-                                      const res = await fetch('/api/admin/courses-v2', {
-                                        method: 'PATCH',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                          id: course.id,
-                                          is_published: !course.is_published
-                                        })
-                                      })
-                                      if (res.ok) {
-                                        // Refresh courses
-                                        const coursesRes = await fetch('/api/courses-v2?all=true')
-                                        const data = await coursesRes.json()
-                                        if (data.courses) {
-                                          setAllCourses(data.courses)
-                                        }
-                                      }
-                                    } catch (error) {
-                                      console.error('Error toggling publish:', error)
-                                    }
-                                  }}
-                                  className={`px-3 py-2 text-xs rounded-lg font-semibold transition-colors ${
-                                    course.is_published
-                                      ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                                      : 'bg-green-600 hover:bg-green-700 text-white'
-                                  }`}
-                                >
-                                  {course.is_published ? 'Unpublish' : 'Publish'}
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                onClick={() => window.location.href = `/courses/${course.slug}`}
-                                className="w-full text-cyan-400 text-xs font-medium hover:translate-x-1 transition-transform inline-flex items-center justify-center gap-1"
-                              >
-                                Start →
-                              </button>
+                            
+                            <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">{course.title}</h3>
+                            
+                            {course.description && (
+                              <p className="text-[rgba(255,255,255,0.6)] text-sm mb-4 line-clamp-2">
+                                {course.description}
+                              </p>
                             )}
+                            
+                            {course.stats && (
+                              <div className="flex items-center gap-3 text-xs text-[rgba(255,255,255,0.5)] mb-4">
+                                <span>{course.stats.lessons} lessons</span>
+                                {course.stats.progress > 0 && (
+                                  <span className="text-cyan-400 font-semibold">{course.stats.progress}% complete</span>
+                                )}
+                              </div>
+                            )}
+                            
+                            <div className="flex flex-col gap-2 mt-4">
+                              {/* View Course button - visible to everyone if published */}
+                              {course.is_published && (
+                                <button
+                                  onClick={() => window.location.href = `/courses/${course.slug}`}
+                                  className="w-full px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white text-sm rounded-lg font-semibold transition-all hover:shadow-lg hover:shadow-cyan-500/50 flex items-center justify-center gap-2 group-hover:scale-[1.02]"
+                                >
+                                  <span>View Course</span>
+                                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                                </button>
+                              )}
+                              
+                              {/* Admin controls */}
+                              {isAdmin && (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => window.location.href = `/admin/courses-v2/${course.id}`}
+                                    className="flex-1 px-3 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] border border-[rgba(255,255,255,0.2)] text-white text-xs rounded-lg font-semibold transition-all"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation()
+                                      try {
+                                        const res = await fetch('/api/admin/courses-v2', {
+                                          method: 'PATCH',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({
+                                            id: course.id,
+                                            is_published: !course.is_published
+                                          })
+                                        })
+                                        if (res.ok) {
+                                          // Refresh courses
+                                          const coursesRes = await fetch('/api/courses-v2?all=true')
+                                          const data = await coursesRes.json()
+                                          if (data.courses) {
+                                            setAllCourses(data.courses)
+                                          }
+                                        }
+                                      } catch (error) {
+                                        console.error('Error toggling publish:', error)
+                                      }
+                                    }}
+                                    className={`flex-1 px-3 py-2 text-xs rounded-lg font-semibold transition-colors ${
+                                      course.is_published
+                                        ? 'bg-yellow-600/80 hover:bg-yellow-600 text-white'
+                                        : 'bg-green-600/80 hover:bg-green-600 text-white'
+                                    }`}
+                                  >
+                                    {course.is_published ? 'Unpublish' : 'Publish'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                       
                       {allCourses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug)).length === 0 && !isAdmin && (
                         <div className="col-span-full text-center py-12">
