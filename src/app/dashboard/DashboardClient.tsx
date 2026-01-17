@@ -1350,11 +1350,12 @@ function ClassroomTab({
       return
     }
 
-    // Auto-generate slug from title
-    const slug = newCourse.title
+    // Auto-generate slug from title with timestamp to ensure uniqueness
+    const baseSlug = newCourse.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
+    const slug = `${baseSlug}-${Date.now()}`
 
     try {
       const res = await fetch('/api/admin/courses-v2', {
