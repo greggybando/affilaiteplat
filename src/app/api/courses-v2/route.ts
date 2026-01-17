@@ -20,11 +20,22 @@ export async function GET(request: NextRequest) {
 
     // If courseId provided, fetch single course with full details
     if (courseId) {
-      const { data: course, error: courseError } = await supabaseAdmin
-        .from('courses')
-        .select('*')
-        .eq('id', courseId)
-        .single()
+      // Try to fetch by ID first, then by slug
+      let query = (supabaseAdmin.from('courses') as any).select('*')
+      
+      // Check if courseId is a UUID (contains hyphens) or a slug
+      if (courseId.includes('-') && courseId.length > 36) {
+        // Likely a slug (with timestamp)
+        query = query.eq('slug', courseId)
+      } else if (courseId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        // Valid UUID format
+        query = query.eq('id', courseId)
+      } else {
+        // Try slug
+        query = query.eq('slug', courseId)
+      }
+      
+      const { data: course, error: courseError } = await query.single()
 
       if (courseError || !course) {
         return NextResponse.json({ error: 'Course not found' }, { status: 404 })
@@ -35,11 +46,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Course not found' }, { status: 404 })
       }
 
-      // Fetch sections
-      const { data: sections, error: sectionsError } = await supabaseAdmin
-        .from('course_modules')
+      // Fetch sections (use course.id not courseId since we might have fetched by slug)
+      const { data: sections, error: sectionsError } = await (supabaseAdmin
+        .from('course_modules') as any)
         .select('*')
-        .eq('course_id', courseId)
+        .eq('course_id', course.id)
         .eq('is_published', true)
         .order('sort_order', { ascending: true })
 
@@ -47,8 +58,8 @@ export async function GET(request: NextRequest) {
 
       // Fetch lessons for each section
       const sectionIds = (sections || []).map((s: any) => s.id)
-      const { data: lessons, error: lessonsError } = await supabaseAdmin
-        .from('course_lessons')
+      const { data: lessons, error: lessonsError } = await (supabaseAdmin
+        .from('course_lessons') as any)
         .select('*')
         .in('module_id', sectionIds.length ? sectionIds : [''])
         .eq('is_published', true)
