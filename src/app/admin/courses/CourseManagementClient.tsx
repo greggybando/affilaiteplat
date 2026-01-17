@@ -474,6 +474,17 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
   const [editing, setEditing] = useState<{ type: 'category' | 'section' | 'video', categoryIndex: number, sectionIndex?: number, videoIndex?: number } | null>(null)
   const [editValues, setEditValues] = useState<any>({})
   const [attachmentManager, setAttachmentManager] = useState<{ parentId: string, parentType: 'video_id' | 'section_id' | 'category_id' } | null>(null)
+  
+  // New course management
+  const [allCourses, setAllCourses] = useState<any[]>([])
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [newCourse, setNewCourse] = useState({
+    title: '',
+    slug: '',
+    description: '',
+    emoji: '',
+    color: '#06B6D4'
+  })
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -498,7 +509,50 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
 
   useEffect(() => {
     loadStructure()
+    loadAllCourses()
   }, [courseType])
+
+  const loadAllCourses = async () => {
+    try {
+      const res = await fetch('/api/admin/courses-v2?all=true')
+      const data = await res.json()
+      if (data.courses) {
+        setAllCourses(data.courses.sort((a: any, b: any) => a.sort_order - b.sort_order))
+      }
+    } catch (error) {
+      console.error('Error loading courses:', error)
+    }
+  }
+
+  const handleCreateCourse = async () => {
+    if (!newCourse.title || !newCourse.slug) {
+      alert('Title and slug are required')
+      return
+    }
+
+    try {
+      const res = await fetch('/api/admin/courses-v2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCourse)
+      })
+
+      const data = await res.json()
+
+      if (data.error) {
+        alert('Error: ' + data.error)
+        return
+      }
+
+      setShowCreateModal(false)
+      setNewCourse({ title: '', slug: '', description: '', emoji: '', color: '#06B6D4' })
+      loadAllCourses()
+      alert('Course created! Click into it to add sections and lessons.')
+    } catch (error) {
+      console.error('Error creating course:', error)
+      alert('Error creating course')
+    }
+  }
 
   const loadStructure = async () => {
     setLoading(true)
@@ -713,39 +767,77 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Course Management</h1>
-            <p className="text-slate-400">Manage course structure, videos, and content</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <select
-              value={courseType}
-              onChange={(e) => setCourseType(e.target.value as any)}
-              className="px-4 py-2 bg-slate-800 text-white rounded-lg border border-slate-700"
+    <div className="min-h-screen bg-slate-900 p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Compact Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-white">Courses</h1>
+          {saving && (
+            <span className="text-sm text-emerald-400 flex items-center gap-2">
+              <div className="w-3 h-3 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+              Saving...
+            </span>
+          )}
+        </div>
+
+        {/* Course Tabs - Scrollable with + Button */}
+        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
+          {allCourses.map((course) => (
+            <button
+              key={course.id}
+              onClick={() => {
+                // Map course slug to courseType for existing courses
+                const typeMap: any = {
+                  'mindset': 'mindset',
+                  'dream-job': 'dreamjob',
+                  'side-income': 'affiliate'
+                }
+                if (typeMap[course.slug]) {
+                  setCourseType(typeMap[course.slug])
+                } else {
+                  // For new courses, open in new tab
+                  window.open(`/admin/courses-v2/${course.id}`, '_blank')
+                }
+              }}
+              className={`px-4 py-2 rounded-lg whitespace-nowrap flex items-center gap-2 transition-colors ${
+                (courseType === 'mindset' && course.slug === 'mindset') ||
+                (courseType === 'dreamjob' && course.slug === 'dream-job') ||
+                (courseType === 'affiliate' && course.slug === 'side-income')
+                  ? 'bg-cyan-600 text-white'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
             >
-              <option value="mindset">Mindset / LD World</option>
-              <option value="dreamjob">Dream Job</option>
-              <option value="affiliate">Affiliate</option>
-            </select>
-            {saving && (
-              <span className="text-sm text-emerald-400 flex items-center gap-2">
-                <div className="w-3 h-3 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                Auto-saving...
-              </span>
-            )}
+              {course.emoji && <span>{course.emoji}</span>}
+              <span className="text-sm font-medium">{course.title}</span>
+            </button>
+          ))}
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-2 whitespace-nowrap"
+            title="Create New Course"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="text-sm font-semibold">New Course</span>
+          </button>
+        </div>
+
+        {/* Course Editor - Existing structure for the 3 old courses */}
+        <div className="bg-slate-800 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">
+              {courseType === 'mindset' && 'Mindset / LD World'}
+              {courseType === 'dreamjob' && 'Dream Job'}
+              {courseType === 'affiliate' && 'Affiliate'}
+            </h2>
             <button
               onClick={saveStructure}
               disabled={saving}
-              className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50"
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 text-sm"
             >
-              <Save className="w-4 h-4" />
-              {saving ? 'Saving...' : 'Save All'}
+              <Save className="w-3 h-3" />
+              {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
-        </div>
 
         <DndContext
           sensors={sensors}
@@ -756,7 +848,7 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
             items={structure.map((_, idx) => `category-${idx}`)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-4">
+            <div className="space-y-3">
               {structure.map((category, catIndex) => (
                 <SortableCategoryItem
                   key={category.id || category.category_id}
@@ -781,14 +873,107 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
 
               <button
                 onClick={addCategory}
-                className="w-full py-4 border-2 border-dashed border-slate-600 rounded-lg text-slate-400 hover:text-white hover:border-slate-500 flex items-center justify-center gap-2"
+                className="w-full py-3 border-2 border-dashed border-slate-600 rounded-lg text-slate-400 hover:text-white hover:border-slate-500 flex items-center justify-center gap-2 text-sm"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 Add Category
               </button>
             </div>
           </SortableContext>
         </DndContext>
+        </div>
+
+        {/* Create Course Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 max-w-md w-full">
+              <h2 className="text-xl font-bold text-white mb-4">Create New Course</h2>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                    Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={newCourse.title}
+                    onChange={e => setNewCourse({ ...newCourse, title: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500 text-sm"
+                    placeholder="e.g., Productivity Mastery"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                    Slug * (URL-friendly)
+                  </label>
+                  <input
+                    type="text"
+                    value={newCourse.slug}
+                    onChange={e => setNewCourse({ ...newCourse, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500 text-sm"
+                    placeholder="e.g., productivity-mastery"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={newCourse.description}
+                    onChange={e => setNewCourse({ ...newCourse, description: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500 h-16 resize-none text-sm"
+                    placeholder="Brief course description"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">
+                      Emoji
+                    </label>
+                    <input
+                      type="text"
+                      value={newCourse.emoji}
+                      onChange={e => setNewCourse({ ...newCourse, emoji: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500 text-center text-xl"
+                      placeholder="⚡"
+                      maxLength={2}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">
+                      Color
+                    </label>
+                    <input
+                      type="color"
+                      value={newCourse.color}
+                      onChange={e => setNewCourse({ ...newCourse, color: e.target.value })}
+                      className="w-full h-10 bg-slate-700 border border-slate-600 rounded-lg cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateCourse}
+                  className="flex-1 px-4 py-2 bg-cyan-600 text-white rounded-lg font-semibold hover:bg-cyan-700 transition-colors text-sm"
+                >
+                  Create Course
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Attachment Manager Modal */}
