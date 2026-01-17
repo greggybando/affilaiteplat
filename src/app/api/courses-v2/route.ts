@@ -90,29 +90,29 @@ export async function GET(request: NextRequest) {
 
     // Get section/lesson counts for each course
     const coursesWithCounts = await Promise.all(
-      (courses || []).map(async (course) => {
-        const { data: sections } = await supabaseAdmin
-          .from('course_modules')
+      (courses || []).map(async (course: any) => {
+        const { data: sections } = await (supabaseAdmin
+          .from('course_modules') as any)
           .select('id')
           .eq('course_id', course.id)
           .eq('is_published', true)
 
-        const sectionIds = (sections || []).map(s => s.id)
-        const { data: lessons } = await supabaseAdmin
-          .from('course_lessons')
+        const sectionIds = (sections || []).map((s: any) => s.id)
+        const { data: lessons } = await (supabaseAdmin
+          .from('course_lessons') as any)
           .select('id')
           .in('module_id', sectionIds.length ? sectionIds : [''])
           .eq('is_published', true)
 
         // Get user progress for this course
-        const lessonIds = (lessons || []).map(l => l.id)
-        const { data: progress } = await supabaseAdmin
-          .from('user_lesson_progress')
+        const lessonIds = (lessons || []).map((l: any) => l.id)
+        const { data: progress } = await (supabaseAdmin
+          .from('user_lesson_progress') as any)
           .select('id, completed')
           .eq('user_id', affiliate.id)
           .in('lesson_id', lessonIds.length ? lessonIds : [''])
 
-        const completedCount = (progress || []).filter(p => p.completed).length
+        const completedCount = (progress || []).filter((p: any) => p.completed).length
         const totalLessons = lessons?.length || 0
 
         return {
