@@ -205,7 +205,7 @@ const glowShadow = (shadows: string, glowIntensity: number) => {
         return `${Math.round(val * boosted)}px`
       }
       return match
-    }).replace(/rgba?\(([^)]+)\)/g, (match, content) => {
+    }).replace(/rgba?\(([^\)]+)\)/g, (match, content) => {
       const parts = content.split(',')
       if (parts.length === 4) {
         const alpha = Math.min(1, parseFloat(parts[3].trim()) * boosted)
