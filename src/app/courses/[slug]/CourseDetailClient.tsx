@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, CheckCircle, Circle, Play } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface Course {
   id: string
@@ -35,10 +36,12 @@ interface Lesson {
   }
 }
 
-export default function CourseDetailClient({ affiliate, slug }: { affiliate: any, slug: string }) {
+export default function CourseDetailClient({ slug }: { slug: string }) {
+  const router = useRouter()
   const [course, setCourse] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchCourse()
@@ -47,16 +50,39 @@ export default function CourseDetailClient({ affiliate, slug }: { affiliate: any
   const fetchCourse = async () => {
     try {
       const res = await fetch(`/api/courses-v2?courseId=${slug}`)
+      
+      if (res.status === 401) {
+        // Not authenticated, redirect to login
+        router.push('/login')
+        return
+      }
+      
+      if (!res.ok) {
+        setError('Course not found')
+        setLoading(false)
+        return
+      }
+      
       const data = await res.json()
+      
+      if (data.error) {
+        setError(data.error)
+        setLoading(false)
+        return
+      }
+      
       if (data.course) {
         setCourse(data.course)
         // Auto-select first lesson
         if (data.course.sections?.[0]?.lessons?.[0]) {
           setSelectedLesson(data.course.sections[0].lessons[0])
         }
+      } else {
+        setError('Course not found')
       }
     } catch (error) {
       console.error('Error fetching course:', error)
+      setError('Failed to load course')
     } finally {
       setLoading(false)
     }
@@ -70,11 +96,11 @@ export default function CourseDetailClient({ affiliate, slug }: { affiliate: any
     )
   }
 
-  if (!course) {
+  if (error || !course) {
     return (
       <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center flex-col gap-4">
-        <div className="text-white text-xl">Course not found</div>
-        <Link href="/dashboard" className="px-4 py-2 bg-cyan-600 text-white rounded-lg">
+        <div className="text-white text-xl">{error || 'Course not found'}</div>
+        <Link href="/dashboard" className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
           Back to Dashboard
         </Link>
       </div>
