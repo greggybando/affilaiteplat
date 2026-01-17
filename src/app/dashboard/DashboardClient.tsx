@@ -1279,12 +1279,14 @@ function ClassroomTab({
   glowIntensity: number
 }) {
   const [selectedWorld, setSelectedWorld] = useState<'mindset' | 'dreamjob' | 'affiliate' | null>(null)
+  const [selectedCourse, setSelectedCourse] = useState<any | null>(null) // For SkillBank courses
   const [isAssistantOpen, setIsAssistantOpen] = useState(false)
   const [selectedLesson, setSelectedLesson] = useState<{ id?: string, title?: string, moduleName?: string } | null>(null)
   const [mindsetCategories, setMindsetCategories] = useState<any[]>([])
   const [dreamJobModules, setDreamJobModules] = useState<any[]>([])
   const [loadingCourses, setLoadingCourses] = useState(true)
   const [allCourses, setAllCourses] = useState<any[]>([])
+  const [courseDetail, setCourseDetail] = useState<any | null>(null) // Full course details with sections/lessons
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newCourse, setNewCourse] = useState({
     title: '',
@@ -1299,8 +1301,29 @@ function ClassroomTab({
   useEffect(() => {
     if (activeTab === 'classroom') {
       setSelectedWorld(null)
+      setSelectedCourse(null)
+      setCourseDetail(null)
     }
   }, [activeTab])
+
+  // Fetch full course details when a course is selected
+  useEffect(() => {
+    if (selectedCourse) {
+      fetchCourseDetail(selectedCourse.slug || selectedCourse.id)
+    }
+  }, [selectedCourse])
+
+  const fetchCourseDetail = async (courseIdOrSlug: string) => {
+    try {
+      const res = await fetch(`/api/courses-v2?courseId=${courseIdOrSlug}`)
+      const data = await res.json()
+      if (data.course) {
+        setCourseDetail(data.course)
+      }
+    } catch (error) {
+      console.error('Error fetching course detail:', error)
+    }
+  }
 
   // Fetch course data from database
   useEffect(() => {
@@ -1766,9 +1789,13 @@ function ClassroomTab({
               <h1 className="text-lg font-bold text-white">Classroom</h1>
               <p className="text-xs text-[rgba(255,255,255,0.6)]">don't just watch. ENACT the lessons IRL. Make your life ACTUALLY better &lt;3</p>
             </div>
-            {selectedWorld && (
+            {(selectedWorld || selectedCourse) && (
               <button
-                onClick={() => setSelectedWorld(null)}
+                onClick={() => {
+                  setSelectedWorld(null)
+                  setSelectedCourse(null)
+                  setCourseDetail(null)
+                }}
                 className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-all"
                 style={{
                   background: 'rgba(255,255,255,0.1)',
@@ -1776,13 +1803,13 @@ function ClassroomTab({
                   border: '1px solid rgba(255,255,255,0.2)'
                 }}
               >
-                ← Back to Worlds
+                ← Back to Courses
               </button>
             )}
           </div>
 
           <div className="flex-1 overflow-y-auto min-h-0 w-full px-4 sm:px-6 lg:px-8 py-8" style={{ width: '100%', maxWidth: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0 }}>
-            {!selectedWorld ? (
+            {!selectedWorld && !selectedCourse ? (
               /* Main Classroom View */
               <div className="max-w-6xl mx-auto">
                 {/* Financial Foundation Section */}
@@ -1927,7 +1954,7 @@ function ClassroomTab({
                               {/* View Course button - visible to everyone if published */}
                               {course.is_published && (
                                 <button
-                                  onClick={() => window.location.href = `/courses/${course.slug}`}
+                                  onClick={() => setSelectedCourse(course)}
                                   className="w-full px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white text-sm rounded-lg font-semibold transition-all hover:shadow-lg hover:shadow-cyan-500/50 flex items-center justify-center gap-2 group-hover:scale-[1.02]"
                                 >
                                   <span>View Course</span>
@@ -2102,6 +2129,133 @@ function ClassroomTab({
                 <Link href="/affiliate" className="inline-block px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors">
                   Go to Affiliate Portal
                 </Link>
+              </div>
+            ) : selectedCourse && courseDetail ? (
+              /* SkillBank Course Content */
+              <div>
+                <div className="bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 mb-6 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{selectedCourse.emoji || '📚'}</span>
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">{selectedCourse.title}</h2>
+                        {selectedCourse.description && (
+                          <p className="text-[rgba(255,255,255,0.6)] text-sm">{selectedCourse.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedCourse(null)
+                        setCourseDetail(null)
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-all"
+                      style={{
+                        background: 'rgba(255,255,255,0.1)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255,255,255,0.2)'
+                      }}
+                    >
+                      ← Back to Courses
+                    </button>
+                  </div>
+                  {courseDetail.stats && (
+                    <div className="flex items-center justify-between">
+                      <div className="text-right">
+                        <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                          {courseDetail.stats.progress || 0}%
+                        </span>
+                        <p className="text-[rgba(255,255,255,0.5)] text-sm">Complete</p>
+                      </div>
+                      <div className="w-full bg-[rgba(255,255,255,0.1)] rounded-full h-2 max-w-xs">
+                        <div 
+                          className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500" 
+                          style={{ width: `${courseDetail.stats.progress || 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {loadingCourses ? (
+                  <div className="text-center py-12 text-white">Loading course content...</div>
+                ) : courseDetail.sections && courseDetail.sections.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block bg-[rgba(255,255,255,0.06)] backdrop-blur-[10px] rounded-2xl p-8 border border-[rgba(255,255,255,0.12)] max-w-xl">
+                      <h2 className="text-xl font-semibold text-white mb-2">Course content coming soon</h2>
+                      <p className="text-[rgba(255,255,255,0.65)] text-sm">
+                        This course is being built. Check back soon!
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {courseDetail.sections?.map((section: any, sectionIndex: number) => (
+                      <div
+                        key={section.id}
+                        className="bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-xl border border-[rgba(255,255,255,0.1)] overflow-hidden"
+                        style={{ backdropFilter: 'blur(10px)' }}
+                      >
+                        {/* Section Header */}
+                        <div className="px-6 py-4 border-b border-[rgba(255,255,255,0.1)]">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20">
+                              {String(sectionIndex + 1).padStart(2, '0')}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="text-base font-semibold text-white">{section.title}</h3>
+                              {section.description && (
+                                <p className="text-[rgba(255,255,255,0.6)] text-sm mt-1">{section.description}</p>
+                              )}
+                            </div>
+                            <span className="text-xs text-[rgba(255,255,255,0.5)] bg-[rgba(255,255,255,0.1)] px-2 py-1 rounded-full">
+                              {section.lessons?.length || 0} lessons
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Lessons */}
+                        {section.lessons && section.lessons.length > 0 && (
+                          <div className="divide-y divide-[rgba(255,255,255,0.05)]">
+                            {section.lessons.map((lesson: any, lessonIndex: number) => (
+                              <button
+                                key={lesson.id}
+                                onClick={() => window.location.href = `/courses/${selectedCourse.slug}?lesson=${lesson.id}`}
+                                className="w-full px-6 py-4 text-left hover:bg-[rgba(255,255,255,0.05)] transition-colors flex items-center gap-4 group"
+                              >
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold shrink-0 transition-all ${
+                                  lesson.progress?.completed
+                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                    : 'bg-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.5)] border border-[rgba(255,255,255,0.1)]'
+                                }`}>
+                                  {lesson.progress?.completed ? '✓' : lessonIndex + 1}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium text-white group-hover:text-cyan-400 transition-colors">
+                                    {lesson.title}
+                                  </div>
+                                  {lesson.description && (
+                                    <div className="text-xs text-[rgba(255,255,255,0.6)] mt-1 line-clamp-1">
+                                      {lesson.description}
+                                    </div>
+                                  )}
+                                  {lesson.duration_minutes > 0 && (
+                                    <div className="text-xs text-[rgba(255,255,255,0.4)] mt-1">
+                                      {lesson.duration_minutes} min
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  →
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : null}
           </div>
