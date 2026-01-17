@@ -23,7 +23,7 @@ import { CSS } from '@dnd-kit/utilities'
 
 interface Lesson {
   id: string
-  section_id: string
+  module_id: string
   title: string
   slug: string
   description: string | null
@@ -412,7 +412,7 @@ export function CourseBuilderClient({ courseId }: { courseId: string }) {
   }
 
   const handleEditLesson = (lesson: Lesson) => {
-    const section = sections.find(s => s.id === lesson.section_id)
+    const section = sections.find(s => s.id === lesson.module_id)
     if (!section) return
 
     setCurrentSection(section)
@@ -466,7 +466,7 @@ export function CourseBuilderClient({ courseId }: { courseId: string }) {
 
     try {
       const res = await fetch(
-        `/api/admin/courses-v2/${courseId}/sections/${lesson.section_id}/lessons?id=${lesson.id}`,
+        `/api/admin/courses-v2/${courseId}/sections/${lesson.module_id}/lessons?id=${lesson.id}`,
         { method: 'DELETE' }
       )
 

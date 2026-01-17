@@ -16,9 +16,9 @@ export async function GET(
     }
 
     const { data: lessons, error } = await supabaseAdmin
-      .from('course_lessons_new')
+      .from('course_lessons')
       .select('*')
-      .eq('section_id', params.sectionId)
+      .eq('module_id', params.sectionId)
       .order('sort_order', { ascending: true })
 
     if (error) {
@@ -53,9 +53,9 @@ export async function POST(
 
     // Get max sort_order
     const { data: existingLessons } = await supabaseAdmin
-      .from('course_lessons_new')
+      .from('course_lessons')
       .select('sort_order')
-      .eq('section_id', params.sectionId)
+      .eq('module_id', params.sectionId)
       .order('sort_order', { ascending: false })
       .limit(1)
 
@@ -63,9 +63,9 @@ export async function POST(
     const newOrder = maxOrder + 1
 
     const { data: lesson, error } = await supabaseAdmin
-      .from('course_lessons_new')
+      .from('course_lessons')
       .insert({
-        section_id: params.sectionId,
+        module_id: params.sectionId,
         title,
         slug,
         description,
@@ -110,10 +110,10 @@ export async function PATCH(
     }
 
     const { data: lesson, error } = await supabaseAdmin
-      .from('course_lessons_new')
+      .from('course_lessons')
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .eq('section_id', params.sectionId)
+      .eq('module_id', params.sectionId)
       .select()
       .single()
 
@@ -148,10 +148,10 @@ export async function DELETE(
     }
 
     const { error } = await supabaseAdmin
-      .from('course_lessons_new')
+      .from('course_lessons')
       .delete()
       .eq('id', id)
-      .eq('section_id', params.sectionId)
+      .eq('module_id', params.sectionId)
 
     if (error) {
       console.error('Error deleting lesson:', error)

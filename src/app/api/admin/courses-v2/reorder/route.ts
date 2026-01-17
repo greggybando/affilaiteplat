@@ -25,10 +25,10 @@ export async function POST(request: NextRequest) {
         table = 'courses'
         break
       case 'section':
-        table = 'course_sections_new'
+        table = 'course_modules'
         break
       case 'lesson':
-        table = 'course_lessons_new'
+        table = 'course_lessons'
         break
       default:
         return NextResponse.json({ error: 'Invalid type' }, { status: 400 })

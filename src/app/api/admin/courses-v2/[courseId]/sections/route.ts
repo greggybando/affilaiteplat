@@ -16,7 +16,7 @@ export async function GET(
     }
 
     const { data: sections, error } = await supabaseAdmin
-      .from('course_sections_new')
+      .from('course_modules')
       .select('*')
       .eq('course_id', params.courseId)
       .order('sort_order', { ascending: true })
@@ -53,7 +53,7 @@ export async function POST(
 
     // Get max sort_order
     const { data: existingSections } = await supabaseAdmin
-      .from('course_sections_new')
+      .from('course_modules')
       .select('sort_order')
       .eq('course_id', params.courseId)
       .order('sort_order', { ascending: false })
@@ -63,7 +63,7 @@ export async function POST(
     const newOrder = maxOrder + 1
 
     const { data: section, error } = await supabaseAdmin
-      .from('course_sections_new')
+      .from('course_modules')
       .insert({
         course_id: params.courseId,
         title,
@@ -106,7 +106,7 @@ export async function PATCH(
     }
 
     const { data: section, error } = await supabaseAdmin
-      .from('course_sections_new')
+      .from('course_modules')
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .eq('course_id', params.courseId)
@@ -144,7 +144,7 @@ export async function DELETE(
     }
 
     const { error } = await supabaseAdmin
-      .from('course_sections_new')
+      .from('course_modules')
       .delete()
       .eq('id', id)
       .eq('course_id', params.courseId)

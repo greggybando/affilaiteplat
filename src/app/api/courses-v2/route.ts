@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
       // Fetch sections
       const { data: sections, error: sectionsError } = await supabaseAdmin
-        .from('course_sections_new')
+        .from('course_modules')
         .select('*')
         .eq('course_id', courseId)
         .eq('is_published', true)
@@ -41,9 +41,9 @@ export async function GET(request: NextRequest) {
       // Fetch lessons for each section
       const sectionIds = (sections || []).map(s => s.id)
       const { data: lessons, error: lessonsError } = await supabaseAdmin
-        .from('course_lessons_new')
+        .from('course_lessons')
         .select('*')
-        .in('section_id', sectionIds.length ? sectionIds : [''])
+        .in('module_id', sectionIds.length ? sectionIds : [''])
         .eq('is_published', true)
         .order('sort_order', { ascending: true })
 
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       const sectionsWithLessons = (sections || []).map(section => ({
         ...section,
         lessons: (lessons || [])
-          .filter(l => l.section_id === section.id)
+          .filter(l => l.module_id === section.id)
           .map(lesson => ({
             ...lesson,
             progress: progress?.find(p => p.lesson_id === lesson.id)
@@ -91,16 +91,16 @@ export async function GET(request: NextRequest) {
     const coursesWithCounts = await Promise.all(
       (courses || []).map(async (course) => {
         const { data: sections } = await supabaseAdmin
-          .from('course_sections_new')
+          .from('course_modules')
           .select('id')
           .eq('course_id', course.id)
           .eq('is_published', true)
 
         const sectionIds = (sections || []).map(s => s.id)
         const { data: lessons } = await supabaseAdmin
-          .from('course_lessons_new')
+          .from('course_lessons')
           .select('id')
-          .in('section_id', sectionIds.length ? sectionIds : [''])
+          .in('module_id', sectionIds.length ? sectionIds : [''])
           .eq('is_published', true)
 
         // Get user progress for this course
