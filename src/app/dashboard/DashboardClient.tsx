@@ -1865,11 +1865,14 @@ function ClassroomTab({
                       {allCourses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug)).map((course) => (
                         <div
                           key={course.id}
-                          className="bg-[rgba(255,255,255,0.08)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.15)] rounded-xl p-5 transition-all hover:border-cyan-500 hover:bg-[rgba(255,255,255,0.12)]"
+                          className={`bg-[rgba(255,255,255,0.08)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.15)] rounded-xl p-5 transition-all hover:border-cyan-500 hover:bg-[rgba(255,255,255,0.12)] ${
+                            !isAdmin && course.is_published ? 'cursor-pointer' : ''
+                          }`}
                           style={{
                             backdropFilter: 'blur(10px)',
                             opacity: !course.is_published && !isAdmin ? 0.6 : 1
                           }}
+                          onClick={!isAdmin && course.is_published ? () => window.location.href = `/courses/${course.slug}` : undefined}
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div className="text-3xl">{course.emoji || '📚'}</div>
@@ -1902,6 +1905,14 @@ function ClassroomTab({
                           <div className="flex gap-2 mt-4">
                             {isAdmin ? (
                               <>
+                                {course.is_published && (
+                                  <button
+                                    onClick={() => window.location.href = `/courses/${course.slug}`}
+                                    className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg font-semibold transition-colors"
+                                  >
+                                    View
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => window.location.href = `/admin/courses-v2/${course.id}`}
                                   className="flex-1 px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs rounded-lg font-semibold transition-colors"
