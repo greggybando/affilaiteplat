@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ course })
+    return NextResponse.json({ course, id: course.id })
   } catch (error: any) {
     console.error('Error in course create API:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })

@@ -1308,8 +1308,8 @@ function ClassroomTab({
       try {
         setLoadingCourses(true)
         
-        // Fetch all courses from new system
-        const coursesRes = await fetch('/api/courses-v2')
+        // Fetch all courses from new system (include drafts if admin)
+        const coursesRes = await fetch(`/api/courses-v2${isAdmin ? '?all=true' : ''}`)
         if (coursesRes.ok) {
           const coursesData = await coursesRes.json()
           if (coursesData.courses) {
@@ -1385,7 +1385,12 @@ function ClassroomTab({
         }
       }
       
-      alert('Course created! Students can now see it.')
+      alert('Course created as draft! You can now edit it and publish when ready.')
+      
+      // Redirect to course builder
+      if (data.id) {
+        window.location.href = `/admin/courses-v2/${data.id}`
+      }
     } catch (error) {
       console.error('Error creating course:', error)
       alert('Error creating course')
@@ -1857,15 +1862,27 @@ function ClassroomTab({
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {allCourses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug)).map((course) => (
-                        <button
+                        <div
                           key={course.id}
-                          onClick={() => window.location.href = `/courses/${course.slug}`}
-                          className="bg-[rgba(255,255,255,0.08)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.15)] rounded-xl p-5 text-left hover:border-cyan-500 hover:bg-[rgba(255,255,255,0.12)] transition-all group"
+                          className="bg-[rgba(255,255,255,0.08)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.15)] rounded-xl p-5 transition-all hover:border-cyan-500 hover:bg-[rgba(255,255,255,0.12)]"
                           style={{
                             backdropFilter: 'blur(10px)',
+                            opacity: !course.is_published && !isAdmin ? 0.6 : 1
                           }}
                         >
-                          <div className="text-3xl mb-3">{course.emoji || '📚'}</div>
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="text-3xl">{course.emoji || '📚'}</div>
+                            {!course.is_published && (
+                              <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-semibold">
+                                Draft
+                              </span>
+                            )}
+                            {course.is_published && (
+                              <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full font-semibold">
+                                Live
+                              </span>
+                            )}
+                          </div>
                           <h3 className="text-base font-bold text-white mb-2 line-clamp-1">{course.title}</h3>
                           {course.description && (
                             <p className="text-[rgba(255,255,255,0.6)] text-xs mb-3 line-clamp-2">
@@ -1880,10 +1897,59 @@ function ClassroomTab({
                               )}
                             </div>
                           )}
-                          <div className="text-cyan-400 text-xs font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                            Start →
+                          
+                          <div className="flex gap-2 mt-4">
+                            {isAdmin ? (
+                              <>
+                                <button
+                                  onClick={() => window.location.href = `/admin/courses-v2/${course.id}`}
+                                  className="flex-1 px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs rounded-lg font-semibold transition-colors"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation()
+                                    try {
+                                      const res = await fetch('/api/admin/courses-v2', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          id: course.id,
+                                          is_published: !course.is_published
+                                        })
+                                      })
+                                      if (res.ok) {
+                                        // Refresh courses
+                                        const coursesRes = await fetch('/api/courses-v2?all=true')
+                                        const data = await coursesRes.json()
+                                        if (data.courses) {
+                                          setAllCourses(data.courses)
+                                        }
+                                      }
+                                    } catch (error) {
+                                      console.error('Error toggling publish:', error)
+                                    }
+                                  }}
+                                  className={`px-3 py-2 text-xs rounded-lg font-semibold transition-colors ${
+                                    course.is_published
+                                      ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                                      : 'bg-green-600 hover:bg-green-700 text-white'
+                                  }`}
+                                >
+                                  {course.is_published ? 'Unpublish' : 'Publish'}
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => window.location.href = `/courses/${course.slug}`}
+                                className="w-full text-cyan-400 text-xs font-medium hover:translate-x-1 transition-transform inline-flex items-center justify-center gap-1"
+                              >
+                                Start →
+                              </button>
+                            )}
                           </div>
-                        </button>
+                        </div>
                       ))}
                       
                       {allCourses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug)).length === 0 && !isAdmin && (

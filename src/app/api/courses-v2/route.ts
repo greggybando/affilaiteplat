@@ -12,9 +12,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const affiliate = affiliateData as any
+    const isAdmin = affiliate.role === 'admin' || affiliate.role === 'moderator'
 
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get('courseId')
+    const showAll = searchParams.get('all') === 'true' // Admin flag to show drafts
 
     // If courseId provided, fetch single course with full details
     if (courseId) {
@@ -22,10 +24,14 @@ export async function GET(request: NextRequest) {
         .from('courses')
         .select('*')
         .eq('id', courseId)
-        .eq('is_published', true)
         .single()
 
       if (courseError || !course) {
+        return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+      }
+
+      // Only allow access to unpublished courses if admin
+      if (!course.is_published && !isAdmin) {
         return NextResponse.json({ error: 'Course not found' }, { status: 404 })
       }
 
@@ -76,12 +82,19 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Otherwise, fetch all published courses (for classroom grid)
-    const { data: courses, error } = await supabaseAdmin
-      .from('courses')
-      .select('id, slug, title, description, emoji, color, thumbnail_url, sort_order')
-      .eq('is_published', true)
+    // Otherwise, fetch all courses (for classroom grid)
+    // Show drafts if admin AND showAll flag is set
+    let query = (supabaseAdmin
+      .from('courses') as any)
+      .select('id, slug, title, description, emoji, color, thumbnail_url, sort_order, is_published')
       .order('sort_order', { ascending: true })
+    
+    // Only filter by published status if not admin or if admin hasn't requested all
+    if (!isAdmin || !showAll) {
+      query = query.eq('is_published', true)
+    }
+
+    const { data: courses, error } = await query
 
     if (error) {
       console.error('Error fetching courses:', error)
