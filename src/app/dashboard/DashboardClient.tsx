@@ -2141,111 +2141,153 @@ function ClassroomTab({
                 </Link>
               </div>
             ) : selectedCourse && courseDetail ? (
-              /* SkillBank Course Content - Split Layout like DreamJob */
-              <div className="flex gap-6 h-full">
-                {/* Left Sidebar - Sections & Lessons */}
-                <div className="w-80 bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden flex flex-col">
-                  {/* Course Header */}
-                  <div className="p-4 border-b border-slate-700/50 bg-slate-900/50">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-2xl">{selectedCourse.emoji || '📚'}</span>
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-sm font-semibold text-white truncate">{selectedCourse.title}</h2>
-                      </div>
-                    </div>
-                    {courseDetail.stats && (
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400">Progress</span>
-                        <span className="text-cyan-400 font-semibold">{courseDetail.stats.progress || 0}%</span>
-                      </div>
-                    )}
+              /* SkillBank Course Content - Match DreamJob Styling Exactly */
+              <div className="flex gap-6">
+                {/* Left Sidebar - Course Navigation - Match DreamJob */}
+                <div className="w-80 rounded-lg overflow-hidden flex flex-col max-h-[calc(100vh-200px)] sticky top-4" style={{
+                  background: 'linear-gradient(135deg, rgba(35,35,40,0.95) 0%, rgba(30,30,35,0.98) 50%, rgba(25,25,30,0.95) 100%)',
+                  border: '1px solid rgba(70,70,75,0.6)',
+                  boxShadow: `
+                    inset 0 1px 1px rgba(255,255,255,0.05),
+                    inset 0 -1px 1px rgba(0,0,0,0.8),
+                    0 2px 8px rgba(0,0,0,0.6)
+                  `
+                }}>
+                  <div className="p-3 shrink-0 border-b" style={{
+                    borderColor: 'rgba(34,211,238,0.2)',
+                    background: 'linear-gradient(135deg, rgba(40,40,45,0.9) 0%, rgba(35,35,40,0.95) 100%)'
+                  }}>
+                    <h3 className="text-xs font-semibold uppercase tracking-widest" style={{
+                      color: 'rgba(34,211,238,0.9)',
+                      textShadow: '0 0 8px rgba(34,211,238,0.4)'
+                    }}>Course Modules</h3>
                   </div>
 
-                  {/* Sections List */}
                   <div className="flex-1 overflow-y-auto">
                     {loadingCourses ? (
                       <div className="p-4 text-center text-slate-400 text-sm">Loading...</div>
                     ) : courseDetail.sections && courseDetail.sections.length === 0 ? (
                       <div className="p-4 text-center text-slate-400 text-sm">No content yet</div>
                     ) : (
-                      <div className="divide-y divide-slate-700/30">
-                        {courseDetail.sections?.map((section: any, sectionIndex: number) => (
-                          <div key={section.id} className="bg-slate-900/30">
-                            {/* Section Header */}
-                            <div className="px-4 py-3 border-b border-slate-700/30">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20 shrink-0">
-                                  {String(sectionIndex + 1).padStart(2, '0')}
-                                </div>
+                      <div>
+                        {courseDetail.sections?.map((section: any, sectionIndex: number) => {
+                          const isExpanded = true // Always expanded for now
+                          return (
+                            <div
+                              key={section.id}
+                              style={{
+                                borderColor: 'rgba(34,211,238,0.15)'
+                              }}
+                              className="border-b last:border-b-0"
+                            >
+                              {/* Section Header - Match DreamJob Module Header */}
+                              <div className="w-full px-4 py-3 flex items-center gap-2.5" style={{
+                                background: 'rgba(15,15,20,0.6)',
+                                borderLeft: '2px solid transparent',
+                                borderBottom: '1px solid rgba(34,211,238,0.1)',
+                                position: 'relative',
+                                overflow: 'hidden'
+                              }}>
+                                <div className="absolute left-0 top-0 bottom-0 w-0.5" style={{
+                                  background: 'linear-gradient(to bottom, rgba(34,211,238,0.4), rgba(6,182,212,0.5), rgba(34,211,238,0.4))',
+                                  boxShadow: '0 0 4px rgba(34,211,238,0.3)',
+                                  opacity: 0.6
+                                }} />
+                                <svg
+                                  className="transition-transform duration-200"
+                                  style={{
+                                    width: '10px',
+                                    height: '10px',
+                                    color: 'rgba(34,211,238,0.5)',
+                                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                                  }}
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                                </svg>
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-300 truncate">
+                                  <div className="text-xs font-semibold uppercase tracking-wider" style={{
+                                    color: 'rgba(220,220,225,0.95)',
+                                    textShadow: '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3), 0 0 30px rgba(34,211,238,0.2)',
+                                    letterSpacing: '0.08em',
+                                    fontWeight: 600
+                                  }}>
                                     {section.title}
                                   </div>
                                 </div>
                               </div>
-                            </div>
 
-                            {/* Lessons */}
-                            {section.lessons && section.lessons.length > 0 && (
-                              <div className="divide-y divide-slate-700/20">
-                                {section.lessons.map((lesson: any, lessonIndex: number) => {
-                                  const isSelected = selectedCourseLesson?.lesson?.id === lesson.id
-                                  return (
-                                    <button
-                                      key={lesson.id}
-                                      onClick={() => setSelectedCourseLesson({ sectionId: section.id, lesson })}
-                                      className={`w-full px-4 py-3 text-left transition-all ${
-                                        isSelected 
-                                          ? 'bg-cyan-600/20 border-l-2 border-cyan-500' 
-                                          : 'hover:bg-slate-800/30'
-                                      }`}
-                                    >
-                                      <div className="flex items-start gap-3">
-                                        <div className={`w-6 h-6 rounded flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5 ${
-                                          lesson.progress?.completed
-                                            ? 'bg-green-500/20 text-green-400'
-                                            : isSelected
-                                            ? 'bg-cyan-500/20 text-cyan-400'
-                                            : 'bg-slate-700/50 text-slate-400'
-                                        }`}>
-                                          {lesson.progress?.completed ? '✓' : lessonIndex + 1}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className={`text-xs leading-relaxed ${
-                                            isSelected 
-                                              ? 'text-cyan-400' 
-                                              : 'text-slate-300'
-                                          }`}>
+                              {/* Lessons - Match DreamJob Video List */}
+                              {isExpanded && section.lessons && section.lessons.length > 0 && (
+                                <div className="bg-slate-900/30 border-t border-slate-700/30">
+                                  {section.lessons.map((lesson: any, lessonIndex: number) => {
+                                    const isSelected = selectedCourseLesson?.lesson?.id === lesson.id
+                                    return (
+                                      <div
+                                        key={lesson.id}
+                                        style={{
+                                          borderColor: 'rgba(34,211,238,0.05)',
+                                          background: isSelected 
+                                            ? 'rgba(25,25,30,0.5)'
+                                            : 'rgba(20,20,25,0.3)',
+                                          borderLeft: isSelected ? '2px solid rgba(34,211,238,0.4)' : '2px solid transparent',
+                                          boxShadow: isSelected ? 'inset 0 0 15px rgba(34,211,238,0.08)' : 'none'
+                                        }}
+                                        className="w-full px-4 py-1.5 pl-12 flex items-center gap-2.5 transition-all border-b last:border-b-0 cursor-pointer"
+                                        onMouseEnter={(e) => {
+                                          if (!isSelected) {
+                                            e.currentTarget.style.background = 'rgba(25,25,30,0.4)'
+                                          }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          if (!isSelected) {
+                                            e.currentTarget.style.background = 'rgba(20,20,25,0.3)'
+                                          }
+                                        }}
+                                        onClick={() => setSelectedCourseLesson({ sectionId: section.id, lesson })}
+                                      >
+                                        <button
+                                          type="button"
+                                          className="flex-1 text-left"
+                                        >
+                                          <div className="text-xs leading-relaxed" style={{
+                                            color: isSelected ? 'rgba(34,211,238,0.9)' : 'rgba(170,170,175,0.85)',
+                                            textShadow: isSelected ? '0 0 6px rgba(34,211,238,0.2)' : 'none',
+                                            fontWeight: isSelected ? 500 : 400
+                                          }}>
+                                            <span style={{ 
+                                              color: 'rgba(110,110,115,0.5)',
+                                              marginRight: '8px',
+                                              fontSize: '10px',
+                                              fontVariantNumeric: 'tabular-nums'
+                                            }}>{lessonIndex + 1}.</span>
                                             {lesson.title}
                                           </div>
-                                          {lesson.duration_minutes > 0 && (
-                                            <div className="text-xs text-slate-500 mt-1">
-                                              {lesson.duration_minutes} min
-                                            </div>
-                                          )}
-                                        </div>
+                                        </button>
                                       </div>
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Right Main Content - Video Player */}
-                <div className="flex-1 bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden flex flex-col">
+                {/* Right Main Content - Video Player - Match DreamJob */}
+                <div className="flex-1 bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden">
                   {selectedCourseLesson ? (
-                    <>
+                    <div className="space-y-0">
                       {/* Video Player */}
                       <div className="aspect-video bg-slate-900 border-b border-slate-700/50 relative">
                         {selectedCourseLesson.lesson.video_type === 'youtube' && selectedCourseLesson.lesson.video_url && (
                           <iframe
-                            key={selectedCourseLesson.lesson.id}
+                            key={`${selectedCourseLesson.lesson.id}-${extractYouTubeId(selectedCourseLesson.lesson.video_url)}`}
                             src={`https://www.youtube.com/embed/${extractYouTubeId(selectedCourseLesson.lesson.video_url)}?rel=0`}
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -2257,7 +2299,7 @@ function ClassroomTab({
                         )}
                         {selectedCourseLesson.lesson.video_type === 'loom' && selectedCourseLesson.lesson.video_url && (
                           <iframe
-                            key={selectedCourseLesson.lesson.id}
+                            key={`${selectedCourseLesson.lesson.id}-${extractLoomId(selectedCourseLesson.lesson.video_url)}`}
                             src={`https://www.loom.com/embed/${extractLoomId(selectedCourseLesson.lesson.video_url)}`}
                             frameBorder="0"
                             allowFullScreen
@@ -2268,16 +2310,13 @@ function ClassroomTab({
                         )}
                         {!selectedCourseLesson.lesson.video_url && (
                           <div className="w-full h-full flex items-center justify-center">
-                            <div className="text-center">
-                              <Play className="w-16 h-16 mx-auto mb-4 text-slate-400 opacity-50" />
-                              <p className="text-slate-400">Video URL not available</p>
-                            </div>
+                            <p className="text-slate-400">Video URL not available</p>
                           </div>
                         )}
                       </div>
 
                       {/* Video Info & Description */}
-                      <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+                      <div className="p-6 space-y-6">
                         <div>
                           <h3 className="text-lg font-semibold text-white mb-2">{selectedCourseLesson.lesson.title}</h3>
                           {selectedCourseLesson.lesson.description && (
@@ -2290,11 +2329,10 @@ function ClassroomTab({
                           </div>
                         )}
                       </div>
-                    </>
+                    </div>
                   ) : (
-                    <div className="flex-1 flex items-center justify-center">
+                    <div className="flex-1 flex items-center justify-center h-full min-h-[400px]">
                       <div className="text-center">
-                        <Play className="w-16 h-16 mx-auto mb-4 text-slate-400 opacity-50" />
                         <p className="text-slate-400">Select a lesson to start</p>
                       </div>
                     </div>
