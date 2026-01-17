@@ -1886,6 +1886,154 @@ function ClassroomTab({
                   )}
                 </div>
               </div>
+                  {/* Mindset & Foundations */}
+                  <button
+                    onClick={() => setSelectedWorld('mindset')}
+                    className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-emerald-500 rounded-2xl p-8 text-center hover:shadow-lg transition-all group"
+                    style={{
+                      backdropFilter: 'blur(10px)',
+                      boxShadow: glowShadow('0 0 30px rgba(16,185,129,0.3), 0 0 60px rgba(16,185,129,0.2)', glowIntensity)
+                    }}
+                  >
+                    <div className="flex items-center justify-center mb-4" style={{ height: '60px' }}>
+                      <svg viewBox="0 0 24 24" fill="none" className="w-16 h-16">
+                        <path d="M12 2C8 2 5 5 5 9C5 13 8 16 12 16C16 16 19 13 19 9C19 5 16 2 12 2Z" 
+                          stroke="rgba(16,185,129,0.9)" 
+                          strokeWidth="1.5" 
+                          fill="rgba(60,60,60,0.8)"
+                          style={{
+                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 2px rgba(255,255,255,0.1)) drop-shadow(0 0 8px rgba(16,185,129,0.5))'
+                          }}
+                        />
+                        <path d="M9 9C9 10.1 9.9 11 11 11C12.1 11 13 10.1 13 9C13 7.9 12.1 7 11 7C9.9 7 9 7.9 9 9Z" 
+                          stroke="rgba(16,185,129,0.9)" 
+                          strokeWidth="1" 
+                          fill="rgba(60,60,60,0.8)"
+                          style={{
+                            filter: 'drop-shadow(0 0 4px rgba(16,185,129,0.6))'
+                          }}
+                        />
+                        <path d="M8 13C8 13 10 15 12 15C14 15 16 13 16 13" 
+                          stroke="rgba(16,185,129,0.9)" 
+                          strokeWidth="1.5" 
+                          strokeLinecap="round"
+                          style={{
+                            filter: 'drop-shadow(0 0 4px rgba(16,185,129,0.6))'
+                          }}
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Mindset & Foundations</h3>
+                    <p className="text-[rgba(255,255,255,0.6)] mb-4">
+                      Build your mental foundation for success
+                    </p>
+                    <span className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-400 text-sm rounded-full font-semibold">
+                      Active
+                    </span>
+                    <div className="mt-4 text-emerald-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                      Enter World →
+                    </div>
+                  </button>
+
+                  {/* Get Your Dream Job */}
+                  <button
+                    onClick={() => setSelectedWorld('dreamjob')}
+                    className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-cyan-500 rounded-2xl p-8 text-center hover:shadow-lg transition-all group"
+                    style={{
+                      backdropFilter: 'blur(10px)',
+                      boxShadow: glowShadow('0 0 30px rgba(6,182,212,0.3), 0 0 60px rgba(6,182,212,0.2)', glowIntensity)
+                    }}
+                  >
+                    <div className="flex items-center justify-center mb-4" style={{ height: '60px' }}>
+                      <svg viewBox="0 0 24 24" fill="none" className="w-16 h-16">
+                        <path d="M4 7C4 5.9 4.9 5 6 5H18C19.1 5 20 5.9 20 7V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V7Z" 
+                          stroke="rgba(6,182,212,0.9)" 
+                          strokeWidth="1.5" 
+                          fill="rgba(60,60,60,0.8)"
+                          style={{
+                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 2px rgba(255,255,255,0.1)) drop-shadow(0 0 8px rgba(6,182,212,0.5))'
+                          }}
+                        />
+                        <path d="M8 5V3C8 2.4 8.4 2 9 2H15C15.6 2 16 2.4 16 3V5" 
+                          stroke="rgba(6,182,212,0.9)" 
+                          strokeWidth="1.5" 
+                          strokeLinecap="round"
+                          style={{
+                            filter: 'drop-shadow(0 0 4px rgba(6,182,212,0.6))'
+                          }}
+                        />
+                        <path d="M9 10H15M9 14H15" 
+                          stroke="rgba(6,182,212,0.9)" 
+                          strokeWidth="1.5" 
+                          strokeLinecap="round"
+                          style={{
+                            filter: 'drop-shadow(0 0 4px rgba(6,182,212,0.6))'
+                          }}
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Get Your Dream Job</h3>
+                    <p className="text-[rgba(255,255,255,0.6)] mb-4">
+                      Land the career you've always wanted
+                    </p>
+                    <span className="inline-block px-3 py-1 bg-cyan-500/20 text-cyan-400 text-sm rounded-full font-semibold">
+                      Active
+                    </span>
+                    <div className="mt-4 text-cyan-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                      Enter World →
+                    </div>
+                  </button>
+
+                  {/* Build Your Side Income */}
+                  <Link
+                    href="/affiliate"
+                    className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-green-500 rounded-2xl p-8 text-center hover:shadow-lg transition-all group"
+                    style={{
+                      backdropFilter: 'blur(10px)',
+                      boxShadow: glowShadow('0 0 30px rgba(34,197,94,0.3), 0 0 60px rgba(34,197,94,0.2)', glowIntensity)
+                    }}
+                  >
+                    <div className="flex items-center justify-center mb-4" style={{ height: '60px' }}>
+                      <svg viewBox="0 0 24 24" fill="none" className="w-16 h-16">
+                        <path d="M12 2C8 2 5 5 5 9C5 13 8 16 12 16C16 16 19 13 19 9C19 5 16 2 12 2Z" 
+                          stroke="rgba(34,197,94,0.9)" 
+                          strokeWidth="1.5" 
+                          fill="rgba(60,60,60,0.8)"
+                          style={{
+                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 2px rgba(255,255,255,0.1)) drop-shadow(0 0 8px rgba(34,197,94,0.5))'
+                          }}
+                        />
+                        <path d="M12 6V10M10 8H14" 
+                          stroke="rgba(34,197,94,0.9)" 
+                          strokeWidth="1.5" 
+                          strokeLinecap="round"
+                          style={{
+                            filter: 'drop-shadow(0 0 4px rgba(34,197,94,0.6))'
+                          }}
+                        />
+                        <path d="M8 12C8 12 9 14 12 14C15 14 16 12 16 12" 
+                          stroke="rgba(34,197,94,0.9)" 
+                          strokeWidth="1.5" 
+                          strokeLinecap="round"
+                          style={{
+                            filter: 'drop-shadow(0 0 4px rgba(34,197,94,0.6))'
+                          }}
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Build Your Side Income</h3>
+                    <p className="text-[rgba(255,255,255,0.6)] mb-4">
+                      grab our done-for-you products, take the content training & begin printing ASAP!
+                    </p>
+                    <span className="inline-block px-3 py-1 bg-green-500/20 text-green-400 text-sm rounded-full font-semibold">
+                      Active
+                    </span>
+                    <div className="mt-4 text-green-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                      Enter World →
+                    </div>
+                  </Link>
+                </div>
+              </div>
             ) : selectedWorld === 'mindset' ? (
               /* LD World / Mindset Content */
               <div>

@@ -7,10 +7,11 @@ export const dynamic = 'force-dynamic'
 // GET - Fetch published courses with sections and lessons
 export async function GET(request: NextRequest) {
   try {
-    const affiliate = await getCurrentAffiliate()
-    if (!affiliate) {
+    const affiliateData = await getCurrentAffiliate()
+    if (!affiliateData) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const affiliate = affiliateData as any
 
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get('courseId')
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
       if (sectionsError) throw sectionsError
 
       // Fetch lessons for each section
-      const sectionIds = (sections || []).map(s => s.id)
+      const sectionIds = (sections || []).map((s: any) => s.id)
       const { data: lessons, error: lessonsError } = await supabaseAdmin
         .from('course_lessons')
         .select('*')
@@ -54,22 +55,22 @@ export async function GET(request: NextRequest) {
         .from('user_lesson_progress')
         .select('*')
         .eq('user_id', affiliate.id)
-        .in('lesson_id', (lessons || []).map(l => l.id).concat(['']))
+        .in('lesson_id', (lessons || []).map((l: any) => l.id).concat(['']))
 
       // Build nested structure
-      const sectionsWithLessons = (sections || []).map(section => ({
+      const sectionsWithLessons = (sections || []).map((section: any) => ({
         ...section,
         lessons: (lessons || [])
-          .filter(l => l.module_id === section.id)
-          .map(lesson => ({
+          .filter((l: any) => l.module_id === section.id)
+          .map((lesson: any) => ({
             ...lesson,
-            progress: progress?.find(p => p.lesson_id === lesson.id)
+            progress: progress?.find((p: any) => p.lesson_id === lesson.id)
           }))
       }))
 
       return NextResponse.json({
         course: {
-          ...course,
+          ...(course as any),
           sections: sectionsWithLessons
         }
       })

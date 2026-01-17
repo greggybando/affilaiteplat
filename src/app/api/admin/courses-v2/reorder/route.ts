@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
 
     // Update sort_order for each item
     for (const item of items) {
-      await supabaseAdmin
-        .from(table)
+      await (supabaseAdmin
+        .from(table) as any)
         .update({ sort_order: item.sort_order })
         .eq('id', item.id)
     }

@@ -59,11 +59,11 @@ export async function POST(
       .order('sort_order', { ascending: false })
       .limit(1)
 
-    const maxOrder = existingSections?.[0]?.sort_order ?? -1
+    const maxOrder = (existingSections as any)?.[0]?.sort_order ?? -1
     const newOrder = maxOrder + 1
 
-    const { data: section, error } = await supabaseAdmin
-      .from('course_modules')
+    const { data: section, error } = await (supabaseAdmin
+      .from('course_modules') as any)
       .insert({
         course_id: params.courseId,
         title,
@@ -105,8 +105,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Section ID is required' }, { status: 400 })
     }
 
-    const { data: section, error } = await supabaseAdmin
-      .from('course_modules')
+    const { data: section, error } = await (supabaseAdmin
+      .from('course_modules') as any)
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .eq('course_id', params.courseId)
