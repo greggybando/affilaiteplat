@@ -1283,6 +1283,7 @@ function ClassroomTab({
   const [isAssistantOpen, setIsAssistantOpen] = useState(false)
   const [selectedLesson, setSelectedLesson] = useState<{ id?: string, title?: string, moduleName?: string } | null>(null)
   const [selectedCourseLesson, setSelectedCourseLesson] = useState<{ sectionId: string, lesson: any } | null>(null) // For SkillBank course lessons
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set()) // Track expanded sections
   const [mindsetCategories, setMindsetCategories] = useState<any[]>([])
   const [dreamJobModules, setDreamJobModules] = useState<any[]>([])
   const [loadingCourses, setLoadingCourses] = useState(true)
@@ -1305,6 +1306,7 @@ function ClassroomTab({
       setSelectedCourse(null)
       setCourseDetail(null)
       setSelectedCourseLesson(null)
+      setExpandedSections(new Set())
     }
   }, [activeTab])
 
@@ -1321,6 +1323,10 @@ function ClassroomTab({
       const data = await res.json()
       if (data.course) {
         setCourseDetail(data.course)
+        // Auto-expand first section
+        if (data.course.sections?.[0]?.id) {
+          setExpandedSections(new Set([data.course.sections[0].id]))
+        }
         // Auto-select first lesson if available
         if (data.course.sections?.[0]?.lessons?.[0]) {
           setSelectedCourseLesson({
@@ -1332,6 +1338,18 @@ function ClassroomTab({
     } catch (error) {
       console.error('Error fetching course detail:', error)
     }
+  }
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId)
+      } else {
+        newSet.add(sectionId)
+      }
+      return newSet
+    })
   }
 
   // Fetch course data from database
@@ -1805,6 +1823,7 @@ function ClassroomTab({
                   setSelectedCourse(null)
                   setCourseDetail(null)
                   setSelectedCourseLesson(null)
+                  setExpandedSections(new Set())
                 }}
                 className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-all"
                 style={{
@@ -2142,7 +2161,33 @@ function ClassroomTab({
               </div>
             ) : selectedCourse && courseDetail ? (
               /* SkillBank Course Content - Match DreamJob Styling Exactly */
-              <div className="flex gap-6">
+              <div>
+                {/* Progress Section - Match DreamJob */}
+                <div className="bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 mb-6 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-white">Course Progress</h2>
+                      <p className="text-[rgba(255,255,255,0.6)] text-sm">
+                        Complete all {courseDetail.sections?.reduce((acc: number, s: any) => acc + (s.lessons?.length || 0), 0) || 0} lessons to master {selectedCourse.title}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                        {courseDetail.stats?.progress || 0}%
+                      </span>
+                      <p className="text-[rgba(255,255,255,0.5)] text-sm">Complete</p>
+                    </div>
+                  </div>
+                  <div className="w-full bg-[rgba(255,255,255,0.1)] rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500" 
+                      style={{ width: `${courseDetail.stats?.progress || 0}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Split Layout - Match DreamJob */}
+                <div className="flex gap-6">
                 {/* Left Sidebar - Course Navigation - Match DreamJob */}
                 <div className="w-80 rounded-lg overflow-hidden flex flex-col max-h-[calc(100vh-200px)] sticky top-4" style={{
                   background: 'linear-gradient(135deg, rgba(35,35,40,0.95) 0%, rgba(30,30,35,0.98) 50%, rgba(25,25,30,0.95) 100%)',
@@ -2171,7 +2216,7 @@ function ClassroomTab({
                     ) : (
                       <div>
                         {courseDetail.sections?.map((section: any, sectionIndex: number) => {
-                          const isExpanded = true // Always expanded for now
+                          const isExpanded = expandedSections.has(section.id)
                           return (
                             <div
                               key={section.id}
@@ -2193,30 +2238,39 @@ function ClassroomTab({
                                   boxShadow: '0 0 4px rgba(34,211,238,0.3)',
                                   opacity: 0.6
                                 }} />
-                                <svg
-                                  className="transition-transform duration-200"
-                                  style={{
-                                    width: '10px',
-                                    height: '10px',
-                                    color: 'rgba(34,211,238,0.5)',
-                                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSection(section.id)}
+                                  className="flex-1 flex items-center gap-2.5 text-left transition-all"
+                                  style={{ 
+                                    paddingLeft: '2px'
                                   }}
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
                                 >
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                                </svg>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-semibold uppercase tracking-wider" style={{
-                                    color: 'rgba(220,220,225,0.95)',
-                                    textShadow: '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3), 0 0 30px rgba(34,211,238,0.2)',
-                                    letterSpacing: '0.08em',
-                                    fontWeight: 600
-                                  }}>
-                                    {section.title}
+                                  <svg
+                                    className="transition-transform duration-200"
+                                    style={{
+                                      width: '10px',
+                                      height: '10px',
+                                      color: 'rgba(34,211,238,0.5)',
+                                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                                    }}
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-semibold uppercase tracking-wider" style={{
+                                      color: 'rgba(220,220,225,0.95)',
+                                      textShadow: '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3), 0 0 30px rgba(34,211,238,0.2)',
+                                      letterSpacing: '0.08em',
+                                      fontWeight: 600
+                                    }}>
+                                      {section.title}
+                                    </div>
                                   </div>
-                                </div>
+                                </button>
                               </div>
 
                               {/* Lessons - Match DreamJob Video List */}
@@ -2339,6 +2393,7 @@ function ClassroomTab({
                   )}
                 </div>
               </div>
+            </div>
             ) : null}
           </div>
         </div>
