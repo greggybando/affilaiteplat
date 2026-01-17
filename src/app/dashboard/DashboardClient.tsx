@@ -1345,16 +1345,25 @@ function ClassroomTab({
   }, [selectedWorld])
 
   const handleCreateCourse = async () => {
-    if (!newCourse.title || !newCourse.slug) {
-      alert('Title and slug are required')
+    if (!newCourse.title) {
+      alert('Title is required')
       return
     }
+
+    // Auto-generate slug from title
+    const slug = newCourse.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
 
     try {
       const res = await fetch('/api/admin/courses-v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCourse)
+        body: JSON.stringify({
+          ...newCourse,
+          slug
+        })
       })
 
       const data = await res.json()
@@ -2018,19 +2027,6 @@ function ClassroomTab({
                     onChange={e => setNewCourse({ ...newCourse, title: e.target.value })}
                     className="w-full px-3 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-cyan-500 text-sm"
                     placeholder="e.g., Productivity Mastery"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[rgba(255,255,255,0.8)] mb-1">
-                    Slug * (URL-friendly)
-                  </label>
-                  <input
-                    type="text"
-                    value={newCourse.slug}
-                    onChange={e => setNewCourse({ ...newCourse, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
-                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-cyan-500 text-sm"
-                    placeholder="e.g., productivity-mastery"
                   />
                 </div>
 
