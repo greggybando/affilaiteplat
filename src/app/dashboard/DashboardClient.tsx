@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X, Play } from 'lucide-react'
+import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X, Play, FileCheck } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns'
 import { NotificationsDropdown } from './components/NotificationsDropdown'
@@ -15,6 +15,7 @@ import { GroupChatTab } from './components/GroupChatTab'
 import { MindsetModuleList } from '../mindset/components/MindsetModuleList'
 import { DreamJobModuleList } from '../dreamjob/components/DreamJobModuleList'
 import CourseAssistant from '@/components/CourseAssistant'
+import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 
 interface DashboardClientProps {
   affiliate: {
@@ -1284,6 +1285,9 @@ function ClassroomTab({
   const [selectedLesson, setSelectedLesson] = useState<{ id?: string, title?: string, moduleName?: string } | null>(null)
   const [selectedCourseLesson, setSelectedCourseLesson] = useState<{ sectionId: string, lesson: any } | null>(null) // For SkillBank course lessons
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set()) // Track expanded sections
+  const [checkpoints, setCheckpoints] = useState<Record<string, any>>({}) // Checkpoints by section ID
+  const [checkpointModalOpen, setCheckpointModalOpen] = useState(false)
+  const [loadingCheckpoints, setLoadingCheckpoints] = useState(false)
   const [mindsetCategories, setMindsetCategories] = useState<any[]>([])
   const [dreamJobModules, setDreamJobModules] = useState<any[]>([])
   const [loadingCourses, setLoadingCourses] = useState(true)
@@ -1307,6 +1311,8 @@ function ClassroomTab({
       setCourseDetail(null)
       setSelectedCourseLesson(null)
       setExpandedSections(new Set())
+      setCheckpoints({})
+      setCheckpointModalOpen(false)
     }
   }, [activeTab])
 
@@ -1334,9 +1340,26 @@ function ClassroomTab({
             lesson: data.course.sections[0].lessons[0]
           })
         }
+        // Fetch checkpoints for this course
+        fetchCheckpoints(data.course.id)
       }
     } catch (error) {
       console.error('Error fetching course detail:', error)
+    }
+  }
+
+  const fetchCheckpoints = async (courseId: string) => {
+    try {
+      setLoadingCheckpoints(true)
+      const res = await fetch(`/api/checkpoints/by-course-v2?courseId=${courseId}`)
+      const data = await res.json()
+      if (data.byUUID) {
+        setCheckpoints(data.byUUID)
+      }
+    } catch (error) {
+      console.error('Error fetching checkpoints:', error)
+    } finally {
+      setLoadingCheckpoints(false)
     }
   }
 
@@ -1824,6 +1847,8 @@ function ClassroomTab({
                   setCourseDetail(null)
                   setSelectedCourseLesson(null)
                   setExpandedSections(new Set())
+                  setCheckpoints({})
+                  setCheckpointModalOpen(false)
                 }}
                 className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-all"
                 style={{
@@ -2382,6 +2407,17 @@ function ClassroomTab({
                             Duration: {selectedCourseLesson.lesson.duration_minutes} minutes
                           </div>
                         )}
+                        
+                        {/* Checkpoint Button */}
+                        {checkpoints[selectedCourseLesson.sectionId] && (
+                          <button
+                            onClick={() => setCheckpointModalOpen(true)}
+                            className="px-8 py-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 font-semibold text-lg transition-all hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/20 flex items-center gap-3"
+                          >
+                            <FileCheck className="w-6 h-6" />
+                            Submit Checkpoint
+                          </button>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -2394,6 +2430,53 @@ function ClassroomTab({
                 </div>
               </div>
             </div>
+
+            {/* Checkpoint Modal */}
+            {checkpointModalOpen && selectedCourseLesson && checkpoints[selectedCourseLesson.sectionId] && (
+              <div 
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" 
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) {
+                    setCheckpointModalOpen(false)
+                  }
+                }}
+              >
+                <div className="bg-slate-900 rounded-xl border border-slate-700/50 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto relative z-[101]" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
+                    <h3 className="text-xl font-bold text-white">Checkpoint Submission</h3>
+                    <button
+                      onClick={() => setCheckpointModalOpen(false)}
+                      className="text-slate-400 hover:text-white transition-colors"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+                  <div className="p-6">
+                    <CheckpointSubmission
+                      checkpointId={checkpoints[selectedCourseLesson.sectionId].id}
+                      checkpointTitle={checkpoints[selectedCourseLesson.sectionId].title}
+                      requirements={checkpoints[selectedCourseLesson.sectionId].requirements}
+                      sectionId={selectedCourseLesson.sectionId}
+                      onSuccess={async (status) => {
+                        if (status === 'approved') {
+                          setCheckpointModalOpen(false)
+                          alert('✅ Checkpoint approved! Next section unlocked.')
+                          // Refresh course to update unlock status
+                          if (selectedCourse?.id) {
+                            fetchCourseDetail(selectedCourse.id)
+                          }
+                        } else if (status === 'needs_review') {
+                          setCheckpointModalOpen(false)
+                          alert('⏳ Checkpoint submitted! Under review, you\'ll be notified within 24 hours.')
+                        } else {
+                          // Denied - keep modal open for resubmission
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             ) : null}
           </div>
         </div>
