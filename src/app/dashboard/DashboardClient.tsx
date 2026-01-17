@@ -1302,6 +1302,16 @@ function ClassroomTab({
   const [mindsetCategories, setMindsetCategories] = useState<any[]>([])
   const [dreamJobModules, setDreamJobModules] = useState<any[]>([])
   const [loadingCourses, setLoadingCourses] = useState(true)
+  const [allCourses, setAllCourses] = useState<any[]>([])
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [newCourse, setNewCourse] = useState({
+    title: '',
+    slug: '',
+    description: '',
+    emoji: '',
+    color: '#06B6D4'
+  })
+  const isAdmin = (affiliate as any).role === 'admin' || (affiliate as any).role === 'moderator'
   
   // Reset to world selection when Classroom tab is clicked
   useEffect(() => {
@@ -1315,6 +1325,15 @@ function ClassroomTab({
     const fetchCourses = async () => {
       try {
         setLoadingCourses(true)
+        
+        // Fetch all courses from new system
+        const coursesRes = await fetch('/api/courses-v2')
+        if (coursesRes.ok) {
+          const coursesData = await coursesRes.json()
+          if (coursesData.courses) {
+            setAllCourses(coursesData.courses)
+          }
+        }
         
         // Fetch Life Design world structure (mindset + lifedesign)
         const mindsetRes = await fetch('/api/courses/structure?courseType=mindset')
@@ -1341,7 +1360,46 @@ function ClassroomTab({
     }
 
     fetchCourses()
-  }, [selectedWorld]) // Refetch when world changes or after drag operations
+  }, [selectedWorld])
+
+  const handleCreateCourse = async () => {
+    if (!newCourse.title || !newCourse.slug) {
+      alert('Title and slug are required')
+      return
+    }
+
+    try {
+      const res = await fetch('/api/admin/courses-v2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCourse)
+      })
+
+      const data = await res.json()
+
+      if (data.error) {
+        alert('Error: ' + data.error)
+        return
+      }
+
+      setShowCreateModal(false)
+      setNewCourse({ title: '', slug: '', description: '', emoji: '', color: '#06B6D4' })
+      
+      // Refresh courses
+      const coursesRes = await fetch('/api/courses-v2')
+      if (coursesRes.ok) {
+        const coursesData = await coursesRes.json()
+        if (coursesData.courses) {
+          setAllCourses(coursesData.courses)
+        }
+      }
+      
+      alert('Course created! Students can now see it.')
+    } catch (error) {
+      console.error('Error creating course:', error)
+      alert('Error creating course')
+    }
+  }
   
   // Mindset modules data
   const extractLoomId = (url: string): string => {
@@ -1716,19 +1774,136 @@ function ClassroomTab({
 
           <div className="flex-1 overflow-y-auto min-h-0 w-full px-4 sm:px-6 lg:px-8 py-8" style={{ width: '100%', maxWidth: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0 }}>
             {!selectedWorld ? (
-              /* World Selection Screen */
-              <div className="max-w-5xl mx-auto">
-                <div className="text-center mb-12">
-                  <h2 className="text-3xl font-bold text-white mb-4">
-                    Welcome back, {affiliate.avatar_name || affiliate.name}!
-                  </h2>
-                  <p className="text-[rgba(255,255,255,0.6)] text-lg">
-                    Choose a world to explore and start your journey
-                  </p>
+              /* Main Classroom View */
+              <div className="max-w-6xl mx-auto">
+                {/* Financial Foundation Section */}
+                <div className="mb-16">
+                  <h1 className="text-4xl font-bold text-white mb-2">Building Your Financial Foundation</h1>
+                  <p className="text-[rgba(255,255,255,0.6)] text-lg mb-8">Start with these core courses</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Mindset & Foundations */}
+                    <button
+                      onClick={() => setSelectedWorld('mindset')}
+                      className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-emerald-500 rounded-2xl p-6 text-left hover:shadow-lg transition-all group"
+                      style={{
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: glowShadow('0 0 30px rgba(16,185,129,0.3), 0 0 60px rgba(16,185,129,0.2)', glowIntensity)
+                      }}
+                    >
+                      <div className="text-4xl mb-3">🧠</div>
+                      <h3 className="text-lg font-bold text-white mb-2">Mindset & Foundations</h3>
+                      <p className="text-[rgba(255,255,255,0.6)] text-sm mb-4">
+                        Build your mental foundation for success
+                      </p>
+                      <div className="text-emerald-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                        Start →
+                      </div>
+                    </button>
+
+                    {/* Get Your Dream Job */}
+                    <button
+                      onClick={() => setSelectedWorld('dreamjob')}
+                      className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-cyan-500 rounded-2xl p-6 text-left hover:shadow-lg transition-all group"
+                      style={{
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: glowShadow('0 0 30px rgba(6,182,212,0.3), 0 0 60px rgba(6,182,212,0.2)', glowIntensity)
+                      }}
+                    >
+                      <div className="text-4xl mb-3">💼</div>
+                      <h3 className="text-lg font-bold text-white mb-2">Get Your Dream Job</h3>
+                      <p className="text-[rgba(255,255,255,0.6)] text-sm mb-4">
+                        Land the career you've always wanted
+                      </p>
+                      <div className="text-cyan-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                        Start →
+                      </div>
+                    </button>
+
+                    {/* Build Your Side Income */}
+                    <Link
+                      href="/affiliate"
+                      className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-yellow-500 rounded-2xl p-6 text-left hover:shadow-lg transition-all group"
+                      style={{
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: glowShadow('0 0 30px rgba(234,179,8,0.3), 0 0 60px rgba(234,179,8,0.2)', glowIntensity)
+                      }}
+                    >
+                      <div className="text-4xl mb-3">💰</div>
+                      <h3 className="text-lg font-bold text-white mb-2">Build Your Side Income</h3>
+                      <p className="text-[rgba(255,255,255,0.6)] text-sm mb-4">
+                        grab our done-for-you products & begin printing ASAP!
+                      </p>
+                      <div className="text-yellow-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                        Start →
+                      </div>
+                    </Link>
+                  </div>
                 </div>
 
-                {/* World Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* SkillBank Section */}
+                <div>
+                  <div className="flex items-end justify-between mb-6">
+                    <div>
+                      <h2 className="text-3xl font-bold text-white mb-2">SkillBank</h2>
+                      <p className="text-[rgba(255,255,255,0.6)] text-lg">
+                        Learn the micro-skills you need to continue balling hard IRL
+                      </p>
+                    </div>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold flex items-center gap-2 hover:shadow-lg hover:shadow-cyan-500/50 transition-all"
+                      >
+                        <Plus className="w-5 h-5" />
+                        Add Course
+                      </button>
+                    )}
+                  </div>
+
+                  {loadingCourses ? (
+                    <div className="text-center py-12 text-white">Loading courses...</div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {allCourses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug)).map((course) => (
+                        <button
+                          key={course.id}
+                          onClick={() => window.location.href = `/courses/${course.slug}`}
+                          className="bg-[rgba(255,255,255,0.08)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.15)] rounded-xl p-5 text-left hover:border-cyan-500 hover:bg-[rgba(255,255,255,0.12)] transition-all group"
+                          style={{
+                            backdropFilter: 'blur(10px)',
+                          }}
+                        >
+                          <div className="text-3xl mb-3">{course.emoji || '📚'}</div>
+                          <h3 className="text-base font-bold text-white mb-2 line-clamp-1">{course.title}</h3>
+                          {course.description && (
+                            <p className="text-[rgba(255,255,255,0.6)] text-xs mb-3 line-clamp-2">
+                              {course.description}
+                            </p>
+                          )}
+                          {course.stats && (
+                            <div className="flex items-center gap-3 text-xs text-[rgba(255,255,255,0.5)] mb-3">
+                              <span>{course.stats.lessons} lessons</span>
+                              {course.stats.progress > 0 && (
+                                <span className="text-cyan-400">{course.stats.progress}%</span>
+                              )}
+                            </div>
+                          )}
+                          <div className="text-cyan-400 text-xs font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                            Start →
+                          </div>
+                        </button>
+                      ))}
+                      
+                      {allCourses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug)).length === 0 && !isAdmin && (
+                        <div className="col-span-full text-center py-12">
+                          <p className="text-[rgba(255,255,255,0.5)]">No courses available yet</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
                   {/* Mindset & Foundations */}
                   <button
                     onClick={() => setSelectedWorld('mindset')}
@@ -1991,6 +2166,98 @@ function ClassroomTab({
             ) : null}
           </div>
         </div>
+
+        {/* Create Course Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
+            <div className="bg-[rgba(26,26,46,0.95)] backdrop-blur-xl rounded-2xl border border-[rgba(255,255,255,0.2)] p-6 max-w-md w-full">
+              <h2 className="text-xl font-bold text-white mb-4">Create New Course</h2>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-[rgba(255,255,255,0.8)] mb-1">
+                    Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={newCourse.title}
+                    onChange={e => setNewCourse({ ...newCourse, title: e.target.value })}
+                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-cyan-500 text-sm"
+                    placeholder="e.g., Productivity Mastery"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[rgba(255,255,255,0.8)] mb-1">
+                    Slug * (URL-friendly)
+                  </label>
+                  <input
+                    type="text"
+                    value={newCourse.slug}
+                    onChange={e => setNewCourse({ ...newCourse, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-cyan-500 text-sm"
+                    placeholder="e.g., productivity-mastery"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[rgba(255,255,255,0.8)] mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={newCourse.description}
+                    onChange={e => setNewCourse({ ...newCourse, description: e.target.value })}
+                    className="w-full px-3 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-cyan-500 h-16 resize-none text-sm"
+                    placeholder="Brief course description"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-[rgba(255,255,255,0.8)] mb-1">
+                      Emoji
+                    </label>
+                    <input
+                      type="text"
+                      value={newCourse.emoji}
+                      onChange={e => setNewCourse({ ...newCourse, emoji: e.target.value })}
+                      className="w-full px-3 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-cyan-500 text-center text-xl"
+                      placeholder="⚡"
+                      maxLength={2}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[rgba(255,255,255,0.8)] mb-1">
+                      Color
+                    </label>
+                    <input
+                      type="color"
+                      value={newCourse.color}
+                      onChange={e => setNewCourse({ ...newCourse, color: e.target.value })}
+                      className="w-full h-10 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-4 py-2 bg-[rgba(255,255,255,0.1)] text-white rounded-lg hover:bg-[rgba(255,255,255,0.2)] transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateCourse}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all text-sm"
+                >
+                  Create Course
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
