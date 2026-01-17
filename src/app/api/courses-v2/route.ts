@@ -20,24 +20,36 @@ export async function GET(request: NextRequest) {
 
     // If courseId provided, fetch single course with full details
     if (courseId) {
-      // Try to fetch by ID first, then by slug
-      let query = (supabaseAdmin.from('courses') as any).select('*')
+      // Try slug first (most common case), then ID
+      let course = null
+      let courseError = null
       
-      // Check if courseId is a UUID (contains hyphens) or a slug
-      if (courseId.includes('-') && courseId.length > 36) {
-        // Likely a slug (with timestamp)
-        query = query.eq('slug', courseId)
-      } else if (courseId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        // Valid UUID format
-        query = query.eq('id', courseId)
+      // First try by slug
+      const { data: courseBySlug, error: slugError } = await (supabaseAdmin
+        .from('courses') as any)
+        .select('*')
+        .eq('slug', courseId)
+        .maybeSingle()
+      
+      if (courseBySlug && !slugError) {
+        course = courseBySlug
       } else {
-        // Try slug
-        query = query.eq('slug', courseId)
+        // Try by ID if slug didn't work
+        const { data: courseById, error: idError } = await (supabaseAdmin
+          .from('courses') as any)
+          .select('*')
+          .eq('id', courseId)
+          .maybeSingle()
+        
+        if (courseById && !idError) {
+          course = courseById
+        } else {
+          courseError = idError || slugError
+        }
       }
-      
-      const { data: course, error: courseError } = await query.single()
 
       if (courseError || !course) {
+        console.error('Course lookup error:', courseError)
         return NextResponse.json({ error: 'Course not found' }, { status: 404 })
       }
 

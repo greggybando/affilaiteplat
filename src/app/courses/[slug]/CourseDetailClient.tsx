@@ -49,7 +49,10 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
 
   const fetchCourse = async () => {
     try {
-      const res = await fetch(`/api/courses-v2?courseId=${slug}`)
+      console.log('Fetching course with slug:', slug)
+      const res = await fetch(`/api/courses-v2?courseId=${encodeURIComponent(slug)}`)
+      
+      console.log('API response status:', res.status)
       
       if (res.status === 401) {
         // Not authenticated, redirect to login
@@ -57,13 +60,14 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
         return
       }
       
+      const data = await res.json()
+      console.log('API response data:', data)
+      
       if (!res.ok) {
-        setError('Course not found')
+        setError(data.error || 'Course not found')
         setLoading(false)
         return
       }
-      
-      const data = await res.json()
       
       if (data.error) {
         setError(data.error)
