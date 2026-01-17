@@ -525,16 +525,26 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
   }
 
   const handleCreateCourse = async () => {
-    if (!newCourse.title || !newCourse.slug) {
-      alert('Title and slug are required')
+    if (!newCourse.title) {
+      alert('Title is required')
       return
     }
+
+    // Auto-generate slug from title with timestamp
+    const baseSlug = newCourse.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+    const slug = `${baseSlug}-${Date.now()}`
 
     try {
       const res = await fetch('/api/admin/courses-v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCourse)
+        body: JSON.stringify({
+          ...newCourse,
+          slug
+        })
       })
 
       const data = await res.json()
@@ -547,7 +557,14 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
       setShowCreateModal(false)
       setNewCourse({ title: '', slug: '', description: '', emoji: '', color: '#06B6D4' })
       loadAllCourses()
-      alert('Course created! Click into it to add sections and lessons.')
+      alert('Course created as draft! Redirecting to course builder...')
+      
+      // Redirect to course builder
+      if (data.id) {
+        setTimeout(() => {
+          window.location.href = `/admin/courses-v2/${data.id}`
+        }, 500)
+      }
     } catch (error) {
       console.error('Error creating course:', error)
       alert('Error creating course')
@@ -900,19 +917,6 @@ export function CourseManagementClient({ affiliate }: CourseManagementClientProp
                     onChange={e => setNewCourse({ ...newCourse, title: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500 text-sm"
                     placeholder="e.g., Productivity Mastery"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">
-                    Slug * (URL-friendly)
-                  </label>
-                  <input
-                    type="text"
-                    value={newCourse.slug}
-                    onChange={e => setNewCourse({ ...newCourse, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500 text-sm"
-                    placeholder="e.g., productivity-mastery"
                   />
                 </div>
 
