@@ -34,6 +34,7 @@ export function middleware(request: NextRequest) {
     '/mindset',
     '/dreamjob',
     '/community',
+    '/courses',
   ]
   
   const isProtected = protectedRoutes.some(route => pathname.startsWith(route))
@@ -68,6 +69,7 @@ export const config = {
     '/mindset/:path*',
     '/dreamjob/:path*',
     '/community/:path*',
+    '/courses/:path*',
   ],
   // Use default Edge Runtime - no Node.js APIs needed here
 }
