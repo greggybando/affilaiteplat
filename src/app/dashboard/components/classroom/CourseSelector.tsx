@@ -9,6 +9,8 @@ interface CourseSelectorProps {
   glowIntensity: number
   isAdmin: boolean
   onSelectCourse?: (course: Course) => void
+  onSelectMindset: () => void
+  onSelectDreamJob: () => void
   onAddCourse?: () => void
 }
 
@@ -31,6 +33,8 @@ export function CourseSelector({
   glowIntensity,
   isAdmin,
   onSelectCourse,
+  onSelectMindset,
+  onSelectDreamJob,
   onAddCourse
 }: CourseSelectorProps) {
   // Filter out foundation courses (mindset, dream-job, side-income)
@@ -45,8 +49,13 @@ export function CourseSelector({
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Mindset & Foundations */}
-          <Link
-            href="/mindset/content"
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('[CourseSelector] Mindset button clicked, calling onSelectMindset')
+              onSelectMindset()
+            }}
             className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-emerald-500 rounded-2xl p-6 text-left hover:shadow-lg transition-all group"
             style={{
               backdropFilter: 'blur(10px)',
@@ -61,11 +70,16 @@ export function CourseSelector({
             <div className="text-emerald-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
               Start →
             </div>
-          </Link>
+          </button>
 
           {/* Get Your Dream Job */}
-          <Link
-            href="/dreamjob/content"
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('[CourseSelector] DreamJob button clicked, calling onSelectDreamJob')
+              onSelectDreamJob()
+            }}
             className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-cyan-500 rounded-2xl p-6 text-left hover:shadow-lg transition-all group"
             style={{
               backdropFilter: 'blur(10px)',
@@ -80,7 +94,7 @@ export function CourseSelector({
             <div className="text-cyan-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
               Start →
             </div>
-          </Link>
+          </button>
 
           {/* Build Your Side Income */}
           <Link

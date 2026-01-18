@@ -199,7 +199,15 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   const router = useRouter()
   const searchParams = useSearchParams()
   const openDMUserId = searchParams.get('openDM')
-  const [activeTab, setActiveTab] = useState<'community' | 'classroom' | 'groupchat'>('community')
+  const tabParam = searchParams.get('tab') as 'community' | 'classroom' | 'groupchat' | null
+  const [activeTab, setActiveTab] = useState<'community' | 'classroom' | 'groupchat'>(tabParam || 'community')
+  
+  // Update activeTab when tab query param changes
+  useEffect(() => {
+    if (tabParam && ['community', 'classroom', 'groupchat'].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
   const [isGroupChatOpen, setIsGroupChatOpen] = useState(false)
   const [glowIntensity, setGlowIntensity] = useState(50) // Default 50%
   const [classroomResetKey, setClassroomResetKey] = useState(0)

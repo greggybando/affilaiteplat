@@ -181,9 +181,38 @@ export default function ClassroomTab({
         if (res.ok) {
           const data = await res.json()
           console.log('[ClassroomTab] DreamJob API response data:', data)
-          if (data.modules) {
+          // DreamJob API returns { modules: [...] } directly (not categories)
+          if (data.modules && Array.isArray(data.modules)) {
             console.log('[ClassroomTab] Setting dreamJobModules:', data.modules.length, 'modules')
             setDreamJobModules(data.modules)
+          } else if (data.categories && Array.isArray(data.categories)) {
+            // Fallback: if API returns categories, parse them
+            const modulesList: any[] = []
+            data.categories.forEach((category: any) => {
+              if (category.sections && Array.isArray(category.sections)) {
+                category.sections.forEach((section: any) => {
+                  modulesList.push({
+                    id: section.number || section.id,
+                    uuid: section.uuid || section.id,
+                    number: section.number || 0,
+                    title: section.title || '',
+                    description: section.description || '',
+                    videos: (section.videos || []).map((video: any) => ({
+                      id: video.id || video.video_id,
+                      uuid: video.uuid,
+                      title: video.title || '',
+                      youtubeId: video.youtube_id || video.youtubeId,
+                      loomId: video.loom_id || video.loomId,
+                    })),
+                  })
+                })
+              }
+            })
+            console.log('[ClassroomTab] Setting dreamJobModules (from categories):', modulesList.length, 'modules')
+            setDreamJobModules(modulesList)
+          } else {
+            console.warn('[ClassroomTab] DreamJob API returned unexpected structure:', data)
+            setDreamJobModules([])
           }
         } else {
           console.error('[ClassroomTab] DreamJob API response not OK:', res.status, await res.text())
@@ -631,6 +660,14 @@ export default function ClassroomTab({
                 glowIntensity={glowIntensity}
                 isAdmin={isAdmin}
                 onSelectCourse={setSelectedCourse}
+                onSelectMindset={() => {
+                  console.log('[ClassroomTab] onSelectMindset called, setting selectedWorld to "mindset"')
+                  setSelectedWorld('mindset')
+                }}
+                onSelectDreamJob={() => {
+                  console.log('[ClassroomTab] onSelectDreamJob called, setting selectedWorld to "dreamjob"')
+                  setSelectedWorld('dreamjob')
+                }}
                 onAddCourse={() => {
                   // Handle add course
                   console.log('Add course')
@@ -716,13 +753,17 @@ export default function ClassroomTab({
                   <DreamJobModuleList 
                     modules={dreamJobModules} 
                     affiliate={affiliate}
+                    onVideoSelect={() => {}}
                     onDataChange={async () => {
                       // Refetch data after drag operation
                       try {
                         const res = await fetch('/api/courses/structure?courseType=dreamjob')
                         const data = await res.json()
-                        if (data.modules) {
+                        // DreamJob API returns { modules: [...] } directly
+                        if (data.modules && Array.isArray(data.modules)) {
                           setDreamJobModules(data.modules)
+                        } else {
+                          console.warn('[ClassroomTab] DreamJob refetch returned unexpected structure:', data)
                         }
                       } catch (error) {
                         console.error('Error refetching dreamjob data:', error)
