@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
-// GET - Fetch notes for a lesson
+// GET - Fetch course-wide notes for a lesson (public access - all users can view)
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
@@ -14,26 +14,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing lessonId' }, { status: 400 })
     }
 
-    // Fetch notes from user_lesson_progress table
-    const affiliate = await getCurrentAffiliate()
-    if (!affiliate) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: progress, error } = await (supabaseAdmin as any)
-      .from('user_lesson_progress')
-      .select('notes, updated_at')
-      .eq('user_id', affiliate.id)
+    // Fetch course-wide notes from lesson_notes table (public - all users can view)
+    const { data: note, error } = await (supabaseAdmin as any)
+      .from('lesson_notes')
+      .select('id, notes, updated_at')
       .eq('lesson_id', lessonId)
       .single()
 
-    if (error && error.code !== 'PGRST116') {
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
       throw error
     }
 
     return NextResponse.json({ 
-      notes: (progress as any)?.notes || '',
-      updatedAt: (progress as any)?.updated_at || null
+      notes: (note as any)?.notes || '',
+      updatedAt: (note as any)?.updated_at || null
     })
   } catch (error: any) {
     console.error('Error fetching lesson notes:', error)
@@ -41,11 +35,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT - Save notes for a lesson
+// PUT - Save course-wide notes for a lesson (admin only)
 export async function PUT(request: NextRequest) {
   try {
     const affiliate = await getCurrentAffiliate()
-    if (!affiliate) {
+    if (!affiliate || (affiliate.role !== 'admin' && affiliate.role !== 'moderator')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -55,29 +49,31 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Missing lessonId' }, { status: 400 })
     }
 
-    // Upsert notes in user_lesson_progress
-    const { data: progress, error } = await (supabaseAdmin as any)
-      .from('user_lesson_progress')
+    // Use upsert with proper conflict handling (course-wide notes)
+    const { data: note, error } = await (supabaseAdmin as any)
+      .from('lesson_notes')
       .upsert({
-        user_id: affiliate.id,
         lesson_id: lessonId,
         notes: notes || '',
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        created_by: affiliate.id
       }, {
-        onConflict: 'user_id,lesson_id'
+        onConflict: 'lesson_id'
       })
       .select()
       .single()
 
     if (error) {
       console.error('Error saving lesson notes:', error)
+      console.error('Error details:', JSON.stringify(error, null, 2))
       return NextResponse.json({ 
         error: 'Failed to save notes',
-        details: error.message || error.code || 'Unknown error'
+        details: error.message || error.code || 'Unknown error',
+        hint: 'Make sure the lesson_notes table exists with UNIQUE constraint on lesson_id. Run the SQL migration if needed.'
       }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, notes: (progress as any)?.notes || '' })
+    return NextResponse.json({ success: true, notes: (note as any)?.notes || '' })
   } catch (error: any) {
     console.error('Error saving lesson notes:', error)
     return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 })

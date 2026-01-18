@@ -2786,8 +2786,8 @@ function ClassroomTab({
                           </button>
                         )}
 
-                        {/* Notes Section */}
-                        <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+                        {/* Notes/Attachments Section - Match DreamJob Exactly */}
+                        <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
                           {(() => {
                             const lessonNotes = notes[selectedCourseLesson.lesson.id] || ''
                             const hasNotes = lessonNotes && lessonNotes.trim().length > 0
@@ -2856,6 +2856,7 @@ function ClassroomTab({
                                 </div>
 
                                 {/* Notes Content */}
+                                {/* Always show textarea for admins, show read-only for regular users when expanded */}
                                 {(isAdmin || shouldAutoExpand || isExpanded || !hasNotes) && (
                                   <div className="px-4 pb-4">
                                     {isAdmin ? (
@@ -2894,8 +2895,8 @@ function ClassroomTab({
                           })()}
                         </div>
 
-                        {/* Course Materials Section */}
-                        <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+                        {/* Course Materials Section - Match DreamJob */}
+                        <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
                           <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
                             <h4 className="text-sm font-semibold text-slate-300">Course Materials</h4>
                             {isAdmin && (
