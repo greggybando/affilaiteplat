@@ -203,6 +203,11 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   const [isGroupChatOpen, setIsGroupChatOpen] = useState(false)
   const [glowIntensity, setGlowIntensity] = useState(50) // Default 50%
   const [classroomResetKey, setClassroomResetKey] = useState(0)
+  
+  // Debug: Log when key changes
+  useEffect(() => {
+    console.log('[DashboardClient] classroomResetKey changed to:', classroomResetKey)
+  }, [classroomResetKey])
   const [searchQuery, setSearchQuery] = useState('')
   const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = useState(false)
   const avatarDropdownRef = useRef<HTMLDivElement>(null)

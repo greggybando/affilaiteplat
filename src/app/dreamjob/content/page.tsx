@@ -1,7 +1,17 @@
 import { redirect } from 'next/navigation'
+import { getCurrentAffiliate } from '@/lib/auth'
+import { DreamJobContentClient } from './DreamJobContentClient'
 
-// This page is deprecated - all course content is now database-driven
-// Redirect to the main dashboard classroom view
-export default function DreamJobContentPage() {
-  redirect('/dashboard?tab=classroom&world=dreamjob')
+export default async function DreamJobContentPage() {
+  const affiliate = await getCurrentAffiliate()
+
+  if (!affiliate) {
+    redirect('/login')
+  }
+
+  if (!(affiliate as any).onboarding_completed) {
+    redirect('/onboarding')
+  }
+
+  return <DreamJobContentClient affiliate={affiliate} />
 }

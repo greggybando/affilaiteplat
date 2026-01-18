@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Course, Module, Lesson, Checkpoint } from '@/lib/types/courses'
 import { fetchCourses, fetchCourseWithModules, fetchCheckpoints } from '@/lib/api/courses'
 import { useAdmin } from '@/lib/hooks/useAdmin'
@@ -9,6 +9,8 @@ import { CourseSelector } from './classroom/CourseSelector'
 import { ModuleCard } from './classroom/ModuleCard'
 import { CheckpointGate } from './classroom/CheckpointGate'
 import { Settings, LogOut } from 'lucide-react'
+import { MindsetModuleList } from '@/app/mindset/components/MindsetModuleList'
+import { DreamJobModuleList } from '@/app/dreamjob/components/DreamJobModuleList'
 
 // Helper function for glow shadow
 const glowShadow = (shadows: string, glowIntensity: number) => {
@@ -34,8 +36,32 @@ export default function ClassroomTab({
   setActiveTab,
   glowIntensity
 }: ClassroomTabProps) {
+  console.log('[ClassroomTab] Component rendering/re-rendering')
   const isAdmin = useAdmin(affiliate)
+  const [selectedWorld, setSelectedWorld] = useState<'mindset' | 'dreamjob' | null>(null)
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+  
+  // Debug: Log component mount/unmount
+  useEffect(() => {
+    console.log('[ClassroomTab] Component MOUNTED')
+    return () => {
+      console.log('[ClassroomTab] Component UNMOUNTING - state will be lost!')
+    }
+  }, [])
+  
+  // Debug: Log state changes
+  useEffect(() => {
+    console.log('[ClassroomTab] ===== STATE CHANGE =====')
+    console.log('[ClassroomTab] selectedWorld:', selectedWorld, '(type:', typeof selectedWorld, ')')
+    console.log('[ClassroomTab] selectedCourse:', selectedCourse)
+    console.log('[ClassroomTab] Will render:', selectedWorld === 'mindset' ? 'MINDSET' : selectedWorld === 'dreamjob' ? 'DREAMJOB' : selectedCourse ? 'COURSE' : 'SELECTOR')
+    console.log('[ClassroomTab] Conditional checks:')
+    console.log('[ClassroomTab]   selectedWorld === "mindset":', selectedWorld === 'mindset')
+    console.log('[ClassroomTab]   selectedWorld === "dreamjob":', selectedWorld === 'dreamjob')
+    console.log('[ClassroomTab]   !selectedWorld && !selectedCourse:', !selectedWorld && !selectedCourse)
+    console.log('[ClassroomTab] ========================')
+  }, [selectedWorld, selectedCourse])
+  
   const [courses, setCourses] = useState<Course[]>([])
   const [modules, setModules] = useState<Module[]>([])
   const [lessons, setLessons] = useState<Record<string, Lesson[]>>({})
@@ -46,6 +72,12 @@ export default function ClassroomTab({
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
   const [checkpointModalOpen, setCheckpointModalOpen] = useState(false)
+  
+  // Mindset and DreamJob data
+  const [mindsetCategories, setMindsetCategories] = useState<any[]>([])
+  const [mindsetModules, setMindsetModules] = useState<any[]>([])
+  const [dreamJobModules, setDreamJobModules] = useState<any[]>([])
+  const [loadingCourses, setLoadingCourses] = useState(false)
 
   // Helper functions for video URL extraction
   const extractLoomId = (url: string): string => {
@@ -76,6 +108,96 @@ export default function ClassroomTab({
     }
     loadCourses()
   }, [])
+
+  // Fetch mindset data when selected
+  useEffect(() => {
+    console.log('[ClassroomTab] useEffect for mindset - selectedWorld:', selectedWorld)
+    if (selectedWorld !== 'mindset') {
+      console.log('[ClassroomTab] selectedWorld is not "mindset", clearing mindset data')
+      setMindsetCategories([])
+      setMindsetModules([])
+      return
+    }
+
+    console.log('[ClassroomTab] selectedWorld is "mindset", starting fetch...')
+    const loadMindsetData = async () => {
+      try {
+        console.log('[ClassroomTab] Setting loadingCourses to true')
+        setLoadingCourses(true)
+        console.log('[ClassroomTab] Fetching /api/courses/structure?courseType=mindset')
+        const res = await fetch('/api/courses/structure?courseType=mindset')
+        console.log('[ClassroomTab] Mindset API response status:', res.status, res.ok)
+        if (res.ok) {
+          const data = await res.json()
+          console.log('[ClassroomTab] Mindset API response data:', data)
+          if (data.categories) {
+            console.log('[ClassroomTab] Setting mindsetCategories:', data.categories.length, 'categories')
+            setMindsetCategories(data.categories)
+          }
+          // Build modules array from categories
+          const modulesList: any[] = []
+          data.categories?.forEach((category: any) => {
+            category.sections?.forEach((section: any) => {
+              modulesList.push({
+                ...section,
+                categoryId: category.id,
+                categoryTitle: category.title
+              })
+            })
+          })
+          console.log('[ClassroomTab] Setting mindsetModules:', modulesList.length, 'modules')
+          setMindsetModules(modulesList)
+        } else {
+          console.error('[ClassroomTab] Mindset API response not OK:', res.status, await res.text())
+        }
+      } catch (error) {
+        console.error('[ClassroomTab] Error loading mindset data:', error)
+      } finally {
+        console.log('[ClassroomTab] Setting loadingCourses to false')
+        setLoadingCourses(false)
+      }
+    }
+
+    loadMindsetData()
+  }, [selectedWorld])
+
+  // Fetch dreamjob data when selected
+  useEffect(() => {
+    console.log('[ClassroomTab] useEffect for dreamjob - selectedWorld:', selectedWorld)
+    if (selectedWorld !== 'dreamjob') {
+      console.log('[ClassroomTab] selectedWorld is not "dreamjob", clearing dreamjob data')
+      setDreamJobModules([])
+      return
+    }
+
+    console.log('[ClassroomTab] selectedWorld is "dreamjob", starting fetch...')
+    const loadDreamJobData = async () => {
+      try {
+        console.log('[ClassroomTab] Setting loadingCourses to true')
+        setLoadingCourses(true)
+        console.log('[ClassroomTab] Fetching /api/courses/structure?courseType=dreamjob')
+        const res = await fetch('/api/courses/structure?courseType=dreamjob')
+        console.log('[ClassroomTab] DreamJob API response status:', res.status, res.ok)
+        if (res.ok) {
+          const data = await res.json()
+          console.log('[ClassroomTab] DreamJob API response data:', data)
+          if (data.modules) {
+            console.log('[ClassroomTab] Setting dreamJobModules:', data.modules.length, 'modules')
+            setDreamJobModules(data.modules)
+          }
+        } else {
+          console.error('[ClassroomTab] DreamJob API response not OK:', res.status, await res.text())
+        }
+      } catch (error) {
+        console.error('[ClassroomTab] Error loading dreamjob data:', error)
+      } finally {
+        console.log('[ClassroomTab] Setting loadingCourses to false')
+        setLoadingCourses(false)
+      }
+    }
+
+    loadDreamJobData()
+  }, [selectedWorld])
 
   // Fetch course details when selected
   useEffect(() => {
@@ -149,7 +271,8 @@ export default function ClassroomTab({
 
   return (
     <div className="flex h-full w-full" style={{ display: 'flex', width: '100%', maxWidth: '100%', boxSizing: 'border-box', margin: 0, padding: 0, gap: 0, backgroundColor: '#0f0f1a' }}>
-      {/* Sidebar - Match CommunityTab styling */}
+      {/* Sidebar - Match CommunityTab styling - Hide when mindset/dreamjob selected */}
+      {!selectedWorld && (
       <div className="w-[250px] text-white flex flex-col shrink-0" style={{ width: '250px', flexShrink: 0, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)' }}>
         <div className="p-5 border-b border-slate-700">
           <div className="flex items-center gap-3 mb-1">
@@ -458,9 +581,10 @@ export default function ClassroomTab({
           </div>
         </div>
       </div>
+      )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden h-full w-full min-w-0 relative" style={{ flex: 1, minWidth: 0, width: '100%', maxWidth: '100%', margin: 0, padding: 0, boxSizing: 'border-box' }}>
+      <div className={`flex-1 flex flex-col overflow-hidden h-full w-full min-w-0 relative ${selectedWorld ? 'w-full' : ''}`} style={{ flex: 1, minWidth: 0, width: '100%', maxWidth: '100%', margin: 0, padding: 0, boxSizing: 'border-box' }}>
         {/* Color Splash Header */}
         <div 
           className="absolute top-0 left-0 right-0 h-[300px] z-0"
@@ -478,9 +602,10 @@ export default function ClassroomTab({
               <h1 className="text-lg font-bold text-white">Classroom</h1>
               <p className="text-xs text-[rgba(255,255,255,0.6)]">don't just watch. ENACT the lessons IRL. Make your life ACTUALLY better &lt;3</p>
             </div>
-            {selectedCourse && (
+            {(selectedWorld || selectedCourse) && (
               <button
                 onClick={() => {
+                  setSelectedWorld(null)
                   setSelectedCourse(null)
                   setSelectedLesson(null)
                   setExpandedModules(new Set())
@@ -497,29 +622,116 @@ export default function ClassroomTab({
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto min-h-0 w-full px-4 sm:px-6 lg:px-8 py-8" style={{ width: '100%', maxWidth: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0 }}>
+          <div className={`flex-1 overflow-y-auto min-h-0 w-full ${selectedWorld ? '' : 'px-4 sm:px-6 lg:px-8 py-8'}`} style={{ width: '100%', maxWidth: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0 }}>
             {loading ? (
               <div className="text-center py-12 text-white">Loading...</div>
-            ) : !selectedCourse ? (
+            ) : !selectedWorld && !selectedCourse ? (
               <CourseSelector
                 courses={courses}
                 glowIntensity={glowIntensity}
                 isAdmin={isAdmin}
                 onSelectCourse={setSelectedCourse}
-                onSelectMindset={() => {
-                  // Handle mindset selection
-                  console.log('Mindset selected')
-                }}
-                onSelectDreamJob={() => {
-                  // Handle dreamjob selection
-                  console.log('DreamJob selected')
-                }}
                 onAddCourse={() => {
                   // Handle add course
                   console.log('Add course')
                 }}
               />
-            ) : (
+            ) : selectedWorld === 'mindset' ? (
+              <div className="w-full h-full" style={{ width: '100%', height: '100%' }}>
+                {loadingCourses ? (
+                  <div className="text-center py-12 text-white">Loading courses...</div>
+                ) : mindsetCategories.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block bg-[rgba(255,255,255,0.06)] backdrop-blur-[10px] rounded-2xl p-8 border border-[rgba(255,255,255,0.12)] max-w-xl">
+                      <h2 className="text-xl font-semibold text-white mb-2">Course not configured yet</h2>
+                      <p className="text-[rgba(255,255,255,0.65)] text-sm">
+                        The classroom now uses <span className="text-white">only</span> the database-backed course structure.
+                        Add categories/sections/videos in the admin course editor and this will populate automatically.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <MindsetModuleList 
+                    modules={mindsetModules} 
+                    categories={mindsetCategories}
+                    affiliate={affiliate}
+                    onDataChange={async () => {
+                      // Refetch data after drag operation
+                      try {
+                        const res = await fetch('/api/courses/structure?courseType=mindset')
+                        const data = await res.json()
+                        if (data.categories) {
+                          setMindsetCategories(data.categories)
+                        }
+                        const modulesList: any[] = []
+                        data.categories?.forEach((category: any) => {
+                          category.sections?.forEach((section: any) => {
+                            modulesList.push({
+                              ...section,
+                              categoryId: category.id,
+                              categoryTitle: category.title
+                            })
+                          })
+                        })
+                        setMindsetModules(modulesList)
+                      } catch (error) {
+                        console.error('Error refetching mindset data:', error)
+                      }
+                    }}
+                  />
+                )}
+              </div>
+            ) : selectedWorld === 'dreamjob' ? (
+              <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-8">
+                <div className="bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 mb-6 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-white">Course Progress</h2>
+                      <p className="text-[rgba(255,255,255,0.6)] text-sm">Complete all 8 modules to master the Dream Job method</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">0%</span>
+                      <p className="text-[rgba(255,255,255,0.5)] text-sm">Complete</p>
+                    </div>
+                  </div>
+                  <div className="w-full bg-[rgba(255,255,255,0.1)] rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500" 
+                      style={{ width: '0%' }}
+                    />
+                  </div>
+                </div>
+                {loadingCourses ? (
+                  <div className="text-center py-12 text-white">Loading courses...</div>
+                ) : dreamJobModules.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block bg-[rgba(255,255,255,0.06)] backdrop-blur-[10px] rounded-2xl p-8 border border-[rgba(255,255,255,0.12)] max-w-xl">
+                      <h2 className="text-xl font-semibold text-white mb-2">Dream Job course not configured yet</h2>
+                      <p className="text-[rgba(255,255,255,0.65)] text-sm">
+                        This course now loads from the database only. Add modules/lessons in the admin course editor to publish content here.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <DreamJobModuleList 
+                    modules={dreamJobModules} 
+                    affiliate={affiliate}
+                    onDataChange={async () => {
+                      // Refetch data after drag operation
+                      try {
+                        const res = await fetch('/api/courses/structure?courseType=dreamjob')
+                        const data = await res.json()
+                        if (data.modules) {
+                          setDreamJobModules(data.modules)
+                        }
+                      } catch (error) {
+                        console.error('Error refetching dreamjob data:', error)
+                      }
+                    }}
+                  />
+                )}
+              </div>
+            ) : selectedCourse ? (
               <div className="flex gap-6">
                 {/* Left Sidebar - Course Navigation */}
                 <div className="w-80 rounded-lg overflow-hidden flex flex-col max-h-[calc(100vh-200px)] sticky top-4" style={{
@@ -641,7 +853,7 @@ export default function ClassroomTab({
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

@@ -9,8 +9,6 @@ interface CourseSelectorProps {
   glowIntensity: number
   isAdmin: boolean
   onSelectCourse?: (course: Course) => void
-  onSelectMindset?: () => void
-  onSelectDreamJob?: () => void
   onAddCourse?: () => void
 }
 
@@ -33,8 +31,6 @@ export function CourseSelector({
   glowIntensity,
   isAdmin,
   onSelectCourse,
-  onSelectMindset,
-  onSelectDreamJob,
   onAddCourse
 }: CourseSelectorProps) {
   // Filter out foundation courses (mindset, dream-job, side-income)
@@ -49,13 +45,13 @@ export function CourseSelector({
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Mindset & Foundations */}
-          <button
-            onClick={onSelectMindset}
+          <Link
+            href="/mindset/content"
             className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-emerald-500 rounded-2xl p-6 text-left hover:shadow-lg transition-all group"
             style={{
               backdropFilter: 'blur(10px)',
               boxShadow: glowShadow('0 0 30px rgba(16,185,129,0.3), 0 0 60px rgba(16,185,129,0.2)', glowIntensity)
-            }}
+            } as React.CSSProperties}
           >
             <div className="text-4xl mb-3">🧠</div>
             <h3 className="text-lg font-bold text-white mb-2">Mindset & Foundations</h3>
@@ -65,16 +61,16 @@ export function CourseSelector({
             <div className="text-emerald-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
               Start →
             </div>
-          </button>
+          </Link>
 
           {/* Get Your Dream Job */}
-          <button
-            onClick={onSelectDreamJob}
+          <Link
+            href="/dreamjob/content"
             className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-cyan-500 rounded-2xl p-6 text-left hover:shadow-lg transition-all group"
             style={{
               backdropFilter: 'blur(10px)',
               boxShadow: glowShadow('0 0 30px rgba(6,182,212,0.3), 0 0 60px rgba(6,182,212,0.2)', glowIntensity)
-            }}
+            } as React.CSSProperties}
           >
             <div className="text-4xl mb-3">💼</div>
             <h3 className="text-lg font-bold text-white mb-2">Get Your Dream Job</h3>
@@ -84,7 +80,7 @@ export function CourseSelector({
             <div className="text-cyan-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
               Start →
             </div>
-          </button>
+          </Link>
 
           {/* Build Your Side Income */}
           <Link

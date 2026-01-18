@@ -1,6 +1,17 @@
 import { redirect } from 'next/navigation'
+import { getCurrentAffiliate } from '@/lib/auth'
+import { MindsetContentClient } from './MindsetContentClient'
 
 export default async function MindsetContentPage() {
-  // Legacy worksheet-based module pages removed in favor of DB-backed classroom.
-  redirect('/dashboard')
+  const affiliate = await getCurrentAffiliate()
+
+  if (!affiliate) {
+    redirect('/login')
+  }
+
+  if (!affiliate.onboarding_completed) {
+    redirect('/onboarding')
+  }
+
+  return <MindsetContentClient affiliate={affiliate} />
 }
