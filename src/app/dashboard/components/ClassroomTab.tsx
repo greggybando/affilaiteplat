@@ -10,7 +10,7 @@ import { ModuleCard } from './classroom/ModuleCard'
 import { CheckpointGate } from './classroom/CheckpointGate'
 import { Settings, LogOut } from 'lucide-react'
 import { MindsetModuleListRefactored as MindsetModuleList } from '@/app/mindset/components/MindsetModuleListRefactored'
-import { DreamJobModuleList } from '@/app/dreamjob/components/DreamJobModuleList'
+import { DreamJobModuleListRefactored as DreamJobModuleList } from '@/app/dreamjob/components/DreamJobModuleListRefactored'
 
 // Helper function for glow shadow
 const glowShadow = (shadows: string, glowIntensity: number) => {
