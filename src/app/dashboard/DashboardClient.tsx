@@ -2672,7 +2672,7 @@ function ClassroomTab({
                       </div>
 
                       {/* Video Info & Description */}
-                      <div className="p-6 space-y-6">
+                      <div className="p-6 space-y-6 relative z-0">
                         {isAdmin && editing?.type === 'lesson' && editing.lessonId === selectedCourseLesson.lesson.id ? (
                           <div className="space-y-4">
                             <div>
@@ -2785,8 +2785,10 @@ function ClassroomTab({
                             Submit Checkpoint
                           </button>
                         )}
+                      </div>
 
-                        {/* Notes/Attachments Section - Match DreamJob Exactly */}
+                      {/* Notes/Attachments Section - Match DreamJob Exactly */}
+                      <div className="px-6 pb-6">
                         <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
                           {(() => {
                             const lessonNotes = notes[selectedCourseLesson.lesson.id] || ''
@@ -2961,6 +2963,7 @@ function ClassroomTab({
                         </div>
                       </div>
                     </div>
+                  </div>
                   ) : (
                     <div className="flex-1 flex items-center justify-center h-full min-h-[400px]">
                       <div className="text-center">
