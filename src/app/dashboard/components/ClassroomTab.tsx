@@ -611,20 +611,21 @@ export default function ClassroomTab({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full min-w-0" style={{ flex: 1, minWidth: 0, height: '100%', margin: 0, padding: 0, boxSizing: 'border-box', overflow: 'hidden', position: 'relative' }}>
-        {/* Color Splash Header */}
+      <div className="flex-1 flex flex-col h-full min-w-0" style={{ flex: 1, minWidth: 0, height: '100%', margin: 0, padding: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
+        {/* Color Splash Header - Only in main content area */}
         <div 
-          className="absolute top-0 left-0 right-0 h-[300px] z-0"
+          className="absolute top-0 left-0 right-0 h-[300px]"
           style={{
             background: 'linear-gradient(135deg, #fde047 0%, #fde047 25%, #f472b6 25%, #f472b6 50%, #22d3ee 50%, #22d3ee 75%, #0ea5e9 75%, #0ea5e9 100%)',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            zIndex: 0
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(15,15,26,0.5)] to-[#0f0f1a]" />
         </div>
 
         {/* Content Overlay */}
-        <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
+        <div className="relative flex-1 flex flex-col overflow-hidden" style={{ zIndex: 1 }}>
           <div className="h-14 bg-[rgba(26,26,46,0.8)] backdrop-blur-[20px] border-b border-[rgba(255,255,255,0.1)] flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0" style={{ backdropFilter: 'blur(20px)' }}>
             <div>
               <h1 className="text-lg font-bold text-white">Classroom</h1>
