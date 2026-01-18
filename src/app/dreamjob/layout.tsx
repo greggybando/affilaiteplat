@@ -3,7 +3,6 @@ import { getCurrentAffiliate, isAdmin } from '@/lib/auth'
 import Link from 'next/link'
 import { DreamJobNav } from './components/DreamJobNav'
 import { AIChatBot } from './components/AIChatBot'
-import { AdminDropdown } from '@/components/AdminDropdown'
 import { DreamJobProviders } from './components/DreamJobProviders'
 
 export default async function DreamJobLayout({
@@ -45,9 +44,6 @@ export default async function DreamJobLayout({
             
             {/* Avatar */}
             <div className="flex items-center gap-3">
-              {admin && (
-                <AdminDropdown isAdmin={true} />
-              )}
               {(affiliate as any).avatar_url ? (
                 <img 
                   src={(affiliate as any).avatar_url} 

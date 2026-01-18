@@ -232,7 +232,7 @@ function SortableVideoList({
 
       // Save new order to API (autosave without page reload)
       try {
-        const res = await fetch('/api/admin/courses/reorder', {
+        const res = await fetch('/api/courses/reorder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1138,7 +1138,7 @@ export function MindsetModuleList({ modules, categories, affiliate, onDataChange
         
         // Method 3: Try admin API and match by section title
         console.log('[Checkpoint Fetch Effect] Trying admin API')
-        const res3 = await fetch(`/api/admin/checkpoints`)
+        const res3 = await fetch(`/api/checkpoints/admin`)
         const data3 = await res3.json()
         
         if (data3.courses) {
@@ -1259,7 +1259,7 @@ export function MindsetModuleList({ modules, categories, affiliate, onDataChange
         if (editValues.youtubeId) updateData.youtubeId = extractYouTubeId(editValues.youtubeId)
         if (editValues.loomId) updateData.loomId = extractLoomId(editValues.loomId)
 
-        const res = await fetch('/api/admin/courses/update', {
+        const res = await fetch('/api/courses/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1299,7 +1299,7 @@ export function MindsetModuleList({ modules, categories, affiliate, onDataChange
         window.location.reload()
       } else if (editing.type === 'category') {
         const updateData: any = { title: editValues.title }
-        const res = await fetch('/api/admin/courses/update', {
+        const res = await fetch('/api/courses/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1318,7 +1318,7 @@ export function MindsetModuleList({ modules, categories, affiliate, onDataChange
           title: editValues.title,
           description: editValues.description
         }
-        const res = await fetch('/api/admin/courses/update', {
+        const res = await fetch('/api/courses/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1352,7 +1352,7 @@ export function MindsetModuleList({ modules, categories, affiliate, onDataChange
 
       // Save new order to API
       try {
-        const res = await fetch('/api/admin/courses/reorder', {
+        const res = await fetch('/api/courses/reorder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1408,7 +1408,7 @@ export function MindsetModuleList({ modules, categories, affiliate, onDataChange
 
       // Save new order to API (autosave without page reload)
       try {
-        const res = await fetch('/api/admin/courses/reorder', {
+        const res = await fetch('/api/courses/reorder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

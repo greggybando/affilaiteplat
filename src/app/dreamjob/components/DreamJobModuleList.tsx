@@ -346,7 +346,7 @@ function SortableVideoList({
 
       // Save new order to API (autosave without page reload)
       try {
-        const res = await fetch('/api/admin/courses/reorder', {
+        const res = await fetch('/api/courses/reorder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -534,7 +534,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect, onDataCh
         }
         if (editValues.youtubeId) updateData.youtubeId = extractYouTubeId(editValues.youtubeId)
 
-        const res = await fetch('/api/admin/courses/update', {
+        const res = await fetch('/api/courses/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -576,7 +576,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect, onDataCh
           description: editValues.description
         }
 
-        const res = await fetch('/api/admin/courses/update', {
+        const res = await fetch('/api/courses/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -610,7 +610,7 @@ export function DreamJobModuleList({ modules, affiliate, onVideoSelect, onDataCh
 
       // Save new order to API
       try {
-        const res = await fetch('/api/admin/courses/reorder', {
+        const res = await fetch('/api/courses/reorder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

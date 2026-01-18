@@ -1,0 +1,650 @@
+'use client'
+
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { Course, Module, Lesson, Checkpoint } from '@/lib/types/courses'
+import { fetchCourses, fetchCourseWithModules, fetchCheckpoints } from '@/lib/api/courses'
+import { useAdmin } from '@/lib/hooks/useAdmin'
+import { CourseSelector } from './classroom/CourseSelector'
+import { ModuleCard } from './classroom/ModuleCard'
+import { CheckpointGate } from './classroom/CheckpointGate'
+import { Settings, LogOut } from 'lucide-react'
+
+// Helper function for glow shadow
+const glowShadow = (shadows: string, glowIntensity: number) => {
+  return shadows
+}
+
+interface ClassroomTabProps {
+  affiliate: {
+    id: string
+    name: string
+    avatar_name: string | null
+    avatar_url: string | null
+    role?: string
+  }
+  activeTab: 'community' | 'classroom' | 'groupchat'
+  setActiveTab: (tab: 'community' | 'classroom' | 'groupchat') => void
+  glowIntensity: number
+}
+
+export default function ClassroomTab({ 
+  affiliate, 
+  activeTab, 
+  setActiveTab,
+  glowIntensity
+}: ClassroomTabProps) {
+  const isAdmin = useAdmin(affiliate)
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+  const [courses, setCourses] = useState<Course[]>([])
+  const [modules, setModules] = useState<Module[]>([])
+  const [lessons, setLessons] = useState<Record<string, Lesson[]>>({})
+  const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([])
+  const [checkpointsByModule, setCheckpointsByModule] = useState<Record<string, Checkpoint>>({})
+  const [loading, setLoading] = useState(true)
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
+  const [checkpointModalOpen, setCheckpointModalOpen] = useState(false)
+
+  // Helper functions for video URL extraction
+  const extractLoomId = (url: string): string => {
+    const match = url.match(/loom\.com\/share\/([a-f0-9]+)/i)
+    return match ? match[1] : ''
+  }
+
+  const extractYouTubeId = (url: string): string => {
+    if (!url) return ''
+    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0].split('&')[0]
+    if (url.includes('youtube.com/watch?v=')) return url.split('youtube.com/watch?v=')[1].split('&')[0]
+    if (url.includes('youtube.com/embed/')) return url.split('youtube.com/embed/')[1].split('?')[0].split('&')[0]
+    return url
+  }
+
+  // Fetch all courses on mount
+  useEffect(() => {
+    const loadCourses = async () => {
+      try {
+        setLoading(true)
+        const allCourses = await fetchCourses()
+        setCourses(allCourses)
+      } catch (error) {
+        console.error('Error loading courses:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadCourses()
+  }, [])
+
+  // Fetch course details when selected
+  useEffect(() => {
+    if (!selectedCourse) {
+      setModules([])
+      setLessons({})
+      setCheckpoints([])
+      return
+    }
+
+    const loadCourseDetails = async () => {
+      try {
+        setLoading(true)
+        const { course, modules: courseModules } = await fetchCourseWithModules(selectedCourse.id)
+        setModules(courseModules)
+        
+        // Auto-expand first module
+        if (courseModules.length > 0) {
+          setExpandedModules(new Set([courseModules[0].id]))
+        }
+
+        // Fetch lessons for each module
+        const lessonsMap: Record<string, Lesson[]> = {}
+        for (const module of courseModules) {
+          try {
+            const res = await fetch(`/api/courses-v2/${selectedCourse.id}/sections/${module.id}/lessons`)
+            if (res.ok) {
+              const data = await res.json()
+              lessonsMap[module.id] = data.lessons || []
+            }
+          } catch (error) {
+            console.error(`Error fetching lessons for module ${module.id}:`, error)
+            lessonsMap[module.id] = []
+          }
+        }
+        setLessons(lessonsMap)
+
+        // Fetch checkpoints
+        const courseCheckpoints = await fetchCheckpoints(selectedCourse.id)
+        setCheckpoints(courseCheckpoints)
+        
+        // Build checkpoint map by module ID
+        const checkpointMap: Record<string, Checkpoint> = {}
+        courseCheckpoints.forEach(cp => {
+          if (cp.after_module_id) {
+            checkpointMap[cp.after_module_id] = cp
+          }
+        })
+        setCheckpointsByModule(checkpointMap)
+      } catch (error) {
+        console.error('Error loading course details:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadCourseDetails()
+  }, [selectedCourse])
+
+  const toggleModule = (moduleId: string) => {
+    setExpandedModules(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(moduleId)) {
+        newSet.delete(moduleId)
+      } else {
+        newSet.add(moduleId)
+      }
+      return newSet
+    })
+  }
+
+  return (
+    <div className="flex h-full w-full" style={{ display: 'flex', width: '100%', maxWidth: '100%', boxSizing: 'border-box', margin: 0, padding: 0, gap: 0, backgroundColor: '#0f0f1a' }}>
+      {/* Sidebar - Match CommunityTab styling */}
+      <div className="w-[250px] text-white flex flex-col shrink-0" style={{ width: '250px', flexShrink: 0, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)' }}>
+        <div className="p-5 border-b border-slate-700">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center relative overflow-hidden" style={{
+              background: 'linear-gradient(135deg, rgba(60,60,60,0.95) 0%, rgba(40,40,40,0.98) 50%, rgba(30,30,30,0.95) 100%)',
+              border: '2px solid rgba(168,85,247,0.6)',
+              boxShadow: `
+                inset 0 1px 2px rgba(255,255,255,0.1),
+                inset 0 -1px 2px rgba(0,0,0,0.9),
+                0 2px 8px rgba(0,0,0,0.8),
+                0 0 1px rgba(168,85,247,0.5),
+                0 0 20px rgba(168,85,247,0.6), 0 0 40px rgba(168,85,247,0.4)
+              `
+            }}>
+              <div className="absolute inset-0 opacity-20" style={{
+                background: 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(168,85,247,0.1) 2px, rgba(168,85,247,0.1) 4px)',
+                backgroundSize: '8px 100%'
+              }} />
+              <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 relative z-10" style={{
+                filter: 'drop-shadow(0 0 4px rgba(168,85,247,0.8)) drop-shadow(0 0 8px rgba(168,85,247,0.6))',
+              }}>
+                <path d="M13 2L3 14h12v8l10-12H13V2z" fill="rgba(168,85,247,0.9)" stroke="rgba(168,85,247,0.9)" />
+              </svg>
+            </div>
+            <div>
+              <div className="font-bold text-sm">LifeDesign</div>
+              <div className="text-[10px] text-slate-400">2,847 members</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-3 flex-1 overflow-y-auto">
+          <div className="text-[10px] text-[rgba(255,255,255,0.6)] mb-3 font-semibold uppercase tracking-wider px-2">Navigation</div>
+          {[
+            { id: 'community', icon: '💬', label: 'Community' },
+            { id: 'classroom', icon: '📚', label: 'Classroom' },
+            { id: 'members', icon: '👥', label: 'Members' },
+            ...(isAdmin 
+              ? [{ id: 'admin', icon: '⚙️', label: 'Admin', href: '/community/admin' }]
+              : []
+            ),
+          ].map(item => {
+            const hasHref = !!(item as any).href
+            const isActive = activeTab === (item.id as any) || item.id === 'members' || item.id === 'admin'
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (item.id === 'community' || item.id === 'classroom') {
+                    setActiveTab(item.id as 'community' | 'classroom')
+                  } else if (hasHref) {
+                    window.location.href = (item as any).href
+                  }
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm mb-1 text-left transition-all ${
+                  activeTab === item.id
+                    ? 'text-white'
+                    : 'text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.1)]'
+                }`}
+                style={activeTab === item.id ? {
+                  background: 'linear-gradient(135deg, #fde047, #facc15)',
+                  boxShadow: glowShadow('0 0 20px rgba(253,224,71,0.7), 0 0 40px rgba(253,224,71,0.5), 0 8px 30px rgba(253,224,71,0.4)', glowIntensity)
+                } : {}}
+              >
+                <div className="w-5 h-5 flex items-center justify-center">
+                  {item.id === 'community' && (
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                      <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" 
+                        stroke="currentColor" 
+                        strokeWidth="1.5" 
+                        fill="rgba(60,60,60,0.8)"
+                        style={{
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
+                          stroke: isActive ? 'rgba(253,224,71,0.9)' : 'rgba(120,120,120,0.8)'
+                        }}
+                      />
+                      <path d="M7 9h10M7 13h6" 
+                        stroke={isActive ? 'rgba(253,224,71,0.9)' : 'rgba(120,120,120,0.8)'} 
+                        strokeWidth="1.5" 
+                        strokeLinecap="round"
+                        style={{
+                          filter: isActive ? 'drop-shadow(0 0 4px rgba(253,224,71,0.6)) drop-shadow(0 0 8px rgba(253,224,71,0.4))' : 'none'
+                        }}
+                      />
+                    </svg>
+                  )}
+                  {item.id === 'classroom' && (
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                      <path d="M12 2L12 22" 
+                        stroke={isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'} 
+                        strokeWidth="2" 
+                        strokeLinecap="round"
+                        style={{
+                          filter: isActive ? 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' : 'none'
+                        }}
+                      />
+                      <path d="M8 6L12 2L16 6" 
+                        stroke={isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'} 
+                        strokeWidth="1.5" 
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="rgba(60,60,60,0.8)"
+                        style={{
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
+                        }}
+                      />
+                      <path d="M10 18L12 22L14 18" 
+                        stroke={isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'} 
+                        strokeWidth="1.5" 
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="rgba(60,60,60,0.8)"
+                        style={{
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
+                        }}
+                      />
+                    </svg>
+                  )}
+                  {item.id === 'members' && (
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" 
+                        stroke="currentColor" 
+                        strokeWidth="1.5" 
+                        fill="rgba(60,60,60,0.8)"
+                        style={{
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
+                          stroke: isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'
+                        }}
+                      />
+                      <circle cx="9" cy="7" r="4" 
+                        stroke="currentColor" 
+                        strokeWidth="1.5" 
+                        fill="rgba(60,60,60,0.8)"
+                        style={{
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
+                          stroke: isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'
+                        }}
+                      />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" 
+                        stroke={isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'} 
+                        strokeWidth="1.5" 
+                        strokeLinecap="round"
+                        style={{
+                          filter: isActive ? 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' : 'none'
+                        }}
+                      />
+                    </svg>
+                  )}
+                  {item.id === 'admin' && (
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                      <circle cx="12" cy="12" r="3" 
+                        stroke="currentColor" 
+                        strokeWidth="1.5" 
+                        fill="rgba(60,60,60,0.8)"
+                        style={{
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
+                          stroke: 'rgba(34,211,238,0.9)'
+                        }}
+                      />
+                      <path d="M12 1v6m0 6v6M1 12h6m6 0h6" 
+                        stroke="rgba(34,211,238,0.9)" 
+                        strokeWidth="1.5" 
+                        strokeLinecap="round"
+                        style={{
+                          filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))'
+                        }}
+                      />
+                      <path d="M19.07 4.93l-4.24 4.24m0 5.66l4.24 4.24M4.93 19.07l4.24-4.24m0-5.66L4.93 4.93" 
+                        stroke="rgba(34,211,238,0.9)" 
+                        strokeWidth="1.5" 
+                        strokeLinecap="round"
+                        style={{
+                          filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))'
+                        }}
+                      />
+                    </svg>
+                  )}
+                </div>
+                <span className="font-medium">{item.label}</span>
+              </button>
+            )
+          })}
+
+          <div className="mt-6 pt-6 border-t border-[rgba(255,255,255,0.1)]">
+            <button
+              onClick={() => setActiveTab('groupchat')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm mb-1 text-left transition-all relative ${
+                activeTab === 'groupchat'
+                  ? 'text-white'
+                  : 'text-[rgba(255,255,255,0.6)] hover:text-white'
+              }`}
+              style={activeTab === 'groupchat' ? {
+                background: 'linear-gradient(135deg, rgba(60,60,60,0.95) 0%, rgba(40,40,40,0.98) 50%, rgba(30,30,30,0.95) 100%)',
+                border: '2px solid rgba(34,211,238,0.6)',
+                boxShadow: `
+                  inset 0 1px 2px rgba(255,255,255,0.1),
+                  inset 0 -1px 2px rgba(0,0,0,0.9),
+                  0 2px 8px rgba(0,0,0,0.8),
+                  0 0 1px rgba(34,211,238,0.5),
+                  ${glowShadow('0 0 20px rgba(34,211,238,0.7), 0 0 40px rgba(34,211,238,0.5), 0 8px 30px rgba(34,211,238,0.4)', glowIntensity)}
+                `,
+                color: 'rgba(34,211,238,0.95)',
+                textShadow: '0 0 8px rgba(34,211,238,0.6), 0 1px 2px rgba(0,0,0,0.8)'
+              } : {
+                background: 'transparent',
+                border: '1px solid transparent'
+              }}
+            >
+              <div className="w-5 h-5 flex items-center justify-center relative">
+                <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" 
+                    stroke="rgba(255,255,255,0.9)" 
+                    strokeWidth="1.5" 
+                    fill="rgba(60,60,60,0.8)"
+                    style={{
+                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))'
+                    }}
+                  />
+                  <path d="M7 9h10M7 13h6" 
+                    stroke="rgba(255,255,255,0.9)" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute -bottom-0.5 -right-0.5 text-[6px] font-bold leading-none" style={{
+                  color: '#fde047',
+                  textShadow: '0 0 3px rgba(253,224,71,0.8), 0 1px 1px rgba(0,0,0,0.9)',
+                  filter: 'drop-shadow(0 0 2px rgba(253,224,71,0.6))',
+                  background: 'linear-gradient(135deg, rgba(60,60,60,0.95) 0%, rgba(40,40,40,0.98) 50%, rgba(30,30,30,0.95) 100%)',
+                  padding: '1px 2px',
+                  borderRadius: '2px',
+                  border: '0.5px solid rgba(253,224,71,0.3)',
+                  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.1), inset 0 -1px 1px rgba(0,0,0,0.9)'
+                }}>
+                  ld
+                </div>
+              </div>
+              <span className="font-medium">Group Chat</span>
+              <span className="ml-auto w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            </button>
+          </div>
+
+          <div className="mt-6 bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-4 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
+            <div className="text-xs font-semibold mb-2 text-white">Your Progress</div>
+            <div className="h-2 bg-[rgba(255,255,255,0.1)] rounded-full mb-2 overflow-hidden">
+              <div 
+                className="h-full rounded-full"
+                style={{
+                  width: '42%',
+                  background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                  boxShadow: glowShadow('0 0 12px rgba(34,211,238,0.9), 0 0 24px rgba(34,211,238,0.6)', glowIntensity)
+                }}
+              />
+            </div>
+            <div className="text-[11px] text-[rgba(255,255,255,0.6)]">15 of 36 lessons completed</div>
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px]" style={{ backdropFilter: 'blur(10px)' }}>
+          <div className="flex items-center gap-3 mb-3">
+            {affiliate.avatar_url ? (
+              <img 
+                src={affiliate.avatar_url} 
+                alt={affiliate.avatar_name || affiliate.name} 
+                className="w-10 h-10 rounded-full border-2"
+                style={{
+                  borderColor: 'rgba(34,211,238,0.5)',
+                  boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
+                }}
+              />
+            ) : (
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold border-2"
+                style={{
+                  background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                  borderColor: 'rgba(34,211,238,0.5)',
+                  boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
+                }}
+              >
+                <span className="text-white">{(affiliate.avatar_name || affiliate.name).substring(0, 2).toUpperCase()}</span>
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold truncate text-white">{affiliate.avatar_name || affiliate.name}</div>
+              <div className="text-[10px] text-[rgba(255,255,255,0.6)]">Member</div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Link
+              href="/settings"
+              className="px-3 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl transition-colors flex items-center justify-center"
+              title="Settings"
+            >
+              <Settings className="w-4 h-4 text-white" />
+            </Link>
+            <button
+              onClick={async () => {
+                await fetch('/api/auth/logout', { method: 'POST' })
+                window.location.href = '/login'
+              }}
+              className="px-3 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl transition-colors flex items-center justify-center"
+              title="Log out"
+            >
+              <LogOut className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden h-full w-full min-w-0 relative" style={{ flex: 1, minWidth: 0, width: '100%', maxWidth: '100%', margin: 0, padding: 0, boxSizing: 'border-box' }}>
+        {/* Color Splash Header */}
+        <div 
+          className="absolute top-0 left-0 right-0 h-[300px] z-0"
+          style={{
+            background: 'linear-gradient(135deg, #fde047 0%, #fde047 25%, #f472b6 25%, #f472b6 50%, #22d3ee 50%, #22d3ee 75%, #0ea5e9 75%, #0ea5e9 100%)'
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(15,15,26,0.5)] to-[#0f0f1a]" />
+        </div>
+
+        {/* Content Overlay */}
+        <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
+          <div className="h-14 bg-[rgba(26,26,46,0.8)] backdrop-blur-[20px] border-b border-[rgba(255,255,255,0.1)] flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0" style={{ backdropFilter: 'blur(20px)' }}>
+            <div>
+              <h1 className="text-lg font-bold text-white">Classroom</h1>
+              <p className="text-xs text-[rgba(255,255,255,0.6)]">don't just watch. ENACT the lessons IRL. Make your life ACTUALLY better &lt;3</p>
+            </div>
+            {selectedCourse && (
+              <button
+                onClick={() => {
+                  setSelectedCourse(null)
+                  setSelectedLesson(null)
+                  setExpandedModules(new Set())
+                }}
+                className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.2)'
+                }}
+              >
+                ← Back to Courses
+              </button>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto min-h-0 w-full px-4 sm:px-6 lg:px-8 py-8" style={{ width: '100%', maxWidth: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0 }}>
+            {loading ? (
+              <div className="text-center py-12 text-white">Loading...</div>
+            ) : !selectedCourse ? (
+              <CourseSelector
+                courses={courses}
+                glowIntensity={glowIntensity}
+                isAdmin={isAdmin}
+                onSelectCourse={setSelectedCourse}
+                onSelectMindset={() => {
+                  // Handle mindset selection
+                  console.log('Mindset selected')
+                }}
+                onSelectDreamJob={() => {
+                  // Handle dreamjob selection
+                  console.log('DreamJob selected')
+                }}
+                onAddCourse={() => {
+                  // Handle add course
+                  console.log('Add course')
+                }}
+              />
+            ) : (
+              <div className="flex gap-6">
+                {/* Left Sidebar - Course Navigation */}
+                <div className="w-80 rounded-lg overflow-hidden flex flex-col max-h-[calc(100vh-200px)] sticky top-4" style={{
+                  background: 'linear-gradient(135deg, rgba(35,35,40,0.95) 0%, rgba(30,30,35,0.98) 50%, rgba(25,25,30,0.95) 100%)',
+                  border: '1px solid rgba(70,70,75,0.6)',
+                  boxShadow: `
+                    inset 0 1px 1px rgba(255,255,255,0.05),
+                    inset 0 -1px 1px rgba(0,0,0,0.8),
+                    0 2px 8px rgba(0,0,0,0.6)
+                  `
+                }}>
+                  <div className="p-3 shrink-0 border-b" style={{
+                    borderColor: 'rgba(34,211,238,0.2)',
+                    background: 'linear-gradient(135deg, rgba(40,40,45,0.9) 0%, rgba(35,35,40,0.95) 100%)'
+                  }}>
+                    <h3 className="text-xs font-semibold uppercase tracking-widest" style={{
+                      color: 'rgba(34,211,238,0.9)',
+                      textShadow: '0 0 8px rgba(34,211,238,0.4)'
+                    }}>Course Modules</h3>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto">
+                    {modules.length === 0 ? (
+                      <div className="p-4 text-center text-slate-400 text-sm">No content yet</div>
+                    ) : (
+                      <div>
+                        {modules.map((module) => {
+                          const moduleLessons = lessons[module.id] || []
+                          const isExpanded = expandedModules.has(module.id)
+                          // Check if module is locked (has checkpoint before it that's not approved)
+                          const moduleCheckpoint = checkpointsByModule[module.id]
+                          const isLocked = false // TODO: Implement checkpoint locking logic based on user checkpoint status
+                          
+                          return (
+                            <ModuleCard
+                              key={module.id}
+                              module={module}
+                              lessons={moduleLessons}
+                              isAdmin={isAdmin}
+                              isExpanded={isExpanded}
+                              isLocked={isLocked}
+                              onToggleExpand={() => toggleModule(module.id)}
+                              onSelectLesson={(lesson) => {
+                                setSelectedLesson(lesson)
+                                setSelectedModuleId(module.id)
+                              }}
+                              selectedLessonId={selectedLesson?.id}
+                            />
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Main Content - Video Player */}
+                <div className="flex-1 bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden">
+                  {selectedLesson ? (
+                    <div className="space-y-0">
+                      {/* Video Player */}
+                      <div className="aspect-video bg-slate-900 border-b border-slate-700/50 relative">
+                        {(selectedLesson as any).video_type === 'youtube' && selectedLesson.video_url && (
+                          <iframe
+                            key={`${selectedLesson.id}-${extractYouTubeId(selectedLesson.video_url)}`}
+                            src={`https://www.youtube.com/embed/${extractYouTubeId(selectedLesson.video_url)}?rel=0`}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="w-full h-full absolute inset-0"
+                            title={selectedLesson.title}
+                            loading="eager"
+                          />
+                        )}
+                        {(selectedLesson as any).video_type === 'loom' && selectedLesson.video_url && (
+                          <iframe
+                            key={`${selectedLesson.id}-${extractLoomId(selectedLesson.video_url)}`}
+                            src={`https://www.loom.com/embed/${extractLoomId(selectedLesson.video_url)}`}
+                            frameBorder="0"
+                            allowFullScreen
+                            className="w-full h-full absolute inset-0"
+                            title={selectedLesson.title}
+                            loading="eager"
+                          />
+                        )}
+                        {!selectedLesson.video_url && (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <p className="text-slate-400">Video URL not available</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Video Info & Description */}
+                      <div className="p-6 space-y-6 relative z-0">
+                        <div>
+                          <h3 className="text-lg font-semibold text-white mb-2">{selectedLesson.title}</h3>
+                          {selectedLesson.description && (
+                            <p className="text-slate-300 text-sm leading-relaxed">{selectedLesson.description}</p>
+                          )}
+                        </div>
+
+                        {/* Checkpoint Gate */}
+                        {selectedModuleId && checkpointsByModule[selectedModuleId] && (
+                          <CheckpointGate
+                            checkpoint={checkpointsByModule[selectedModuleId]}
+                            onSubmit={async (text: string) => {
+                              // TODO: Implement checkpoint submission
+                              console.log('Submitting checkpoint:', text)
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center h-full min-h-[400px]">
+                      <div className="text-center">
+                        <p className="text-slate-400">Select a lesson to start</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

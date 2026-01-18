@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import { getCurrentAffiliate, isAdmin } from '@/lib/auth'
 import Link from 'next/link'
 import { MindsetNav } from './components/MindsetNav'
-import { AdminDropdown } from '@/components/AdminDropdown'
 
 export default async function MindsetLayout({
   children,
@@ -40,9 +39,6 @@ export default async function MindsetLayout({
               </p>
             </div>
             <div className="flex items-center gap-3">
-              {admin && (
-                <AdminDropdown isAdmin={true} />
-              )}
               {affiliate.avatar_url ? (
                 <img 
                   src={affiliate.avatar_url} 

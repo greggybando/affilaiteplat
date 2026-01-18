@@ -39,7 +39,7 @@ function ModuleCard({ module, isAdmin, courseId }: { module: any; isAdmin: boole
   const [title, setTitle] = useState(module.title)
 
   const save = async () => {
-    await fetch('/api/admin/courses/module', {
+    await fetch('/api/courses/module', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: module.id, title }),
@@ -49,7 +49,7 @@ function ModuleCard({ module, isAdmin, courseId }: { module: any; isAdmin: boole
   }
 
   const togglePublish = async () => {
-    await fetch('/api/admin/courses/module', {
+    await fetch('/api/courses/module', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: module.id, is_published: !module.is_published }),
@@ -141,7 +141,7 @@ function LessonRow({ lesson, isAdmin }: { lesson: any; isAdmin: boolean }) {
   const [videoUrl, setVideoUrl] = useState(lesson.video_url || '')
 
   const save = async () => {
-    await fetch('/api/admin/courses/lesson', {
+    await fetch('/api/courses/lesson', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: lesson.id, title, video_url: videoUrl }),
@@ -151,7 +151,7 @@ function LessonRow({ lesson, isAdmin }: { lesson: any; isAdmin: boolean }) {
   }
 
   const togglePublish = async () => {
-    await fetch('/api/admin/courses/lesson', {
+    await fetch('/api/courses/lesson', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: lesson.id, is_published: !lesson.is_published }),
@@ -240,7 +240,7 @@ function AddButton({ type, parentId }: { type: 'module' | 'lesson'; parentId: st
 
   const add = async () => {
     if (!title.trim()) return
-    const endpoint = type === 'module' ? '/api/admin/courses/module' : '/api/admin/courses/lesson'
+    const endpoint = type === 'module' ? '/api/courses/module' : '/api/courses/lesson'
     const body = type === 'module' ? { course_id: parentId, title } : { module_id: parentId, title }
     await fetch(endpoint, {
       method: 'POST',
