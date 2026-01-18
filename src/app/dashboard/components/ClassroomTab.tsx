@@ -611,12 +611,13 @@ export default function ClassroomTab({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full min-w-0" style={{ flex: 1, minWidth: 0, height: '100%', margin: 0, padding: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
+      <div className="flex-1 flex flex-col h-full min-w-0" style={{ flex: 1, minWidth: 0, height: '100%', margin: 0, padding: 0, boxSizing: 'border-box', overflow: 'hidden', position: 'relative' }}>
         {/* Color Splash Header */}
         <div 
           className="absolute top-0 left-0 right-0 h-[300px] z-0"
           style={{
-            background: 'linear-gradient(135deg, #fde047 0%, #fde047 25%, #f472b6 25%, #f472b6 50%, #22d3ee 50%, #22d3ee 75%, #0ea5e9 75%, #0ea5e9 100%)'
+            background: 'linear-gradient(135deg, #fde047 0%, #fde047 25%, #f472b6 25%, #f472b6 50%, #22d3ee 50%, #22d3ee 75%, #0ea5e9 75%, #0ea5e9 100%)',
+            pointerEvents: 'none'
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(15,15,26,0.5)] to-[#0f0f1a]" />
