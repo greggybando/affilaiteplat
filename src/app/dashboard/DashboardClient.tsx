@@ -1294,6 +1294,9 @@ function ClassroomTab({
   const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({})
   const [attachments, setAttachments] = useState<Record<string, any[]>>({}) // Attachments by lesson ID
   const [loadingAttachments, setLoadingAttachments] = useState<Record<string, boolean>>({})
+  const [editing, setEditing] = useState<{ type: 'section' | 'lesson', sectionId?: string, lessonId?: string } | null>(null)
+  const [editValues, setEditValues] = useState<any>({})
+  const [savingEdit, setSavingEdit] = useState(false)
   const [mindsetCategories, setMindsetCategories] = useState<any[]>([])
   const [dreamJobModules, setDreamJobModules] = useState<any[]>([])
   const [loadingCourses, setLoadingCourses] = useState(true)
@@ -1322,6 +1325,8 @@ function ClassroomTab({
       setNotes({})
       setAttachments({})
       setNotesExpanded({})
+      setEditing(null)
+      setEditValues({})
     }
   }, [activeTab])
 
@@ -1489,6 +1494,95 @@ function ClassroomTab({
       console.error('Error deleting attachment:', error)
       alert('Failed to delete attachment')
     }
+  }
+
+  const handleStartEditSection = (section: any) => {
+    if (!isAdmin) return
+    setEditing({ type: 'section', sectionId: section.id })
+    setEditValues({ title: section.title, description: section.description || '' })
+  }
+
+  const handleStartEditLesson = (lesson: any) => {
+    if (!isAdmin) return
+    setEditing({ type: 'lesson', lessonId: lesson.id, sectionId: selectedCourseLesson?.sectionId })
+    setEditValues({ 
+      title: lesson.title, 
+      description: lesson.description || '',
+      video_url: lesson.video_url || '',
+      video_type: lesson.video_type || 'youtube',
+      duration_minutes: lesson.duration_minutes || 0
+    })
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editing || !isAdmin) return
+
+    setSavingEdit(true)
+    try {
+      if (editing.type === 'section') {
+        const res = await fetch(`/api/admin/courses-v2/${selectedCourse?.id}/sections`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editing.sectionId,
+            title: editValues.title,
+            description: editValues.description
+          })
+        })
+        const data = await res.json()
+        if (res.ok) {
+          // Refresh course detail
+          if (selectedCourse) {
+            await fetchCourseDetail(selectedCourse.slug || selectedCourse.id)
+          }
+          setEditing(null)
+          setEditValues({})
+        } else {
+          alert(data.error || 'Failed to save section')
+        }
+      } else if (editing.type === 'lesson') {
+        const res = await fetch(`/api/admin/courses-v2/${selectedCourse?.id}/sections/${editing.sectionId}/lessons`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editing.lessonId,
+            title: editValues.title,
+            description: editValues.description,
+            video_url: editValues.video_url,
+            video_type: editValues.video_type,
+            duration_minutes: editValues.duration_minutes
+          })
+        })
+        const data = await res.json()
+        if (res.ok) {
+          // Refresh course detail
+          if (selectedCourse) {
+            await fetchCourseDetail(selectedCourse.slug || selectedCourse.id)
+          }
+          // Update selected lesson if it's the one being edited
+          if (selectedCourseLesson?.lesson?.id === editing.lessonId) {
+            setSelectedCourseLesson({
+              sectionId: selectedCourseLesson.sectionId,
+              lesson: data.lesson
+            })
+          }
+          setEditing(null)
+          setEditValues({})
+        } else {
+          alert(data.error || 'Failed to save lesson')
+        }
+      }
+    } catch (error) {
+      console.error('Error saving edit:', error)
+      alert('Failed to save changes')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditing(null)
+    setEditValues({})
   }
 
   const toggleSection = (sectionId: string) => {
@@ -1980,6 +2074,8 @@ function ClassroomTab({
                   setNotes({})
                   setAttachments({})
                   setNotesExpanded({})
+                  setEditing(null)
+                  setEditValues({})
                 }}
                 className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-all"
                 style={{
@@ -2394,39 +2490,89 @@ function ClassroomTab({
                                   boxShadow: '0 0 4px rgba(34,211,238,0.3)',
                                   opacity: 0.6
                                 }} />
-                                <button
-                                  type="button"
-                                  onClick={() => toggleSection(section.id)}
-                                  className="flex-1 flex items-center gap-2.5 text-left transition-all"
-                                  style={{ 
-                                    paddingLeft: '2px'
-                                  }}
-                                >
-                                  <svg
-                                    className="transition-transform duration-200"
-                                    style={{
-                                      width: '10px',
-                                      height: '10px',
-                                      color: 'rgba(34,211,238,0.5)',
-                                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
-                                    }}
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-semibold uppercase tracking-wider" style={{
-                                      color: 'rgba(220,220,225,0.95)',
-                                      textShadow: '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3), 0 0 30px rgba(34,211,238,0.2)',
-                                      letterSpacing: '0.08em',
-                                      fontWeight: 600
-                                    }}>
-                                      {section.title}
+                                {editing?.type === 'section' && editing.sectionId === section.id ? (
+                                  <div className="flex-1 flex flex-col gap-2">
+                                    <input
+                                      type="text"
+                                      value={editValues.title || ''}
+                                      onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
+                                      className="w-full px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-xs font-semibold uppercase tracking-wider"
+                                      placeholder="Section title"
+                                    />
+                                    <textarea
+                                      value={editValues.description || ''}
+                                      onChange={(e) => setEditValues({ ...editValues, description: e.target.value })}
+                                      className="w-full px-2 py-1 bg-slate-700 text-white rounded border border-slate-600 text-xs"
+                                      placeholder="Section description"
+                                      rows={2}
+                                    />
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={handleSaveEdit}
+                                        disabled={savingEdit}
+                                        className="px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded text-xs flex items-center gap-1"
+                                      >
+                                        {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                        Save
+                                      </button>
+                                      <button
+                                        onClick={handleCancelEdit}
+                                        className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs flex items-center gap-1"
+                                      >
+                                        <X className="w-3 h-3" />
+                                        Cancel
+                                      </button>
                                     </div>
                                   </div>
-                                </button>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleSection(section.id)}
+                                      className="flex-1 flex items-center gap-2.5 text-left transition-all"
+                                      style={{ 
+                                        paddingLeft: '2px'
+                                      }}
+                                    >
+                                      <svg
+                                        className="transition-transform duration-200"
+                                        style={{
+                                          width: '10px',
+                                          height: '10px',
+                                          color: 'rgba(34,211,238,0.5)',
+                                          transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                                        }}
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                                      </svg>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-semibold uppercase tracking-wider" style={{
+                                          color: 'rgba(220,220,225,0.95)',
+                                          textShadow: '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3), 0 0 30px rgba(34,211,238,0.2)',
+                                          letterSpacing: '0.08em',
+                                          fontWeight: 600
+                                        }}>
+                                          {section.title}
+                                        </div>
+                                      </div>
+                                    </button>
+                                    {isAdmin && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleStartEditSection(section)
+                                        }}
+                                        className="text-slate-400 hover:text-cyan-400 transition-colors p-1"
+                                        title="Edit section"
+                                      >
+                                        <Settings className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </>
+                                )}
                               </div>
 
                               {/* Lessons - Match DreamJob Video List */}
@@ -2527,15 +2673,105 @@ function ClassroomTab({
 
                       {/* Video Info & Description */}
                       <div className="p-6 space-y-6">
-                        <div>
-                          <h3 className="text-lg font-semibold text-white mb-2">{selectedCourseLesson.lesson.title}</h3>
-                          {selectedCourseLesson.lesson.description && (
-                            <p className="text-slate-300 text-sm leading-relaxed">{selectedCourseLesson.lesson.description}</p>
-                          )}
-                        </div>
-                        {selectedCourseLesson.lesson.duration_minutes > 0 && (
-                          <div className="text-xs text-slate-400">
-                            Duration: {selectedCourseLesson.lesson.duration_minutes} minutes
+                        {isAdmin && editing?.type === 'lesson' && editing.lessonId === selectedCourseLesson.lesson.id ? (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-xs text-slate-400 mb-1">Lesson Title</label>
+                              <input
+                                type="text"
+                                value={editValues.title || ''}
+                                onChange={(e) => setEditValues({ ...editValues, title: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600 text-lg font-bold"
+                                placeholder="Lesson title"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-slate-400 mb-1">Description</label>
+                              <textarea
+                                value={editValues.description || ''}
+                                onChange={(e) => setEditValues({ ...editValues, description: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
+                                placeholder="Lesson description"
+                                rows={3}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-slate-400 mb-1">Video URL</label>
+                              <input
+                                type="text"
+                                value={editValues.video_url || ''}
+                                onChange={(e) => setEditValues({ ...editValues, video_url: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
+                                placeholder="YouTube or Loom URL"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-slate-400 mb-1">Video Type</label>
+                              <select
+                                value={editValues.video_type || 'youtube'}
+                                onChange={(e) => setEditValues({ ...editValues, video_type: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
+                              >
+                                <option value="youtube">YouTube</option>
+                                <option value="loom">Loom</option>
+                                <option value="vimeo">Vimeo</option>
+                                <option value="other">Other</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-slate-400 mb-1">Duration (minutes)</label>
+                              <input
+                                type="number"
+                                value={editValues.duration_minutes || 0}
+                                onChange={(e) => setEditValues({ ...editValues, duration_minutes: parseInt(e.target.value) || 0 })}
+                                className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
+                                placeholder="0"
+                                min="0"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleSaveEdit}
+                                disabled={savingEdit}
+                                className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg flex items-center gap-2"
+                              >
+                                {savingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Save Changes
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg flex items-center gap-2"
+                              >
+                                <X className="w-4 h-4" />
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <h3 className="text-lg font-semibold text-white mb-2">{selectedCourseLesson.lesson.title}</h3>
+                                {selectedCourseLesson.lesson.description && (
+                                  <p className="text-slate-300 text-sm leading-relaxed">{selectedCourseLesson.lesson.description}</p>
+                                )}
+                              </div>
+                              {isAdmin && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartEditLesson(selectedCourseLesson.lesson)}
+                                  className="text-slate-400 hover:text-cyan-400 transition-colors p-1"
+                                  title="Edit lesson"
+                                >
+                                  <Settings className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                            {selectedCourseLesson.lesson.duration_minutes > 0 && (
+                              <div className="text-xs text-slate-400">
+                                Duration: {selectedCourseLesson.lesson.duration_minutes} minutes
+                              </div>
+                            )}
                           </div>
                         )}
                         
