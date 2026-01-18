@@ -611,7 +611,7 @@ export default function ClassroomTab({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full min-w-0" style={{ flex: 1, minWidth: 0, height: '100%', margin: 0, padding: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
+      <div className="flex-1 flex flex-col h-full min-w-0 relative" style={{ flex: 1, minWidth: 0, height: '100%', margin: 0, padding: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
         {/* Color Splash Header - Only in main content area */}
         <div 
           className="absolute top-0 left-0 right-0 h-[300px]"
