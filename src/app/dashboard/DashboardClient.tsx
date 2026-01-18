@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X, Play, FileCheck } from 'lucide-react'
+import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X, Play, FileCheck, Paperclip, Save, Loader2, Check, Trash2 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns'
 import { NotificationsDropdown } from './components/NotificationsDropdown'
@@ -1288,6 +1288,12 @@ function ClassroomTab({
   const [checkpoints, setCheckpoints] = useState<Record<string, any>>({}) // Checkpoints by section ID
   const [checkpointModalOpen, setCheckpointModalOpen] = useState(false)
   const [loadingCheckpoints, setLoadingCheckpoints] = useState(false)
+  const [notes, setNotes] = useState<Record<string, string>>({}) // Notes by lesson ID
+  const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({})
+  const [savingNotes, setSavingNotes] = useState<Record<string, boolean>>({})
+  const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({})
+  const [attachments, setAttachments] = useState<Record<string, any[]>>({}) // Attachments by lesson ID
+  const [loadingAttachments, setLoadingAttachments] = useState<Record<string, boolean>>({})
   const [mindsetCategories, setMindsetCategories] = useState<any[]>([])
   const [dreamJobModules, setDreamJobModules] = useState<any[]>([])
   const [loadingCourses, setLoadingCourses] = useState(true)
@@ -1313,6 +1319,9 @@ function ClassroomTab({
       setExpandedSections(new Set())
       setCheckpoints({})
       setCheckpointModalOpen(false)
+      setNotes({})
+      setAttachments({})
+      setNotesExpanded({})
     }
   }, [activeTab])
 
@@ -1322,6 +1331,14 @@ function ClassroomTab({
       fetchCourseDetail(selectedCourse.slug || selectedCourse.id)
     }
   }, [selectedCourse])
+
+  // Fetch notes and attachments when a lesson is selected
+  useEffect(() => {
+    if (selectedCourseLesson?.lesson?.id) {
+      fetchNotes(selectedCourseLesson.lesson.id)
+      fetchAttachments(selectedCourseLesson.lesson.id)
+    }
+  }, [selectedCourseLesson?.lesson?.id])
 
   const fetchCourseDetail = async (courseIdOrSlug: string) => {
     try {
@@ -1360,6 +1377,117 @@ function ClassroomTab({
       console.error('Error fetching checkpoints:', error)
     } finally {
       setLoadingCheckpoints(false)
+    }
+  }
+
+  const fetchNotes = async (lessonId: string) => {
+    try {
+      const res = await fetch(`/api/courses-v2/lesson-notes?lessonId=${lessonId}`)
+      const data = await res.json()
+      if (res.ok && data.notes !== undefined) {
+        setNotes(prev => ({ ...prev, [lessonId]: data.notes || '' }))
+      }
+    } catch (error) {
+      console.error('Error fetching notes:', error)
+    }
+  }
+
+  const saveNotes = async (lessonId: string) => {
+    if (!isAdmin) return
+    
+    setSavingNotes(prev => ({ ...prev, [lessonId]: true }))
+    setNotesSaved(prev => ({ ...prev, [lessonId]: false }))
+    try {
+      const res = await fetch('/api/courses-v2/lesson-notes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lessonId,
+          notes: notes[lessonId] || ''
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setNotesSaved(prev => ({ ...prev, [lessonId]: true }))
+        setTimeout(() => {
+          setNotesSaved(prev => ({ ...prev, [lessonId]: false }))
+        }, 3000)
+      } else {
+        alert(`Failed to save notes: ${data.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error saving notes:', error)
+      alert('Failed to save notes')
+    } finally {
+      setSavingNotes(prev => ({ ...prev, [lessonId]: false }))
+    }
+  }
+
+  const handleNotesChange = (lessonId: string, value: string) => {
+    setNotes(prev => ({ ...prev, [lessonId]: value }))
+  }
+
+  const fetchAttachments = async (lessonId: string) => {
+    if (loadingAttachments[lessonId]) return
+    setLoadingAttachments(prev => ({ ...prev, [lessonId]: true }))
+    try {
+      const res = await fetch(`/api/courses-v2/lesson-attachments?lessonId=${lessonId}`)
+      const data = await res.json()
+      if (res.ok && data.attachments) {
+        setAttachments(prev => ({ ...prev, [lessonId]: data.attachments }))
+      }
+    } catch (error) {
+      console.error('Error fetching attachments:', error)
+    } finally {
+      setLoadingAttachments(prev => ({ ...prev, [lessonId]: false }))
+    }
+  }
+
+  const handleAddAttachment = async (lessonId: string, files: FileList | null) => {
+    if (!files || !isAdmin) return
+    
+    for (const file of Array.from(files)) {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('lessonId', lessonId)
+
+      try {
+        const res = await fetch('/api/courses-v2/lesson-attachments', {
+          method: 'POST',
+          body: formData
+        })
+        const data = await res.json()
+        if (res.ok && data.attachment) {
+          await fetchAttachments(lessonId)
+        } else {
+          alert(data.error || 'Failed to upload attachment')
+        }
+      } catch (error) {
+        console.error('Error uploading attachment:', error)
+        alert('Failed to upload attachment')
+      }
+    }
+  }
+
+  const handleRemoveAttachment = async (lessonId: string, attachmentId: string) => {
+    if (!isAdmin) return
+    if (!confirm('Are you sure you want to delete this attachment?')) return
+
+    try {
+      const res = await fetch('/api/courses-v2/lesson-attachments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attachmentId })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        await fetchAttachments(lessonId)
+      } else {
+        alert(data.error || 'Failed to delete attachment')
+      }
+    } catch (error) {
+      console.error('Error deleting attachment:', error)
+      alert('Failed to delete attachment')
     }
   }
 
@@ -1849,6 +1977,9 @@ function ClassroomTab({
                   setExpandedSections(new Set())
                   setCheckpoints({})
                   setCheckpointModalOpen(false)
+                  setNotes({})
+                  setAttachments({})
+                  setNotesExpanded({})
                 }}
                 className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-all"
                 style={{
@@ -2418,6 +2549,179 @@ function ClassroomTab({
                             Submit Checkpoint
                           </button>
                         )}
+
+                        {/* Notes Section */}
+                        <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+                          {(() => {
+                            const lessonNotes = notes[selectedCourseLesson.lesson.id] || ''
+                            const hasNotes = lessonNotes && lessonNotes.trim().length > 0
+                            const isExpanded = notesExpanded[selectedCourseLesson.lesson.id] || false
+                            const shouldAutoExpand = hasNotes && lessonNotes.length > 200
+                            
+                            return (
+                              <>
+                                <div className="flex items-center justify-between p-4">
+                                  <h3 className="text-sm font-semibold text-slate-300">Notes</h3>
+                                  <div className="flex items-center gap-2">
+                                    {isAdmin && (
+                                      <button
+                                        onClick={() => saveNotes(selectedCourseLesson.lesson.id)}
+                                        disabled={savingNotes[selectedCourseLesson.lesson.id]}
+                                        className={`text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                                          notesSaved[selectedCourseLesson.lesson.id]
+                                            ? 'bg-cyan-600 text-white'
+                                            : savingNotes[selectedCourseLesson.lesson.id]
+                                            ? 'bg-cyan-800 text-white'
+                                            : 'bg-cyan-600 hover:bg-cyan-700 text-white'
+                                        }`}
+                                        title="Save notes"
+                                      >
+                                        {savingNotes[selectedCourseLesson.lesson.id] ? (
+                                          <>
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                            Saving...
+                                          </>
+                                        ) : notesSaved[selectedCourseLesson.lesson.id] ? (
+                                          <>
+                                            <Check className="w-3 h-3" />
+                                            Saved!
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Save className="w-3 h-3" />
+                                            Save
+                                          </>
+                                        )}
+                                      </button>
+                                    )}
+                                    {hasNotes && (
+                                      <button
+                                        onClick={() => setNotesExpanded(prev => ({ ...prev, [selectedCourseLesson.lesson.id]: !isExpanded }))}
+                                        className="text-xs text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1"
+                                      >
+                                        {isExpanded ? (
+                                          <>
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                            </svg>
+                                            Collapse
+                                          </>
+                                        ) : (
+                                          <>
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                            Expand
+                                          </>
+                                        )}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Notes Content */}
+                                {(isAdmin || shouldAutoExpand || isExpanded || !hasNotes) && (
+                                  <div className="px-4 pb-4">
+                                    {isAdmin ? (
+                                      <textarea
+                                        value={lessonNotes}
+                                        onChange={(e) => handleNotesChange(selectedCourseLesson.lesson.id, e.target.value)}
+                                        placeholder="Add your notes, thoughts, or questions about this lesson..."
+                                        className="w-full bg-transparent text-slate-200 placeholder-slate-500 resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50"
+                                        style={{ 
+                                          height: 'auto',
+                                          minHeight: '120px'
+                                        }}
+                                        onInput={(e) => {
+                                          const target = e.target as HTMLTextAreaElement
+                                          target.style.height = 'auto'
+                                          target.style.height = `${Math.max(120, target.scrollHeight)}px`
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className="w-full bg-transparent text-slate-200 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50 whitespace-pre-wrap min-h-[60px]">
+                                        {lessonNotes || <span className="text-slate-500 italic">No notes available</span>}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {/* Show collapsed preview for regular users only when collapsed */}
+                                {!isAdmin && hasNotes && !shouldAutoExpand && !isExpanded && (
+                                  <div className="px-4 pb-4">
+                                    <div className="text-sm text-slate-400 line-clamp-2 p-3 border border-slate-700/50 rounded-lg bg-slate-800/30">
+                                      {lessonNotes}
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )
+                          })()}
+                        </div>
+
+                        {/* Course Materials Section */}
+                        <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+                          <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
+                            <h4 className="text-sm font-semibold text-slate-300">Course Materials</h4>
+                            {isAdmin && (
+                              <label className="cursor-pointer">
+                                <input
+                                  type="file"
+                                  multiple
+                                  onChange={(e) => handleAddAttachment(selectedCourseLesson.lesson.id, e.target.files)}
+                                  className="hidden"
+                                />
+                                <span className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm font-medium transition-colors">
+                                  <Paperclip className="w-4 h-4" />
+                                  Upload
+                                </span>
+                              </label>
+                            )}
+                          </div>
+
+                          {/* Attachments List */}
+                          <div className="p-4">
+                            {loadingAttachments[selectedCourseLesson.lesson.id] ? (
+                              <div className="text-sm text-slate-400 text-center py-4">Loading attachments...</div>
+                            ) : (attachments[selectedCourseLesson.lesson.id] || []).length > 0 ? (
+                              <div className="space-y-2">
+                                {(attachments[selectedCourseLesson.lesson.id] || []).map((attachment: any) => (
+                                  <div
+                                    key={attachment.id}
+                                    className="flex items-center justify-between px-3 py-2.5 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:bg-slate-800 transition-colors"
+                                  >
+                                    <a
+                                      href={attachment.file_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-2 flex-1 hover:text-cyan-400 transition-colors"
+                                    >
+                                      <Paperclip className="w-4 h-4 text-slate-400" />
+                                      <span className="text-sm text-slate-300 truncate">{attachment.title || attachment.file_name}</span>
+                                      {attachment.file_size && (
+                                        <span className="text-xs text-slate-500">
+                                          ({(attachment.file_size / 1024).toFixed(1)} KB)
+                                        </span>
+                                      )}
+                                    </a>
+                                    {isAdmin && (
+                                      <button
+                                        onClick={() => handleRemoveAttachment(selectedCourseLesson.lesson.id, attachment.id)}
+                                        className="text-slate-400 hover:text-red-400 transition-colors p-1"
+                                        title="Delete attachment"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-slate-400 text-center py-4">
+                                {isAdmin ? 'No attachments yet. Upload files to share with students.' : 'No materials available for this lesson.'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ) : (
