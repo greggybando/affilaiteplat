@@ -9,7 +9,7 @@ import { CourseSelector } from './classroom/CourseSelector'
 import { ModuleCard } from './classroom/ModuleCard'
 import { CheckpointGate } from './classroom/CheckpointGate'
 import { Settings, LogOut } from 'lucide-react'
-import { MindsetModuleList } from '@/app/mindset/components/MindsetModuleList'
+import { MindsetModuleListRefactored as MindsetModuleList } from '@/app/mindset/components/MindsetModuleListRefactored'
 import { DreamJobModuleList } from '@/app/dreamjob/components/DreamJobModuleList'
 
 // Helper function for glow shadow
