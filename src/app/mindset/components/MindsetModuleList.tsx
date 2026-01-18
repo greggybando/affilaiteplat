@@ -1628,7 +1628,7 @@ export function MindsetModuleList({ modules, categories, affiliate, onDataChange
   }, [selectedVideo?.video?.id])
 
   return (
-    <div className="flex gap-6">
+    <div className="flex gap-6 w-full h-full px-4 sm:px-6 lg:px-8 py-8" style={{ width: '100%', height: '100%', boxSizing: 'border-box' }}>
       {/* Left Sidebar - Course Navigation */}
       <div className="w-80 rounded-lg overflow-hidden flex flex-col max-h-[calc(100vh-200px)] sticky top-4" style={{
         background: 'linear-gradient(135deg, rgba(35,35,40,0.95) 0%, rgba(30,30,35,0.98) 50%, rgba(25,25,30,0.95) 100%)',

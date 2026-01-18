@@ -299,10 +299,9 @@ export default function ClassroomTab({
   }
 
   return (
-    <div className="flex h-full w-full" style={{ display: 'flex', width: '100%', maxWidth: '100%', boxSizing: 'border-box', margin: 0, padding: 0, gap: 0, backgroundColor: '#0f0f1a' }}>
-      {/* Sidebar - Match CommunityTab styling - Hide when mindset/dreamjob selected */}
-      {!selectedWorld && (
-      <div className="w-[250px] text-white flex flex-col shrink-0" style={{ width: '250px', flexShrink: 0, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)' }}>
+    <div className="flex h-full w-full" style={{ display: 'flex', width: '100%', height: '100%', boxSizing: 'border-box', margin: 0, padding: 0, gap: 0, backgroundColor: '#0f0f1a' }}>
+      {/* Sidebar - Match CommunityTab styling - Always visible */}
+      <div className="w-[250px] text-white flex flex-col shrink-0 h-full" style={{ width: '250px', minWidth: '250px', flexShrink: 0, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)', height: '100%' }}>
         <div className="p-5 border-b border-slate-700">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center relative overflow-hidden" style={{
@@ -610,10 +609,9 @@ export default function ClassroomTab({
           </div>
         </div>
       </div>
-      )}
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col overflow-hidden h-full w-full min-w-0 relative ${selectedWorld ? 'w-full' : ''}`} style={{ flex: 1, minWidth: 0, width: '100%', maxWidth: '100%', margin: 0, padding: 0, boxSizing: 'border-box' }}>
+      <div className="flex-1 flex flex-col h-full min-w-0" style={{ flex: 1, minWidth: 0, height: '100%', margin: 0, padding: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
         {/* Color Splash Header */}
         <div 
           className="absolute top-0 left-0 right-0 h-[300px] z-0"
@@ -651,33 +649,35 @@ export default function ClassroomTab({
             )}
           </div>
 
-          <div className={`flex-1 overflow-y-auto min-h-0 w-full ${selectedWorld ? '' : 'px-4 sm:px-6 lg:px-8 py-8'}`} style={{ width: '100%', maxWidth: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0 }}>
+          <div className="flex-1 overflow-y-auto min-h-0 w-full" style={{ width: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0, padding: 0 }}>
             {loading ? (
               <div className="text-center py-12 text-white">Loading...</div>
             ) : !selectedWorld && !selectedCourse ? (
-              <CourseSelector
-                courses={courses}
-                glowIntensity={glowIntensity}
-                isAdmin={isAdmin}
-                onSelectCourse={setSelectedCourse}
-                onSelectMindset={() => {
-                  console.log('[ClassroomTab] onSelectMindset called, setting selectedWorld to "mindset"')
-                  setSelectedWorld('mindset')
-                }}
-                onSelectDreamJob={() => {
-                  console.log('[ClassroomTab] onSelectDreamJob called, setting selectedWorld to "dreamjob"')
-                  setSelectedWorld('dreamjob')
-                }}
-                onAddCourse={() => {
-                  // Handle add course
-                  console.log('Add course')
-                }}
-              />
+              <div className="px-4 sm:px-6 lg:px-8 py-8">
+                <CourseSelector
+                  courses={courses}
+                  glowIntensity={glowIntensity}
+                  isAdmin={isAdmin}
+                  onSelectCourse={setSelectedCourse}
+                  onSelectMindset={() => {
+                    console.log('[ClassroomTab] onSelectMindset called, setting selectedWorld to "mindset"')
+                    setSelectedWorld('mindset')
+                  }}
+                  onSelectDreamJob={() => {
+                    console.log('[ClassroomTab] onSelectDreamJob called, setting selectedWorld to "dreamjob"')
+                    setSelectedWorld('dreamjob')
+                  }}
+                  onAddCourse={() => {
+                    // Handle add course
+                    console.log('Add course')
+                  }}
+                />
+              </div>
             ) : selectedWorld === 'mindset' ? (
-              <div className="w-full h-full" style={{ width: '100%', height: '100%' }}>
-                {loadingCourses ? (
-                  <div className="text-center py-12 text-white">Loading courses...</div>
-                ) : mindsetCategories.length === 0 ? (
+              loadingCourses ? (
+                <div className="text-center py-12 text-white">Loading courses...</div>
+              ) : mindsetCategories.length === 0 ? (
+                <div className="px-4 sm:px-6 lg:px-8 py-8">
                   <div className="text-center py-12">
                     <div className="inline-block bg-[rgba(255,255,255,0.06)] backdrop-blur-[10px] rounded-2xl p-8 border border-[rgba(255,255,255,0.12)] max-w-xl">
                       <h2 className="text-xl font-semibold text-white mb-2">Course not configured yet</h2>
@@ -687,60 +687,42 @@ export default function ClassroomTab({
                       </p>
                     </div>
                   </div>
-                ) : (
-                  <MindsetModuleList 
-                    modules={mindsetModules} 
-                    categories={mindsetCategories}
-                    affiliate={affiliate}
-                    onDataChange={async () => {
-                      // Refetch data after drag operation
-                      try {
-                        const res = await fetch('/api/courses/structure?courseType=mindset')
-                        const data = await res.json()
-                        if (data.categories) {
-                          setMindsetCategories(data.categories)
-                        }
-                        const modulesList: any[] = []
-                        data.categories?.forEach((category: any) => {
-                          category.sections?.forEach((section: any) => {
-                            modulesList.push({
-                              ...section,
-                              categoryId: category.id,
-                              categoryTitle: category.title
-                            })
+                </div>
+              ) : (
+                <MindsetModuleList 
+                  modules={mindsetModules} 
+                  categories={mindsetCategories}
+                  affiliate={affiliate}
+                  onDataChange={async () => {
+                    // Refetch data after drag operation
+                    try {
+                      const res = await fetch('/api/courses/structure?courseType=mindset')
+                      const data = await res.json()
+                      if (data.categories) {
+                        setMindsetCategories(data.categories)
+                      }
+                      const modulesList: any[] = []
+                      data.categories?.forEach((category: any) => {
+                        category.sections?.forEach((section: any) => {
+                          modulesList.push({
+                            ...section,
+                            categoryId: category.id,
+                            categoryTitle: category.title
                           })
                         })
-                        setMindsetModules(modulesList)
-                      } catch (error) {
-                        console.error('Error refetching mindset data:', error)
-                      }
-                    }}
-                  />
-                )}
-              </div>
+                      })
+                      setMindsetModules(modulesList)
+                    } catch (error) {
+                      console.error('Error refetching mindset data:', error)
+                    }
+                  }}
+                />
+              )
             ) : selectedWorld === 'dreamjob' ? (
-              <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-8">
-                <div className="bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 mb-6 border border-[rgba(255,255,255,0.1)]" style={{ backdropFilter: 'blur(10px)' }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h2 className="text-lg font-semibold text-white">Course Progress</h2>
-                      <p className="text-[rgba(255,255,255,0.6)] text-sm">Complete all 8 modules to master the Dream Job method</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">0%</span>
-                      <p className="text-[rgba(255,255,255,0.5)] text-sm">Complete</p>
-                    </div>
-                  </div>
-                  <div className="w-full bg-[rgba(255,255,255,0.1)] rounded-full h-2">
-                    <div 
-                      className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500" 
-                      style={{ width: '0%' }}
-                    />
-                  </div>
-                </div>
-                {loadingCourses ? (
-                  <div className="text-center py-12 text-white">Loading courses...</div>
-                ) : dreamJobModules.length === 0 ? (
+              loadingCourses ? (
+                <div className="text-center py-12 text-white">Loading courses...</div>
+              ) : dreamJobModules.length === 0 ? (
+                <div className="px-4 sm:px-6 lg:px-8 py-8">
                   <div className="text-center py-12">
                     <div className="inline-block bg-[rgba(255,255,255,0.06)] backdrop-blur-[10px] rounded-2xl p-8 border border-[rgba(255,255,255,0.12)] max-w-xl">
                       <h2 className="text-xl font-semibold text-white mb-2">Dream Job course not configured yet</h2>
@@ -749,29 +731,29 @@ export default function ClassroomTab({
                       </p>
                     </div>
                   </div>
-                ) : (
-                  <DreamJobModuleList 
-                    modules={dreamJobModules} 
-                    affiliate={affiliate}
-                    onVideoSelect={() => {}}
-                    onDataChange={async () => {
-                      // Refetch data after drag operation
-                      try {
-                        const res = await fetch('/api/courses/structure?courseType=dreamjob')
-                        const data = await res.json()
-                        // DreamJob API returns { modules: [...] } directly
-                        if (data.modules && Array.isArray(data.modules)) {
-                          setDreamJobModules(data.modules)
-                        } else {
-                          console.warn('[ClassroomTab] DreamJob refetch returned unexpected structure:', data)
-                        }
-                      } catch (error) {
-                        console.error('Error refetching dreamjob data:', error)
+                </div>
+              ) : (
+                <DreamJobModuleList 
+                  modules={dreamJobModules} 
+                  affiliate={affiliate}
+                  onVideoSelect={() => {}}
+                  onDataChange={async () => {
+                    // Refetch data after drag operation
+                    try {
+                      const res = await fetch('/api/courses/structure?courseType=dreamjob')
+                      const data = await res.json()
+                      // DreamJob API returns { modules: [...] } directly
+                      if (data.modules && Array.isArray(data.modules)) {
+                        setDreamJobModules(data.modules)
+                      } else {
+                        console.warn('[ClassroomTab] DreamJob refetch returned unexpected structure:', data)
                       }
-                    }}
-                  />
-                )}
-              </div>
+                    } catch (error) {
+                      console.error('Error refetching dreamjob data:', error)
+                    }
+                  }}
+                />
+              )
             ) : selectedCourse ? (
               <div className="flex gap-6">
                 {/* Left Sidebar - Course Navigation */}
