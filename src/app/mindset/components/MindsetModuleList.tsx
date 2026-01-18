@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Edit2, Save, X, Download, Loader2, Check, GripVertical, FileCheck, Lock, CheckCircle } from 'lucide-react'
+import { Edit2, Save, X, Download, Loader2, Check, GripVertical, FileCheck, Lock, CheckCircle, Plus, Trash2 } from 'lucide-react'
 import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 import {
   DndContext,
@@ -20,6 +20,10 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useAdmin } from '@/lib/hooks/useAdmin'
+import { InlineEditWrapper } from '@/app/dashboard/components/classroom/admin/InlineEditWrapper'
+import { EditableTitle } from '@/app/dashboard/components/classroom/admin/EditableTitle'
+import { DragHandle as AdminDragHandle } from '@/app/dashboard/components/classroom/admin/DragHandle'
 
 interface Video {
   id: string
@@ -725,7 +729,69 @@ function SortableCategoryItem({
 }
 
 export function MindsetModuleList({ modules, categories, affiliate, onDataChange }: MindsetModuleListProps) {
-  const isAdmin = affiliate?.role === 'admin' || affiliate?.role === 'moderator'
+  const isAdmin = useAdmin(affiliate)
+  
+  // Admin handler functions (placeholder - will connect to APIs next)
+  const handleUpdateModuleTitle = async (moduleId: number, newTitle: string) => {
+    console.log('[Admin] Update module title:', { moduleId, newTitle })
+    // TODO: API call to update module title
+    alert(`Update module ${moduleId} to: ${newTitle}\n(API integration pending)`)
+  }
+
+  const handleDeleteModule = async (moduleId: number) => {
+    console.log('[Admin] Delete module:', moduleId)
+    // TODO: API call to delete module
+    alert(`Delete module ${moduleId}\n(API integration pending)`)
+  }
+
+  const handleAddLesson = async (moduleId: number) => {
+    console.log('[Admin] Add lesson to module:', moduleId)
+    // TODO: API call to add lesson
+    alert(`Add lesson to module ${moduleId}\n(API integration pending)`)
+  }
+
+  const handleUpdateLessonTitle = async (lessonId: string, newTitle: string) => {
+    console.log('[Admin] Update lesson title:', { lessonId, newTitle })
+    // TODO: API call to update lesson title
+    alert(`Update lesson ${lessonId} to: ${newTitle}\n(API integration pending)`)
+  }
+
+  const handleDeleteLesson = async (lessonId: string) => {
+    console.log('[Admin] Delete lesson:', lessonId)
+    // TODO: API call to delete lesson
+    alert(`Delete lesson ${lessonId}\n(API integration pending)`)
+  }
+
+  const handleAddModule = async () => {
+    console.log('[Admin] Add new module')
+    // TODO: API call to add module
+    alert('Add new module\n(API integration pending)')
+  }
+
+  const handleUpdateCategoryTitle = async (categoryId: string, newTitle: string) => {
+    console.log('[Admin] Update category title:', { categoryId, newTitle })
+    // TODO: API call to update category title
+    alert(`Update category ${categoryId} to: ${newTitle}\n(API integration pending)`)
+  }
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    console.log('[Admin] Delete category:', categoryId)
+    // TODO: API call to delete category
+    alert(`Delete category ${categoryId}\n(API integration pending)`)
+  }
+
+  const handleAddCategory = async () => {
+    console.log('[Admin] Add new category')
+    // TODO: API call to add category
+    alert('Add new category\n(API integration pending)')
+  }
+
+  const handleAddSectionToCategory = async (categoryId: string) => {
+    console.log('[Admin] Add section to category:', categoryId)
+    // TODO: API call to add section
+    alert(`Add section to category ${categoryId}\n(API integration pending)`)
+  }
+  
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['starthere', 'mindset', 'lifedesign', 'thinkingtools']))
   const getInitialExpandedSections = () => {
     if (categories && categories.length > 0) {
