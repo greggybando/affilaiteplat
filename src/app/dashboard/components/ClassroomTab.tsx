@@ -301,7 +301,7 @@ export default function ClassroomTab({
   return (
     <div className="flex h-full w-full" style={{ display: 'flex', width: '100%', height: '100%', boxSizing: 'border-box', margin: 0, padding: 0, gap: 0, backgroundColor: '#0f0f1a' }}>
       {/* Sidebar - Match CommunityTab styling - Always visible */}
-      <div className="w-[250px] text-white flex flex-col shrink-0 h-full" style={{ width: '250px', minWidth: '250px', flexShrink: 0, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)', height: '100%' }}>
+      <div className="w-[250px] text-white flex flex-col shrink-0 h-full relative" style={{ width: '250px', minWidth: '250px', flexShrink: 0, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)', height: '100%', zIndex: 100 }}>
         <div className="p-5 border-b border-slate-700">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center relative overflow-hidden" style={{
@@ -611,22 +611,22 @@ export default function ClassroomTab({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full min-w-0 relative" style={{ flex: 1, minWidth: 0, height: '100%', margin: 0, padding: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
-        {/* Color Splash Header - Only in main content area */}
-        <div 
-          className="absolute top-0 left-0 right-0 h-[300px]"
-          style={{
-            background: 'linear-gradient(135deg, #fde047 0%, #fde047 25%, #f472b6 25%, #f472b6 50%, #22d3ee 50%, #22d3ee 75%, #0ea5e9 75%, #0ea5e9 100%)',
-            pointerEvents: 'none',
-            zIndex: 0
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(15,15,26,0.5)] to-[#0f0f1a]" />
-        </div>
-
+      <div className="flex-1 flex flex-col h-full min-w-0 relative" style={{ flex: 1, minWidth: 0, height: '100%', margin: 0, padding: 0, boxSizing: 'border-box', overflow: 'hidden', zIndex: 1 }}>
         {/* Content Overlay */}
         <div className="relative flex-1 flex flex-col overflow-hidden" style={{ zIndex: 1 }}>
-          <div className="h-14 bg-[rgba(26,26,46,0.8)] backdrop-blur-[20px] border-b border-[rgba(255,255,255,0.1)] flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0" style={{ backdropFilter: 'blur(20px)' }}>
+          {/* Color Splash Header - Only in main content area, contained */}
+          <div 
+            className="absolute top-0 left-0 right-0 h-[300px]"
+            style={{
+              background: 'linear-gradient(135deg, #fde047 0%, #fde047 25%, #f472b6 25%, #f472b6 50%, #22d3ee 50%, #22d3ee 75%, #0ea5e9 75%, #0ea5e9 100%)',
+              pointerEvents: 'none',
+              zIndex: 0
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(15,15,26,0.5)] to-[#0f0f1a]" />
+          </div>
+
+          <div className="h-14 bg-[rgba(26,26,46,0.8)] backdrop-blur-[20px] border-b border-[rgba(255,255,255,0.1)] flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 relative z-10" style={{ backdropFilter: 'blur(20px)' }}>
             <div>
               <h1 className="text-lg font-bold text-white">Classroom</h1>
               <p className="text-xs text-[rgba(255,255,255,0.6)]">don't just watch. ENACT the lessons IRL. Make your life ACTUALLY better &lt;3</p>
@@ -651,7 +651,7 @@ export default function ClassroomTab({
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto min-h-0 w-full" style={{ width: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0, padding: 0 }}>
+          <div className="flex-1 overflow-y-auto min-h-0 w-full relative z-10" style={{ width: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0, padding: 0 }}>
             {loading ? (
               <div className="text-center py-12 text-white">Loading...</div>
             ) : !selectedWorld && !selectedCourse ? (
