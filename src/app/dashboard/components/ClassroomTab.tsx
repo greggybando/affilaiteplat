@@ -691,11 +691,12 @@ export default function ClassroomTab({
                   </div>
                 </div>
               ) : (
-                <MindsetModuleList 
-                  modules={mindsetModules} 
-                  categories={mindsetCategories}
-                  affiliate={affiliate}
-                  onDataChange={async () => {
+                <div className="px-4 sm:px-6 lg:px-8 py-8">
+                  <MindsetModuleList 
+                    modules={mindsetModules} 
+                    categories={mindsetCategories}
+                    affiliate={affiliate}
+                    onDataChange={async () => {
                     // Refetch data after drag operation
                     try {
                       const res = await fetch('/api/courses/structure?courseType=mindset')
@@ -719,6 +720,7 @@ export default function ClassroomTab({
                     }
                   }}
                 />
+                </div>
               )
             ) : selectedWorld === 'dreamjob' ? (
               loadingCourses ? (
@@ -735,11 +737,12 @@ export default function ClassroomTab({
                   </div>
                 </div>
               ) : (
-                <DreamJobModuleList 
-                  modules={dreamJobModules} 
-                  affiliate={affiliate}
-                  onVideoSelect={() => {}}
-                  onDataChange={async () => {
+                <div className="px-4 sm:px-6 lg:px-8 py-8">
+                  <DreamJobModuleList 
+                    modules={dreamJobModules} 
+                    affiliate={affiliate}
+                    onVideoSelect={() => {}}
+                    onDataChange={async () => {
                     // Refetch data after drag operation
                     try {
                       const res = await fetch('/api/courses/structure?courseType=dreamjob')
@@ -755,6 +758,7 @@ export default function ClassroomTab({
                     }
                   }}
                 />
+                </div>
               )
             ) : selectedCourse ? (
               <div className="flex gap-6">
