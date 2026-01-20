@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // Fetch attachments from course_attachments table (new system)
     const { data: attachments, error } = await (supabaseAdmin as any)
       .from('course_attachments')
-      .select('id, title, file_url, file_name, display_name, file_type, file_size, sort_order, created_at')
+      .select('id, title, file_url, file_type, file_size, sort_order, created_at')
       .eq('lesson_id', lessonId)
       .order('sort_order', { ascending: true })
 
