@@ -79,26 +79,37 @@ export async function POST(request: NextRequest) {
     // Determine file type
     const fileType = file.type || (fileExt === 'pdf' ? 'application/pdf' : 'application/octet-stream')
 
+    // Verify lesson exists first
+    const { data: lessonCheck, error: lessonError } = await supabaseAdmin
+      .from('course_lessons')
+      .select('id')
+      .eq('id', lessonId)
+      .single()
+
+    if (lessonError || !lessonCheck) {
+      console.error('[API] ❌ Lesson not found:', { lessonId, error: lessonError })
+      await supabaseAdmin.storage.from('course-files').remove([filePath])
+      return NextResponse.json({ 
+        error: 'Lesson not found',
+        details: `Lesson with ID ${lessonId} does not exist`
+      }, { status: 404 })
+    }
+
     // Save attachment record
-    console.log('[API] Inserting attachment record:', {
+    const insertData = {
       lesson_id: lessonId,
       title: file.name,
       file_url: urlData.publicUrl,
       file_type: fileType,
       file_size: file.size,
       sort_order: 0
-    })
+    }
+
+    console.log('[API] Inserting attachment record:', insertData)
 
     const { data: attachment, error: dbError } = await (supabaseAdmin as any)
       .from('course_attachments')
-      .insert({
-        lesson_id: lessonId,
-        title: file.name,
-        file_url: urlData.publicUrl,
-        file_type: fileType,
-        file_size: file.size,
-        sort_order: 0
-      })
+      .insert(insertData)
       .select()
       .single()
 
@@ -121,7 +132,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         error: 'Failed to save attachment record',
         details: dbError.message,
-        code: dbError.code
+        code: dbError.code,
+        hint: dbError.hint
       }, { status: 500 })
     }
 
