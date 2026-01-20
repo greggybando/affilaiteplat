@@ -187,32 +187,43 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Remove attachment
 export async function DELETE(request: NextRequest) {
+  console.log('🔴 DELETE ROUTE HIT:', request.url)
+  
   try {
     const affiliate = await getCurrentAffiliate()
+    console.log('🔴 Affiliate:', affiliate?.id, affiliate?.role)
+    
     if (!affiliate || (affiliate.role !== 'admin' && affiliate.role !== 'moderator')) {
+      console.log('🔴 UNAUTHORIZED')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
+    console.log('🔴 ID:', id)
 
     if (!id) {
+      console.log('🔴 NO ID')
       return NextResponse.json({ error: 'Attachment ID is required' }, { status: 400 })
     }
 
+    console.log('🔴 Calling supabase delete...')
     const { error } = await supabaseAdmin
       .from('course_attachments')
       .delete()
       .eq('id', id)
 
+    console.log('🔴 Delete result - error:', error)
+
     if (error) {
-      console.error('Error deleting attachment:', error)
+      console.error('🔴 ERROR:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    console.log('🔴 SUCCESS')
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Error in attachment delete API:', error)
+    console.error('🔴 EXCEPTION:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
