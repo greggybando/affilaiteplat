@@ -369,6 +369,7 @@ export function CourseSelector({
                             <button
                               type="button"
                               onClick={(e) => {
+                                alert('DELETE BUTTON CLICKED! Course: ' + course.title)
                                 e.stopPropagation()
                                 e.preventDefault()
                                 console.log('[CourseSelector] 🔴🔴🔴 DELETE BUTTON CLICKED:', course.id, course.title)
@@ -382,7 +383,7 @@ export function CourseSelector({
                                 })
                               }}
                               className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.15)] transition-colors flex items-center gap-2 cursor-pointer"
-                              style={{ pointerEvents: 'auto' }}
+                              style={{ pointerEvents: 'auto', zIndex: 1000 }}
                             >
                               <Trash2 size={14} />
                               Delete Course
