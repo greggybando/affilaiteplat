@@ -899,13 +899,54 @@ export function SkillBankCourseView({
 
       {/* Header Bar */}
       <div className="absolute top-0 left-0 right-0 h-16 border-b border-[rgba(255,255,255,0.1)] px-6 flex items-center justify-between z-20 bg-[rgba(15,15,26,0.8)] backdrop-blur-sm">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-[rgba(255,255,255,0.6)] hover:text-white transition-colors text-sm"
-        >
-          <ArrowLeft size={16} />
-          Back to Courses
-        </button>
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-[rgba(255,255,255,0.6)] hover:text-white transition-colors text-sm flex-shrink-0"
+          >
+            <ArrowLeft size={16} />
+            Back to Courses
+          </button>
+          
+          {/* Course Title - Editable for Admins */}
+          {isAdmin && editingCourseTitle ? (
+            <input
+              type="text"
+              value={courseTitle}
+              onChange={(e) => setCourseTitle(e.target.value)}
+              onBlur={() => {
+                setEditingCourseTitle(false)
+                handleSaveCourseTitle()
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  setEditingCourseTitle(false)
+                  handleSaveCourseTitle()
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault()
+                  setCourseTitle(courseData.title)
+                  setEditingCourseTitle(false)
+                }
+              }}
+              className="flex-1 bg-transparent border-b-2 border-cyan-500 outline-none text-lg font-semibold text-white px-2 min-w-0"
+              autoFocus
+            />
+          ) : (
+            <h1
+              className={`text-lg font-semibold text-white truncate ${isAdmin ? 'cursor-pointer hover:text-cyan-400 transition-colors' : ''}`}
+              onClick={() => {
+                if (isAdmin) {
+                  setEditingCourseTitle(true)
+                }
+              }}
+              title={isAdmin ? 'Click to edit course title' : ''}
+            >
+              {courseData.title}
+            </h1>
+          )}
+        </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
           {isAdmin && (
