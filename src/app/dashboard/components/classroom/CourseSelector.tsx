@@ -280,6 +280,10 @@ export function CourseSelector({
               <div
                 key={course.id}
                 onClick={(e) => {
+                  // Don't select course if clicking on menu area
+                  if ((e.target as HTMLElement).closest('[data-menu-container]')) {
+                    return
+                  }
                   console.log('[CourseSelector] Click:', { 
                     title: course.title, 
                     isPublished, 
