@@ -144,14 +144,30 @@ export function SkillBankCourseView({
   }
 
   const loadLessonAttachments = async () => {
-    if (!selectedLesson) return
+    if (!selectedLesson) {
+      console.log('[CLIENT] No lesson selected, skipping attachment load')
+      return
+    }
+    
+    console.log('[CLIENT] 📥 Loading attachments for lesson:', selectedLesson.id)
     
     try {
       const res = await fetch(`/api/courses-v2/lesson-attachments?lessonId=${selectedLesson.id}`)
+      console.log('[CLIENT] Attachments response:', res.status, res.statusText)
+      
       const data = await res.json()
-      setLessonAttachments(data.attachments || [])
-    } catch (error) {
-      console.error('Error loading attachments:', error)
+      console.log('[CLIENT] Attachments data:', data)
+      
+      if (data.error) {
+        console.error('[CLIENT] Error loading attachments:', data.error)
+        setLessonAttachments([])
+      } else {
+        setLessonAttachments(data.attachments || [])
+        console.log('[CLIENT] ✅ Loaded', data.attachments?.length || 0, 'attachments')
+      }
+    } catch (error: any) {
+      console.error('[CLIENT] ❌ Error loading attachments:', error)
+      setLessonAttachments([])
     }
   }
 
@@ -561,33 +577,55 @@ export function SkillBankCourseView({
   // File upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (!files || files.length === 0 || !selectedLesson) return
+    if (!files || files.length === 0) {
+      console.log('[CLIENT] No files selected')
+      return
+    }
+    
+    if (!selectedLesson) {
+      console.error('[CLIENT] No lesson selected')
+      alert('Please select a lesson first')
+      return
+    }
+    
+    console.log('[CLIENT] 📤 Uploading files:', {
+      fileCount: files.length,
+      lessonId: selectedLesson.id,
+      files: Array.from(files).map(f => ({ name: f.name, size: f.size }))
+    })
     
     setUploadingFile(true)
     
     try {
       for (const file of Array.from(files)) {
+        console.log('[CLIENT] Uploading file:', file.name)
         const formData = new FormData()
         formData.append('file', file)
         formData.append('lessonId', selectedLesson.id)
-        formData.append('fileName', file.name)
         
         const res = await fetch('/api/courses-v2/lesson-attachments', {
           method: 'POST',
           body: formData
         })
         
+        console.log('[CLIENT] Upload response:', res.status, res.statusText)
+        
         const data = await res.json()
         if (data.error) {
+          console.error('[CLIENT] Upload error:', data.error)
           alert(`Error uploading ${file.name}: ${data.error}`)
+        } else {
+          console.log('[CLIENT] ✅ File uploaded:', data.attachment)
         }
       }
       
+      console.log('[CLIENT] Reloading attachments...')
       await loadLessonAttachments()
       showSavedIndicator()
-    } catch (error) {
-      console.error('Error uploading file:', error)
-      alert('Failed to upload file')
+      console.log('[CLIENT] ✅ All files uploaded successfully')
+    } catch (error: any) {
+      console.error('[CLIENT] ❌ Error uploading file:', error)
+      alert(`Failed to upload file: ${error.message || 'Unknown error'}`)
     } finally {
       setUploadingFile(false)
       e.target.value = ''
@@ -597,21 +635,31 @@ export function SkillBankCourseView({
   const handleDeleteAttachment = async (attachmentId: string) => {
     if (!confirm('Delete this attachment?')) return
     
+    console.log('[CLIENT] 🗑️ Deleting attachment:', attachmentId)
+    
     try {
-      const res = await fetch(`/api/courses-v2/lesson-attachments?id=${attachmentId}`, {
-        method: 'DELETE'
+      const res = await fetch('/api/courses-v2/lesson-attachments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attachmentId })
       })
       
+      console.log('[CLIENT] Delete response:', res.status, res.statusText)
+      
       if (!res.ok) {
-        alert('Failed to delete attachment')
+        const errorData = await res.json().catch(() => ({}))
+        console.error('[CLIENT] Delete error:', errorData)
+        alert(`Failed to delete attachment: ${errorData.error || `HTTP ${res.status}`}`)
         return
       }
       
+      const data = await res.json()
+      console.log('[CLIENT] ✅ Attachment deleted:', data)
       await loadLessonAttachments()
       showSavedIndicator()
-    } catch (error) {
-      console.error('Error deleting attachment:', error)
-      alert('Failed to delete attachment')
+    } catch (error: any) {
+      console.error('[CLIENT] ❌ Error deleting attachment:', error)
+      alert(`Failed to delete attachment: ${error.message || 'Unknown error'}`)
     }
   }
 
@@ -1105,7 +1153,7 @@ export function SkillBankCourseView({
                                 rel="noopener noreferrer"
                                 className="text-sm text-slate-300 hover:text-cyan-400 transition-colors truncate"
                               >
-                                {attachment.file_name}
+                                {attachment.title || attachment.file_name || 'Untitled'}
                               </a>
                               {attachment.file_size && (
                                 <span className="text-xs text-slate-500 flex-shrink-0">
@@ -1127,24 +1175,62 @@ export function SkillBankCourseView({
                     )}
 
                     {isAdmin && (
-                      <label className="block border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-cyan-500 transition-colors cursor-pointer bg-slate-900/20">
+                      <label 
+                        className="block border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-cyan-500 transition-colors cursor-pointer bg-slate-900/20"
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          e.currentTarget.classList.add('border-cyan-500')
+                        }}
+                        onDragLeave={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          e.currentTarget.classList.remove('border-cyan-500')
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          e.currentTarget.classList.remove('border-cyan-500')
+                          
+                          if (!selectedLesson) {
+                            alert('Please select a lesson first')
+                            return
+                          }
+                          
+                          const files = e.dataTransfer.files
+                          if (files.length > 0) {
+                            console.log('[CLIENT] 📤 Files dropped:', files.length)
+                            const fakeEvent = {
+                              target: { files, value: '' },
+                              preventDefault: () => {},
+                              stopPropagation: () => {}
+                            } as any
+                            handleFileUpload(fakeEvent)
+                          }
+                        }}
+                      >
                         <input
                           type="file"
                           multiple
                           onChange={handleFileUpload}
                           className="hidden"
-                          disabled={uploadingFile}
+                          disabled={uploadingFile || !selectedLesson}
                         />
                         {uploadingFile ? (
                           <>
                             <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
                             <p className="text-sm text-cyan-400">Uploading...</p>
                           </>
+                        ) : !selectedLesson ? (
+                          <>
+                            <Upload size={28} className="mx-auto mb-2 text-slate-500 opacity-50" />
+                            <p className="text-sm text-slate-400 mb-1">Select a lesson to upload files</p>
+                          </>
                         ) : (
                           <>
                             <Upload size={28} className="mx-auto mb-2 text-slate-500" />
                             <p className="text-sm text-slate-400 mb-1">Drop files here or click to upload</p>
-                            <p className="text-xs text-slate-500">PDFs, images, documents, etc.</p>
+                            <p className="text-xs text-slate-500">PDFs, images, documents, etc. (max 50MB)</p>
                           </>
                         )}
                       </label>
