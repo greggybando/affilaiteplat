@@ -534,9 +534,12 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                         {group.messages.map((msg, index) => {
                           const isOwnMessage = msg.sender_id === currentUserId
                           const prevMessage = index > 0 ? group.messages[index - 1] : null
+                          const isLastMessage = index === group.messages.length - 1
+                          // Show timestamp if: no previous message, different sender, >5 min apart, OR it's the last message in the group
                           const showTimestamp = !prevMessage || 
                             prevMessage.sender_id !== msg.sender_id ||
-                            new Date(msg.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000 // 5 minutes
+                            new Date(msg.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000 || // 5 minutes
+                            isLastMessage // Always show timestamp for the last message
                           
                           const messageTime = new Date(msg.created_at)
                           const timeStr = messageTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
