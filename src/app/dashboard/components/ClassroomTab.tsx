@@ -42,11 +42,20 @@ export default function ClassroomTab({
   
   // Helper to generate slug from title
   const generateSlug = (title: string): string => {
-    return title
+    if (!title || typeof title !== 'string') {
+      throw new Error('Title must be a non-empty string')
+    }
+    const timestamp = Date.now()
+    const slug = `${title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      + '-' + Date.now()
+      .replace(/^-|-$/g, '')}-${timestamp}`
+    
+    if (!slug || slug.length === 0) {
+      throw new Error('Generated slug is empty')
+    }
+    
+    return slug
   }
   
   const [selectedWorld, setSelectedWorld] = useState<'mindset' | 'dreamjob' | null>(null)
@@ -688,18 +697,29 @@ export default function ClassroomTab({
                       const title = 'New Course'
                       const slug = generateSlug(title)
                       
-                      console.log('[ClassroomTab] Creating new course:', { title, slug })
+                      // Validate before sending
+                      if (!title || !slug) {
+                        console.error('[ClassroomTab] Validation failed:', { title, slug })
+                        alert('Error: Title and slug are required')
+                        return
+                      }
+                      
+                      console.log('[ClassroomTab] Creating new course:', { title, slug, titleType: typeof title, slugType: typeof slug })
+                      
+                      const requestBody = {
+                        title: title.trim(),
+                        slug: slug.trim(),
+                        description: '',
+                        emoji: '📚',
+                        color: '#06B6D4'
+                      }
+                      
+                      console.log('[ClassroomTab] Request body:', requestBody)
                       
                       const res = await fetch('/api/courses-v2', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          title,
-                          slug,
-                          description: '',
-                          emoji: '📚',
-                          color: '#06B6D4'
-                        })
+                        body: JSON.stringify(requestBody)
                       })
                       
                       const data = await res.json()
