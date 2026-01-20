@@ -99,8 +99,112 @@ export function SkillBankCourseView({
       setLessonNotes(selectedLesson.description || '')
       setLessonVideoUrl(selectedLesson.video_url || '')
       loadLessonAttachments()
+      loadNotes()
+      loadCheckpoint()
     }
-  }, [selectedLesson])
+  }, [selectedLesson, selectedSectionId])
+  
+  // Fetch checkpoints for course
+  useEffect(() => {
+    if (course.id && sections.length > 0) {
+      loadAllCheckpoints()
+    }
+  }, [course.id, sections.length])
+  
+  const loadAllCheckpoints = async () => {
+    try {
+      const res = await fetch(`/api/checkpoints/by-course-v2?courseId=${course.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        const checkpointMap: Record<string, any> = {}
+        
+        // Map checkpoints by section ID
+        if (data.byUUID) {
+          sections.forEach(section => {
+            if (data.byUUID[section.id]) {
+              checkpointMap[section.id] = data.byUUID[section.id]
+            }
+          })
+        }
+        
+        setCheckpoints(checkpointMap)
+      }
+    } catch (error) {
+      console.error('Error loading checkpoints:', error)
+    }
+  }
+  
+  const loadCheckpoint = async () => {
+    if (!selectedSectionId) return
+    
+    if (checkpoints[selectedSectionId]) {
+      return // Already loaded
+    }
+    
+    setLoadingCheckpoints(prev => ({ ...prev, [selectedSectionId]: true }))
+    try {
+      const res = await fetch(`/api/checkpoints/by-course-v2?courseId=${course.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.byUUID && data.byUUID[selectedSectionId]) {
+          setCheckpoints(prev => ({ ...prev, [selectedSectionId]: data.byUUID[selectedSectionId] }))
+        }
+      }
+    } catch (error) {
+      console.error('Error loading checkpoint:', error)
+    } finally {
+      setLoadingCheckpoints(prev => ({ ...prev, [selectedSectionId]: false }))
+    }
+  }
+  
+  const loadNotes = async () => {
+    if (!selectedLesson) return
+    
+    try {
+      const res = await fetch(`/api/courses-v2/lesson-notes?lessonId=${selectedLesson.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.notes !== undefined) {
+          setLessonNotes(data.notes || '')
+        }
+      }
+    } catch (error) {
+      console.error('Error loading notes:', error)
+    }
+  }
+  
+  const saveNotes = async () => {
+    if (!selectedLesson) return
+    
+    setSavingNotes(prev => ({ ...prev, [selectedLesson.id]: true }))
+    setNotesSaved(prev => ({ ...prev, [selectedLesson.id]: false }))
+    
+    try {
+      const res = await fetch('/api/courses-v2/lesson-notes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lessonId: selectedLesson.id,
+          notes: lessonNotes || ''
+        })
+      })
+      
+      if (res.ok) {
+        setNotesSaved(prev => ({ ...prev, [selectedLesson.id]: true }))
+        setTimeout(() => {
+          setNotesSaved(prev => ({ ...prev, [selectedLesson.id]: false }))
+        }, 2000)
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        alert(`Failed to save notes: ${errorData.error || `HTTP ${res.status}`}`)
+      }
+    } catch (error: any) {
+      console.error('Error saving notes:', error)
+      alert('Failed to save notes')
+    } finally {
+      setSavingNotes(prev => ({ ...prev, [selectedLesson.id]: false }))
+    }
+  }
 
   const loadSections = async () => {
     try {
@@ -570,16 +674,9 @@ export function SkillBankCourseView({
     setExpandedSections(newExpanded)
   }
 
-  // Auto-save notes
+  // Handle notes change (no auto-save - manual save button)
   const handleNotesChange = (value: string) => {
     setLessonNotes(value)
-    
-    if (selectedLesson && selectedSectionId && isAdmin) {
-      clearTimeout((window as any).notesSaveTimer)
-      ;(window as any).notesSaveTimer = setTimeout(() => {
-        handleUpdateLesson(selectedSectionId, selectedLesson.id, { description: value })
-      }, 1500)
-    }
   }
 
   // Auto-save video URL
