@@ -986,12 +986,18 @@ export function SkillBankCourseView({
                 <input
                   type="text"
                   value={courseTitle}
-                  onChange={(e) => setCourseTitle(e.target.value)}
-                  onBlur={() => {
+                  onChange={(e) => {
+                    e.stopPropagation()
+                    setCourseTitle(e.target.value)
+                  }}
+                  onBlur={(e) => {
+                    e.stopPropagation()
                     setEditingCourseTitle(false)
                     handleSaveCourseTitle()
                   }}
+                  onClick={(e) => e.stopPropagation()}
                   onKeyDown={(e) => {
+                    e.stopPropagation()
                     if (e.key === 'Enter') {
                       e.preventDefault()
                       setEditingCourseTitle(false)
