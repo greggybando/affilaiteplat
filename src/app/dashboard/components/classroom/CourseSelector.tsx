@@ -94,10 +94,7 @@ export function CourseSelector({
       console.log('[CourseSelector] Deleting course:', { courseId, courseTitle })
       
       const res = await fetch(`/api/courses-v2/${courseId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        method: 'DELETE'
       })
       
       console.log('[CourseSelector] Delete response status:', res.status)
@@ -253,7 +250,7 @@ export function CourseSelector({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" style={{ gridAutoRows: 'minmax(200px, auto)' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" style={{ gridAutoRows: '1fr' }}>
           {skillbankCourses.map((course) => {
             const courseColor = course.color || '#06B6D4'
             const rgbValues = hexToRgb(courseColor)
