@@ -4,9 +4,15 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
-// GET - Fetch attachments for a lesson
+// GET - Fetch attachments for a lesson (all authenticated users can view)
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication but allow all authenticated users (not just admins)
+    const affiliate = await getCurrentAffiliate()
+    if (!affiliate) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const searchParams = request.nextUrl.searchParams
     const lessonId = searchParams.get('lessonId')
 
@@ -14,14 +20,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing lessonId' }, { status: 400 })
     }
 
+    console.log('[lesson-attachments GET] Fetching attachments:', { 
+      lessonId, 
+      affiliateId: affiliate.id 
+    })
+
     // Fetch attachments from course_attachments table (new system)
     const { data: attachments, error } = await (supabaseAdmin as any)
       .from('course_attachments')
-      .select('id, title, file_url, file_type, file_size, sort_order, created_at')
+      .select('id, title, file_url, file_name, display_name, file_type, file_size, sort_order, created_at')
       .eq('lesson_id', lessonId)
       .order('sort_order', { ascending: true })
 
-    if (error) throw error
+    if (error) {
+      console.error('[lesson-attachments GET] Database error:', error)
+      throw error
+    }
+
+    console.log('[lesson-attachments GET] Found attachments:', { 
+      lessonId, 
+      count: attachments?.length || 0 
+    })
 
     return NextResponse.json({ attachments: attachments || [] })
   } catch (error: any) {

@@ -105,15 +105,24 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
     
     setLoadingAttachments(true)
     try {
-      const res = await fetch(`/api/courses-v2/lesson-attachments?lessonId=${selectedLesson.id}`)
+      const res = await fetch(`/api/courses-v2/lesson-attachments?lessonId=${selectedLesson.id}`, {
+        credentials: 'include'
+      })
       if (res.ok) {
         const data = await res.json()
+        console.log('[CourseDetailClient] Attachments loaded:', { 
+          lessonId: selectedLesson.id, 
+          attachments: data.attachments, 
+          count: data.attachments?.length || 0 
+        })
         setLessonAttachments(data.attachments || [])
       } else {
+        const errorData = await res.json().catch(() => ({}))
+        console.error('[CourseDetailClient] Failed to load attachments:', res.status, errorData)
         setLessonAttachments([])
       }
     } catch (error) {
-      console.error('Error loading attachments:', error)
+      console.error('[CourseDetailClient] Error loading attachments:', error)
       setLessonAttachments([])
     } finally {
       setLoadingAttachments(false)
