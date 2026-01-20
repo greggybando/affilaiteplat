@@ -115,17 +115,29 @@ export function SkillBankCourseView({
       
       setSections(sectionsWithLessons)
       
-      // Auto-expand first section and select first lesson
-      if (sectionsWithLessons.length > 0) {
+      // Only auto-expand/select on initial load, not on reloads
+      if (sections.length === 0 && sectionsWithLessons.length > 0) {
         const firstSection = sectionsWithLessons[0]
         setExpandedSections(new Set([firstSection.id]))
         if (firstSection.lessons && firstSection.lessons.length > 0) {
           setSelectedSectionId(firstSection.id)
           setSelectedLesson(firstSection.lessons[0])
         }
+      } else {
+        // Preserve current selection after reload
+        if (selectedLesson) {
+          const updatedSection = sectionsWithLessons.find(s => s.id === selectedSectionId)
+          const updatedLesson = updatedSection?.lessons?.find((l: any) => l.id === selectedLesson.id)
+          if (updatedLesson) {
+            setSelectedLesson(updatedLesson)
+          }
+        }
       }
+      
+      return sectionsWithLessons
     } catch (error) {
       console.error('Error loading sections:', error)
+      return []
     } finally {
       setLoading(false)
     }
@@ -340,18 +352,23 @@ export function SkillBankCourseView({
       console.log('Updated lesson data:', updatedLesson)
       
       // Reload sections to get fresh data from server
-      await loadSections()
+      const reloadedSections = await loadSections()
       
       // Update selected lesson if it's the one we just updated
-      if (selectedLesson?.id === lessonId) {
-        // Find the updated lesson from the reloaded sections
-        const updatedSection = sections.find(s => s.id === sectionId)
-        const updatedLessonFromServer = updatedSection?.lessons?.find((l: any) => l.id === lessonId)
-        if (updatedLessonFromServer) {
-          console.log('Updating selected lesson:', updatedLessonFromServer)
-          setSelectedLesson(updatedLessonFromServer)
-        }
-      }
+      // Use a timeout to ensure state has updated
+      setTimeout(() => {
+        setSections(currentSections => {
+          const updatedSection = currentSections.find(s => s.id === sectionId)
+          const updatedLessonFromServer = updatedSection?.lessons?.find((l: any) => l.id === lessonId)
+          
+          if (updatedLessonFromServer && selectedLesson?.id === lessonId) {
+            console.log('Updating selected lesson from reloaded data:', updatedLessonFromServer)
+            setSelectedLesson(updatedLessonFromServer)
+          }
+          
+          return currentSections
+        })
+      }, 100)
       
       // Update editing title state to match saved value
       if (updates.title) {
