@@ -25,8 +25,16 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ attachments: attachments || [] })
   } catch (error: any) {
-    console.error('Error fetching lesson attachments:', error)
-    return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 })
+    console.error('[API] ❌ Error fetching lesson attachments:')
+    console.error('[API]   Error:', error)
+    console.error('[API]   Error code:', error.code)
+    console.error('[API]   Error message:', error.message)
+    console.error('[API]   Error details:', error.details)
+    return NextResponse.json({ 
+      error: error.message || 'Server error',
+      code: error.code,
+      details: error.details
+    }, { status: 500 })
   }
 }
 
@@ -141,8 +149,17 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ attachment })
   } catch (error: any) {
-    console.error('Error uploading attachment:', error)
-    return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 })
+    console.error('[API] ❌ Exception in POST attachment:')
+    console.error('[API]   Error:', error)
+    console.error('[API]   Error code:', error.code)
+    console.error('[API]   Error message:', error.message)
+    console.error('[API]   Error details:', error.details)
+    console.error('[API]   Error stack:', error.stack)
+    return NextResponse.json({ 
+      error: error.message || 'Server error',
+      code: error.code,
+      details: error.details
+    }, { status: 500 })
   }
 }
 
