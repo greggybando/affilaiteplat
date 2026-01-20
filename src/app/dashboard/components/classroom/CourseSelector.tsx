@@ -346,6 +346,7 @@ export function CourseSelector({
                         <button
                           type="button"
                           onClick={(e) => {
+                            alert('MENU BUTTON CLICKED! isAdmin: ' + isAdmin)
                             e.stopPropagation()
                             e.preventDefault()
                             console.log('[CourseSelector] 🔵 Menu button clicked for:', course.id, 'isAdmin:', isAdmin)
@@ -392,8 +393,9 @@ export function CourseSelector({
                         )}
                       </div>
                     ) : (
-                      <div className="w-6 h-6" /> // Spacer when not admin
-                    )}
+                      <div className="w-6 h-6" onClick={() => alert('NOT ADMIN - isAdmin: ' + isAdmin)} />
+                    )
+                    })()}
                   </div>
                 </div>
                 
