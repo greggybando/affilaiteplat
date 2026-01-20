@@ -66,27 +66,37 @@ export function CourseImporter({ courseId, onImportComplete, onClose }: CourseIm
       // Format 2: "- https://..." (just URL, use as title)
       // Format 3: "Lesson Title: https://..."
       // Format 4: Just a URL on its own line
-      const lessonMatch = line.match(/^[-•]\s*(.+?):\s*(https?:\/\/.+)$/i) ||
-                         line.match(/^[-•]\s*(https?:\/\/.+)$/i) ||
-                         line.match(/^(.+?):\s*(https?:\/\/.+)$/i) ||
-                         line.match(/^(https?:\/\/.+)$/i)
+      const lessonMatch1 = line.match(/^[-•]\s*(.+?):\s*(https?:\/\/.+)$/i)
+      const lessonMatch2 = line.match(/^[-•]\s*(https?:\/\/.+)$/i)
+      const lessonMatch3 = line.match(/^(.+?):\s*(https?:\/\/.+)$/i)
+      const lessonMatch4 = line.match(/^(https?:\/\/.+)$/i)
       
-      if (lessonMatch && currentSection) {
-        const videoUrl = lessonMatch[2] || lessonMatch[1]
-        const lessonTitle = lessonMatch[1] && !lessonMatch[1].startsWith('http') 
-          ? lessonMatch[1].trim() 
-          : extractVideoTitle(videoUrl)
-        
-        currentSection.lessons.push({
-          title: lessonTitle,
-          videoUrl: videoUrl.trim()
-        })
-      } else if (currentSection && line.match(/^https?:\/\//i)) {
-        // Just a URL on its own line
-        currentSection.lessons.push({
-          title: extractVideoTitle(line),
-          videoUrl: line.trim()
-        })
+      if (currentSection) {
+        if (lessonMatch1) {
+          // Format 1: "- Lesson Title: https://..."
+          currentSection.lessons.push({
+            title: lessonMatch1[1].trim(),
+            videoUrl: lessonMatch1[2].trim()
+          })
+        } else if (lessonMatch2) {
+          // Format 2: "- https://..."
+          currentSection.lessons.push({
+            title: extractVideoTitle(lessonMatch2[1]),
+            videoUrl: lessonMatch2[1].trim()
+          })
+        } else if (lessonMatch3) {
+          // Format 3: "Lesson Title: https://..."
+          currentSection.lessons.push({
+            title: lessonMatch3[1].trim(),
+            videoUrl: lessonMatch3[2].trim()
+          })
+        } else if (lessonMatch4) {
+          // Format 4: Just a URL on its own line
+          currentSection.lessons.push({
+            title: extractVideoTitle(lessonMatch4[1]),
+            videoUrl: lessonMatch4[1].trim()
+          })
+        }
       }
     }
     
