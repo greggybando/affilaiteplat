@@ -889,15 +889,22 @@ export function SkillBankCourseView({
               background: 'linear-gradient(135deg, rgba(40,40,45,0.9) 0%, rgba(35,35,40,0.95) 100%)'
             }}
           >
-            <h3 
-              className="text-xs font-semibold uppercase tracking-widest" 
-              style={{
-                color: `rgba(${rgbValues},0.9)`,
-                textShadow: `0 0 8px rgba(${rgbValues},0.4)`
-              }}
-            >
-              COURSE MODULES
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 
+                className="text-xs font-semibold uppercase tracking-widest" 
+                style={{
+                  color: `rgba(${rgbValues},0.9)`,
+                  textShadow: `0 0 8px rgba(${rgbValues},0.4)`
+                }}
+              >
+                COURSE MODULES
+              </h3>
+              {isAdmin && (
+                <span className="text-[10px] text-slate-400" title="Double-click titles to edit, hover for delete buttons">
+                  ✏️ Edit Mode
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
