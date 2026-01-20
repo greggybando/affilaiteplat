@@ -651,9 +651,12 @@ export function SkillBankCourseView({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
+                                e.preventDefault()
+                                console.log('Delete section clicked:', section.id)
                                 handleDeleteSection(section.id)
                               }}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:text-red-400 flex-shrink-0"
+                              className="opacity-60 hover:opacity-100 transition-opacity p-1.5 hover:text-red-400 flex-shrink-0"
+                              title="Delete section"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -728,9 +731,12 @@ export function SkillBankCourseView({
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation()
+                                      e.preventDefault()
+                                      console.log('Delete lesson clicked:', lesson.id, 'from section:', section.id)
                                       handleDeleteLesson(section.id, lesson.id)
                                     }}
-                                    className="opacity-0 group-hover/lesson:opacity-100 transition-opacity p-1 hover:text-red-400 flex-shrink-0"
+                                    className="opacity-60 hover:opacity-100 transition-opacity p-1 hover:text-red-400 flex-shrink-0"
+                                    title="Delete lesson"
                                   >
                                     <Trash2 size={12} />
                                   </button>
