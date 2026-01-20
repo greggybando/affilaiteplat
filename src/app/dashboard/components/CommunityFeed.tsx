@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { Heart, Star, MessageCircle, Image as ImageIcon, X, Send, MoreVertical, Copy, CheckCircle2, ChevronDown, Edit, Trash2, Pin, Lock, Flag, AlertTriangle } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
 
 interface User {
@@ -1020,7 +1021,15 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                         userName={post.user.name}
                         userAvatar={post.user.avatar}
                         onChatClick={() => {
-                          window.location.href = `/dashboard?openDM=${post.user.id}`
+                          const currentPath = window.location.pathname
+                          if (currentPath === '/dashboard') {
+                            window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: post.user.id } }))
+                          } else {
+                            router.replace('/dashboard')
+                            requestAnimationFrame(() => {
+                              window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: post.user.id } }))
+                            })
+                          }
                         }}
                       >
                         <Link href={`/profile/${post.user.id}`} className="flex items-center gap-3">

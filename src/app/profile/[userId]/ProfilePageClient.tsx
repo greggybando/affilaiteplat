@@ -159,7 +159,15 @@ export function ProfilePageClient({ profileData, currentUserId }: ProfilePageCli
               {!isOwnProfile && (
                 <button
                   onClick={() => {
-                    window.location.href = `/dashboard?openDM=${profileData.id}`
+                    const currentPath = window.location.pathname
+                    if (currentPath === '/dashboard') {
+                      window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: profileData.id } }))
+                    } else {
+                      window.location.href = '/dashboard'
+                      requestAnimationFrame(() => {
+                        window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: profileData.id } }))
+                      })
+                    }
                   }}
                   className="px-6 py-3 rounded-xl text-white font-semibold transition-all transform hover:scale-[1.02] relative overflow-hidden group"
                   style={{

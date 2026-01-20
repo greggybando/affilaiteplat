@@ -295,21 +295,22 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
         // Replace temp message with real message - preserve optimistic timestamp to maintain session grouping
         if (data.message) {
           setMessages(prev => {
-            const updated = prev.map(msg => 
-              msg.id === tempId 
-                ? {
-                    id: data.message.id,
-                    sender_id: data.message.sender_id,
-                    content: data.message.content,
-                    // Keep optimistic timestamp to preserve session grouping
-                    created_at: optimisticTimestamp
-                  }
-                : msg
-            )
-            // Messages should already be in order, but ensure they stay sorted
-            return updated.sort((a, b) => 
-              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            )
+            // Find the temp message to preserve its position
+            const tempIndex = prev.findIndex(msg => msg.id === tempId)
+            if (tempIndex === -1) return prev // Temp message not found, return unchanged
+            
+            // Replace temp message with real one, keeping optimistic timestamp
+            const updated = [...prev]
+            updated[tempIndex] = {
+              id: data.message.id,
+              sender_id: data.message.sender_id,
+              content: data.message.content,
+              // Keep optimistic timestamp to preserve session grouping
+              created_at: optimisticTimestamp
+            }
+            
+            // Return updated array without sorting to preserve grouping
+            return updated
           })
         } else {
           // Fallback: refetch after a delay if response doesn't include message

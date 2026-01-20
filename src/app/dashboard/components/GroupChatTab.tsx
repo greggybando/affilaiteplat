@@ -1468,7 +1468,15 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                                           e.preventDefault()
                                           e.stopPropagation()
                                           setShowUserMenu(null)
-                                          window.location.href = `/dashboard?openDM=${msg.user_id}`
+                                          const currentPath = window.location.pathname
+                                          if (currentPath === '/dashboard') {
+                                            window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: msg.user_id } }))
+                                          } else {
+                                            window.location.href = '/dashboard'
+                                            requestAnimationFrame(() => {
+                                              window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: msg.user_id } }))
+                                            })
+                                          }
                                         }}
                                         className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 transition-colors"
                                         style={{ color: 'rgba(255,255,255,0.9)' }}
