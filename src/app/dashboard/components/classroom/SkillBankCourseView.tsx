@@ -127,6 +127,23 @@ export function SkillBankCourseView({
     if (selectedLesson) {
       setLessonVideoUrl(selectedLesson.video_url || '')
       setLessonNotes('') // Reset notes first, then load from API
+      
+      // Debug: Check what data exists for this lesson
+      const debugCheck = async () => {
+        try {
+          const debugRes = await fetch(`/api/courses-v2/debug-notes-attachments?lessonId=${selectedLesson.id}`, {
+            credentials: 'include'
+          })
+          if (debugRes.ok) {
+            const debugData = await debugRes.json()
+            console.log('[SkillBankCourseView] 🔍 DEBUG - Lesson data check:', debugData)
+          }
+        } catch (err) {
+          console.error('[SkillBankCourseView] Debug check failed:', err)
+        }
+      }
+      debugCheck()
+      
       loadLessonAttachments()
       loadNotes()
       loadCheckpoint()
