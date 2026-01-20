@@ -227,9 +227,16 @@ export function SkillBankCourseView({
     setNotesSaved(prev => ({ ...prev, [selectedLesson.id]: false }))
     
     try {
+      console.log('[SkillBankCourseView] Saving notes:', { 
+        lessonId: selectedLesson.id, 
+        notesLength: notes.length,
+        notesPreview: notes.substring(0, 50)
+      })
+      
       const res = await fetch('/api/courses-v2/lesson-notes', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           lessonId: selectedLesson.id,
           notes: notes || ''
@@ -237,6 +244,8 @@ export function SkillBankCourseView({
       })
       
       if (res.ok) {
+        const data = await res.json().catch(() => ({}))
+        console.log('[SkillBankCourseView] Notes saved successfully:', data)
         lastSavedNotesRef.current = notes
         setNotesSaved(prev => ({ ...prev, [selectedLesson.id]: true }))
         setTimeout(() => {
@@ -244,7 +253,11 @@ export function SkillBankCourseView({
         }, 2000)
       } else {
         const errorData = await res.json().catch(() => ({}))
-        console.error(`Failed to save notes: ${errorData.error || `HTTP ${res.status}`}`)
+        console.error(`[SkillBankCourseView] Failed to save notes:`, { 
+          status: res.status, 
+          error: errorData.error || `HTTP ${res.status}`,
+          lessonId: selectedLesson.id
+        })
       }
     } catch (error: any) {
       console.error('Error saving notes:', error)
