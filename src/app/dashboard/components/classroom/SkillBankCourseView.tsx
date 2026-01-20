@@ -1365,6 +1365,7 @@ export function SkillBankCourseView({
                         </div>
 
                         {/* Notes Content */}
+                        {/* Always show textarea for admins, show read-only for regular users when expanded */}
                         {(isAdmin || shouldAutoExpand || isExpanded || !hasNotes) && (
                           <div className="px-4 pb-4">
                             {isAdmin ? (
@@ -1372,7 +1373,7 @@ export function SkillBankCourseView({
                                 value={lessonNotes}
                                 onChange={(e) => handleNotesChange(e.target.value)}
                                 placeholder="Add your notes, thoughts, or questions about this lesson..."
-                                className="w-full bg-transparent text-slate-200 placeholder-slate-500 resize-y focus:outline-none focus:ring-2 focus:ring-cyan-500/50 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50"
+                                className="w-full bg-transparent text-slate-200 placeholder-slate-500 resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50"
                                 style={{ 
                                   height: 'auto',
                                   minHeight: '120px'
@@ -1390,6 +1391,7 @@ export function SkillBankCourseView({
                             )}
                           </div>
                         )}
+                        {/* Show collapsed preview for regular users only when collapsed */}
                         {!isAdmin && hasNotes && !shouldAutoExpand && !isExpanded && (
                           <div className="px-4 pb-4">
                             <div className="text-sm text-slate-400 line-clamp-2 p-3 border border-slate-700/50 rounded-lg bg-slate-800/30">
