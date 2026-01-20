@@ -137,91 +137,30 @@ export async function PATCH(request: NextRequest) {
 // DELETE - Delete course (by query param)
 export async function DELETE(request: NextRequest) {
   try {
-    console.log('[API DELETE /courses-v2] Received delete request')
-    console.log('[API DELETE /courses-v2] URL:', request.url)
-    
     const affiliate = await getCurrentAffiliate()
-    console.log('[API DELETE /courses-v2] Affiliate:', affiliate?.id, 'Role:', affiliate?.role)
-    
     if (!affiliate || (affiliate.role !== 'admin' && affiliate.role !== 'moderator')) {
-      console.error('[API DELETE /courses-v2] Unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
-    
-    console.log('[API DELETE /courses-v2] Course ID from query:', id)
 
     if (!id) {
-      console.error('[API DELETE /courses-v2] Missing id parameter')
       return NextResponse.json({ error: 'Course ID is required' }, { status: 400 })
     }
 
-    console.log('[API DELETE /courses-v2] Attempting to delete course:', id)
-    
-    // First, check if course exists
-    const { data: existingCourse, error: checkError } = await supabaseAdmin
-      .from('courses')
-      .select('id, title')
-      .eq('id', id)
-      .single()
-    
-    if (checkError || !existingCourse) {
-      console.error('[API DELETE /courses-v2] Course not found:', checkError)
-      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
-    }
-    
-    console.log('[API DELETE /courses-v2] Course exists:', (existingCourse as any)?.title || 'Unknown')
-    
-    // CASCADE delete will handle sections, lessons, attachments
-    const { data, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from('courses')
       .delete()
       .eq('id', id)
-      .select()
-
-    console.log('[API DELETE /courses-v2] Delete result - data:', data ? JSON.stringify(data) : 'null', 'error:', error ? JSON.stringify(error) : 'null')
 
     if (error) {
-      const errorDetails = {
-        message: error.message,
-        code: (error as any).code,
-        details: (error as any).details,
-        hint: (error as any).hint
-      }
-      console.error('[API DELETE /courses-v2] Error deleting course:', errorDetails)
-      return NextResponse.json({ 
-        error: error.message || 'Failed to delete course',
-        code: (error as any).code,
-        details: (error as any).details,
-        hint: (error as any).hint
-      }, { status: 500 })
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Supabase delete with .select() returns deleted rows, but can be empty array if nothing matched
-    if (!data || (Array.isArray(data) && data.length === 0)) {
-      console.warn('[API DELETE /courses-v2] Delete returned no data - course may not exist or already deleted')
-      // Still return success since the course is gone (either deleted or never existed)
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Course deleted (or did not exist)',
-        deleted: [] 
-      })
-    }
-
-    console.log('[API DELETE /courses-v2] Course deleted successfully:', id)
-    return NextResponse.json({ success: true, deleted: data })
+    return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('[API DELETE /courses-v2] Exception:', {
-      message: error?.message,
-      stack: error?.stack,
-      name: error?.name
-    })
-    return NextResponse.json({ 
-      error: error?.message || 'Internal server error',
-      stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
-    }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }
 

@@ -343,66 +343,38 @@ export function CourseSelector({
                       </span>
                     )}
                     
-                    {/* DEBUG: Always show admin status */}
-                    <div className="text-xs text-red-500" style={{ position: 'absolute', top: 0, right: 0, zIndex: 9999 }}>
-                      Admin: {String(isAdmin)}
-                    </div>
-                    
                     {isAdmin ? (
                       <div 
                         className="relative" 
                         ref={(el) => { menuRefs.current[course.id] = el }}
-                        data-menu-container
                       >
                         <button
                           type="button"
                           onClick={(e) => {
-                            alert('MENU BUTTON CLICKED! isAdmin: ' + isAdmin)
                             e.stopPropagation()
                             e.preventDefault()
-                            console.log('[CourseSelector] 🔵 Menu button clicked for:', course.id, 'isAdmin:', isAdmin)
-                            const newMenuId = openMenuId === course.id ? null : course.id
-                            console.log('[CourseSelector] Setting menu to:', newMenuId)
-                            setOpenMenuId(newMenuId)
+                            setOpenMenuId(openMenuId === course.id ? null : course.id)
                           }}
                           className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.15)] transition-colors text-white opacity-80 hover:opacity-100"
                           title="Course options"
-                          style={{ zIndex: 10, pointerEvents: 'auto' }}
                         >
                           <MoreVertical size={18} />
                         </button>
                         
                         {openMenuId === course.id && (
                           <div 
-                            className="absolute top-9 right-0 z-[9999] bg-[rgba(26,26,46,0.98)] backdrop-blur-[20px] border-2 border-red-500 rounded-lg shadow-2xl min-w-[160px] overflow-visible"
-                            data-menu-container
-                            style={{ pointerEvents: 'auto', position: 'absolute' }}
-                            onClick={(e) => {
-                              console.log('[CourseSelector] 🟡 Dropdown container clicked')
-                              e.stopPropagation()
-                            }}
+                            className="absolute top-9 right-0 z-[100] bg-[rgba(26,26,46,0.98)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.2)] rounded-lg shadow-2xl min-w-[160px] overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <div className="text-xs text-yellow-400 p-2 bg-yellow-900/20">
-                              Menu Open: {course.id.substring(0, 8)}
-                            </div>
                             <button
                               type="button"
                               onClick={(e) => {
-                                alert('DELETE BUTTON CLICKED! Course: ' + course.title + ' ID: ' + course.id)
                                 e.stopPropagation()
                                 e.preventDefault()
-                                console.log('[CourseSelector] 🔴🔴🔴 DELETE BUTTON CLICKED:', course.id, course.title)
-                                
                                 setOpenMenuId(null)
-                                
-                                // Direct inline delete - no async wrapper
-                                handleDeleteCourse(course.id, course.title, e).catch(err => {
-                                  console.error('[CourseSelector] Delete error:', err)
-                                  alert('Delete failed: ' + err.message)
-                                })
+                                handleDeleteCourse(course.id, course.title, e)
                               }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.15)] transition-colors flex items-center gap-2 cursor-pointer border-2 border-red-500"
-                              style={{ pointerEvents: 'auto', zIndex: 10000 }}
+                              className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.15)] transition-colors flex items-center gap-2"
                             >
                               <Trash2 size={14} />
                               Delete Course
@@ -411,7 +383,7 @@ export function CourseSelector({
                         )}
                       </div>
                     ) : (
-                      <div className="w-6 h-6" onClick={() => alert('NOT ADMIN - isAdmin: ' + isAdmin)} />
+                      <div className="w-6 h-6" />
                     )}
                   </div>
                 </div>
