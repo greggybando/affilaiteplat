@@ -85,10 +85,22 @@ export function CourseSelector({
     e.stopPropagation()
     e.preventDefault()
     
-    if (!confirm(`Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`)) {
+    console.log('[CourseSelector] handleDeleteCourse called with:', { courseId, courseTitle })
+    
+    if (!courseId) {
+      console.error('[CourseSelector] No courseId provided!')
+      alert('Error: Course ID is missing')
       setOpenMenuId(null)
       return
     }
+    
+    if (!confirm(`Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`)) {
+      console.log('[CourseSelector] User cancelled deletion')
+      setOpenMenuId(null)
+      return
+    }
+    
+    console.log('[CourseSelector] User confirmed deletion, proceeding...')
     
     try {
       console.log('[CourseSelector] Deleting course:', { courseId, courseTitle })
