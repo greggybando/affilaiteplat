@@ -1551,7 +1551,7 @@ export function SkillBankCourseView({
                         </div>
 
                         {/* Notes Content */}
-                        {/* Always show textarea for admins, show read-only for regular users when expanded */}
+                        {/* Always show for admins, show for regular users when expanded or when there are no notes */}
                         {(isAdmin || shouldAutoExpand || isExpanded || !hasNotes) && (
                           <div className="px-4 pb-4">
                             {isAdmin ? (
@@ -1573,12 +1573,12 @@ export function SkillBankCourseView({
                               />
                             ) : (
                               <div className="w-full bg-transparent text-slate-200 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50 whitespace-pre-wrap min-h-[60px]">
-                                {lessonNotes || <span className="text-slate-500 italic">No notes available</span>}
+                                {lessonNotes && lessonNotes.trim() ? lessonNotes : <span className="text-slate-500 italic">No notes available</span>}
                               </div>
                             )}
                           </div>
                         )}
-                        {/* Show collapsed preview for regular users only when collapsed */}
+                        {/* Show collapsed preview for regular users only when collapsed and notes exist */}
                         {!isAdmin && hasNotes && !shouldAutoExpand && !isExpanded && (
                           <div className="px-4 pb-4">
                             <div className="text-sm text-slate-400 line-clamp-2 p-3 border border-slate-700/50 rounded-lg bg-slate-800/30">
