@@ -344,7 +344,10 @@ export function CourseSelector({
                         {openMenuId === course.id && (
                           <div className="absolute top-9 right-0 z-[100] bg-[rgba(26,26,46,0.98)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.2)] rounded-lg shadow-2xl min-w-[160px] overflow-hidden">
                             <button
-                              onClick={(e) => handleDeleteCourse(course.id, course.title, e)}
+                              onClick={(e) => {
+                                console.log('[CourseSelector] Delete button clicked for course:', course.id, course.title)
+                                handleDeleteCourse(course.id, course.title, e)
+                              }}
                               className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.15)] transition-colors flex items-center gap-2"
                             >
                               <Trash2 size={14} />
