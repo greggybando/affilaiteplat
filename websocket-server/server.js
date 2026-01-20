@@ -169,20 +169,20 @@ io.on('connection', (socket) => {
       const { data: newMessage, error } = await supabase
         .from('group_chat_messages')
         .insert({
-          chat_id: chatId,
-          user_id: socket.userId,
-          message: message.trim(),
-          reply_to_id: replyToId || null
+          group_chat_id: chatId,
+          affiliate_id: socket.userId,
+          message: message.trim()
         })
         .select(`
           id,
-          chat_id,
-          user_id,
+          group_chat_id,
+          affiliate_id,
           message,
-          reply_to_id,
           created_at,
-          affiliates!inner (
+          affiliates!group_chat_messages_affiliate_id_fkey (
+            id,
             name,
+            avatar_name,
             avatar_url
           )
         `)
@@ -197,12 +197,11 @@ io.on('connection', (socket) => {
       // Format message for clients
       const formattedMessage = {
         id: newMessage.id,
-        chat_id: newMessage.chat_id,
-        user_id: newMessage.user_id,
+        chat_id: newMessage.group_chat_id,
+        user_id: newMessage.affiliate_id,
         message: newMessage.message,
-        reply_to_id: newMessage.reply_to_id,
         created_at: newMessage.created_at,
-        user_name: newMessage.affiliates?.name || socket.userName,
+        user_name: newMessage.affiliates?.avatar_name || newMessage.affiliates?.name || socket.userName,
         user_avatar: newMessage.affiliates?.avatar_url || socket.userAvatar
       }
       
