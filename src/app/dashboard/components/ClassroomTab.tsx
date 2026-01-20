@@ -883,12 +883,12 @@ export default function ClassroomTab({
             ) : selectedCourse ? (
               // Check if this is a SkillBank course (not a foundation course)
               // Foundation courses: mindset, dream-job, side-income
-              // Admins can always edit SkillBank courses, regardless of published status
+              // All users (admin and non-admin) should see SkillBankCourseView for SkillBank courses
+              // The isAdmin prop controls editing permissions within the component
               (() => {
                 const foundationSlugs = ['mindset', 'dream-job', 'side-income']
                 const isSkillBankCourse = !foundationSlugs.includes(selectedCourse.slug)
-                const shouldShowEditor = isSkillBankCourse && (isAdmin || (selectedCourse as any).is_published === false)
-                return shouldShowEditor
+                return isSkillBankCourse
               })() ? (
                 <SkillBankCourseView
                   course={selectedCourse}
