@@ -1361,7 +1361,15 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                   userName={selectedPost.user.name}
                   userAvatar={selectedPost.user.avatar}
                   onChatClick={() => {
-                    window.location.href = `/dashboard?openDM=${selectedPost.user.id}`
+                    const currentPath = window.location.pathname
+                    if (currentPath === '/dashboard') {
+                      window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: selectedPost.user.id } }))
+                    } else {
+                      router.replace('/dashboard')
+                      requestAnimationFrame(() => {
+                        window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: selectedPost.user.id } }))
+                      })
+                    }
                   }}
                 >
                   <Link href={`/profile/${selectedPost.user.id}`} className="flex items-center gap-3">
@@ -1476,7 +1484,15 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                             userName={reply.user.name}
                             userAvatar={reply.user.avatar}
                             onChatClick={() => {
-                              window.location.href = `/dashboard?openDM=${reply.user.id}`
+                              const currentPath = window.location.pathname
+                              if (currentPath === '/dashboard') {
+                                window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: reply.user.id } }))
+                              } else {
+                                router.replace('/dashboard')
+                                requestAnimationFrame(() => {
+                                  window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: reply.user.id } }))
+                                })
+                              }
                             }}
                           >
                             <Link href={`/profile/${reply.user.id}`}>
@@ -1554,7 +1570,15 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                   userName={nestedReply.user.name}
                                   userAvatar={nestedReply.user.avatar}
                                   onChatClick={() => {
-                                    window.location.href = `/dashboard?openDM=${nestedReply.user.id}`
+                                    const currentPath = window.location.pathname
+                                    if (currentPath === '/dashboard') {
+                                      window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: nestedReply.user.id } }))
+                                    } else {
+                                      router.replace('/dashboard')
+                                      requestAnimationFrame(() => {
+                                        window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: nestedReply.user.id } }))
+                                      })
+                                    }
                                   }}
                                 >
                                   <Link href={`/profile/${nestedReply.user.id}`}>
