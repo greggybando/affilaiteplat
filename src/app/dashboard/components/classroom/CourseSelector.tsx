@@ -107,13 +107,24 @@ export function CourseSelector({
       
       const url = `/api/courses-v2/${courseId}`
       console.log('[CourseSelector] DELETE URL:', url)
+      console.log('[CourseSelector] Course ID type:', typeof courseId, 'value:', courseId)
       
-      const res = await fetch(url, {
-        method: 'DELETE',
-        credentials: 'include'
-      })
-      
-      console.log('[CourseSelector] DELETE fetch completed, status:', res.status)
+      let res
+      try {
+        res = await fetch(url, {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        console.log('[CourseSelector] DELETE fetch completed, status:', res.status, res.statusText)
+      } catch (fetchError: any) {
+        console.error('[CourseSelector] Fetch error:', fetchError)
+        alert('Network error: ' + (fetchError.message || 'Failed to connect to server'))
+        setOpenMenuId(null)
+        return
+      }
       
       console.log('[CourseSelector] Delete response status:', res.status, res.statusText)
       
