@@ -134,36 +134,14 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// DELETE - Delete course
+// DELETE - Delete course (by query param - deprecated, use /api/courses-v2/[courseId] instead)
 export async function DELETE(request: NextRequest) {
-  try {
-    const affiliate = await getCurrentAffiliate()
-    if (!affiliate || (affiliate.role !== 'admin' && affiliate.role !== 'moderator')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return NextResponse.json({ error: 'Course ID is required' }, { status: 400 })
-    }
-
-    // CASCADE delete will handle sections, lessons, attachments
-    const { error } = await supabaseAdmin
-      .from('courses')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      console.error('Error deleting course:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error in course delete API:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  console.log('[API DELETE /courses-v2] This route should not be used - use /api/courses-v2/[courseId] instead')
+  console.log('[API DELETE /courses-v2] URL:', request.url)
+  
+  return NextResponse.json({ 
+    error: 'Use DELETE /api/courses-v2/[courseId] instead',
+    deprecated: true 
+  }, { status: 405 })
 }
 
