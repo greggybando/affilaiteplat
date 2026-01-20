@@ -731,24 +731,35 @@ export function SkillBankCourseView({
                                     type="text"
                                     defaultValue={lesson.title}
                                     onBlur={(e) => {
+                                      const newValue = e.target.value.trim()
                                       setEditingLessonId(null)
-                                      if (e.target.value !== lesson.title) {
+                                      if (newValue && newValue !== lesson.title) {
+                                        console.log('Saving lesson name on blur:', newValue)
                                         handleUpdateLesson(section.id, lesson.id, {
-                                          title: e.target.value,
-                                          slug: generateSlug(e.target.value)
+                                          title: newValue,
+                                          slug: generateSlug(newValue)
                                         })
+                                      } else if (!newValue) {
+                                        console.log('Empty lesson name, reverting to:', lesson.title)
                                       }
                                     }}
                                     onClick={(e) => e.stopPropagation()}
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') {
+                                        const newValue = (e.target as HTMLInputElement).value.trim()
                                         setEditingLessonId(null)
-                                        if ((e.target as HTMLInputElement).value !== lesson.title) {
+                                        if (newValue && newValue !== lesson.title) {
+                                          console.log('Saving lesson name on Enter:', newValue)
                                           handleUpdateLesson(section.id, lesson.id, {
-                                            title: (e.target as HTMLInputElement).value,
-                                            slug: generateSlug((e.target as HTMLInputElement).value)
+                                            title: newValue,
+                                            slug: generateSlug(newValue)
                                           })
+                                        } else if (!newValue) {
+                                          console.log('Empty lesson name, reverting to:', lesson.title)
                                         }
+                                      }
+                                      if (e.key === 'Escape') {
+                                        setEditingLessonId(null)
                                       }
                                     }}
                                     className="flex-1 bg-transparent border-b border-cyan-500 outline-none text-sm text-white"
