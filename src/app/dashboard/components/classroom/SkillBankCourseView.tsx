@@ -134,7 +134,12 @@ export function SkillBankCourseView({
   // Update when lesson changes
   useEffect(() => {
     if (selectedLesson) {
-      setLessonVideoUrl(selectedLesson.video_url || '')
+      // Reset video URL first to force iframe unmount, then set new URL
+      setLessonVideoUrl('')
+      // Use setTimeout to ensure React unmounts old iframe before mounting new one
+      const timer = setTimeout(() => {
+        setLessonVideoUrl(selectedLesson.video_url || '')
+      }, 10)
       setLessonNotes('') // Reset notes first, then load from API
       
       // Debug: Check what data exists for this lesson
@@ -156,6 +161,10 @@ export function SkillBankCourseView({
       loadLessonAttachments()
       loadNotes()
       loadCheckpoint()
+      
+      return () => {
+        clearTimeout(timer)
+      }
     } else {
       setLessonNotes('')
       setLessonVideoUrl('')
@@ -1418,23 +1427,27 @@ export function SkillBankCourseView({
             <div className="space-y-0 h-full overflow-y-auto">
               {/* Video Player */}
               <div className="aspect-video bg-slate-900 border-b border-slate-700/50 relative">
-                {lessonVideoUrl && lessonVideoUrl.includes('youtube') && (
+                {lessonVideoUrl && (lessonVideoUrl.includes('youtube') || lessonVideoUrl.includes('youtu.be')) && extractYouTubeId(lessonVideoUrl) && (
                   <iframe
+                    key={`youtube-${selectedLesson.id}-${extractYouTubeId(lessonVideoUrl)}`}
                     src={`https://www.youtube.com/embed/${extractYouTubeId(lessonVideoUrl)}?rel=0`}
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                     className="w-full h-full absolute inset-0"
                     title={selectedLesson.title}
+                    loading="eager"
                   />
                 )}
-                {lessonVideoUrl && lessonVideoUrl.includes('loom') && (
+                {lessonVideoUrl && lessonVideoUrl.includes('loom') && extractLoomId(lessonVideoUrl) && (
                   <iframe
+                    key={`loom-${selectedLesson.id}-${extractLoomId(lessonVideoUrl)}`}
                     src={`https://www.loom.com/embed/${extractLoomId(lessonVideoUrl)}`}
                     frameBorder="0"
                     allowFullScreen
                     className="w-full h-full absolute inset-0"
                     title={selectedLesson.title}
+                    loading="eager"
                   />
                 )}
                 {!lessonVideoUrl && isAdmin && (
