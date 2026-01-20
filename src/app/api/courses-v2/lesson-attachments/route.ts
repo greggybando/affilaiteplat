@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
     const fileType = file.type || (fileExt === 'pdf' ? 'application/pdf' : 'application/octet-stream')
 
     // Verify lesson exists first
+    console.log('[API] Verifying lesson exists:', lessonId)
     const { data: lessonCheck, error: lessonError } = await supabaseAdmin
       .from('course_lessons')
       .select('id')
@@ -95,13 +96,22 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (lessonError || !lessonCheck) {
-      console.error('[API] ❌ Lesson not found:', { lessonId, error: lessonError })
-      await supabaseAdmin.storage.from('course-files').remove([filePath])
+      console.error('[API] ❌ Lesson not found:', { 
+        lessonId, 
+        error: lessonError,
+        lessonCheck 
+      })
+      try {
+        await supabaseAdmin.storage.from('course-files').remove([filePath])
+      } catch {}
       return NextResponse.json({ 
         error: 'Lesson not found',
-        details: `Lesson with ID ${lessonId} does not exist`
+        details: `Lesson with ID ${lessonId} does not exist`,
+        lessonError: lessonError?.message
       }, { status: 404 })
     }
+    
+    console.log('[API] ✅ Lesson verified:', lessonCheck)
 
     // Save attachment record
     const insertData = {
@@ -115,6 +125,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[API] Inserting attachment record:', insertData)
 
+    // Try inserting - if table doesn't exist or has wrong schema, we'll get a clear error
     const { data: attachment, error: dbError } = await (supabaseAdmin as any)
       .from('course_attachments')
       .insert(insertData)
@@ -129,6 +140,10 @@ export async function POST(request: NextRequest) {
       console.error('[API]   Error hint:', dbError.hint)
       console.error('[API]   Full error:', JSON.stringify(dbError, null, 2))
       
+      // Check if it's a table/column issue
+      const isTableError = dbError.code === '42P01' || dbError.message?.includes('does not exist')
+      const isForeignKeyError = dbError.code === '23503' || dbError.message?.includes('foreign key')
+      
       // Try to clean up uploaded file
       try {
         await supabaseAdmin.storage.from('course-files').remove([filePath])
@@ -137,11 +152,18 @@ export async function POST(request: NextRequest) {
         console.error('[API] Failed to cleanup file:', cleanupError)
       }
       
+      let errorMessage = 'Failed to save attachment record'
+      if (isTableError) {
+        errorMessage = 'course_attachments table does not exist. Please run the migration: fix-course-attachments-schema.sql'
+      } else if (isForeignKeyError) {
+        errorMessage = 'Foreign key constraint failed. The lesson_id may not exist or the table schema is incorrect.'
+      }
+      
       return NextResponse.json({ 
-        error: 'Failed to save attachment record',
+        error: errorMessage,
         details: dbError.message,
         code: dbError.code,
-        hint: dbError.hint
+        hint: dbError.hint || (isTableError ? 'Run fix-course-attachments-schema.sql migration' : undefined)
       }, { status: 500 })
     }
 
