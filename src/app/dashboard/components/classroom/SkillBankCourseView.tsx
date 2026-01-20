@@ -1259,89 +1259,51 @@ export function SkillBankCourseView({
                 {/* Checkpoint Button - Centered above Notes */}
                 {selectedLesson && selectedSectionId && (
                   <div className="mt-4 flex justify-center relative z-10">
-                  {(() => {
-                    const checkpoint = checkpoints[selectedSectionId]
-                    const isLoading = loadingCheckpoints[selectedSectionId]
-                    
-                    if (checkpoint && checkpoint.id && checkpoint.title && checkpoint.requirements) {
-                      return (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            setCheckpointModalOpen(true)
-                          }}
-                          className="px-8 py-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 font-semibold text-lg transition-all hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/20 flex items-center gap-3 relative z-50 cursor-pointer"
-                        >
-                          <FileCheck className="w-6 h-6" />
-                          Submit Checkpoint
-                        </button>
-                      )
-                    }
-                    
-                    if (isLoading) {
+                    {(() => {
+                      const checkpoint = checkpoints[selectedSectionId]
+                      const isLoading = loadingCheckpoints[selectedSectionId]
+                      
+                      if (checkpoint && checkpoint.id && checkpoint.title && checkpoint.requirements) {
+                        return (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setCheckpointModalOpen(true)
+                            }}
+                            className="px-8 py-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 font-semibold text-lg transition-all hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/20 flex items-center gap-3 relative z-50 cursor-pointer"
+                          >
+                            <FileCheck className="w-6 h-6" />
+                            Submit Checkpoint
+                          </button>
+                        )
+                      }
+                      
+                      if (isLoading) {
+                        return (
+                          <button
+                            disabled
+                            className="px-8 py-4 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-400 font-semibold text-lg flex items-center gap-3 cursor-not-allowed"
+                          >
+                            <Loader2 className="w-6 h-6 animate-spin" />
+                            Loading Checkpoint...
+                          </button>
+                        )
+                      }
+                      
                       return (
                         <button
                           disabled
-                          className="px-8 py-4 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-400 font-semibold text-lg flex items-center gap-3 cursor-not-allowed"
+                          className="px-8 py-4 bg-slate-700/30 border border-slate-600/50 rounded-lg text-slate-500 font-semibold text-lg flex items-center gap-3 cursor-not-allowed opacity-60"
                         >
-                          <Loader2 className="w-6 h-6 animate-spin" />
-                          Loading Checkpoint...
+                          <FileCheck className="w-6 h-6" />
+                          No Checkpoint Available
                         </button>
                       )
-                    }
-                    
-                    return (
-                      <button
-                        disabled
-                        className="px-8 py-4 bg-slate-700/30 border border-slate-600/50 rounded-lg text-slate-500 font-semibold text-lg flex items-center gap-3 cursor-not-allowed opacity-60"
-                      >
-                        <FileCheck className="w-6 h-6" />
-                        No Checkpoint Available
-                      </button>
-                    )
-                  })()}
-                </div>
-              )}
-
-              {/* Checkpoint Modal */}
-              {checkpointModalOpen && selectedLesson && selectedSectionId && checkpoints[selectedSectionId] && (
-                <div 
-                  className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" 
-                  onClick={(e) => {
-                    if (e.target === e.currentTarget) {
-                      setCheckpointModalOpen(false)
-                    }
-                  }}
-                >
-                  <div className="bg-slate-900 rounded-xl border border-slate-700/50 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto relative z-[101]" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
-                      <h3 className="text-xl font-bold text-white">Checkpoint Submission</h3>
-                      <button
-                        onClick={() => setCheckpointModalOpen(false)}
-                        className="text-slate-400 hover:text-white transition-colors"
-                      >
-                        <X className="w-6 h-6" />
-                      </button>
-                    </div>
-                    <div className="p-6">
-                      <CheckpointSubmission
-                        checkpointId={checkpoints[selectedSectionId].id}
-                        checkpointTitle={checkpoints[selectedSectionId].title}
-                        requirements={checkpoints[selectedSectionId].requirements}
-                        sectionId={selectedSectionId}
-                        onSuccess={(status) => {
-                          if (status === 'approved' || status === 'needs_review') {
-                            setCheckpointModalOpen(false)
-                            alert(status === 'approved' ? '✅ Checkpoint approved! Next section unlocked.' : '⏳ Checkpoint submitted! Under review.')
-                          }
-                        }}
-                      />
-                    </div>
+                    })()}
                   </div>
-                </div>
-              )}
+                )}
 
                 {/* Notes Section */}
                 <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
@@ -1519,6 +1481,44 @@ export function SkillBankCourseView({
                   </div>
                 </div>
               </div>
+
+              {/* Checkpoint Modal */}
+              {checkpointModalOpen && selectedLesson && selectedSectionId && checkpoints[selectedSectionId] && (
+                <div 
+                  className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" 
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      setCheckpointModalOpen(false)
+                    }
+                  }}
+                >
+                  <div className="bg-slate-900 rounded-xl border border-slate-700/50 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto relative z-[101]" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
+                      <h3 className="text-xl font-bold text-white">Checkpoint Submission</h3>
+                      <button
+                        onClick={() => setCheckpointModalOpen(false)}
+                        className="text-slate-400 hover:text-white transition-colors"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                    <div className="p-6">
+                      <CheckpointSubmission
+                        checkpointId={checkpoints[selectedSectionId].id}
+                        checkpointTitle={checkpoints[selectedSectionId].title}
+                        requirements={checkpoints[selectedSectionId].requirements}
+                        sectionId={selectedSectionId}
+                        onSuccess={(status) => {
+                          if (status === 'approved' || status === 'needs_review') {
+                            setCheckpointModalOpen(false)
+                            alert(status === 'approved' ? '✅ Checkpoint approved! Next section unlocked.' : '⏳ Checkpoint submitted! Under review.')
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center h-full min-h-[400px]">
