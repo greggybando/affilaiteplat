@@ -187,44 +187,41 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Remove attachment
 export async function DELETE(request: NextRequest) {
-  console.log('🔴 DELETE ROUTE HIT:', request.url)
-  
   try {
+    // Step 1: Auth check
     const affiliate = await getCurrentAffiliate()
-    console.log('🔴 Affiliate:', affiliate?.id, affiliate?.role)
-    
     if (!affiliate || (affiliate.role !== 'admin' && affiliate.role !== 'moderator')) {
-      console.log('🔴 UNAUTHORIZED')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Step 2: Get ID
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
-    console.log('🔴 ID:', id)
-
     if (!id) {
-      console.log('🔴 NO ID')
       return NextResponse.json({ error: 'Attachment ID is required' }, { status: 400 })
     }
 
-    console.log('🔴 Calling supabase delete...')
+    // Step 3: Delete - EXACT same pattern as POST/GET
     const { error } = await (supabaseAdmin as any)
       .from('course_attachments')
       .delete()
       .eq('id', id)
 
-    console.log('🔴 Delete result - error:', error)
-
     if (error) {
-      console.error('🔴 ERROR:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ 
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      }, { status: 500 })
     }
 
-    console.log('🔴 SUCCESS')
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('🔴 EXCEPTION:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ 
+      error: error.message,
+      stack: error.stack
+    }, { status: 500 })
   }
 }
 
