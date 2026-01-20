@@ -148,7 +148,13 @@ export function CourseSelector({
             return (
               <div
                 key={course.id}
-                onClick={() => {
+                onClick={(e) => {
+                  console.log('[CourseSelector] Click:', { 
+                    title: course.title, 
+                    isPublished, 
+                    isAdmin, 
+                    canClick: (isPublished || isAdmin) && onSelectCourse 
+                  })
                   if ((isPublished || isAdmin) && onSelectCourse) {
                     onSelectCourse(course)
                   }
