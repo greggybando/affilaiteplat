@@ -333,27 +333,25 @@ export function CourseSelector({
                       </span>
                     )}
                     
-                    {isAdmin && (
+                    {isAdmin ? (
                       <div 
                         className="relative" 
                         ref={(el) => { menuRefs.current[course.id] = el }}
                         data-menu-container
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          e.preventDefault()
-                        }}
                       >
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation()
                             e.preventDefault()
-                            console.log('[CourseSelector] Menu button clicked for:', course.id)
-                            setOpenMenuId(openMenuId === course.id ? null : course.id)
+                            console.log('[CourseSelector] 🔵 Menu button clicked for:', course.id, 'isAdmin:', isAdmin)
+                            const newMenuId = openMenuId === course.id ? null : course.id
+                            console.log('[CourseSelector] Setting menu to:', newMenuId)
+                            setOpenMenuId(newMenuId)
                           }}
                           className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.15)] transition-colors text-white opacity-80 hover:opacity-100"
                           title="Course options"
-                          style={{ zIndex: 10 }}
+                          style={{ zIndex: 10, pointerEvents: 'auto' }}
                         >
                           <MoreVertical size={18} />
                         </button>
@@ -361,33 +359,26 @@ export function CourseSelector({
                         {openMenuId === course.id && (
                           <div 
                             className="absolute top-9 right-0 z-[100] bg-[rgba(26,26,46,0.98)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.2)] rounded-lg shadow-2xl min-w-[160px] overflow-hidden"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              e.preventDefault()
-                            }}
-                            onMouseDown={(e) => {
-                              e.stopPropagation()
-                            }}
                             data-menu-container
+                            style={{ pointerEvents: 'auto' }}
                           >
                             <button
                               type="button"
-                              onMouseDown={(e) => {
+                              onClick={(e) => {
                                 e.stopPropagation()
                                 e.preventDefault()
-                              }}
-                              onClick={async (e) => {
-                                e.stopPropagation()
-                                e.preventDefault()
-                                console.log('[CourseSelector] 🔴 Delete button CLICKED for course:', course.id, course.title)
+                                console.log('[CourseSelector] 🔴🔴🔴 DELETE BUTTON CLICKED:', course.id, course.title)
                                 
-                                // Close menu immediately
                                 setOpenMenuId(null)
                                 
-                                // Call delete handler
-                                await handleDeleteCourse(course.id, course.title, e)
+                                // Direct inline delete - no async wrapper
+                                handleDeleteCourse(course.id, course.title, e).catch(err => {
+                                  console.error('[CourseSelector] Delete error:', err)
+                                  alert('Delete failed: ' + err.message)
+                                })
                               }}
                               className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.15)] transition-colors flex items-center gap-2 cursor-pointer"
+                              style={{ pointerEvents: 'auto' }}
                             >
                               <Trash2 size={14} />
                               Delete Course
@@ -395,6 +386,8 @@ export function CourseSelector({
                           </div>
                         )}
                       </div>
+                    ) : (
+                      <div className="w-6 h-6" /> // Spacer when not admin
                     )}
                   </div>
                 </div>
