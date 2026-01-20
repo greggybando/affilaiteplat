@@ -290,7 +290,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     const optimisticTimestamp = new Date().toISOString()
     setNewMessage('')
 
-    // Optimistic update - add message to end (newest messages go to bottom)
+    // Optimistic update - add message with current timestamp (will be newest)
     const tempMessage: Message = {
       id: tempId,
       sender_id: currentUserId,
@@ -298,12 +298,17 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       created_at: optimisticTimestamp
     }
     setMessages(prev => {
+      // Add to end and sort - newest messages will be at the bottom
       const updated = [...prev, tempMessage]
-      // Sort ascending (oldest first) so newest appears at bottom
       return updated.sort((a, b) => 
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       )
     })
+    
+    // Scroll to bottom after adding optimistic message
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 50)
 
     try {
       const res = await fetch(`/api/messages/${selectedConversation.participant.id}`, {
