@@ -233,7 +233,7 @@ export function CourseSelector({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-fr">
           {skillbankCourses.map((course) => {
             const courseColor = course.color || '#06B6D4'
             const rgbValues = hexToRgb(courseColor)
@@ -255,7 +255,7 @@ export function CourseSelector({
                     onSelectCourse(course)
                   }
                 }}
-                className={`bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 rounded-2xl p-6 transition-all hover:shadow-lg group ${(isPublished || isAdmin) && onSelectCourse ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                className={`bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 rounded-2xl p-6 transition-all hover:shadow-lg group relative ${(isPublished || isAdmin) && onSelectCourse ? 'cursor-pointer' : 'cursor-not-allowed'} flex flex-col`}
                 style={{
                   backdropFilter: 'blur(10px)',
                   borderColor: borderColor,
@@ -266,6 +266,7 @@ export function CourseSelector({
                     : glowShadow('0 0 20px rgba(252,211,77,0.3), 0 0 40px rgba(252,211,77,0.2)', glowIntensity)
                 }}
               >
+                {/* Top section with emoji and menu */}
                 <div className="flex items-start justify-between mb-4 relative">
                   <div 
                     className="text-4xl"
@@ -277,14 +278,15 @@ export function CourseSelector({
                     {course.emoji || '📚'}
                   </div>
                   
-                  <div className="flex items-center gap-2">
+                  {/* Top right corner - menu and badges */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {!isPublished && (
-                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-semibold border border-yellow-500/30">
+                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-semibold border border-yellow-500/30 whitespace-nowrap">
                         Draft
                       </span>
                     )}
                     {isPublished && (
-                      <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full font-semibold border border-green-500/30">
+                      <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full font-semibold border border-green-500/30 whitespace-nowrap">
                         Live
                       </span>
                     )}
@@ -297,17 +299,18 @@ export function CourseSelector({
                             e.preventDefault()
                             setOpenMenuId(openMenuId === course.id ? null : course.id)
                           }}
-                          className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.1)] transition-colors text-[rgba(255,255,255,0.6)] hover:text-white"
+                          className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.15)] transition-colors text-white opacity-80 hover:opacity-100"
                           title="Course options"
+                          style={{ zIndex: 10 }}
                         >
-                          <MoreVertical size={16} />
+                          <MoreVertical size={18} />
                         </button>
                         
                         {openMenuId === course.id && (
-                          <div className="absolute top-8 right-0 z-50 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-lg shadow-xl min-w-[160px] overflow-hidden">
+                          <div className="absolute top-9 right-0 z-[100] bg-[rgba(26,26,46,0.98)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.2)] rounded-lg shadow-2xl min-w-[160px] overflow-hidden">
                             <button
                               onClick={(e) => handleDeleteCourse(course.id, course.title, e)}
-                              className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.1)] transition-colors flex items-center gap-2"
+                              className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.15)] transition-colors flex items-center gap-2"
                             >
                               <Trash2 size={14} />
                               Delete Course
