@@ -35,17 +35,25 @@ export function CourseImporter({ courseId, onImportComplete, onClose }: CourseIm
       // Format 1: "SECTION: Title" or "Section: Title"
       // Format 2: "# Title" (markdown heading)
       // Format 3: "Title" (if it's all caps or has specific markers)
-      const sectionMatch = line.match(/^(?:SECTION|Section):\s*(.+)$/i) || 
-                          line.match(/^#+\s*(.+)$/) ||
-                          (line.match(/^[A-Z\s]+$/) && line.length > 3 && line.length < 50)
+      const sectionMatch1 = line.match(/^(?:SECTION|Section):\s*(.+)$/i)
+      const sectionMatch2 = line.match(/^#+\s*(.+)$/)
+      const sectionMatch3 = line.match(/^[A-Z\s]+$/) && line.length > 3 && line.length < 50
       
-      if (sectionMatch) {
+      if (sectionMatch1 || sectionMatch2 || sectionMatch3) {
         // Save previous section if exists
         if (currentSection && currentSection.lessons.length > 0) {
           sections.push(currentSection)
         }
         
-        const sectionTitle = sectionMatch[1] || sectionMatch[0]
+        let sectionTitle = ''
+        if (sectionMatch1) {
+          sectionTitle = sectionMatch1[1]
+        } else if (sectionMatch2) {
+          sectionTitle = sectionMatch2[1]
+        } else if (sectionMatch3) {
+          sectionTitle = line
+        }
+        
         currentSection = {
           title: sectionTitle.toUpperCase().trim(),
           lessons: []
