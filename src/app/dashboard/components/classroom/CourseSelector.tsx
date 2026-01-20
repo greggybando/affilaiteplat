@@ -272,7 +272,7 @@ export function CourseSelector({
                     onSelectCourse(course)
                   }
                 }}
-                className={`bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 rounded-2xl p-6 transition-all hover:shadow-lg group relative ${(isPublished || isAdmin) && onSelectCourse ? 'cursor-pointer' : 'cursor-not-allowed'} flex flex-col h-full`}
+                className={`bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 rounded-2xl p-6 transition-all hover:shadow-lg group relative ${(isPublished || isAdmin) && onSelectCourse ? 'cursor-pointer' : 'cursor-not-allowed'} flex flex-col`}
                 style={{
                   backdropFilter: 'blur(10px)',
                   borderColor: borderColor,
@@ -280,7 +280,9 @@ export function CourseSelector({
                   pointerEvents: ((!isPublished && !isAdmin) || !onSelectCourse) ? 'none' : 'auto',
                   boxShadow: isPublished 
                     ? glowShadow(`0 0 30px rgba(${rgbValues},0.3), 0 0 60px rgba(${rgbValues},0.2)`, glowIntensity)
-                    : glowShadow('0 0 20px rgba(252,211,77,0.3), 0 0 40px rgba(252,211,77,0.2)', glowIntensity)
+                    : glowShadow('0 0 20px rgba(252,211,77,0.3), 0 0 40px rgba(252,211,77,0.2)', glowIntensity),
+                  height: '100%',
+                  minHeight: '220px'
                 }}
               >
                 {/* Top section with emoji and menu */}
