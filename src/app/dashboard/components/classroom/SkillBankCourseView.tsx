@@ -1012,8 +1012,10 @@ export function SkillBankCourseView({
               ) : (
                 <h3 
                   className={`text-sm font-semibold truncate flex-1 ${isAdmin ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     if (isAdmin) {
+                      console.log('[SkillBank] Clicked course title to edit, isAdmin:', isAdmin)
                       setEditingCourseTitle(true)
                     }
                   }}
@@ -1025,11 +1027,6 @@ export function SkillBankCourseView({
                 >
                   {courseData.title}
                 </h3>
-              )}
-              {isAdmin && !editingCourseTitle && (
-                <span className="text-[10px] text-slate-400 flex-shrink-0" title="Double-click titles to edit, hover for delete buttons">
-                  ✏️ Edit Mode
-                </span>
               )}
             </div>
           </div>
