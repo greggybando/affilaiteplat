@@ -340,6 +340,11 @@ export function CourseSelector({
                       </span>
                     )}
                     
+                    {/* DEBUG: Always show admin status */}
+                    <div className="text-xs text-red-500" style={{ position: 'absolute', top: 0, right: 0, zIndex: 9999 }}>
+                      Admin: {String(isAdmin)}
+                    </div>
+                    
                     {isAdmin ? (
                       <div 
                         className="relative" 
