@@ -111,8 +111,8 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as HTMLElement
-      // Don't close if clicking the trigger button
-      if (buttonRef.current && buttonRef.current.contains(target)) {
+      // Don't close if clicking the trigger button or its children
+      if (buttonRef.current && (buttonRef.current === target || buttonRef.current.contains(target))) {
         return
       }
       // Don't close if clicking inside the dropdown
@@ -123,13 +123,14 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       setIsOpen(false)
       setSelectedConversation(null)
     }
-    // Use a small delay to avoid immediate closure when opening
+    // Use a delay to avoid immediate closure when opening
+    // This ensures the button click completes before the listener is attached
     const timeout = setTimeout(() => {
-      document.addEventListener('click', handleClickOutside)
-    }, 100)
+      document.addEventListener('click', handleClickOutside, true) // Use capture phase
+    }, 150)
     return () => {
       clearTimeout(timeout)
-      document.removeEventListener('click', handleClickOutside)
+      document.removeEventListener('click', handleClickOutside, true)
     }
   }, [isOpen])
 
@@ -181,17 +182,21 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   
   function getDateSession(date: Date): string {
     const now = new Date()
+    // Normalize to midnight in local timezone
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    const diffDays = Math.floor((today.getTime() - messageDate.getTime()) / (1000 * 60 * 60 * 24))
+    
+    // Calculate difference in days (can be negative if message is in future, but should be 0 for today)
+    const diffTime = today.getTime() - messageDate.getTime()
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
     
     if (diffDays === 0) return 'Today'
     if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 7) {
+    if (diffDays >= 0 && diffDays < 7) {
       const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-      return days[date.getDay()]
+      return days[messageDate.getDay()]
     }
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
+    return messageDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: messageDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
   }
   
   // Memoize grouped messages to prevent recalculation on every render
@@ -342,25 +347,34 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       })
       if (res.ok) {
         const data = await res.json()
-        // Replace temp message with real message - preserve optimistic timestamp to maintain session grouping
+        // Replace temp message with real message from server
         if (data.message) {
           setMessages(prev => {
-            // Find the temp message to preserve its position
+            // Find the temp message to replace
             const tempIndex = prev.findIndex(msg => msg.id === tempId)
-            if (tempIndex === -1) return prev // Temp message not found, return unchanged
+            if (tempIndex === -1) {
+              // Temp message not found, add real message and sort
+              const updated = [...prev, {
+                id: data.message.id,
+                sender_id: data.message.sender_id,
+                content: data.message.content,
+                created_at: data.message.created_at
+              }]
+              return updated.sort((a, b) => 
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              )
+            }
             
-            // Replace temp message with real one, keeping optimistic timestamp
+            // Replace temp message with real one using server timestamp
             const updated = [...prev]
             updated[tempIndex] = {
               id: data.message.id,
               sender_id: data.message.sender_id,
               content: data.message.content,
-              // Keep optimistic timestamp to preserve session grouping
-              created_at: optimisticTimestamp
+              created_at: data.message.created_at // Use real server timestamp
             }
             
-            // Sort to ensure proper order for timestamp comparisons
-            // This is safe because we're preserving the optimistic timestamp
+            // Sort to ensure proper order
             return updated.sort((a, b) => 
               new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             )
@@ -451,6 +465,10 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       {/* Trigger Button - matches NotificationBell pattern */}
       <button
         ref={buttonRef}
+        onMouseDown={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+        }}
         onClick={(e) => {
           e.stopPropagation()
           e.preventDefault()
