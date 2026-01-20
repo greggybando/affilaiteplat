@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, CheckCircle, Circle, Play } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Circle, Play, Download, Paperclip } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -36,16 +36,80 @@ interface Lesson {
   }
 }
 
+interface Attachment {
+  id: string
+  title?: string
+  file_url: string
+  file_name: string
+  display_name?: string
+  file_type?: string
+  file_size?: number
+}
+
 export default function CourseDetailClient({ slug }: { slug: string }) {
   const router = useRouter()
   const [course, setCourse] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [lessonNotes, setLessonNotes] = useState<string>('')
+  const [lessonAttachments, setLessonAttachments] = useState<Attachment[]>([])
+  const [loadingNotes, setLoadingNotes] = useState(false)
+  const [loadingAttachments, setLoadingAttachments] = useState(false)
 
   useEffect(() => {
     fetchCourse()
   }, [slug])
+
+  useEffect(() => {
+    if (selectedLesson) {
+      loadNotes()
+      loadAttachments()
+    } else {
+      setLessonNotes('')
+      setLessonAttachments([])
+    }
+  }, [selectedLesson])
+
+  const loadNotes = async () => {
+    if (!selectedLesson) return
+    
+    setLoadingNotes(true)
+    try {
+      const res = await fetch(`/api/courses-v2/lesson-notes?lessonId=${selectedLesson.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setLessonNotes(data.notes || '')
+      } else {
+        setLessonNotes('')
+      }
+    } catch (error) {
+      console.error('Error loading notes:', error)
+      setLessonNotes('')
+    } finally {
+      setLoadingNotes(false)
+    }
+  }
+
+  const loadAttachments = async () => {
+    if (!selectedLesson) return
+    
+    setLoadingAttachments(true)
+    try {
+      const res = await fetch(`/api/courses-v2/lesson-attachments?lessonId=${selectedLesson.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setLessonAttachments(data.attachments || [])
+      } else {
+        setLessonAttachments([])
+      }
+    } catch (error) {
+      console.error('Error loading attachments:', error)
+      setLessonAttachments([])
+    } finally {
+      setLoadingAttachments(false)
+    }
+  }
 
   const fetchCourse = async () => {
     try {
@@ -160,11 +224,79 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
                   </div>
                 )}
               </div>
-              <div className="bg-[rgba(26,26,46,0.95)] p-6 border-t border-[rgba(255,255,255,0.1)]">
-                <h2 className="text-xl font-bold text-white mb-2">{selectedLesson.title}</h2>
-                {selectedLesson.description && (
-                  <p className="text-[rgba(255,255,255,0.7)]">{selectedLesson.description}</p>
+              <div className="bg-[rgba(26,26,46,0.95)] p-6 border-t border-[rgba(255,255,255,0.1)] space-y-6 overflow-y-auto">
+                <div>
+                  <h2 className="text-xl font-bold text-white mb-2">{selectedLesson.title}</h2>
+                  {selectedLesson.description && (
+                    <p className="text-[rgba(255,255,255,0.7)]">{selectedLesson.description}</p>
+                  )}
+                </div>
+
+                {/* Notes Section */}
+                {(lessonNotes || loadingNotes) && (
+                  <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+                    <div className="p-4 border-b border-slate-700/50">
+                      <h4 className="text-sm font-semibold text-slate-300">Notes</h4>
+                    </div>
+                    <div className="p-4">
+                      {loadingNotes ? (
+                        <div className="text-sm text-slate-400 text-center py-4">Loading notes...</div>
+                      ) : lessonNotes ? (
+                        <div className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
+                          {lessonNotes}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-500 italic">No notes available</div>
+                      )}
+                    </div>
+                  </div>
                 )}
+
+                {/* Course Materials Section */}
+                <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+                  <div className="p-4 border-b border-slate-700/50">
+                    <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                      <Paperclip className="w-4 h-4" />
+                      Course Materials
+                    </h4>
+                  </div>
+                  <div className="p-4">
+                    {loadingAttachments ? (
+                      <div className="text-sm text-slate-400 text-center py-4">Loading attachments...</div>
+                    ) : lessonAttachments.length > 0 ? (
+                      <div className="space-y-2">
+                        {lessonAttachments.map((attachment) => (
+                          <div
+                            key={attachment.id}
+                            className="flex items-center justify-between px-3 py-2.5 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:bg-slate-800 transition-colors"
+                          >
+                            <a
+                              href={attachment.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 flex-1 hover:text-cyan-400 transition-colors"
+                            >
+                              <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span className="text-sm text-slate-300">{attachment.display_name || attachment.title || attachment.file_name}</span>
+                            </a>
+                            <a
+                              href={attachment.file_url}
+                              download
+                              className="p-1.5 text-slate-400 hover:text-cyan-400 transition-colors"
+                              title="Download"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-slate-500 text-center py-4 italic">No course materials available</div>
+                    )}
+                  </div>
+                </div>
               </div>
             </>
           ) : (
