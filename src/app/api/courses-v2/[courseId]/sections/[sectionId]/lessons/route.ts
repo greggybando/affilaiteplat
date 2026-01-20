@@ -99,7 +99,7 @@ export async function POST(
 // PATCH - Update lesson
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ courseId: string; sectionId: string }> | { courseId: string; sectionId: string } }
+  { params }: { params: { courseId: string; sectionId: string } }
 ) {
   try {
     const affiliate = await getCurrentAffiliate()
@@ -107,8 +107,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Handle both sync and async params
-    const routeParams = await Promise.resolve(params)
     const body = await request.json()
     const { id, ...updates } = body
 
@@ -116,26 +114,32 @@ export async function PATCH(
       return NextResponse.json({ error: 'Lesson ID is required' }, { status: 400 })
     }
 
-    console.log('PATCH lesson:', { courseId: routeParams.courseId, sectionId: routeParams.sectionId, lessonId: id, updates })
+    console.log('[API] PATCH lesson:', { 
+      courseId: params.courseId, 
+      sectionId: params.sectionId, 
+      lessonId: id, 
+      updates,
+      body 
+    })
 
     const { data: lesson, error } = await (supabaseAdmin
       .from('course_lessons') as any)
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .eq('module_id', routeParams.sectionId)
+      .eq('module_id', params.sectionId)
       .select()
       .single()
 
     if (error) {
-      console.error('Error updating lesson:', error)
+      console.error('[API] Error updating lesson:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log('Lesson updated successfully:', lesson)
+    console.log('[API] Lesson updated successfully:', lesson)
     return NextResponse.json({ lesson })
   } catch (error: any) {
-    console.error('Error in lesson update API:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('[API] Error in lesson update API:', error)
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }
 
