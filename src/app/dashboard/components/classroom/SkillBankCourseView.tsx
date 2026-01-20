@@ -319,6 +319,7 @@ export function SkillBankCourseView({
     if (!confirm('Delete this section and all its lessons? This cannot be undone.')) return
     
     try {
+      console.log('Deleting section:', sectionId, 'from course:', course.id)
       const res = await fetch(`/api/courses-v2/${course.id}/sections?id=${sectionId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
@@ -326,9 +327,11 @@ export function SkillBankCourseView({
       
       const data = await res.json().catch(() => ({}))
       
+      console.log('Delete section response:', res.status, data)
+      
       if (!res.ok) {
-        console.error('Delete section failed:', data)
-        alert(data.error || 'Failed to delete section')
+        console.error('Delete section failed:', res.status, data)
+        alert(data.error || `Failed to delete section (${res.status})`)
         return
       }
       
@@ -352,7 +355,7 @@ export function SkillBankCourseView({
     if (!confirm('Delete this lesson? This cannot be undone.')) return
     
     try {
-      const res = await fetch(`/api/courses-v2/${course.id}/sections/${sectionId}/lessons/${lessonId}`, {
+      const res = await fetch(`/api/courses-v2/${course.id}/sections/${sectionId}/lessons?id=${lessonId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       })
@@ -360,8 +363,8 @@ export function SkillBankCourseView({
       const data = await res.json().catch(() => ({}))
       
       if (!res.ok) {
-        console.error('Delete lesson failed:', data)
-        alert(data.error || 'Failed to delete lesson')
+        console.error('Delete lesson failed:', res.status, data)
+        alert(data.error || `Failed to delete lesson (${res.status})`)
         return
       }
       
