@@ -402,8 +402,7 @@ export function CourseSelector({
                       </div>
                     ) : (
                       <div className="w-6 h-6" onClick={() => alert('NOT ADMIN - isAdmin: ' + isAdmin)} />
-                    )
-                    })()}
+                    )}
                   </div>
                 </div>
                 
