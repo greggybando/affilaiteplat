@@ -222,6 +222,8 @@ export function SkillBankCourseView({
   const handleAddLesson = async (sectionId: string) => {
     try {
       const newTitle = 'Untitled Lesson'
+      console.log('Adding lesson:', { courseId: course.id, sectionId, newTitle })
+      
       const res = await fetch(`/api/courses-v2/${course.id}/sections/${sectionId}/lessons`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -233,20 +235,35 @@ export function SkillBankCourseView({
       })
       
       const data = await res.json()
+      console.log('Add lesson response:', res.status, data)
+      
       if (data.error) {
+        console.error('Error creating lesson:', data.error)
         alert('Error creating lesson: ' + data.error)
         return
       }
       
+      if (!res.ok) {
+        console.error('Failed to create lesson:', res.status, data)
+        alert(`Failed to create lesson (${res.status}). Check console for details.`)
+        return
+      }
+      
+      // Reload sections to get the new lesson
       await loadSections()
       showSavedIndicator()
+      
+      // Find and select the new lesson
       if (data.lesson) {
         setSelectedLesson(data.lesson)
         setSelectedSectionId(sectionId)
         setEditingLessonId(data.lesson.id)
+        // Make sure section is expanded
+        setExpandedSections(prev => new Set([...prev, sectionId]))
       }
     } catch (error) {
       console.error('Error creating lesson:', error)
+      alert('Failed to create lesson. Please try again.')
     }
   }
 
