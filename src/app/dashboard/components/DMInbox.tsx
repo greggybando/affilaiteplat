@@ -449,7 +449,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     <div className="relative" ref={dropdownRef} style={{ zIndex: 999999 }}>
       {/* Trigger Button - matches NotificationBell pattern */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+          setIsOpen(prev => !prev)
+        }}
         className="relative p-2 bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.16)] rounded-xl border border-[rgba(255,255,255,0.18)] transition-colors"
         title="Messages"
       >
