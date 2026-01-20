@@ -80,7 +80,15 @@ export function CourseSelector({
               boxShadow: glowShadow('0 0 30px rgba(16,185,129,0.3), 0 0 60px rgba(16,185,129,0.2)', glowIntensity)
             } as React.CSSProperties}
           >
-            <div className="text-4xl mb-3">🧠</div>
+            <div 
+              className="text-4xl mb-3"
+              style={{
+                textShadow: glowShadow('0 0 20px rgba(16,185,129,0.8), 0 0 40px rgba(16,185,129,0.6), 0 0 60px rgba(16,185,129,0.4)', glowIntensity),
+                filter: glowIntensity > 0 ? `drop-shadow(0 0 ${glowIntensity * 0.3}px rgba(16,185,129,${glowIntensity / 100 * 0.6}))` : 'none'
+              } as React.CSSProperties}
+            >
+              🧠
+            </div>
             <h3 className="text-lg font-bold text-white mb-2">Mindset & Foundations</h3>
             <p className="text-[rgba(255,255,255,0.6)] text-sm mb-4">
               Build your mental foundation for success
@@ -104,7 +112,15 @@ export function CourseSelector({
               boxShadow: glowShadow('0 0 30px rgba(6,182,212,0.3), 0 0 60px rgba(6,182,212,0.2)', glowIntensity)
             } as React.CSSProperties}
           >
-            <div className="text-4xl mb-3">💼</div>
+            <div 
+              className="text-4xl mb-3"
+              style={{
+                textShadow: glowShadow('0 0 20px rgba(6,182,212,0.8), 0 0 40px rgba(6,182,212,0.6), 0 0 60px rgba(6,182,212,0.4)', glowIntensity),
+                filter: glowIntensity > 0 ? `drop-shadow(0 0 ${glowIntensity * 0.3}px rgba(6,182,212,${glowIntensity / 100 * 0.6}))` : 'none'
+              } as React.CSSProperties}
+            >
+              💼
+            </div>
             <h3 className="text-lg font-bold text-white mb-2">Get Your Dream Job</h3>
             <p className="text-[rgba(255,255,255,0.6)] text-sm mb-4">
               Land the career you've always wanted
@@ -123,7 +139,15 @@ export function CourseSelector({
               boxShadow: glowShadow('0 0 30px rgba(234,179,8,0.3), 0 0 60px rgba(234,179,8,0.2)', glowIntensity)
             }}
           >
-            <div className="text-4xl mb-3">💰</div>
+            <div 
+              className="text-4xl mb-3"
+              style={{
+                textShadow: glowShadow('0 0 20px rgba(234,179,8,0.8), 0 0 40px rgba(234,179,8,0.6), 0 0 60px rgba(234,179,8,0.4)', glowIntensity),
+                filter: glowIntensity > 0 ? `drop-shadow(0 0 ${glowIntensity * 0.3}px rgba(234,179,8,${glowIntensity / 100 * 0.6}))` : 'none'
+              } as React.CSSProperties}
+            >
+              💰
+            </div>
             <h3 className="text-lg font-bold text-white mb-2">Build Your Side Income</h3>
             <p className="text-[rgba(255,255,255,0.6)] text-sm mb-4">
               grab our done-for-you products & begin printing ASAP!
