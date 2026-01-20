@@ -193,51 +193,28 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Use query params like sections/lessons do
     const { searchParams } = new URL(request.url)
-    const attachmentId = searchParams.get('id')
+    const id = searchParams.get('id')
 
-    if (!attachmentId) {
-      return NextResponse.json({ error: 'Missing attachmentId' }, { status: 400 })
+    if (!id) {
+      return NextResponse.json({ error: 'Attachment ID is required' }, { status: 400 })
     }
 
-    // Get file_url for cleanup before deleting
-    const { data: attachment } = await supabaseAdmin
-      .from('course_attachments')
-      .select('file_url')
-      .eq('id', attachmentId)
-      .single()
-
-    // Delete from database (exact same pattern as sections/lessons)
+    // Delete from database - EXACT same pattern as sections/lessons
     const { error } = await supabaseAdmin
       .from('course_attachments')
       .delete()
-      .eq('id', attachmentId)
+      .eq('id', id)
 
     if (error) {
-      console.error('[API] Error deleting attachment:', error)
+      console.error('Error deleting attachment:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    // Clean up storage file (non-blocking)
-    if (attachment?.file_url) {
-      try {
-        const url = new URL(attachment.file_url)
-        const pathParts = url.pathname.split('/')
-        const courseFilesIndex = pathParts.findIndex(part => part === 'course-files')
-        if (courseFilesIndex !== -1) {
-          const filePath = pathParts.slice(courseFilesIndex + 1).join('/')
-          await supabaseAdmin.storage.from('course-files').remove([filePath]).catch(() => {})
-        }
-      } catch {
-        // Ignore storage errors
-      }
     }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('[API] Error in DELETE attachment:', error)
-    return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 })
+    console.error('Error in attachment delete API:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
