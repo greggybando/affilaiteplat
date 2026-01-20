@@ -65,6 +65,7 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
   const [memberSearchResults, setMemberSearchResults] = useState<User[]>([])
   const [showMemberSearch, setShowMemberSearch] = useState(false)
   const [showChatMenu, setShowChatMenu] = useState<string | null>(null)
+  const [showUserMenu, setShowUserMenu] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -1405,21 +1406,53 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                         </div>
                         <div className="flex flex-col items-start max-w-[75%]">
                           {showName && (
-                            <div className="text-xs mb-1 px-2 flex items-center gap-2" style={{ color: 'rgba(34,211,238,0.8)' }}>
+                            <div className="text-xs mb-1 px-2 flex items-center gap-2 relative" style={{ color: 'rgba(34,211,238,0.8)' }}>
                               <span>{msg.user_name}</span>
                               {msg.user_id !== affiliate.id && (
-                                <a
-                                  href={`/messages?user=${msg.user_id}`}
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    window.location.href = `/dashboard?openDM=${msg.user_id}`
-                                  }}
-                                  className="p-0.5 hover:bg-[rgba(255,255,255,0.1)] rounded transition-colors"
-                                  title={`Message ${msg.user_name}`}
-                                >
-                                  <MessageCircle className="w-3 h-3 text-cyan-400" />
-                                </a>
+                                <div className="relative">
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      setShowUserMenu(showUserMenu === msg.user_id ? null : msg.user_id)
+                                    }}
+                                    className="p-0.5 hover:bg-[rgba(255,255,255,0.1)] rounded transition-colors opacity-0 group-hover:opacity-100"
+                                    title={`Options for ${msg.user_name}`}
+                                  >
+                                    <MoreVertical className="w-3 h-3 text-cyan-400" />
+                                  </button>
+                                  {showUserMenu === msg.user_id && (
+                                    <div 
+                                      className="absolute left-0 top-5 z-50 rounded-lg shadow-lg min-w-[140px]"
+                                      style={{
+                                        background: 'linear-gradient(135deg, rgba(60,60,60,0.95) 0%, rgba(40,40,40,0.98) 100%)',
+                                        border: '1px solid rgba(34,211,238,0.3)',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.8), 0 0 8px rgba(34,211,238,0.2)'
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <button
+                                        onClick={(e) => {
+                                          e.preventDefault()
+                                          e.stopPropagation()
+                                          setShowUserMenu(null)
+                                          window.location.href = `/dashboard?openDM=${msg.user_id}`
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 transition-colors"
+                                        style={{ color: 'rgba(255,255,255,0.9)' }}
+                                        onMouseEnter={(e) => {
+                                          e.currentTarget.style.background = 'rgba(34,211,238,0.1)'
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          e.currentTarget.style.background = 'transparent'
+                                        }}
+                                      >
+                                        <MessageCircle className="w-4 h-4" />
+                                        Send DM
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
                           )}
