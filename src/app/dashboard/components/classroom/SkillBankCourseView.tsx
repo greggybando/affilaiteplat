@@ -330,28 +330,33 @@ export function SkillBankCourseView({
 
   const loadLessonAttachments = async () => {
     if (!selectedLesson) {
-      console.log('[CLIENT] No lesson selected, skipping attachment load')
+      console.log('[SkillBankCourseView] No lesson selected, skipping attachment load')
       return
     }
     
-    console.log('[CLIENT] 📥 Loading attachments for lesson:', selectedLesson.id)
+    console.log('[SkillBankCourseView] Loading attachments for lesson:', selectedLesson.id)
     
     try {
-      const res = await fetch(`/api/courses-v2/lesson-attachments?lessonId=${selectedLesson.id}`)
-      console.log('[CLIENT] Attachments response:', res.status, res.statusText)
+      const res = await fetch(`/api/courses-v2/lesson-attachments?lessonId=${selectedLesson.id}`, {
+        credentials: 'include'
+      })
+      console.log('[SkillBankCourseView] Attachments response:', res.status, res.statusText)
       
-      const data = await res.json()
-      console.log('[CLIENT] Attachments data:', data)
-      
-      if (data.error) {
-        console.error('[CLIENT] Error loading attachments:', data.error)
-        setLessonAttachments([])
-      } else {
+      if (res.ok) {
+        const data = await res.json()
+        console.log('[SkillBankCourseView] Attachments loaded:', { 
+          lessonId: selectedLesson.id,
+          attachments: data.attachments,
+          count: data.attachments?.length || 0 
+        })
         setLessonAttachments(data.attachments || [])
-        console.log('[CLIENT] ✅ Loaded', data.attachments?.length || 0, 'attachments')
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        console.error('[SkillBankCourseView] Failed to load attachments:', res.status, errorData)
+        setLessonAttachments([])
       }
     } catch (error: any) {
-      console.error('[CLIENT] ❌ Error loading attachments:', error)
+      console.error('[SkillBankCourseView] Error loading attachments:', error)
       setLessonAttachments([])
     }
   }
