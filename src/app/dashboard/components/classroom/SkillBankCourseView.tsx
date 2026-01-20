@@ -848,7 +848,7 @@ export function SkillBankCourseView({
                   console.log('[SkillBank] Import button clicked, isAdmin:', isAdmin)
                   setImportModalOpen(true)
                 }}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-purple-500/20 whitespace-nowrap"
+                className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white text-sm rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/50 whitespace-nowrap"
                 title="Import course from Google Docs"
               >
                 <Upload size={14} />
@@ -873,7 +873,7 @@ export function SkillBankCourseView({
           {!isPublished && isAdmin && (
             <button
               onClick={handlePublish}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg font-semibold transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white text-sm rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/50 whitespace-nowrap"
             >
               <Eye size={14} />
               Publish Course
