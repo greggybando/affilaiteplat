@@ -1089,7 +1089,7 @@ export function SkillBankCourseView({
           {selectedLesson ? (
             <div className="space-y-0 h-full overflow-y-auto">
               {/* Video Player */}
-              <div className="aspect-video bg-slate-900 border-b border-slate-700/50 relative">
+              <div className="aspect-video bg-slate-900 border-b border-slate-700/50 relative max-w-5xl mx-auto w-full">
                 {lessonVideoUrl && lessonVideoUrl.includes('youtube') && (
                   <iframe
                     src={`https://www.youtube.com/embed/${extractYouTubeId(lessonVideoUrl)}?rel=0`}
