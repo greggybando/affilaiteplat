@@ -36,48 +36,16 @@ interface Lesson {
   }
 }
 
-interface Attachment {
-  id: string
-  title: string
-  file_url: string
-  file_type?: string
-  file_size?: number
-}
-
 export default function CourseDetailClient({ slug }: { slug: string }) {
   const router = useRouter()
   const [course, setCourse] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [lessonAttachments, setLessonAttachments] = useState<Attachment[]>([])
 
   useEffect(() => {
     fetchCourse()
   }, [slug])
-
-  useEffect(() => {
-    if (selectedLesson) {
-      loadLessonAttachments()
-    } else {
-      setLessonAttachments([])
-    }
-  }, [selectedLesson])
-
-  const loadLessonAttachments = async () => {
-    if (!selectedLesson) return
-    
-    try {
-      const res = await fetch(`/api/courses-v2/lesson-attachments?lessonId=${selectedLesson.id}`)
-      const data = await res.json()
-      if (data.attachments) {
-        setLessonAttachments(data.attachments)
-      }
-    } catch (error) {
-      console.error('Error loading attachments:', error)
-      setLessonAttachments([])
-    }
-  }
 
   const fetchCourse = async () => {
     try {
@@ -169,67 +137,33 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
         <div className="flex-1 flex flex-col bg-black">
           {selectedLesson ? (
             <>
-              <div className="flex-1 flex items-center justify-center bg-black p-4">
-                <div className="w-full max-w-4xl aspect-video">
-                  {selectedLesson.video_type === 'youtube' && selectedLesson.video_url && (
-                    <iframe
-                      src={`https://www.youtube.com/embed/${extractYouTubeId(selectedLesson.video_url)}`}
-                      className="w-full h-full rounded-lg"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  )}
-                  {selectedLesson.video_type === 'loom' && selectedLesson.video_url && (
-                    <iframe
-                      src={`https://www.loom.com/embed/${extractLoomId(selectedLesson.video_url)}`}
-                      className="w-full h-full rounded-lg"
-                      allowFullScreen
-                    />
-                  )}
-                  {!selectedLesson.video_url && (
-                    <div className="w-full h-full flex items-center justify-center text-white text-center">
-                      <div>
-                        <Play className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                        <p>No video available</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="flex-1 flex items-center justify-center bg-black">
+                {selectedLesson.video_type === 'youtube' && selectedLesson.video_url && (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${extractYouTubeId(selectedLesson.video_url)}`}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                )}
+                {selectedLesson.video_type === 'loom' && selectedLesson.video_url && (
+                  <iframe
+                    src={`https://www.loom.com/embed/${extractLoomId(selectedLesson.video_url)}`}
+                    className="w-full h-full"
+                    allowFullScreen
+                  />
+                )}
+                {!selectedLesson.video_url && (
+                  <div className="text-white text-center">
+                    <Play className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p>No video available</p>
+                  </div>
+                )}
               </div>
               <div className="bg-[rgba(26,26,46,0.95)] p-6 border-t border-[rgba(255,255,255,0.1)]">
                 <h2 className="text-xl font-bold text-white mb-2">{selectedLesson.title}</h2>
                 {selectedLesson.description && (
-                  <p className="text-[rgba(255,255,255,0.7)] mb-4">{selectedLesson.description}</p>
-                )}
-                
-                {/* Attachments */}
-                {lessonAttachments.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium text-[rgba(255,255,255,0.8)] mb-3">Attachments</h4>
-                    <div className="space-y-2">
-                      {lessonAttachments.map((attachment) => (
-                        <a
-                          key={attachment.id}
-                          href={attachment.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 hover:bg-[rgba(255,255,255,0.1)] transition-colors"
-                        >
-                          <svg className="w-5 h-5 text-cyan-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                          </svg>
-                          <span className="text-sm text-[rgba(255,255,255,0.9)] flex-1 truncate">
-                            {attachment.title || 'Untitled'}
-                          </span>
-                          {attachment.file_size && (
-                            <span className="text-xs text-[rgba(255,255,255,0.5)] flex-shrink-0">
-                              ({(attachment.file_size / 1024).toFixed(1)} KB)
-                            </span>
-                          )}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
+                  <p className="text-[rgba(255,255,255,0.7)]">{selectedLesson.description}</p>
                 )}
               </div>
             </>
