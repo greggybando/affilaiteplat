@@ -363,10 +363,22 @@ export function SkillBankCourseView({
         const data = await res.json()
         console.log('[SkillBankCourseView] Attachments loaded:', { 
           lessonId: selectedLesson.id,
+          responseData: data,
           attachments: data.attachments,
+          attachmentsType: typeof data.attachments,
+          attachmentsIsArray: Array.isArray(data.attachments),
           count: data.attachments?.length || 0 
         })
-        setLessonAttachments(data.attachments || [])
+        
+        // Ensure we're setting an array
+        const attachmentsArray = Array.isArray(data.attachments) ? data.attachments : (data.attachments || [])
+        console.log('[SkillBankCourseView] Setting attachments state:', attachmentsArray)
+        setLessonAttachments(attachmentsArray)
+        
+        // Verify state was set
+        setTimeout(() => {
+          console.log('[SkillBankCourseView] Attachments state after set:', lessonAttachments)
+        }, 100)
       } else {
         const errorData = await res.json().catch(() => ({}))
         console.error('[SkillBankCourseView] Failed to load attachments:', res.status, errorData)
