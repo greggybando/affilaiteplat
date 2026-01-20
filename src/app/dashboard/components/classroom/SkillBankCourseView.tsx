@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, Upload, Paperclip, Check, FileCheck, Loader2, Save, X, Download, FileUp } from 'lucide-react'
 import { Course, Module, Lesson } from '@/lib/types/courses'
 import { CheckpointSubmission } from '@/components/CheckpointSubmission'
@@ -203,8 +203,15 @@ export function SkillBankCourseView({
     }
   }
   
-  const saveNotes = async () => {
+  const saveNotes = useCallback(async (notesToSave?: string) => {
     if (!selectedLesson) return
+    
+    const notes = notesToSave !== undefined ? notesToSave : lessonNotes
+    
+    // Skip if notes haven't changed
+    if (notes === lastSavedNotesRef.current) {
+      return
+    }
     
     setSavingNotes(prev => ({ ...prev, [selectedLesson.id]: true }))
     setNotesSaved(prev => ({ ...prev, [selectedLesson.id]: false }))
@@ -215,26 +222,26 @@ export function SkillBankCourseView({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           lessonId: selectedLesson.id,
-          notes: lessonNotes || ''
+          notes: notes || ''
         })
       })
       
       if (res.ok) {
+        lastSavedNotesRef.current = notes
         setNotesSaved(prev => ({ ...prev, [selectedLesson.id]: true }))
         setTimeout(() => {
           setNotesSaved(prev => ({ ...prev, [selectedLesson.id]: false }))
         }, 2000)
       } else {
         const errorData = await res.json().catch(() => ({}))
-        alert(`Failed to save notes: ${errorData.error || `HTTP ${res.status}`}`)
+        console.error(`Failed to save notes: ${errorData.error || `HTTP ${res.status}`}`)
       }
     } catch (error: any) {
       console.error('Error saving notes:', error)
-      alert('Failed to save notes')
     } finally {
       setSavingNotes(prev => ({ ...prev, [selectedLesson.id]: false }))
     }
-  }
+  }, [selectedLesson, lessonNotes])
 
   const loadSections = async () => {
     try {
@@ -704,10 +711,52 @@ export function SkillBankCourseView({
     setExpandedSections(newExpanded)
   }
 
-  // Handle notes change (no auto-save - manual save button)
+  // Handle notes change with auto-save (debounced)
   const handleNotesChange = (value: string) => {
     setLessonNotes(value)
+    
+    // Clear existing timeout
+    if (notesSaveTimeoutRef.current) {
+      clearTimeout(notesSaveTimeoutRef.current)
+    }
+    
+    // Set new timeout for auto-save (1 second after typing stops)
+    notesSaveTimeoutRef.current = setTimeout(() => {
+      if (selectedLesson && value !== lastSavedNotesRef.current) {
+        saveNotes(value)
+      }
+    }, 1000)
   }
+
+  // Auto-save on blur (immediate)
+  const handleNotesBlur = () => {
+    // Clear debounced timeout
+    if (notesSaveTimeoutRef.current) {
+      clearTimeout(notesSaveTimeoutRef.current)
+      notesSaveTimeoutRef.current = null
+    }
+    
+    // Save immediately if changed
+    if (selectedLesson && lessonNotes !== lastSavedNotesRef.current) {
+      saveNotes()
+    }
+  }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (notesSaveTimeoutRef.current) {
+        clearTimeout(notesSaveTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // Reset last saved notes when lesson changes
+  useEffect(() => {
+    if (selectedLesson) {
+      lastSavedNotesRef.current = lessonNotes
+    }
+  }, [selectedLesson?.id])
 
   // Auto-save video URL
   const handleVideoUrlBlur = () => {
@@ -1429,7 +1478,8 @@ export function SkillBankCourseView({
                               <textarea
                                 value={lessonNotes}
                                 onChange={(e) => handleNotesChange(e.target.value)}
-                                placeholder="Add your notes, thoughts, or questions about this lesson..."
+                                onBlur={handleNotesBlur}
+                                placeholder="Add your notes, thoughts, or questions about this lesson... (Auto-saves as you type)"
                                 className="w-full bg-transparent text-slate-200 placeholder-slate-500 resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50"
                                 style={{ 
                                   height: 'auto',
