@@ -194,20 +194,30 @@ export function SkillBankCourseView({
     if (!selectedLesson) return
     
     try {
-      const res = await fetch(`/api/courses-v2/lesson-notes?lessonId=${selectedLesson.id}`)
+      console.log('[SkillBankCourseView] Loading notes for lesson:', selectedLesson.id)
+      const res = await fetch(`/api/courses-v2/lesson-notes?lessonId=${selectedLesson.id}`, {
+        credentials: 'include'
+      })
       if (res.ok) {
         const data = await res.json()
         const loadedNotes = data.notes || ''
+        console.log('[SkillBankCourseView] Notes loaded:', { 
+          lessonId: selectedLesson.id, 
+          notesLength: loadedNotes.length,
+          hasNotes: !!loadedNotes 
+        })
         setLessonNotes(loadedNotes)
         // Update ref after loading so auto-save knows what was last saved
         lastSavedNotesRef.current = loadedNotes
       } else {
+        const errorData = await res.json().catch(() => ({}))
+        console.error('[SkillBankCourseView] Failed to load notes:', res.status, errorData)
         // If no notes exist, that's OK - just use empty string
         setLessonNotes('')
         lastSavedNotesRef.current = ''
       }
     } catch (error) {
-      console.error('Error loading notes:', error)
+      console.error('[SkillBankCourseView] Error loading notes:', error)
       setLessonNotes('')
       lastSavedNotesRef.current = ''
     }
