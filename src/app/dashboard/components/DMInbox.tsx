@@ -287,14 +287,20 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     const optimisticTimestamp = new Date().toISOString()
     setNewMessage('')
 
-    // Optimistic update
+    // Optimistic update - add message and keep sorted
     const tempMessage: Message = {
       id: tempId,
       sender_id: currentUserId,
       content,
       created_at: optimisticTimestamp
     }
-    setMessages(prev => [...prev, tempMessage])
+    setMessages(prev => {
+      const updated = [...prev, tempMessage]
+      // Sort to ensure proper order for timestamp comparisons
+      return updated.sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      )
+    })
 
     try {
       const res = await fetch(`/api/messages/${selectedConversation.participant.id}`, {
