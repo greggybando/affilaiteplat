@@ -190,18 +190,19 @@ export function SkillBankCourseView({
       const res = await fetch(`/api/courses-v2/lesson-notes?lessonId=${selectedLesson.id}`)
       if (res.ok) {
         const data = await res.json()
-        if (data.notes !== undefined) {
-          setLessonNotes(data.notes || '')
-        } else {
-          setLessonNotes('')
-        }
+        const loadedNotes = data.notes || ''
+        setLessonNotes(loadedNotes)
+        // Update ref after loading so auto-save knows what was last saved
+        lastSavedNotesRef.current = loadedNotes
       } else {
         // If no notes exist, that's OK - just use empty string
         setLessonNotes('')
+        lastSavedNotesRef.current = ''
       }
     } catch (error) {
       console.error('Error loading notes:', error)
       setLessonNotes('')
+      lastSavedNotesRef.current = ''
     }
   }
   
@@ -753,10 +754,10 @@ export function SkillBankCourseView({
     }
   }, [])
 
-  // Reset last saved notes when lesson changes
+  // Reset last saved notes ref when lesson changes (will be updated after loadNotes completes)
   useEffect(() => {
     if (selectedLesson) {
-      lastSavedNotesRef.current = lessonNotes
+      lastSavedNotesRef.current = ''
     }
   }, [selectedLesson?.id])
 
