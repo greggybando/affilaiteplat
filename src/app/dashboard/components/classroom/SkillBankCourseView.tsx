@@ -1565,6 +1565,18 @@ export function SkillBankCourseView({
           )}
         </div>
       </div>
+
+      {/* Import Modal */}
+      {importModalOpen && (
+        <CourseImporter
+          courseId={course.id}
+          onImportComplete={async () => {
+            await loadSections()
+            setImportModalOpen(false)
+          }}
+          onClose={() => setImportModalOpen(false)}
+        />
+      )}
     </div>
   )
 }
