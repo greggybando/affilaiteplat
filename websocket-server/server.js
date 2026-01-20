@@ -216,17 +216,17 @@ io.on('connection', (socket) => {
       
       // Get chat members who aren't in the room to send notifications
       const { data: chatMembers } = await supabase
-        .from('group_chat_members')
-        .select('user_id')
-        .eq('chat_id', chatId)
-        .neq('user_id', socket.userId)
+        .from('group_chat_participants')
+        .select('affiliate_id')
+        .eq('group_chat_id', chatId)
+        .neq('affiliate_id', socket.userId)
       
       if (chatMembers) {
         const onlineInRoom = roomUsers.get(chatId) || new Set()
         for (const member of chatMembers) {
           // Only notify if they're not currently in this chat room
-          if (!onlineInRoom.has(member.user_id)) {
-            io.to(`user:${member.user_id}`).emit('chat_notification', {
+          if (!onlineInRoom.has(member.affiliate_id)) {
+            io.to(`user:${member.affiliate_id}`).emit('chat_notification', {
               chatId,
               senderName: socket.userName,
               messagePreview: message.trim().substring(0, 50)
