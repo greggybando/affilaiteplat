@@ -125,11 +125,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     }
     // Use a small delay to avoid immediate closure when opening
     const timeout = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('click', handleClickOutside)
     }, 100)
     return () => {
       clearTimeout(timeout)
-      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('click', handleClickOutside)
     }
   }, [isOpen])
 

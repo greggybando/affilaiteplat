@@ -1017,23 +1017,24 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <ProfileHoverCard
-                        userId={post.user.id}
-                        userName={post.user.name}
-                        userAvatar={post.user.avatar}
-                        onChatClick={() => {
-                          const currentPath = window.location.pathname
-                          if (currentPath === '/dashboard') {
-                            window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: post.user.id } }))
-                          } else {
-                            router.replace('/dashboard')
-                            requestAnimationFrame(() => {
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <ProfileHoverCard
+                          userId={post.user.id}
+                          userName={post.user.name}
+                          userAvatar={post.user.avatar}
+                          onChatClick={() => {
+                            const currentPath = window.location.pathname
+                            if (currentPath === '/dashboard') {
                               window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: post.user.id } }))
-                            })
-                          }
-                        }}
-                      >
-                        <Link href={`/profile/${post.user.id}`} className="flex items-center gap-3">
+                            } else {
+                              router.replace('/dashboard')
+                              requestAnimationFrame(() => {
+                                window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: post.user.id } }))
+                              })
+                            }
+                          }}
+                        >
+                          <Link href={`/profile/${post.user.id}`} className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                           {post.user.avatar ? (
                             <img
                               src={post.user.avatar}
@@ -1085,6 +1086,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           </div>
                         </Link>
                       </ProfileHoverCard>
+                      </div>
                       <span 
                         className="px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
                         style={post.category === 'Wins' ? {
@@ -1298,28 +1300,30 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                       {post.repliesCount}
                     </button>
                     {post.lastReply && (
-                      <ProfileHoverCard
-                        userId={(post.lastReply.user as any).id || ''}
-                        userName={post.lastReply.user.name}
-                        userAvatar={post.lastReply.user.avatar}
-                      >
-                        <Link href={`/profile/${(post.lastReply.user as any).id || ''}`} className="flex items-center gap-2 ml-auto text-xs text-slate-500">
-                          <div className="flex -space-x-2">
-                            {post.lastReply.user.avatar ? (
-                              <img
-                                src={post.lastReply.user.avatar}
-                                alt={post.lastReply.user.name}
-                                className="w-6 h-6 rounded-full border-2 border-white cursor-pointer"
-                              />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full bg-purple-600 border-2 border-white flex items-center justify-center text-white text-xs cursor-pointer">
-                                {post.lastReply.user.name[0]?.toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                          <span className="hover:text-cyan-400 transition-colors cursor-pointer">Last comment {formatTime(post.lastReply.date)}</span>
-                        </Link>
-                      </ProfileHoverCard>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <ProfileHoverCard
+                          userId={(post.lastReply.user as any).id || ''}
+                          userName={post.lastReply.user.name}
+                          userAvatar={post.lastReply.user.avatar}
+                        >
+                          <Link href={`/profile/${(post.lastReply.user as any).id || ''}`} className="flex items-center gap-2 ml-auto text-xs text-slate-500" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex -space-x-2">
+                              {post.lastReply.user.avatar ? (
+                                <img
+                                  src={post.lastReply.user.avatar}
+                                  alt={post.lastReply.user.name}
+                                  className="w-6 h-6 rounded-full border-2 border-white cursor-pointer"
+                                />
+                              ) : (
+                                <div className="w-6 h-6 rounded-full bg-purple-600 border-2 border-white flex items-center justify-center text-white text-xs cursor-pointer">
+                                  {post.lastReply.user.name[0]?.toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <span className="hover:text-cyan-400 transition-colors cursor-pointer">Last comment {formatTime(post.lastReply.date)}</span>
+                          </Link>
+                        </ProfileHoverCard>
+                      </div>
                     )}
                   </div>
                 </div>
