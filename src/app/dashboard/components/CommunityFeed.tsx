@@ -85,6 +85,7 @@ const glowShadow = (shadows: string, glowIntensity: number) => {
 }
 
 export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '' }: CommunityFeedProps) {
+  const router = useRouter()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('All')
