@@ -90,7 +90,7 @@ export async function POST(
 // PATCH - Update section
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> | { courseId: string } }
 ) {
   try {
     const affiliate = await getCurrentAffiliate()
@@ -98,6 +98,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Handle both sync and async params
+    const routeParams = await Promise.resolve(params)
     const body = await request.json()
     const { id, ...updates } = body
 
@@ -109,7 +111,7 @@ export async function PATCH(
       .from('course_modules') as any)
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .eq('course_id', params.courseId)
+      .eq('course_id', routeParams.courseId)
       .select()
       .single()
 
