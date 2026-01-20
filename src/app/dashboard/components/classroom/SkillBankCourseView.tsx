@@ -289,7 +289,11 @@ export function SkillBankCourseView({
         setEditingLessonId(data.lesson.id)
         setEditingLessonTitle(data.lesson.title || 'Untitled Lesson')
         // Make sure section is expanded
-        setExpandedSections(prev => new Set([...prev, sectionId]))
+        setExpandedSections(prev => {
+          const newSet = new Set(prev)
+          newSet.add(sectionId)
+          return newSet
+        })
       }
     } catch (error) {
       console.error('Error creating lesson:', error)
