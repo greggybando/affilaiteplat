@@ -836,6 +836,12 @@ export function SkillBankCourseView({
         </button>
 
         <div className="flex items-center gap-3">
+          {isAdmin && (
+            <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30">
+              Admin Mode
+            </span>
+          )}
+          
           {!isPublished && (
             <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full border border-yellow-500/30">
               Draft
