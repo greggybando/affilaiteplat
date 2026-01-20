@@ -845,11 +845,11 @@ export function SkillBankCourseView({
               </span>
               <button
                 onClick={() => setImportModalOpen(true)}
-                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg font-medium transition-colors flex items-center gap-1.5"
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-purple-500/20"
                 title="Import course from Google Docs"
               >
-                <FileUp size={12} />
-                Import
+                <FileUp size={14} />
+                Import Course
               </button>
             </>
           )}
