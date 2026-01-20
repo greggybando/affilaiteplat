@@ -82,110 +82,68 @@ export function CourseSelector({
   }, [openMenuId])
   
   const handleDeleteCourse = async (courseId: string, courseTitle: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
+    // Prevent any event bubbling
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
     
-    console.log('[CourseSelector] handleDeleteCourse called with:', { courseId, courseTitle })
+    console.log('[CourseSelector] 🔴 handleDeleteCourse CALLED:', { courseId, courseTitle, courseIdType: typeof courseId })
     
-    if (!courseId) {
-      console.error('[CourseSelector] No courseId provided!')
-      alert('Error: Course ID is missing')
-      setOpenMenuId(null)
+    if (!courseId || courseId === 'undefined' || courseId === 'null') {
+      console.error('[CourseSelector] ❌ INVALID courseId:', courseId)
+      alert('Error: Invalid course ID')
       return
     }
     
-    if (!confirm(`Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`)) {
-      console.log('[CourseSelector] User cancelled deletion')
-      setOpenMenuId(null)
+    const confirmed = confirm(`Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`)
+    if (!confirmed) {
+      console.log('[CourseSelector] User cancelled')
       return
     }
     
-    console.log('[CourseSelector] User confirmed deletion, proceeding...')
+    console.log('[CourseSelector] ✅ User confirmed, starting delete...')
     
     try {
-      console.log('[CourseSelector] Deleting course:', { courseId, courseTitle })
+      // Use simple query parameter approach
+      const url = `/api/courses-v2?id=${encodeURIComponent(courseId)}`
+      console.log('[CourseSelector] 🌐 DELETE URL:', url)
       
-      // Try query parameter approach first (more reliable)
-      const url = `/api/courses-v2?id=${courseId}`
-      console.log('[CourseSelector] DELETE URL (query param):', url)
-      console.log('[CourseSelector] Course ID type:', typeof courseId, 'value:', courseId)
+      const res = await fetch(url, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
       
-      let res
-      try {
-        res = await fetch(url, {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-        console.log('[CourseSelector] DELETE fetch completed, status:', res.status, res.statusText)
-        
-        // If query param approach fails, try path param
-        if (!res.ok && res.status === 404) {
-          console.log('[CourseSelector] Query param failed, trying path param approach...')
-          const pathUrl = `/api/courses-v2/${courseId}`
-          console.log('[CourseSelector] DELETE URL (path param):', pathUrl)
-          res = await fetch(pathUrl, {
-            method: 'DELETE',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          })
-          console.log('[CourseSelector] Path param fetch completed, status:', res.status, res.statusText)
-        }
-      } catch (fetchError: any) {
-        console.error('[CourseSelector] Fetch error:', fetchError)
-        alert('Network error: ' + (fetchError.message || 'Failed to connect to server'))
-        setOpenMenuId(null)
-        return
-      }
+      console.log('[CourseSelector] 📡 Response status:', res.status, res.statusText)
       
-      console.log('[CourseSelector] Delete response status:', res.status, res.statusText)
+      const text = await res.text()
+      console.log('[CourseSelector] 📄 Response text:', text)
       
       let data: any = {}
       try {
-        const text = await res.text()
-        console.log('[CourseSelector] Response text:', text)
         data = text ? JSON.parse(text) : {}
-      } catch (parseError) {
-        console.error('[CourseSelector] Failed to parse response:', parseError)
-        data = {}
+      } catch (e) {
+        console.error('[CourseSelector] Parse error:', e)
       }
       
       if (!res.ok) {
-        console.error('[CourseSelector] Delete error:', data)
-        alert('Error deleting course: ' + (data.error || `HTTP ${res.status}: ${res.statusText}`))
-        setOpenMenuId(null)
+        console.error('[CourseSelector] ❌ Delete failed:', res.status, data)
+        alert(`Failed to delete: ${data.error || res.statusText || 'Unknown error'}`)
         return
       }
       
-      console.log('[CourseSelector] Delete success:', data)
+      console.log('[CourseSelector] ✅ Delete SUCCESS:', data)
       
-      if (data.error) {
-        alert('Error deleting course: ' + data.error)
-        setOpenMenuId(null)
-        return
-      }
-      
-      // Close menu and refresh course list
-      setOpenMenuId(null)
+      // Refresh courses
       if (onCourseDeleted) {
-        console.log('[CourseSelector] Calling onCourseDeleted callback')
-        try {
-          await onCourseDeleted()
-          console.log('[CourseSelector] onCourseDeleted completed')
-        } catch (callbackError) {
-          console.error('[CourseSelector] Error in onCourseDeleted:', callbackError)
-        }
-      } else {
-        console.warn('[CourseSelector] onCourseDeleted callback not provided!')
+        console.log('[CourseSelector] 🔄 Refreshing course list...')
+        await onCourseDeleted()
       }
+      
+      alert('Course deleted successfully!')
     } catch (error: any) {
-      console.error('[CourseSelector] Error deleting course:', error)
-      alert('Failed to delete course: ' + (error.message || 'Unknown error'))
-      setOpenMenuId(null)
+      console.error('[CourseSelector] 💥 Exception:', error)
+      alert(`Error: ${error.message || 'Failed to delete course'}`)
     }
   }
 
@@ -372,11 +330,21 @@ export function CourseSelector({
                     )}
                     
                     {isAdmin && (
-                      <div className="relative" ref={(el) => { menuRefs.current[course.id] = el }}>
+                      <div 
+                        className="relative" 
+                        ref={(el) => { menuRefs.current[course.id] = el }}
+                        data-menu-container
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          e.preventDefault()
+                        }}
+                      >
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation()
                             e.preventDefault()
+                            console.log('[CourseSelector] Menu button clicked for:', course.id)
                             setOpenMenuId(openMenuId === course.id ? null : course.id)
                           }}
                           className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.15)] transition-colors text-white opacity-80 hover:opacity-100"
@@ -393,16 +361,29 @@ export function CourseSelector({
                               e.stopPropagation()
                               e.preventDefault()
                             }}
+                            onMouseDown={(e) => {
+                              e.stopPropagation()
+                            }}
+                            data-menu-container
                           >
                             <button
                               type="button"
+                              onMouseDown={(e) => {
+                                e.stopPropagation()
+                                e.preventDefault()
+                              }}
                               onClick={async (e) => {
                                 e.stopPropagation()
                                 e.preventDefault()
-                                console.log('[CourseSelector] Delete button clicked for course:', course.id, course.title)
+                                console.log('[CourseSelector] 🔴 Delete button CLICKED for course:', course.id, course.title)
+                                
+                                // Close menu immediately
+                                setOpenMenuId(null)
+                                
+                                // Call delete handler
                                 await handleDeleteCourse(course.id, course.title, e)
                               }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.15)] transition-colors flex items-center gap-2"
+                              className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.15)] transition-colors flex items-center gap-2 cursor-pointer"
                             >
                               <Trash2 size={14} />
                               Delete Course
