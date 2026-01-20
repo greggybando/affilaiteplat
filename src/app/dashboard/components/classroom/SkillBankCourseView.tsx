@@ -258,8 +258,18 @@ export function SkillBankCourseView({
         body: JSON.stringify(updates)
       })
       
-      if (!res.ok) return
-      await loadSections()
+      if (!res.ok) {
+        console.error('Failed to update section')
+        return
+      }
+      
+      // Update local state immediately
+      setSections(prevSections => 
+        prevSections.map(s => 
+          s.id === sectionId ? { ...s, ...updates } : s
+        )
+      )
+      
       showSavedIndicator()
     } catch (error) {
       console.error('Error updating section:', error)
@@ -274,13 +284,31 @@ export function SkillBankCourseView({
         body: JSON.stringify(updates)
       })
       
-      if (!res.ok) return
+      if (!res.ok) {
+        console.error('Failed to update lesson')
+        return
+      }
       
+      // Update selected lesson immediately
       if (selectedLesson?.id === lessonId) {
         setSelectedLesson({ ...selectedLesson, ...updates })
       }
       
-      await loadSections()
+      // Update sections state immediately
+      setSections(prevSections => 
+        prevSections.map(section => {
+          if (section.id === sectionId) {
+            return {
+              ...section,
+              lessons: section.lessons?.map((lesson: any) => 
+                lesson.id === lessonId ? { ...lesson, ...updates } : lesson
+              )
+            }
+          }
+          return section
+        })
+      )
+      
       showSavedIndicator()
     } catch (error) {
       console.error('Error updating lesson:', error)
@@ -756,66 +784,76 @@ export function SkillBankCourseView({
               {/* Lesson Info & Content */}
               <div className="p-6 space-y-6 relative z-0">
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">{selectedLesson.title}</h3>
+                  <h3 className="text-lg font-semibold text-white mb-4">{selectedLesson.title}</h3>
                   
                   {/* Admin Video URL Input */}
                   {isAdmin && (
                     <div className="mb-4">
-                      <label className="block text-xs text-slate-400 mb-1">Video URL (YouTube or Loom)</label>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Video URL (YouTube or Loom)</label>
                       <input
                         type="text"
                         value={lessonVideoUrl}
                         onChange={(e) => setLessonVideoUrl(e.target.value)}
                         onBlur={handleVideoUrlBlur}
                         placeholder="https://youtube.com/watch?v=..."
-                        className="w-full bg-slate-800/50 border border-slate-700 rounded px-3 py-2 text-sm text-white outline-none focus:border-cyan-500 transition-colors"
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-cyan-500 transition-colors"
                       />
                     </div>
                   )}
                   
                   {/* Lesson Description/Notes */}
                   {isAdmin ? (
-                    <div>
-                      <label className="block text-xs text-slate-400 mb-1">Lesson Notes</label>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Lesson Notes</label>
                       <textarea
                         value={lessonNotes}
                         onChange={(e) => handleNotesChange(e.target.value)}
                         placeholder="Add lesson description and notes..."
-                        className="w-full min-h-[200px] bg-slate-800/50 border border-slate-700 rounded px-3 py-2 text-sm text-slate-300 outline-none focus:border-cyan-500 transition-colors resize-none"
+                        className="w-full min-h-[300px] bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-slate-300 outline-none focus:border-cyan-500 transition-colors resize-none leading-relaxed"
+                        style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
                       />
+                      <p className="text-xs text-slate-500 mt-2">Auto-saves as you type</p>
                     </div>
                   ) : lessonNotes ? (
-                    <p className="text-slate-300 text-sm leading-relaxed">{lessonNotes}</p>
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-slate-300 mb-2">Lesson Notes</h4>
+                      <p className="text-slate-300 text-sm leading-relaxed">{lessonNotes}</p>
+                    </div>
                   ) : null}
                 </div>
 
                 {/* Attachments */}
                 {(lessonAttachments.length > 0 || isAdmin) && (
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-400 mb-3">Attachments</h4>
+                    <h4 className="text-sm font-medium text-slate-300 mb-3">Attachments</h4>
                     
                     {lessonAttachments.length > 0 && (
                       <div className="space-y-2 mb-3">
                         {lessonAttachments.map((attachment: any) => (
                           <div
                             key={attachment.id}
-                            className="flex items-center justify-between bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-3 group"
+                            className="flex items-center justify-between bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-3 group hover:border-slate-600 transition-colors"
                           >
-                            <div className="flex items-center gap-3 flex-1">
-                              <Paperclip size={16} className="text-cyan-400" />
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <Paperclip size={16} className="text-cyan-400 flex-shrink-0" />
                               <a
                                 href={attachment.file_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm text-slate-300 hover:text-cyan-400 transition-colors"
+                                className="text-sm text-slate-300 hover:text-cyan-400 transition-colors truncate"
                               >
                                 {attachment.file_name}
                               </a>
+                              {attachment.file_size && (
+                                <span className="text-xs text-slate-500 flex-shrink-0">
+                                  ({(attachment.file_size / 1024).toFixed(1)} KB)
+                                </span>
+                              )}
                             </div>
                             {isAdmin && (
                               <button
                                 onClick={() => handleDeleteAttachment(attachment.id)}
-                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+                                className="opacity-0 group-hover:opacity-100 p-1.5 hover:text-red-400 transition-all flex-shrink-0 ml-2"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -826,7 +864,7 @@ export function SkillBankCourseView({
                     )}
 
                     {isAdmin && (
-                      <label className="block border-2 border-dashed border-slate-700 rounded-lg p-4 text-center hover:border-cyan-500 transition-colors cursor-pointer">
+                      <label className="block border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-cyan-500 transition-colors cursor-pointer bg-slate-900/20">
                         <input
                           type="file"
                           multiple
@@ -836,13 +874,14 @@ export function SkillBankCourseView({
                         />
                         {uploadingFile ? (
                           <>
-                            <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                            <p className="text-xs text-cyan-400">Uploading...</p>
+                            <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                            <p className="text-sm text-cyan-400">Uploading...</p>
                           </>
                         ) : (
                           <>
-                            <Upload size={20} className="mx-auto mb-1 text-slate-500" />
-                            <p className="text-xs text-slate-400">Click to upload files</p>
+                            <Upload size={28} className="mx-auto mb-2 text-slate-500" />
+                            <p className="text-sm text-slate-400 mb-1">Drop files here or click to upload</p>
+                            <p className="text-xs text-slate-500">PDFs, images, documents, etc.</p>
                           </>
                         )}
                       </label>
