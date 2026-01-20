@@ -322,28 +322,33 @@ export function CourseSelector({
                   </div>
                 </div>
                 
-                <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">{course.title}</h3>
-                
-                {course.description && (
-                  <p className="text-[rgba(255,255,255,0.6)] text-sm mb-4 line-clamp-2">
-                    {course.description}
-                  </p>
-                )}
-                
-                {(course as any).stats && (
-                  <div className="flex items-center gap-3 text-xs text-[rgba(255,255,255,0.5)] mb-4">
-                    <span>{(course as any).stats.lessons} lessons</span>
-                    {(course as any).stats.progress > 0 && (
-                      <span className="text-cyan-400 font-semibold">{(course as any).stats.progress}% complete</span>
+                {/* Content section - flex-grow to push footer down */}
+                <div className="flex-grow flex flex-col">
+                  <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">{course.title}</h3>
+                  
+                  {course.description && (
+                    <p className="text-[rgba(255,255,255,0.6)] text-sm mb-4 line-clamp-2">
+                      {course.description}
+                    </p>
+                  )}
+                  
+                  {(course as any).stats && (
+                    <div className="flex items-center gap-3 text-xs text-[rgba(255,255,255,0.5)] mb-4">
+                      <span>{(course as any).stats.lessons} lessons</span>
+                      {(course as any).stats.progress > 0 && (
+                        <span className="text-cyan-400 font-semibold">{(course as any).stats.progress}% complete</span>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="mt-auto pt-2">
+                    {isPublished && (
+                      <div className="text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1" style={{ color: courseColor }}>
+                        Start →
+                      </div>
                     )}
                   </div>
-                )}
-                
-                {isPublished && (
-                  <div className="text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1 mt-2" style={{ color: courseColor }}>
-                    Start →
-                  </div>
-                )}
+                </div>
               </div>
             )
           })}
