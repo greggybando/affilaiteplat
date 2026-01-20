@@ -178,14 +178,20 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   }
   
   // Memoize grouped messages to prevent recalculation on every render
-  // Use a more stable key based on message IDs and timestamps to prevent unnecessary recalculations
+  // Create a stable key from message IDs and timestamps
+  const messagesKey = useMemo(() => 
+    messages.map(m => `${m.id}-${m.created_at}`).join('|'),
+    [messages]
+  )
+  
   const groupedMessages = useMemo(() => {
     if (messages.length === 0) return []
     
     const groups: { session: string; messages: typeof messages }[] = []
     let currentSession = ''
     
-    // Sort messages by created_at to ensure proper grouping
+    // Always sort messages by created_at to ensure proper grouping
+    // This handles cases where API returns messages out of order
     const sortedMessages = [...messages].sort((a, b) => 
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     )
@@ -203,7 +209,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     })
     
     return groups
-  }, [messages.length, messages.map(m => `${m.id}-${m.created_at}`).join(',')])
+  }, [messagesKey])
 
   // Poll for unread count
   useEffect(() => {
