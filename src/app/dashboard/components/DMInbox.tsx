@@ -133,13 +133,6 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     }
   }, [forceOpen])
 
-  // Handle initialUserId - open inbox when set
-  useEffect(() => {
-    if (initialUserId && initialUserId !== currentUserId) {
-      setIsOpen(true)
-    }
-  }, [initialUserId, currentUserId])
-
   // Fetch messages and last active time when conversation selected
   useEffect(() => {
     if (selectedConversation) {
