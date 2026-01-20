@@ -447,7 +447,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   }
 
   return (
-    <div className="relative" ref={dropdownRef} style={{ zIndex: 999999 }}>
+    <div className="relative" style={{ zIndex: 999999 }}>
       {/* Trigger Button - matches NotificationBell pattern */}
       <button
         ref={buttonRef}
@@ -456,8 +456,9 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
           e.preventDefault()
           console.log('[DMInbox] Chat button clicked, current isOpen:', isOpen)
           setIsOpen(prev => {
-            console.log('[DMInbox] Toggling isOpen from', prev, 'to', !prev)
-            return !prev
+            const newValue = !prev
+            console.log('[DMInbox] Toggling isOpen from', prev, 'to', newValue)
+            return newValue
           })
         }}
         className="relative p-2 bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.16)] rounded-xl border border-[rgba(255,255,255,0.18)] transition-colors"
@@ -473,7 +474,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="fixed w-96 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] overflow-hidden" style={{ right: '1rem', top: '4rem', backdropFilter: 'blur(20px)', boxShadow: '0 0 40px rgba(6,182,212,0.3), 0 8px 32px rgba(0,0,0,0.8)', zIndex: 999999 }}>
+        <div ref={dropdownRef} className="fixed w-96 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] overflow-hidden" style={{ right: '1rem', top: '4rem', backdropFilter: 'blur(20px)', boxShadow: '0 0 40px rgba(6,182,212,0.3), 0 8px 32px rgba(0,0,0,0.8)', zIndex: 999999 }}>
           {/* Header */}
           <div className="p-3 border-b border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)]">
             {selectedConversation ? (
