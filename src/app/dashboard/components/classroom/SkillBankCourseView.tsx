@@ -161,11 +161,13 @@ export function SkillBankCourseView({
     if (!selectedLesson) return
     
     try {
-      const res = await fetch(`/api/lesson-notes?lessonId=${selectedLesson.id}`)
+      const res = await fetch(`/api/courses-v2/lesson-notes?lessonId=${selectedLesson.id}`)
       if (res.ok) {
         const data = await res.json()
         if (data.notes !== undefined) {
           setLessonNotes(data.notes || '')
+        } else {
+          setLessonNotes('')
         }
       } else {
         // If no notes exist, that's OK - just use empty string
@@ -184,7 +186,7 @@ export function SkillBankCourseView({
     setNotesSaved(prev => ({ ...prev, [selectedLesson.id]: false }))
     
     try {
-      const res = await fetch('/api/lesson-notes', {
+      const res = await fetch('/api/courses-v2/lesson-notes', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
