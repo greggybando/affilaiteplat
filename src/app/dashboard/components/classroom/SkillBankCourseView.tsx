@@ -96,11 +96,15 @@ export function SkillBankCourseView({
   // Update when lesson changes
   useEffect(() => {
     if (selectedLesson) {
-      setLessonNotes(selectedLesson.description || '')
       setLessonVideoUrl(selectedLesson.video_url || '')
+      setLessonNotes('') // Reset notes first, then load from API
       loadLessonAttachments()
       loadNotes()
       loadCheckpoint()
+    } else {
+      setLessonNotes('')
+      setLessonVideoUrl('')
+      setLessonAttachments([])
     }
   }, [selectedLesson, selectedSectionId])
   
