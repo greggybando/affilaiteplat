@@ -187,77 +187,116 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Remove attachment
 export async function DELETE(request: NextRequest) {
+  console.log('[API] ===== DELETE ATTACHMENT REQUEST =====')
+  
   try {
     const affiliate = await getCurrentAffiliate()
+    console.log('[API] Affiliate:', affiliate?.id, affiliate?.role)
+    
     if (!affiliate || (affiliate.role !== 'admin' && affiliate.role !== 'moderator')) {
+      console.error('[API] ❌ Unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Try to get attachmentId from body first, then query params
+    // Get attachmentId from request body
     let attachmentId: string | null = null
     
     try {
-      const body = await request.json().catch(() => ({}))
+      const body = await request.json()
+      console.log('[API] Request body:', body)
       attachmentId = body.attachmentId || null
-    } catch {
-      // Body might be empty, try query params
-    }
-
-    // Fallback to query params if body didn't have it
-    if (!attachmentId) {
+    } catch (bodyError: any) {
+      console.log('[API] No JSON body, trying query params:', bodyError.message)
       const { searchParams } = new URL(request.url)
-      attachmentId = searchParams.get('id')
+      attachmentId = searchParams.get('id') || searchParams.get('attachmentId')
     }
 
+    console.log('[API] Attachment ID:', attachmentId)
+
     if (!attachmentId) {
+      console.error('[API] ❌ Missing attachmentId')
       return NextResponse.json({ error: 'Missing attachmentId' }, { status: 400 })
     }
 
-    console.log('[API] DELETE attachment:', attachmentId)
-
-    // Get file_url before deleting (for storage cleanup)
-    const { data: attachment } = await (supabaseAdmin as any)
+    // Verify attachment exists first
+    console.log('[API] Checking if attachment exists:', attachmentId)
+    const { data: existingAttachment, error: checkError } = await (supabaseAdmin as any)
       .from('course_attachments')
-      .select('file_url')
+      .select('id, file_url')
       .eq('id', attachmentId)
       .single()
 
-    // Delete from database (simple, direct - like sections/lessons)
-    const { error } = await supabaseAdmin
+    if (checkError || !existingAttachment) {
+      console.error('[API] ❌ Attachment not found:', { attachmentId, checkError })
+      return NextResponse.json({ 
+        error: 'Attachment not found',
+        details: checkError?.message
+      }, { status: 404 })
+    }
+
+    console.log('[API] Attachment exists:', existingAttachment)
+
+    // Delete from database
+    console.log('[API] Deleting from database...')
+    const { error: deleteError, data: deleteData } = await (supabaseAdmin as any)
       .from('course_attachments')
       .delete()
       .eq('id', attachmentId)
+      .select()
 
-    if (error) {
-      console.error('[API] Error deleting attachment:', error)
+    console.log('[API] Delete result:', { deleteError, deleteData })
+
+    if (deleteError) {
+      console.error('[API] ❌ Delete failed:')
+      console.error('[API]   Code:', deleteError.code)
+      console.error('[API]   Message:', deleteError.message)
+      console.error('[API]   Details:', deleteError.details)
+      console.error('[API]   Hint:', deleteError.hint)
       return NextResponse.json({ 
-        error: error.message || 'Failed to delete attachment',
-        code: error.code,
-        details: error.details
+        error: 'Failed to delete attachment',
+        message: deleteError.message,
+        code: deleteError.code,
+        details: deleteError.details,
+        hint: deleteError.hint
       }, { status: 500 })
     }
 
+    console.log('[API] ✅ Database deletion successful')
+
     // Try to clean up storage file (non-blocking)
-    if (attachment?.file_url) {
+    if (existingAttachment.file_url) {
       try {
-        const url = new URL(attachment.file_url)
+        const url = new URL(existingAttachment.file_url)
         const pathParts = url.pathname.split('/')
         const courseFilesIndex = pathParts.findIndex(part => part === 'course-files')
         if (courseFilesIndex !== -1) {
           const filePath = pathParts.slice(courseFilesIndex + 1).join('/')
-          await supabaseAdmin.storage.from('course-files').remove([filePath]).catch(() => {})
+          console.log('[API] Cleaning up storage file:', filePath)
+          const { error: storageError } = await supabaseAdmin.storage
+            .from('course-files')
+            .remove([filePath])
+          if (storageError) {
+            console.warn('[API] ⚠️ Storage cleanup failed (non-critical):', storageError)
+          } else {
+            console.log('[API] ✅ Storage file deleted')
+          }
         }
-      } catch {
-        // Ignore storage cleanup errors
+      } catch (storageErr: any) {
+        console.warn('[API] ⚠️ Storage cleanup exception (non-critical):', storageErr)
       }
     }
 
+    console.log('[API] ✅ DELETE SUCCESS')
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('[API] Error in DELETE attachment:', error)
+    console.error('[API] ❌ EXCEPTION in DELETE:')
+    console.error('[API]   Error:', error)
+    console.error('[API]   Message:', error.message)
+    console.error('[API]   Stack:', error.stack)
     return NextResponse.json({ 
       error: error.message || 'Server error',
-      details: error.toString()
+      details: error.toString(),
+      stack: error.stack
     }, { status: 500 })
   }
 }
