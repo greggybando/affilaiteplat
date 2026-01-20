@@ -371,14 +371,21 @@ export function CourseSelector({
                         
                         {openMenuId === course.id && (
                           <div 
-                            className="absolute top-9 right-0 z-[100] bg-[rgba(26,26,46,0.98)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.2)] rounded-lg shadow-2xl min-w-[160px] overflow-hidden"
+                            className="absolute top-9 right-0 z-[9999] bg-[rgba(26,26,46,0.98)] backdrop-blur-[20px] border-2 border-red-500 rounded-lg shadow-2xl min-w-[160px] overflow-visible"
                             data-menu-container
-                            style={{ pointerEvents: 'auto' }}
+                            style={{ pointerEvents: 'auto', position: 'absolute' }}
+                            onClick={(e) => {
+                              console.log('[CourseSelector] 🟡 Dropdown container clicked')
+                              e.stopPropagation()
+                            }}
                           >
+                            <div className="text-xs text-yellow-400 p-2 bg-yellow-900/20">
+                              Menu Open: {course.id.substring(0, 8)}
+                            </div>
                             <button
                               type="button"
                               onClick={(e) => {
-                                alert('DELETE BUTTON CLICKED! Course: ' + course.title)
+                                alert('DELETE BUTTON CLICKED! Course: ' + course.title + ' ID: ' + course.id)
                                 e.stopPropagation()
                                 e.preventDefault()
                                 console.log('[CourseSelector] 🔴🔴🔴 DELETE BUTTON CLICKED:', course.id, course.title)
@@ -391,8 +398,8 @@ export function CourseSelector({
                                   alert('Delete failed: ' + err.message)
                                 })
                               }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.15)] transition-colors flex items-center gap-2 cursor-pointer"
-                              style={{ pointerEvents: 'auto', zIndex: 1000 }}
+                              className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.15)] transition-colors flex items-center gap-2 cursor-pointer border-2 border-red-500"
+                              style={{ pointerEvents: 'auto', zIndex: 10000 }}
                             >
                               <Trash2 size={14} />
                               Delete Course
