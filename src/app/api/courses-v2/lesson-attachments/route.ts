@@ -236,15 +236,12 @@ export async function DELETE(request: NextRequest) {
 
     console.log('[API] Attachment exists:', existingAttachment)
 
-    // Delete from database
+    // Delete from database (exactly like sections/lessons - no select after delete)
     console.log('[API] Deleting from database...')
-    const { error: deleteError, data: deleteData } = await (supabaseAdmin as any)
+    const { error: deleteError } = await supabaseAdmin
       .from('course_attachments')
       .delete()
       .eq('id', attachmentId)
-      .select()
-
-    console.log('[API] Delete result:', { deleteError, deleteData })
 
     if (deleteError) {
       console.error('[API] ❌ Delete failed:')
