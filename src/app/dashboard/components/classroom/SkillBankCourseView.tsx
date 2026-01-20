@@ -1486,6 +1486,16 @@ export function SkillBankCourseView({
                     const isExpanded = notesExpanded[selectedLesson?.id] || false
                     const shouldAutoExpand = hasNotes && lessonNotes.length > 200
                     
+                    // Debug logging
+                    console.log('[SkillBankCourseView] Notes section render:', {
+                      lessonId: selectedLesson?.id,
+                      hasNotes,
+                      notesLength: lessonNotes?.length || 0,
+                      isExpanded,
+                      shouldAutoExpand,
+                      isAdmin
+                    })
+                    
                     return (
                       <>
                         <div className="flex items-center justify-between p-4">
@@ -1593,6 +1603,14 @@ export function SkillBankCourseView({
 
                 {/* Course Materials Section */}
                 <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
+                  {(() => {
+                    console.log('[SkillBankCourseView] Attachments section render:', {
+                      lessonId: selectedLesson?.id,
+                      attachmentsCount: lessonAttachments.length,
+                      attachments: lessonAttachments
+                    })
+                    return null
+                  })()}
                   <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
                     <h4 className="text-sm font-semibold text-slate-300">Course Materials</h4>
                     {isAdmin && (
