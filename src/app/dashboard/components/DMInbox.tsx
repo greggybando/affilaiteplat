@@ -220,7 +220,10 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Use setTimeout to ensure DOM has updated
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
   }, [messages])
 
   async function fetchUnreadCount() {
@@ -287,7 +290,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     const optimisticTimestamp = new Date().toISOString()
     setNewMessage('')
 
-    // Optimistic update - add message and keep sorted
+    // Optimistic update - add message to end (newest messages go to bottom)
     const tempMessage: Message = {
       id: tempId,
       sender_id: currentUserId,
@@ -296,7 +299,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     }
     setMessages(prev => {
       const updated = [...prev, tempMessage]
-      // Sort to ensure proper order for timestamp comparisons
+      // Sort ascending (oldest first) so newest appears at bottom
       return updated.sort((a, b) => 
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       )
