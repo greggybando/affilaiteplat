@@ -278,16 +278,23 @@ export function SkillBankCourseView({
 
   const handleUpdateLesson = async (sectionId: string, lessonId: string, updates: any) => {
     try {
-      const res = await fetch(`/api/courses-v2/${course.id}/sections/${sectionId}/lessons/${lessonId}`, {
+      console.log('Updating lesson:', { courseId: course.id, sectionId, lessonId, updates })
+      
+      const res = await fetch(`/api/courses-v2/${course.id}/sections/${sectionId}/lessons`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
+        body: JSON.stringify({ id: lessonId, ...updates })
       })
       
+      const data = await res.json().catch(() => ({}))
+      
       if (!res.ok) {
-        console.error('Failed to update lesson')
+        console.error('Failed to update lesson:', res.status, data)
+        alert(data.error || `Failed to save lesson changes (${res.status})`)
         return
       }
+      
+      console.log('Lesson updated successfully:', data)
       
       // Update selected lesson immediately
       if (selectedLesson?.id === lessonId) {
@@ -312,6 +319,7 @@ export function SkillBankCourseView({
       showSavedIndicator()
     } catch (error) {
       console.error('Error updating lesson:', error)
+      alert('Failed to save lesson changes. Please try again.')
     }
   }
 
