@@ -287,10 +287,16 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
 
     const content = newMessage.trim()
     const tempId = 'temp-' + Date.now()
-    const optimisticTimestamp = new Date().toISOString()
     setNewMessage('')
 
-    // Optimistic update - add message with current timestamp (will be newest)
+    // Get the latest message timestamp to ensure new message is always newest
+    const latestTimestamp = messages.length > 0 
+      ? new Date(Math.max(...messages.map(m => new Date(m.created_at).getTime())) + 1000).toISOString()
+      : new Date().toISOString()
+    
+    const optimisticTimestamp = latestTimestamp
+
+    // Optimistic update - add message with timestamp guaranteed to be newest
     const tempMessage: Message = {
       id: tempId,
       sender_id: currentUserId,
