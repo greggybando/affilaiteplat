@@ -188,78 +188,36 @@ export async function POST(request: NextRequest) {
 // DELETE - Remove attachment
 export async function DELETE(request: NextRequest) {
   try {
-    console.log('[DELETE] Request URL:', request.url)
-    console.log('[DELETE] Request method:', request.method)
-    
     const affiliate = await getCurrentAffiliate()
-    console.log('[DELETE] Affiliate:', affiliate?.id, affiliate?.role)
-    
     if (!affiliate || (affiliate.role !== 'admin' && affiliate.role !== 'moderator')) {
-      console.error('[DELETE] Unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
-    console.log('[DELETE] ID from query:', id)
-    console.log('[DELETE] All search params:', Object.fromEntries(searchParams.entries()))
 
     if (!id) {
-      console.error('[DELETE] Missing ID')
       return NextResponse.json({ error: 'Attachment ID is required' }, { status: 400 })
     }
 
-    // Verify attachment exists first
-    console.log('[DELETE] Checking if attachment exists:', id)
-    const { data: checkData, error: checkError } = await supabaseAdmin
-      .from('course_attachments')
-      .select('id')
-      .eq('id', id)
-      .single()
-    
-    console.log('[DELETE] Check result:', { checkData, checkError })
-    
-    if (checkError) {
-      console.error('[DELETE] Attachment not found:', checkError)
-      return NextResponse.json({ 
-        error: 'Attachment not found',
-        details: checkError.message,
-        code: checkError.code
-      }, { status: 404 })
-    }
-
-    // Delete from database
-    console.log('[DELETE] Executing delete for ID:', id)
-    const { error, data } = await supabaseAdmin
+    // Delete directly - no checks, just delete (like sections/lessons)
+    const { error } = await supabaseAdmin
       .from('course_attachments')
       .delete()
       .eq('id', id)
 
-    console.log('[DELETE] Delete result:', { error, data })
-
     if (error) {
-      console.error('[DELETE] Delete error:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint
-      })
+      console.error('Error deleting attachment:', error)
       return NextResponse.json({ 
         error: error.message || 'Failed to delete attachment',
         code: error.code,
-        details: error.details,
-        hint: error.hint
+        details: error.details
       }, { status: 500 })
     }
 
-    console.log('[DELETE] Success')
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('[DELETE] Exception:', {
-      message: error.message,
-      stack: error.stack,
-      error: error.toString()
-    })
+    console.error('Error in attachment delete API:', error)
     return NextResponse.json({ 
       error: error.message || 'Server error',
       details: error.toString()
