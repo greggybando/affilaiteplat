@@ -793,8 +793,15 @@ export default function ClassroomTab({
                 </div>
               )
             ) : selectedCourse ? (
-              // Check if this is a SkillBank course (has type property)
-              (selectedCourse as any).type === 'skillbank' || (selectedCourse as any).is_published === false ? (
+              // Check if this is a SkillBank course (not a foundation course)
+              // Foundation courses: mindset, dream-job, side-income
+              // Admins can always edit SkillBank courses, regardless of published status
+              (() => {
+                const foundationSlugs = ['mindset', 'dream-job', 'side-income']
+                const isSkillBankCourse = !foundationSlugs.includes(selectedCourse.slug)
+                const shouldShowEditor = isSkillBankCourse && (isAdmin || (selectedCourse as any).is_published === false)
+                return shouldShowEditor
+              })() ? (
                 <SkillBankCourseView
                   course={selectedCourse}
                   isAdmin={isAdmin}
