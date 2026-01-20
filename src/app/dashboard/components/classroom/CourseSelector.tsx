@@ -58,8 +58,12 @@ export function CourseSelector({
   onAddCourse,
   onCourseDeleted
 }: CourseSelectorProps) {
+  console.log('[CourseSelector] RENDER - isAdmin:', isAdmin, 'courses:', courses.length)
+  
   // Filter out foundation courses (mindset, dream-job, side-income)
   const skillbankCourses = courses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug))
+  
+  console.log('[CourseSelector] SkillBank courses:', skillbankCourses.length, 'isAdmin:', isAdmin)
   
   // State for dropdown menu
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
