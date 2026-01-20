@@ -73,10 +73,15 @@ export async function PATCH(
 // DELETE - Delete course
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> | { courseId: string } }
 ) {
   try {
-    console.log('[API DELETE] Received delete request for courseId:', params.courseId)
+    // Handle both sync and async params (Next.js 14 compatibility)
+    const resolvedParams = await Promise.resolve(params)
+    const courseId = resolvedParams.courseId
+    
+    console.log('[API DELETE] Received delete request for courseId:', courseId)
+    console.log('[API DELETE] Request URL:', request.url)
     
     const affiliate = await getCurrentAffiliate()
     console.log('[API DELETE] Affiliate:', affiliate?.id, 'Role:', affiliate?.role)
@@ -86,12 +91,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('[API DELETE] Attempting to delete course:', params.courseId)
+    console.log('[API DELETE] Attempting to delete course:', courseId)
     
     const { data, error } = await supabaseAdmin
       .from('courses')
       .delete()
-      .eq('id', params.courseId)
+      .eq('id', courseId)
       .select()
 
     console.log('[API DELETE] Delete result - data:', data, 'error:', error)
@@ -101,7 +106,7 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log('[API DELETE] Course deleted successfully:', params.courseId)
+    console.log('[API DELETE] Course deleted successfully:', courseId)
     return NextResponse.json({ success: true, deleted: data })
   } catch (error: any) {
     console.error('[API DELETE] Exception in course delete API:', error)
