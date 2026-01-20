@@ -236,7 +236,7 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
     setNewMessage('')
     
     // Use WebSocket if connected (message will come back via socket event)
-    if (useWebSocket) {
+    if (false && useWebSocket) {
       console.log('[Chat] Attempting WebSocket send:', { selectedChatId, messageLength: messageToSend.length, connected: socket.connected })
       const sent = socket.sendMessage(selectedChatId, messageToSend)
       if (!sent) {
