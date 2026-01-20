@@ -106,21 +106,31 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
 
   // Close dropdown when clicking outside
   useEffect(() => {
+    if (!isOpen) return // Don't set up listener if already closed
+    
     function handleClickOutside(event: MouseEvent) {
-      // Don't close if clicking the trigger button
-      const target = event.target as Node
-      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
-        // Check if click was on the trigger button
-        const triggerButton = (event.target as HTMLElement)?.closest('button[title="Messages"]')
-        if (!triggerButton) {
-          setIsOpen(false)
-          setSelectedConversation(null)
-        }
+      const target = event.target as HTMLElement
+      // Don't close if clicking the trigger button or anything inside it
+      if (target.closest('button[title="Messages"]')) {
+        return
       }
+      // Don't close if clicking inside the dropdown
+      if (dropdownRef.current && dropdownRef.current.contains(target)) {
+        return
+      }
+      // Close if clicking outside
+      setIsOpen(false)
+      setSelectedConversation(null)
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    // Use a small delay to avoid immediate closure when opening
+    const timeout = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside)
+    }, 100)
+    return () => {
+      clearTimeout(timeout)
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
 
   // Fetch conversations when dropdown opens
   useEffect(() => {
