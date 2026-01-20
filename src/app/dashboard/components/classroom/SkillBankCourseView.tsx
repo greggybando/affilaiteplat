@@ -1292,15 +1292,7 @@ export function SkillBankCourseView({
                         )
                       }
                       
-                      return (
-                        <button
-                          disabled
-                          className="px-8 py-4 bg-slate-700/30 border border-slate-600/50 rounded-lg text-slate-500 font-semibold text-lg flex items-center gap-3 cursor-not-allowed opacity-60"
-                        >
-                          <FileCheck className="w-6 h-6" />
-                          No Checkpoint Available
-                        </button>
-                      )
+                      return null
                     })()}
                   </div>
                 )}
