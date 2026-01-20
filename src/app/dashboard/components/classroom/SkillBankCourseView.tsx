@@ -5,6 +5,7 @@ import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, 
 import { Course, Module, Lesson } from '@/lib/types/courses'
 import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 import { CourseImporter } from './CourseImporter'
+import { CourseImporter } from './CourseImporter'
 
 interface SkillBankCourseViewProps {
   course: Course
@@ -65,6 +66,7 @@ export function SkillBankCourseView({
   const [checkpoints, setCheckpoints] = useState<Record<string, any>>({})
   const [loadingCheckpoints, setLoadingCheckpoints] = useState<Record<string, boolean>>({})
   const [checkpointModalOpen, setCheckpointModalOpen] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
   
   // Notes state (matching DreamJob)
   const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({})
@@ -838,9 +840,19 @@ export function SkillBankCourseView({
 
         <div className="flex items-center gap-3">
           {isAdmin && (
-            <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30">
-              Admin Mode
-            </span>
+            <>
+              <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30">
+                Admin Mode
+              </span>
+              <button
+                onClick={() => setImportModalOpen(true)}
+                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg font-medium transition-colors flex items-center gap-1.5"
+                title="Import course from Google Docs"
+              >
+                <FileUp size={12} />
+                Import
+              </button>
+            </>
           )}
           
           {!isPublished && (
