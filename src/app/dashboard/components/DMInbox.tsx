@@ -32,7 +32,7 @@ interface UserSearchResult {
   avatar_url: string | null
 }
 
-export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplete }: { currentUserId: string; forceOpen?: boolean; initialUserId?: string; onOpenComplete?: () => void }) {
+export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplete, onClose }: { currentUserId: string; forceOpen?: boolean; initialUserId?: string; onOpenComplete?: () => void; onClose?: () => void }) {
   const [isOpen, setIsOpen] = useState(false)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
@@ -126,6 +126,10 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       setSelectedConversation(null)
       // Reset last processed initialUserId so it can be reopened
       lastProcessedInitialUserId.current = undefined
+      // Notify parent to clear initialUserId state
+      if (onClose) {
+        onClose()
+      }
     }
     // Use a delay to avoid immediate closure when opening
     // This ensures the button click completes before the listener is attached
@@ -604,6 +608,9 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     setIsOpen(false)
                     setSelectedConversation(null)
                     lastProcessedInitialUserId.current = undefined
+                    if (onClose) {
+                      onClose()
+                    }
                   }} className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded text-white" title="Close">
                     <X className="w-4 h-4" />
                   </button>
