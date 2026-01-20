@@ -107,9 +107,15 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-        setSelectedConversation(null)
+      // Don't close if clicking the trigger button
+      const target = event.target as Node
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+        // Check if click was on the trigger button
+        const triggerButton = (event.target as HTMLElement)?.closest('button[title="Messages"]')
+        if (!triggerButton) {
+          setIsOpen(false)
+          setSelectedConversation(null)
+        }
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
