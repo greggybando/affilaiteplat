@@ -265,7 +265,7 @@ export function CourseSelector({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" style={{ gridAutoRows: '1fr' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {skillbankCourses.map((course) => {
             const courseColor = course.color || '#06B6D4'
             const rgbValues = hexToRgb(courseColor)
@@ -296,8 +296,9 @@ export function CourseSelector({
                   boxShadow: isPublished 
                     ? glowShadow(`0 0 30px rgba(${rgbValues},0.3), 0 0 60px rgba(${rgbValues},0.2)`, glowIntensity)
                     : glowShadow('0 0 20px rgba(252,211,77,0.3), 0 0 40px rgba(252,211,77,0.2)', glowIntensity),
-                  height: '100%',
-                  minHeight: '220px'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: '240px'
                 }}
               >
                 {/* Top section with emoji and menu */}
