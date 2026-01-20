@@ -916,7 +916,7 @@ export function SkillBankCourseView({
                       >
                         <div className="flex items-center gap-3">
                           {isAdmin && (
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <div className="opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0">
                               <GripVertical size={16} className="text-[rgba(255,255,255,0.3)]" />
                             </div>
                           )}
@@ -987,7 +987,7 @@ export function SkillBankCourseView({
                                 handleDeleteSection(section.id)
                               }}
                               className="opacity-60 hover:opacity-100 transition-opacity p-1.5 hover:text-red-400 flex-shrink-0"
-                              title="Delete section"
+                              title="Delete section (admin)"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -1011,7 +1011,7 @@ export function SkillBankCourseView({
                             >
                               <div className="flex items-center gap-3">
                                 {isAdmin && (
-                                  <div className="opacity-0 group-hover/lesson:opacity-100 transition-opacity flex-shrink-0">
+                                  <div className="opacity-60 group-hover/lesson:opacity-100 transition-opacity flex-shrink-0">
                                     <GripVertical size={14} className="text-[rgba(255,255,255,0.3)]" />
                                   </div>
                                 )}
@@ -1127,7 +1127,7 @@ export function SkillBankCourseView({
                                   <span
                                     className={`flex-1 text-sm transition-colors ${
                                       selectedLesson?.id === lesson.id ? 'text-cyan-300' : 'text-slate-400 hover:text-slate-200'
-                                    }`}
+                                    } ${isAdmin ? 'cursor-text hover:underline' : ''}`}
                                     onDoubleClick={(e) => {
                                       e.stopPropagation()
                                       console.log('[CLIENT] 👆 Double-click detected on lesson:', {
@@ -1143,6 +1143,7 @@ export function SkillBankCourseView({
                                         console.log('[CLIENT] ⚠️ Not admin, cannot edit')
                                       }
                                     }}
+                                    title={isAdmin ? 'Double-click to edit lesson title' : ''}
                                   >
                                     {lesson.title}
                                   </span>
