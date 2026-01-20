@@ -186,22 +186,33 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  console.log('🔥 DELETE CALLED')
+  console.log('🔥 URL:', request.url)
+  
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   
+  console.log('🔥 ID:', id)
+  
   if (!id) {
+    console.log('🔥 NO ID - returning 400')
     return NextResponse.json({ error: 'Missing id' }, { status: 400 })
   }
 
+  console.log('🔥 Calling delete...')
   const { error } = await (supabaseAdmin as any)
     .from('course_attachments')
     .delete()
     .eq('id', id)
 
+  console.log('🔥 Delete result error:', error)
+
   if (error) {
+    console.log('🔥 ERROR - returning 500:', error.message)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  console.log('🔥 SUCCESS - returning 200')
   return NextResponse.json({ success: true })
 }
 
