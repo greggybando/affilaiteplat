@@ -465,7 +465,7 @@ export function SkillBankCourseView({
         headers: { 'Content-Type': 'application/json' }
       })
       
-      const data = await res.json().catch(() => ({}))
+      const data: any = await res.json().catch(() => ({}))
       
       console.log('Delete section response:', res.status, data)
       
@@ -505,7 +505,7 @@ export function SkillBankCourseView({
       
       console.log('Delete lesson response status:', res.status)
       
-      let data = {}
+      let data: any = {}
       try {
         const text = await res.text()
         console.log('Delete lesson response text:', text)
@@ -661,7 +661,7 @@ export function SkillBankCourseView({
       const responseText = await res.text()
       console.log('[CLIENT] Response text:', responseText)
       
-      let data = {}
+      let data: any = {}
       try {
         data = JSON.parse(responseText)
         console.log('[CLIENT] Parsed response data:', data)
@@ -674,7 +674,7 @@ export function SkillBankCourseView({
         console.error('[CLIENT] ❌ DELETE FAILED:')
         console.error('[CLIENT]   Status:', res.status)
         console.error('[CLIENT]   Data:', data)
-        alert(`Failed to delete attachment: ${(data as any).error || (data as any).details || `HTTP ${res.status}`}`)
+        alert(`Failed to delete attachment: ${data.error || data.details || `HTTP ${res.status}`}`)
         return
       }
       
