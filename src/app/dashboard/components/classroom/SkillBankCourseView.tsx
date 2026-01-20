@@ -1229,31 +1229,36 @@ export function SkillBankCourseView({
                 )}
               </div>
 
-              {/* Video Info */}
-              <div className="p-6">
-                <h2 className="text-2xl font-bold text-white mb-4">
-                  {selectedLesson.title}
-                </h2>
+              {/* Video Info & Description */}
+              <div className="p-6 space-y-6 relative z-0">
+                {/* Title */}
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-1">{selectedLesson.title}</h2>
+                  {selectedSectionId && (
+                    <p className="text-sm text-slate-400">
+                      {sections.find(s => s.id === selectedSectionId)?.title || 'Section'}
+                    </p>
+                  )}
+                </div>
                 
                 {/* Admin Video URL Input */}
                 {isAdmin && (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Video URL (YouTube or Loom)</label>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">YouTube ID/URL</label>
                     <input
                       type="text"
                       value={lessonVideoUrl}
                       onChange={(e) => setLessonVideoUrl(e.target.value)}
                       onBlur={handleVideoUrlBlur}
-                      placeholder="https://youtube.com/watch?v=..."
-                      className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-cyan-500 transition-colors"
+                      placeholder="YouTube ID or URL"
+                      className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
                     />
                   </div>
                 )}
-              </div>
 
-              {/* Checkpoint Button - Centered above Notes */}
-              {selectedLesson && selectedSectionId && (
-                <div className="mt-4 flex justify-center relative z-10 px-6">
+                {/* Checkpoint Button - Centered above Notes */}
+                {selectedLesson && selectedSectionId && (
+                  <div className="mt-4 flex justify-center relative z-10">
                   {(() => {
                     const checkpoint = checkpoints[selectedSectionId]
                     const isLoading = loadingCheckpoints[selectedSectionId]
@@ -1443,8 +1448,8 @@ export function SkillBankCourseView({
                   })()}
                 </div>
 
-              {/* Course Materials Section */}
-              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4 mx-6 mb-6">
+                {/* Course Materials Section */}
+                <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
                   <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
                     <h4 className="text-sm font-semibold text-slate-300">Course Materials</h4>
                     {isAdmin && (
@@ -1456,12 +1461,10 @@ export function SkillBankCourseView({
                           className="hidden"
                           disabled={uploadingFile}
                         />
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors">
-                          <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          <span className="text-xs text-slate-300 font-medium">Upload</span>
-                        </div>
+                        <span className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm font-medium transition-colors">
+                          <Paperclip className="w-4 h-4" />
+                          Upload
+                        </span>
                       </label>
                     )}
                   </div>
@@ -1486,7 +1489,7 @@ export function SkillBankCourseView({
                               <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
-                              <span className="text-sm text-slate-300">{attachment.title || attachment.file_name || 'Untitled'}</span>
+                              <span className="text-sm text-slate-300">{attachment.display_name || attachment.title || attachment.file_name || 'Untitled'}</span>
                             </a>
                             <div className="flex items-center gap-2">
                               <a
