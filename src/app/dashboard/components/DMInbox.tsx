@@ -45,6 +45,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   const [isSearching, setIsSearching] = useState(false)
   const [participantLastActive, setParticipantLastActive] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Handle initial user ID to open conversation with
@@ -110,8 +111,8 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as HTMLElement
-      // Don't close if clicking the trigger button or anything inside it
-      if (target.closest('button[title="Messages"]')) {
+      // Don't close if clicking the trigger button
+      if (buttonRef.current && buttonRef.current.contains(target)) {
         return
       }
       // Don't close if clicking inside the dropdown
@@ -449,10 +450,15 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     <div className="relative" ref={dropdownRef} style={{ zIndex: 999999 }}>
       {/* Trigger Button - matches NotificationBell pattern */}
       <button
+        ref={buttonRef}
         onClick={(e) => {
           e.stopPropagation()
           e.preventDefault()
-          setIsOpen(prev => !prev)
+          console.log('[DMInbox] Chat button clicked, current isOpen:', isOpen)
+          setIsOpen(prev => {
+            console.log('[DMInbox] Toggling isOpen from', prev, 'to', !prev)
+            return !prev
+          })
         }}
         className="relative p-2 bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.16)] rounded-xl border border-[rgba(255,255,255,0.18)] transition-colors"
         title="Messages"
