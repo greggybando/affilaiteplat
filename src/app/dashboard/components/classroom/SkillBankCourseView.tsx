@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, Upload, Paperclip, Check } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, Upload, Paperclip, Check, FileCheck, Loader2, Save, X, Download } from 'lucide-react'
 import { Course, Module, Lesson } from '@/lib/types/courses'
+import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 
 interface SkillBankCourseViewProps {
   course: Course
@@ -58,6 +59,16 @@ export function SkillBankCourseView({
   
   const [saving, setSaving] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
+  
+  // Checkpoints
+  const [checkpoints, setCheckpoints] = useState<Record<string, any>>({})
+  const [loadingCheckpoints, setLoadingCheckpoints] = useState<Record<string, boolean>>({})
+  const [checkpointModalOpen, setCheckpointModalOpen] = useState(false)
+  
+  // Notes state (matching DreamJob)
+  const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({})
+  const [savingNotes, setSavingNotes] = useState<Record<string, boolean>>({})
+  const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({})
 
   const isPublished = (courseData as any).is_published !== false
   const courseColor = courseData.color || '#06B6D4'
@@ -1121,151 +1132,294 @@ export function SkillBankCourseView({
                 )}
               </div>
 
-              {/* Lesson Info & Content */}
-              <div className="p-6 space-y-6 relative z-0">
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-4">{selectedLesson.title}</h3>
-                  
-                  {/* Admin Video URL Input */}
-                  {isAdmin && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-slate-300 mb-2">Video URL (YouTube or Loom)</label>
-                      <input
-                        type="text"
-                        value={lessonVideoUrl}
-                        onChange={(e) => setLessonVideoUrl(e.target.value)}
-                        onBlur={handleVideoUrlBlur}
-                        placeholder="https://youtube.com/watch?v=..."
-                        className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-cyan-500 transition-colors"
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Lesson Description/Notes */}
-                  {isAdmin ? (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-slate-300 mb-2">Lesson Notes</label>
-                      <textarea
-                        value={lessonNotes}
-                        onChange={(e) => handleNotesChange(e.target.value)}
-                        placeholder="Add lesson description and notes..."
-                        className="w-full min-h-[300px] bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-slate-300 outline-none focus:border-cyan-500 transition-colors resize-none leading-relaxed"
-                        style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
-                      />
-                      <p className="text-xs text-slate-500 mt-2">Auto-saves as you type</p>
-                    </div>
-                  ) : lessonNotes ? (
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium text-slate-300 mb-2">Lesson Notes</h4>
-                      <p className="text-slate-300 text-sm leading-relaxed">{lessonNotes}</p>
-                    </div>
-                  ) : null}
-                </div>
+              {/* Video Info */}
+              <div className="p-6">
+                <h2 className="text-2xl font-bold text-white mb-4">
+                  {selectedLesson.title}
+                </h2>
+                
+                {/* Admin Video URL Input */}
+                {isAdmin && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Video URL (YouTube or Loom)</label>
+                    <input
+                      type="text"
+                      value={lessonVideoUrl}
+                      onChange={(e) => setLessonVideoUrl(e.target.value)}
+                      onBlur={handleVideoUrlBlur}
+                      placeholder="https://youtube.com/watch?v=..."
+                      className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-cyan-500 transition-colors"
+                    />
+                  </div>
+                )}
+              </div>
 
-                {/* Attachments */}
-                {(lessonAttachments.length > 0 || isAdmin) && (
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-300 mb-3">Attachments</h4>
+              {/* Checkpoint Button - Centered above Notes */}
+              {selectedLesson && selectedSectionId && (
+                <div className="px-6 mt-4 flex justify-center relative z-10">
+                  {(() => {
+                    const checkpoint = checkpoints[selectedSectionId]
+                    const isLoading = loadingCheckpoints[selectedSectionId]
                     
-                    {lessonAttachments.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {lessonAttachments.map((attachment: any) => (
-                          <div
-                            key={attachment.id}
-                            className="flex items-center justify-between bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-3 group hover:border-slate-600 transition-colors"
-                          >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <Paperclip size={16} className="text-cyan-400 flex-shrink-0" />
-                              <a
-                                href={attachment.file_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-slate-300 hover:text-cyan-400 transition-colors truncate"
-                              >
-                                {attachment.title || attachment.file_name || 'Untitled'}
-                              </a>
-                              {attachment.file_size && (
-                                <span className="text-xs text-slate-500 flex-shrink-0">
-                                  ({(attachment.file_size / 1024).toFixed(1)} KB)
-                                </span>
-                              )}
-                            </div>
+                    if (checkpoint && checkpoint.id && checkpoint.title && checkpoint.requirements) {
+                      return (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setCheckpointModalOpen(true)
+                          }}
+                          className="px-8 py-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 font-semibold text-lg transition-all hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/20 flex items-center gap-3 relative z-50 cursor-pointer"
+                        >
+                          <FileCheck className="w-6 h-6" />
+                          Submit Checkpoint
+                        </button>
+                      )
+                    }
+                    
+                    if (isLoading) {
+                      return (
+                        <button
+                          disabled
+                          className="px-8 py-4 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-400 font-semibold text-lg flex items-center gap-3 cursor-not-allowed"
+                        >
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                          Loading Checkpoint...
+                        </button>
+                      )
+                    }
+                    
+                    return (
+                      <button
+                        disabled
+                        className="px-8 py-4 bg-slate-700/30 border border-slate-600/50 rounded-lg text-slate-500 font-semibold text-lg flex items-center gap-3 cursor-not-allowed opacity-60"
+                      >
+                        <FileCheck className="w-6 h-6" />
+                        No Checkpoint Available
+                      </button>
+                    )
+                  })()}
+                </div>
+              )}
+
+              {/* Checkpoint Modal */}
+              {checkpointModalOpen && selectedLesson && selectedSectionId && checkpoints[selectedSectionId] && (
+                <div 
+                  className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" 
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      setCheckpointModalOpen(false)
+                    }
+                  }}
+                >
+                  <div className="bg-slate-900 rounded-xl border border-slate-700/50 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto relative z-[101]" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
+                      <h3 className="text-xl font-bold text-white">Checkpoint Submission</h3>
+                      <button
+                        onClick={() => setCheckpointModalOpen(false)}
+                        className="text-slate-400 hover:text-white transition-colors"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+                    <div className="p-6">
+                      <CheckpointSubmission
+                        checkpointId={checkpoints[selectedSectionId].id}
+                        checkpointTitle={checkpoints[selectedSectionId].title}
+                        requirements={checkpoints[selectedSectionId].requirements}
+                        sectionId={selectedSectionId}
+                        onSuccess={(status) => {
+                          if (status === 'approved' || status === 'needs_review') {
+                            setCheckpointModalOpen(false)
+                            alert(status === 'approved' ? '✅ Checkpoint approved! Next section unlocked.' : '⏳ Checkpoint submitted! Under review.')
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Notes/Attachments Section */}
+              <div className="p-6 space-y-4">
+                {/* Notes Section */}
+                <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+                  {(() => {
+                    const hasNotes = lessonNotes && lessonNotes.trim().length > 0
+                    const isExpanded = notesExpanded[selectedLesson.id] || false
+                    const shouldAutoExpand = hasNotes && lessonNotes.length > 200
+                    
+                    return (
+                      <>
+                        <div className="flex items-center justify-between p-4">
+                          <h3 className="text-sm font-semibold text-slate-300">Notes</h3>
+                          <div className="flex items-center gap-2">
                             {isAdmin && (
                               <button
-                                onClick={() => handleDeleteAttachment(attachment.id)}
-                                className="opacity-0 group-hover:opacity-100 p-1.5 hover:text-red-400 transition-all flex-shrink-0 ml-2"
+                                onClick={saveNotes}
+                                disabled={savingNotes[selectedLesson.id]}
+                                className={`text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                                  notesSaved[selectedLesson.id]
+                                    ? 'bg-cyan-600 text-white'
+                                    : savingNotes[selectedLesson.id]
+                                    ? 'bg-cyan-800 text-white'
+                                    : 'bg-cyan-600 hover:bg-cyan-700 text-white'
+                                }`}
                               >
-                                <Trash2 size={14} />
+                                {savingNotes[selectedLesson.id] ? (
+                                  <>
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    Saving...
+                                  </>
+                                ) : notesSaved[selectedLesson.id] ? (
+                                  <>
+                                    <Check className="w-3 h-3" />
+                                    Saved!
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save className="w-3 h-3" />
+                                    Save
+                                  </>
+                                )}
+                              </button>
+                            )}
+                            {hasNotes && (
+                              <button
+                                onClick={() => setNotesExpanded(prev => ({ ...prev, [selectedLesson.id]: !isExpanded }))}
+                                className="text-xs text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                    Collapse
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                    Expand
+                                  </>
+                                )}
                               </button>
                             )}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
 
+                        {/* Notes Content */}
+                        {(isAdmin || shouldAutoExpand || isExpanded || !hasNotes) && (
+                          <div className="px-4 pb-4">
+                            {isAdmin ? (
+                              <textarea
+                                value={lessonNotes}
+                                onChange={(e) => handleNotesChange(e.target.value)}
+                                placeholder="Add your notes, thoughts, or questions about this lesson..."
+                                className="w-full bg-transparent text-slate-200 placeholder-slate-500 resize-y focus:outline-none focus:ring-2 focus:ring-cyan-500/50 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50"
+                                style={{ 
+                                  height: 'auto',
+                                  minHeight: '120px'
+                                }}
+                                onInput={(e) => {
+                                  const target = e.target as HTMLTextAreaElement
+                                  target.style.height = 'auto'
+                                  target.style.height = `${Math.max(120, target.scrollHeight)}px`
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full bg-transparent text-slate-200 rounded-lg p-3 text-sm leading-relaxed border border-slate-700/50 whitespace-pre-wrap min-h-[60px]">
+                                {lessonNotes || <span className="text-slate-500 italic">No notes available</span>}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {!isAdmin && hasNotes && !shouldAutoExpand && !isExpanded && (
+                          <div className="px-4 pb-4">
+                            <div className="text-sm text-slate-400 line-clamp-2 p-3 border border-slate-700/50 rounded-lg bg-slate-800/30">
+                              {lessonNotes}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
+
+                {/* Course Materials Section */}
+                <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+                  <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
+                    <h4 className="text-sm font-semibold text-slate-300">Course Materials</h4>
                     {isAdmin && (
-                      <label 
-                        className="block border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-cyan-500 transition-colors cursor-pointer bg-slate-900/20"
-                        onDragOver={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          e.currentTarget.classList.add('border-cyan-500')
-                        }}
-                        onDragLeave={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          e.currentTarget.classList.remove('border-cyan-500')
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          e.currentTarget.classList.remove('border-cyan-500')
-                          
-                          if (!selectedLesson) {
-                            alert('Please select a lesson first')
-                            return
-                          }
-                          
-                          const files = e.dataTransfer.files
-                          if (files.length > 0) {
-                            console.log('[CLIENT] 📤 Files dropped:', files.length)
-                            const fakeEvent = {
-                              target: { files, value: '' },
-                              preventDefault: () => {},
-                              stopPropagation: () => {}
-                            } as any
-                            handleFileUpload(fakeEvent)
-                          }
-                        }}
-                      >
+                      <label className="cursor-pointer">
                         <input
                           type="file"
                           multiple
                           onChange={handleFileUpload}
                           className="hidden"
-                          disabled={uploadingFile || !selectedLesson}
+                          disabled={uploadingFile}
                         />
-                        {uploadingFile ? (
-                          <>
-                            <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                            <p className="text-sm text-cyan-400">Uploading...</p>
-                          </>
-                        ) : !selectedLesson ? (
-                          <>
-                            <Upload size={28} className="mx-auto mb-2 text-slate-500 opacity-50" />
-                            <p className="text-sm text-slate-400 mb-1">Select a lesson to upload files</p>
-                          </>
-                        ) : (
-                          <>
-                            <Upload size={28} className="mx-auto mb-2 text-slate-500" />
-                            <p className="text-sm text-slate-400 mb-1">Drop files here or click to upload</p>
-                            <p className="text-xs text-slate-500">PDFs, images, documents, etc. (max 50MB)</p>
-                          </>
-                        )}
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors">
+                          <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span className="text-xs text-slate-300 font-medium">Upload</span>
+                        </div>
                       </label>
                     )}
                   </div>
-                )}
+
+                  {/* Attachments List */}
+                  <div className="p-4">
+                    {uploadingFile ? (
+                      <div className="text-sm text-slate-400 text-center py-4">Uploading...</div>
+                    ) : lessonAttachments.length > 0 ? (
+                      <div className="space-y-2">
+                        {lessonAttachments.map((attachment) => (
+                          <div
+                            key={attachment.id}
+                            className="flex items-center justify-between px-3 py-2.5 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:bg-slate-800 transition-colors"
+                          >
+                            <a
+                              href={attachment.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 flex-1 hover:text-cyan-400 transition-colors"
+                            >
+                              <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span className="text-sm text-slate-300">{attachment.title || attachment.file_name || 'Untitled'}</span>
+                            </a>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={attachment.file_url}
+                                download
+                                className="p-1.5 text-slate-400 hover:text-cyan-400 transition-colors"
+                                title="Download"
+                              >
+                                <Download className="w-4 h-4" />
+                              </a>
+                              {isAdmin && (
+                                <button
+                                  onClick={() => handleDeleteAttachment(attachment.id)}
+                                  className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
+                                  title="Delete attachment"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-slate-500 text-center py-4 italic">No course materials available</div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
