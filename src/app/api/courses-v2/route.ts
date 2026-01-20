@@ -46,9 +46,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('[API courses-v2 POST] Received body:', JSON.stringify(body, null, 2))
     const { title, slug, description, emoji, color, thumbnail_url } = body
 
+    console.log('[API courses-v2 POST] Extracted values:', { 
+      title, 
+      slug, 
+      titleType: typeof title, 
+      slugType: typeof slug,
+      titleLength: title?.length,
+      slugLength: slug?.length
+    })
+
     if (!title || !slug) {
+      console.error('[API courses-v2 POST] Validation failed:', { title, slug, body })
       return NextResponse.json({ error: 'Title and slug are required' }, { status: 400 })
     }
 
