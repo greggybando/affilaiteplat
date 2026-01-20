@@ -83,6 +83,15 @@ export function SkillBankCourseView({
   const [lessonAttachments, setLessonAttachments] = useState<any[]>([])
   const [uploadingFile, setUploadingFile] = useState(false)
   
+  // Debug: Log when attachments state changes
+  useEffect(() => {
+    console.log('[SkillBankCourseView] ⚡ Attachments state changed:', {
+      count: lessonAttachments.length,
+      attachments: lessonAttachments,
+      lessonId: selectedLesson?.id
+    })
+  }, [lessonAttachments, selectedLesson?.id])
+  
   const [saving, setSaving] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   
