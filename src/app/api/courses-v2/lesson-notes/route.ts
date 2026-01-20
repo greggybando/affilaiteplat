@@ -4,9 +4,15 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
-// GET - Fetch course-wide notes for a lesson (public access - all users can view)
+// GET - Fetch course-wide notes for a lesson (all authenticated users can view)
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication but allow all authenticated users (not just admins)
+    const affiliate = await getCurrentAffiliate()
+    if (!affiliate) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const searchParams = request.nextUrl.searchParams
     const lessonId = searchParams.get('lessonId')
 
@@ -14,7 +20,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing lessonId' }, { status: 400 })
     }
 
-    // Fetch course-wide notes from lesson_notes table (public - all users can view)
+    // Fetch course-wide notes from lesson_notes table (all authenticated users can view)
     const { data: note, error } = await (supabaseAdmin as any)
       .from('lesson_notes')
       .select('id, notes, updated_at')
@@ -22,6 +28,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Error fetching lesson notes:', error)
       throw error
     }
 
