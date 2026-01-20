@@ -10,8 +10,8 @@ import { ModuleCard } from './classroom/ModuleCard'
 import { CheckpointGate } from './classroom/CheckpointGate'
 import { SkillBankCourseView } from './classroom/SkillBankCourseView'
 import { Settings, LogOut } from 'lucide-react'
-import { MindsetModuleListRefactored as MindsetModuleList } from '@/app/mindset/components/MindsetModuleListRefactored'
-import { DreamJobModuleListRefactored as DreamJobModuleList } from '@/app/dreamjob/components/DreamJobModuleListRefactored'
+import { MindsetModuleList } from '@/app/mindset/components/MindsetModuleList'
+import { DreamJobModuleList } from '@/app/dreamjob/components/DreamJobModuleList'
 
 // Helper function for glow shadow
 const glowShadow = (shadows: string, glowIntensity: number) => {
