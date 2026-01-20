@@ -90,7 +90,7 @@ export async function POST(
 // PATCH - Update section
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ courseId: string }> | { courseId: string } }
+  { params }: { params: { courseId: string } }
 ) {
   try {
     const affiliate = await getCurrentAffiliate()
@@ -98,8 +98,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Handle both sync and async params
-    const routeParams = await Promise.resolve(params)
     const body = await request.json()
     const { id, ...updates } = body
 
@@ -111,18 +109,18 @@ export async function PATCH(
       .from('course_modules') as any)
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .eq('course_id', routeParams.courseId)
+      .eq('course_id', params.courseId)
       .select()
       .single()
 
     if (error) {
-      console.error('Error updating section:', error)
+      console.error('[API] Error updating section:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ section })
   } catch (error: any) {
-    console.error('Error in section update API:', error)
+    console.error('[API] Error in section update API:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
