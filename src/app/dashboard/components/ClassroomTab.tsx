@@ -39,6 +39,16 @@ export default function ClassroomTab({
 }: ClassroomTabProps) {
   console.log('[ClassroomTab] Component rendering/re-rendering')
   const isAdmin = useAdmin(affiliate)
+  
+  // Helper to generate slug from title
+  const generateSlug = (title: string): string => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      + '-' + Date.now()
+  }
+  
   const [selectedWorld, setSelectedWorld] = useState<'mindset' | 'dreamjob' | null>(null)
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
   
