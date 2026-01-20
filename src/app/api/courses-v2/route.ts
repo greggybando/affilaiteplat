@@ -134,14 +134,51 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// DELETE - Delete course (by query param - deprecated, use /api/courses-v2/[courseId] instead)
+// DELETE - Delete course (by query param)
 export async function DELETE(request: NextRequest) {
-  console.log('[API DELETE /courses-v2] This route should not be used - use /api/courses-v2/[courseId] instead')
-  console.log('[API DELETE /courses-v2] URL:', request.url)
-  
-  return NextResponse.json({ 
-    error: 'Use DELETE /api/courses-v2/[courseId] instead',
-    deprecated: true 
-  }, { status: 405 })
+  try {
+    console.log('[API DELETE /courses-v2] Received delete request')
+    console.log('[API DELETE /courses-v2] URL:', request.url)
+    
+    const affiliate = await getCurrentAffiliate()
+    console.log('[API DELETE /courses-v2] Affiliate:', affiliate?.id, 'Role:', affiliate?.role)
+    
+    if (!affiliate || (affiliate.role !== 'admin' && affiliate.role !== 'moderator')) {
+      console.error('[API DELETE /courses-v2] Unauthorized')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    
+    console.log('[API DELETE /courses-v2] Course ID from query:', id)
+
+    if (!id) {
+      console.error('[API DELETE /courses-v2] Missing id parameter')
+      return NextResponse.json({ error: 'Course ID is required' }, { status: 400 })
+    }
+
+    console.log('[API DELETE /courses-v2] Attempting to delete course:', id)
+    
+    // CASCADE delete will handle sections, lessons, attachments
+    const { data, error } = await supabaseAdmin
+      .from('courses')
+      .delete()
+      .eq('id', id)
+      .select()
+
+    console.log('[API DELETE /courses-v2] Delete result - data:', data, 'error:', error)
+
+    if (error) {
+      console.error('[API DELETE /courses-v2] Error deleting course:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    console.log('[API DELETE /courses-v2] Course deleted successfully:', id)
+    return NextResponse.json({ success: true, deleted: data })
+  } catch (error: any) {
+    console.error('[API DELETE /courses-v2] Exception:', error)
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+  }
 }
 

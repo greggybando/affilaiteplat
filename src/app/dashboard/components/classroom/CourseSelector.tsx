@@ -105,8 +105,9 @@ export function CourseSelector({
     try {
       console.log('[CourseSelector] Deleting course:', { courseId, courseTitle })
       
-      const url = `/api/courses-v2/${courseId}`
-      console.log('[CourseSelector] DELETE URL:', url)
+      // Try query parameter approach first (more reliable)
+      const url = `/api/courses-v2?id=${courseId}`
+      console.log('[CourseSelector] DELETE URL (query param):', url)
       console.log('[CourseSelector] Course ID type:', typeof courseId, 'value:', courseId)
       
       let res
@@ -119,6 +120,21 @@ export function CourseSelector({
           }
         })
         console.log('[CourseSelector] DELETE fetch completed, status:', res.status, res.statusText)
+        
+        // If query param approach fails, try path param
+        if (!res.ok && res.status === 404) {
+          console.log('[CourseSelector] Query param failed, trying path param approach...')
+          const pathUrl = `/api/courses-v2/${courseId}`
+          console.log('[CourseSelector] DELETE URL (path param):', pathUrl)
+          res = await fetch(pathUrl, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          console.log('[CourseSelector] Path param fetch completed, status:', res.status, res.statusText)
+        }
       } catch (fetchError: any) {
         console.error('[CourseSelector] Fetch error:', fetchError)
         alert('Network error: ' + (fetchError.message || 'Failed to connect to server'))
