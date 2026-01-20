@@ -376,7 +376,7 @@ export function SkillBankCourseView({
       
       if (!res.ok) {
         const errorText = await res.text()
-        let errorData = {}
+        let errorData: any = {}
         try {
           errorData = JSON.parse(errorText)
         } catch {
