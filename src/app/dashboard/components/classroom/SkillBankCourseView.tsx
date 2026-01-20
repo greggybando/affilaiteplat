@@ -310,24 +310,27 @@ export function SkillBankCourseView({
       if (!res.ok) {
         console.error('Failed to update lesson:', res.status, data)
         alert(data.error || `Failed to save lesson changes (${res.status})`)
-        return
+        return false
       }
       
       console.log('Lesson updated successfully:', data)
       
+      // Use the response data if available, otherwise use updates
+      const updatedLesson = data.lesson || { ...updates, id: lessonId }
+      
       // Update selected lesson immediately
       if (selectedLesson?.id === lessonId) {
-        setSelectedLesson({ ...selectedLesson, ...updates })
+        setSelectedLesson({ ...selectedLesson, ...updatedLesson })
       }
       
-      // Update sections state immediately
+      // Update sections state immediately with the actual updated data
       setSections(prevSections => 
         prevSections.map(section => {
           if (section.id === sectionId) {
             return {
               ...section,
               lessons: section.lessons?.map((lesson: any) => 
-                lesson.id === lessonId ? { ...lesson, ...updates } : lesson
+                lesson.id === lessonId ? { ...lesson, ...updatedLesson } : lesson
               )
             }
           }
@@ -335,10 +338,17 @@ export function SkillBankCourseView({
         })
       )
       
+      // Update editing title state to match saved value
+      if (updates.title) {
+        setEditingLessonTitle(updates.title)
+      }
+      
       showSavedIndicator()
+      return true
     } catch (error) {
       console.error('Error updating lesson:', error)
       alert('Failed to save lesson changes. Please try again.')
+      return false
     }
   }
 
@@ -733,34 +743,59 @@ export function SkillBankCourseView({
                                     type="text"
                                     value={editingLessonTitle}
                                     onChange={(e) => setEditingLessonTitle(e.target.value)}
-                                    onBlur={(e) => {
+                                    onBlur={async (e) => {
                                       const newValue = e.target.value.trim()
-                                      setEditingLessonId(null)
-                                      if (newValue && newValue !== lesson.title) {
-                                        console.log('Saving lesson name on blur:', newValue)
-                                        handleUpdateLesson(section.id, lesson.id, {
-                                          title: newValue,
-                                          slug: generateSlug(newValue)
-                                        })
-                                      } else if (!newValue) {
+                                      if (!newValue) {
                                         console.log('Empty lesson name, reverting to:', lesson.title)
+                                        setEditingLessonId(null)
                                         setEditingLessonTitle(lesson.title)
+                                        return
+                                      }
+                                      
+                                      if (newValue === lesson.title) {
+                                        console.log('No change, closing editor')
+                                        setEditingLessonId(null)
+                                        return
+                                      }
+                                      
+                                      console.log('Saving lesson name on blur:', newValue, 'from:', lesson.title)
+                                      const success = await handleUpdateLesson(section.id, lesson.id, {
+                                        title: newValue,
+                                        slug: generateSlug(newValue)
+                                      })
+                                      
+                                      if (success) {
+                                        setEditingLessonId(null)
+                                      } else {
+                                        // If save failed, keep editing
+                                        console.log('Save failed, keeping editor open')
                                       }
                                     }}
                                     onClick={(e) => e.stopPropagation()}
-                                    onKeyDown={(e) => {
+                                    onKeyDown={async (e) => {
                                       if (e.key === 'Enter') {
                                         const newValue = editingLessonTitle.trim()
-                                        setEditingLessonId(null)
-                                        if (newValue && newValue !== lesson.title) {
-                                          console.log('Saving lesson name on Enter:', newValue)
-                                          handleUpdateLesson(section.id, lesson.id, {
-                                            title: newValue,
-                                            slug: generateSlug(newValue)
-                                          })
-                                        } else if (!newValue) {
+                                        if (!newValue) {
                                           console.log('Empty lesson name, reverting to:', lesson.title)
+                                          setEditingLessonId(null)
                                           setEditingLessonTitle(lesson.title)
+                                          return
+                                        }
+                                        
+                                        if (newValue === lesson.title) {
+                                          console.log('No change, closing editor')
+                                          setEditingLessonId(null)
+                                          return
+                                        }
+                                        
+                                        console.log('Saving lesson name on Enter:', newValue, 'from:', lesson.title)
+                                        const success = await handleUpdateLesson(section.id, lesson.id, {
+                                          title: newValue,
+                                          slug: generateSlug(newValue)
+                                        })
+                                        
+                                        if (success) {
+                                          setEditingLessonId(null)
                                         }
                                       }
                                       if (e.key === 'Escape') {
