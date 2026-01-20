@@ -76,15 +76,20 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
     
     setLoadingNotes(true)
     try {
-      const res = await fetch(`/api/courses-v2/lesson-notes?lessonId=${selectedLesson.id}`)
+      const res = await fetch(`/api/courses-v2/lesson-notes?lessonId=${selectedLesson.id}`, {
+        credentials: 'include'
+      })
       if (res.ok) {
         const data = await res.json()
+        console.log('[CourseDetailClient] Notes loaded:', { lessonId: selectedLesson.id, notes: data.notes, hasNotes: !!data.notes })
         setLessonNotes(data.notes || '')
       } else {
+        const errorData = await res.json().catch(() => ({}))
+        console.error('[CourseDetailClient] Failed to load notes:', res.status, errorData)
         setLessonNotes('')
       }
     } catch (error) {
-      console.error('Error loading notes:', error)
+      console.error('[CourseDetailClient] Error loading notes:', error)
       setLessonNotes('')
     } finally {
       setLoadingNotes(false)
@@ -232,7 +237,7 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
                   )}
                 </div>
 
-                {/* Notes Section */}
+                {/* Notes Section - Always show if there are notes or if we're loading */}
                 {(lessonNotes || loadingNotes) && (
                   <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
                     <div className="p-4 border-b border-slate-700/50">
@@ -241,7 +246,7 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
                     <div className="p-4">
                       {loadingNotes ? (
                         <div className="text-sm text-slate-400 text-center py-4">Loading notes...</div>
-                      ) : lessonNotes ? (
+                      ) : lessonNotes && lessonNotes.trim() ? (
                         <div className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
                           {lessonNotes}
                         </div>

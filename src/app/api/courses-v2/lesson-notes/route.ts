@@ -25,15 +25,23 @@ export async function GET(request: NextRequest) {
       .from('lesson_notes')
       .select('id, notes, updated_at')
       .eq('lesson_id', lessonId)
-      .single()
+      .maybeSingle()
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Error fetching lesson notes:', error)
+    if (error) {
+      console.error('[lesson-notes GET] Error fetching lesson notes:', error)
       throw error
     }
 
+    const notesText = (note as any)?.notes || ''
+    console.log('[lesson-notes GET] Fetched notes:', { 
+      lessonId, 
+      hasNote: !!note, 
+      notesLength: notesText.length,
+      affiliateId: affiliate.id 
+    })
+
     return NextResponse.json({ 
-      notes: (note as any)?.notes || '',
+      notes: notesText,
       updatedAt: (note as any)?.updated_at || null
     })
   } catch (error: any) {
