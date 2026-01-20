@@ -185,43 +185,23 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE - Remove attachment
 export async function DELETE(request: NextRequest) {
-  try {
-    // Step 1: Auth check
-    const affiliate = await getCurrentAffiliate()
-    if (!affiliate || (affiliate.role !== 'admin' && affiliate.role !== 'moderator')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Step 2: Get ID
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-    if (!id) {
-      return NextResponse.json({ error: 'Attachment ID is required' }, { status: 400 })
-    }
-
-    // Step 3: Delete - EXACT same pattern as POST/GET
-    const { error } = await (supabaseAdmin as any)
-      .from('course_attachments')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      return NextResponse.json({ 
-        error: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    return NextResponse.json({ 
-      error: error.message,
-      stack: error.stack
-    }, { status: 500 })
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
+  
+  if (!id) {
+    return NextResponse.json({ error: 'Missing id' }, { status: 400 })
   }
+
+  const { error } = await (supabaseAdmin as any)
+    .from('course_attachments')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true })
 }
 
