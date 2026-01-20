@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Plus, Trash2, Eye, ChevronDown, ChevronRight, Upload, Paperclip } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, Upload, Paperclip, Check } from 'lucide-react'
 import { Course, Module, Lesson } from '@/lib/types/courses'
 
 interface SkillBankCourseViewProps {
@@ -25,6 +25,11 @@ const glowShadow = (shadows: string, glowIntensity: number) => {
   return shadows
 }
 
+const hexToRgb = (hex: string): string => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result ? `${parseInt(result[1], 16)},${parseInt(result[2], 16)},${parseInt(result[3], 16)}` : '6,182,212'
+}
+
 export function SkillBankCourseView({ 
   course, 
   isAdmin, 
@@ -34,52 +39,56 @@ export function SkillBankCourseView({
 }: SkillBankCourseViewProps) {
   const [courseData, setCourseData] = useState(course)
   const [sections, setSections] = useState<any[]>([])
-  const [selectedSection, setSelectedSection] = useState<any>(null)
   const [selectedLesson, setSelectedLesson] = useState<any>(null)
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   
   // Editing states
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
+  const [editingCourseTitle, setEditingCourseTitle] = useState(false)
+  const [courseTitle, setCourseTitle] = useState(course.title)
+  
   const [lessonNotes, setLessonNotes] = useState('')
   const [lessonVideoUrl, setLessonVideoUrl] = useState('')
   const [lessonAttachments, setLessonAttachments] = useState<any[]>([])
   const [uploadingFile, setUploadingFile] = useState(false)
   
   const [saving, setSaving] = useState(false)
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [showSaved, setShowSaved] = useState(false)
 
   const isPublished = (courseData as any).is_published !== false
   const courseColor = courseData.color || '#06B6D4'
-  const rgbValues = courseColor.match(/\w\w/g)?.map((x) => parseInt(x, 16)).join(',') || '6,182,212'
+  const rgbValues = hexToRgb(courseColor)
+
+  // Extract video ID helpers
+  const extractYouTubeId = (url: string): string => {
+    if (!url) return ''
+    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0]
+    if (url.includes('youtube.com/watch?v=')) return url.split('v=')[1].split('&')[0]
+    if (url.includes('youtube.com/embed/')) return url.split('embed/')[1].split('?')[0]
+    return url
+  }
+
+  const extractLoomId = (url: string): string => {
+    const match = url.match(/loom\.com\/share\/([a-f0-9]+)/i)
+    return match ? match[1] : ''
+  }
 
   // Fetch sections with lessons
   useEffect(() => {
     loadSections()
   }, [course.id])
 
-  // Update notes and video URL when lesson changes
+  // Update when lesson changes
   useEffect(() => {
     if (selectedLesson) {
       setLessonNotes(selectedLesson.description || '')
       setLessonVideoUrl(selectedLesson.video_url || '')
       loadLessonAttachments()
-      setHasUnsavedChanges(false)
     }
   }, [selectedLesson])
-
-  const loadLessonAttachments = async () => {
-    if (!selectedLesson) return
-    
-    try {
-      const res = await fetch(`/api/courses-v2/lesson-attachments?lessonId=${selectedLesson.id}`)
-      const data = await res.json()
-      setLessonAttachments(data.attachments || [])
-    } catch (error) {
-      console.error('Error loading attachments:', error)
-    }
-  }
 
   const loadSections = async () => {
     try {
@@ -105,12 +114,12 @@ export function SkillBankCourseView({
       
       setSections(sectionsWithLessons)
       
-      // Auto-expand first section and select first lesson if available
+      // Auto-expand first section and select first lesson
       if (sectionsWithLessons.length > 0) {
         const firstSection = sectionsWithLessons[0]
         setExpandedSections(new Set([firstSection.id]))
         if (firstSection.lessons && firstSection.lessons.length > 0) {
-          setSelectedSection(firstSection)
+          setSelectedSectionId(firstSection.id)
           setSelectedLesson(firstSection.lessons[0])
         }
       }
@@ -119,6 +128,23 @@ export function SkillBankCourseView({
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadLessonAttachments = async () => {
+    if (!selectedLesson) return
+    
+    try {
+      const res = await fetch(`/api/courses-v2/lesson-attachments?lessonId=${selectedLesson.id}`)
+      const data = await res.json()
+      setLessonAttachments(data.attachments || [])
+    } catch (error) {
+      console.error('Error loading attachments:', error)
+    }
+  }
+
+  const showSavedIndicator = () => {
+    setShowSaved(true)
+    setTimeout(() => setShowSaved(false), 2000)
   }
 
   const handlePublish = async () => {
@@ -145,9 +171,27 @@ export function SkillBankCourseView({
     }
   }
 
+  const handleSaveCourseTitle = async () => {
+    if (courseTitle === courseData.title) return
+    
+    try {
+      const res = await fetch('/api/courses-v2', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: course.id, title: courseTitle })
+      })
+      
+      if (!res.ok) return
+      setCourseData({ ...courseData, title: courseTitle })
+      showSavedIndicator()
+    } catch (error) {
+      console.error('Error saving course title:', error)
+    }
+  }
+
   const handleAddSection = async () => {
     try {
-      const newTitle = 'Untitled Section'
+      const newTitle = 'UNTITLED SECTION'
       const res = await fetch(`/api/courses-v2/${course.id}/sections`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -165,7 +209,7 @@ export function SkillBankCourseView({
       }
       
       await loadSections()
-      // Focus on the new section
+      showSavedIndicator()
       if (data.section || data.module) {
         const newSection = data.section || data.module
         setEditingSectionId(newSection.id)
@@ -195,9 +239,10 @@ export function SkillBankCourseView({
       }
       
       await loadSections()
-      // Auto-select the new lesson
+      showSavedIndicator()
       if (data.lesson) {
         setSelectedLesson(data.lesson)
+        setSelectedSectionId(sectionId)
         setEditingLessonId(data.lesson.id)
       }
     } catch (error) {
@@ -214,8 +259,8 @@ export function SkillBankCourseView({
       })
       
       if (!res.ok) return
-      
       await loadSections()
+      showSavedIndicator()
     } catch (error) {
       console.error('Error updating section:', error)
     }
@@ -231,12 +276,12 @@ export function SkillBankCourseView({
       
       if (!res.ok) return
       
-      // Update local state
       if (selectedLesson?.id === lessonId) {
         setSelectedLesson({ ...selectedLesson, ...updates })
       }
       
       await loadSections()
+      showSavedIndicator()
     } catch (error) {
       console.error('Error updating lesson:', error)
     }
@@ -256,8 +301,9 @@ export function SkillBankCourseView({
       }
       
       await loadSections()
-      if (selectedSection?.id === sectionId) {
-        setSelectedSection(null)
+      showSavedIndicator()
+      if (selectedSectionId === sectionId) {
+        setSelectedSectionId(null)
         setSelectedLesson(null)
       }
     } catch (error) {
@@ -279,6 +325,7 @@ export function SkillBankCourseView({
       }
       
       await loadSections()
+      showSavedIndicator()
       if (selectedLesson?.id === lessonId) {
         setSelectedLesson(null)
       }
@@ -297,38 +344,26 @@ export function SkillBankCourseView({
     setExpandedSections(newExpanded)
   }
 
-  // Mark as changed when editing
+  // Auto-save notes
   const handleNotesChange = (value: string) => {
     setLessonNotes(value)
-    setHasUnsavedChanges(true)
-  }
-
-  const handleVideoUrlChange = (value: string) => {
-    setLessonVideoUrl(value)
-    setHasUnsavedChanges(true)
-  }
-
-  // Save all lesson changes
-  const handleSaveLesson = async () => {
-    if (!selectedLesson || !selectedSection) return
     
-    try {
-      setSaving(true)
-      await handleUpdateLesson(selectedSection.id, selectedLesson.id, {
-        description: lessonNotes,
-        video_url: lessonVideoUrl
-      })
-      setHasUnsavedChanges(false)
-      
-      // Show success message briefly
-      setTimeout(() => setSaving(false), 500)
-    } catch (error) {
-      setSaving(false)
-      alert('Failed to save changes')
+    if (selectedLesson && selectedSectionId && isAdmin) {
+      clearTimeout((window as any).notesSaveTimer)
+      ;(window as any).notesSaveTimer = setTimeout(() => {
+        handleUpdateLesson(selectedSectionId, selectedLesson.id, { description: value })
+      }, 1500)
     }
   }
 
-  // Handle file upload
+  // Auto-save video URL
+  const handleVideoUrlBlur = () => {
+    if (selectedLesson && selectedSectionId && lessonVideoUrl !== selectedLesson.video_url && isAdmin) {
+      handleUpdateLesson(selectedSectionId, selectedLesson.id, { video_url: lessonVideoUrl })
+    }
+  }
+
+  // File upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0 || !selectedLesson) return
@@ -353,19 +388,17 @@ export function SkillBankCourseView({
         }
       }
       
-      // Reload attachments
       await loadLessonAttachments()
+      showSavedIndicator()
     } catch (error) {
       console.error('Error uploading file:', error)
       alert('Failed to upload file')
     } finally {
       setUploadingFile(false)
-      // Reset input
       e.target.value = ''
     }
   }
 
-  // Delete attachment
   const handleDeleteAttachment = async (attachmentId: string) => {
     if (!confirm('Delete this attachment?')) return
     
@@ -380,6 +413,7 @@ export function SkillBankCourseView({
       }
       
       await loadLessonAttachments()
+      showSavedIndicator()
     } catch (error) {
       console.error('Error deleting attachment:', error)
       alert('Failed to delete attachment')
@@ -388,393 +422,444 @@ export function SkillBankCourseView({
 
   return (
     <div className="flex h-full overflow-hidden relative">
-      {/* Background gradient - matching dashboard */}
+      {/* Color Splash Background */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0"
           style={{
             background: `
-              radial-gradient(circle at 20% 50%, rgba(${rgbValues}, 0.15) 0%, transparent 50%),
-              radial-gradient(circle at 80% 80%, rgba(${rgbValues}, 0.15) 0%, transparent 50%),
-              radial-gradient(circle at 40% 20%, rgba(${rgbValues}, 0.1) 0%, transparent 40%)
+              radial-gradient(circle at 20% 50%, rgba(${rgbValues}, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(${rgbValues}, 0.08) 0%, transparent 50%)
             `
           }}
         />
       </div>
 
-      {/* Left Sidebar */}
-      <div 
-        className="w-80 flex-shrink-0 flex flex-col relative z-10"
-        style={{
-          background: 'rgba(20,20,25,0.85)',
-          backdropFilter: 'blur(12px)',
-          borderRight: '1px solid rgba(255,255,255,0.1)'
-        }}
-      >
-        {/* Header */}
-        <div className="p-4 border-b border-[rgba(255,255,255,0.1)]">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-[rgba(255,255,255,0.6)] hover:text-white transition-colors text-sm mb-4"
-          >
-            <ArrowLeft size={16} />
-            Back to Courses
-          </button>
+      {/* Header Bar */}
+      <div className="absolute top-0 left-0 right-0 h-16 border-b border-[rgba(255,255,255,0.1)] px-6 flex items-center justify-between z-20 bg-[rgba(15,15,26,0.8)] backdrop-blur-sm">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-[rgba(255,255,255,0.6)] hover:text-white transition-colors text-sm"
+        >
+          <ArrowLeft size={16} />
+          Back to Courses
+        </button>
 
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold text-white">{courseData.title}</h2>
-            {!isPublished && (
-              <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full border border-yellow-500/30">
-                Draft
-              </span>
-            )}
-          </div>
-
+        <div className="flex items-center gap-3">
+          {!isPublished && (
+            <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full border border-yellow-500/30">
+              Draft
+            </span>
+          )}
+          
+          {showSaved && (
+            <span className="flex items-center gap-1 text-green-400 text-sm">
+              <Check size={14} />
+              Saved
+            </span>
+          )}
+          
           {!isPublished && isAdmin && (
             <button
               onClick={handlePublish}
-              className="w-full mt-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg font-semibold transition-colors flex items-center gap-2"
             >
               <Eye size={14} />
               Publish Course
             </button>
           )}
         </div>
+      </div>
 
-        {/* Add Section Button */}
-        {isAdmin && (
-          <div className="p-3 border-b border-[rgba(255,255,255,0.1)]">
-            <button
-              onClick={handleAddSection}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.1)] rounded-lg text-sm text-white transition-colors"
+      {/* Main Content - offset by header */}
+      <div className="flex w-full h-full pt-16">
+        {/* Left Sidebar - Course Modules */}
+        <div 
+          className="w-80 rounded-lg overflow-hidden flex flex-col max-h-full sticky top-4 z-10"
+          style={{
+            background: 'linear-gradient(135deg, rgba(35,35,40,0.95) 0%, rgba(30,30,35,0.98) 50%, rgba(25,25,30,0.95) 100%)',
+            border: '1px solid rgba(70,70,75,0.6)',
+            boxShadow: glowShadow(`
+              inset 0 1px 1px rgba(255,255,255,0.05),
+              inset 0 -1px 1px rgba(0,0,0,0.8),
+              0 2px 8px rgba(0,0,0,0.6)
+            `, glowIntensity)
+          }}
+        >
+          <div 
+            className="p-3 shrink-0 border-b" 
+            style={{
+              borderColor: `rgba(${rgbValues},0.2)`,
+              background: 'linear-gradient(135deg, rgba(40,40,45,0.9) 0%, rgba(35,35,40,0.95) 100%)'
+            }}
+          >
+            <h3 
+              className="text-xs font-semibold uppercase tracking-widest" 
+              style={{
+                color: `rgba(${rgbValues},0.9)`,
+                textShadow: `0 0 8px rgba(${rgbValues},0.4)`
+              }}
             >
-              <Plus size={16} />
-              Add Section
-            </button>
+              Course Modules
+            </h3>
           </div>
-        )}
 
-        {/* Course Sections Header */}
-        <div className="px-4 py-3">
-          <h3 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
-            Course Sections
-          </h3>
-        </div>
-
-        {/* Sections List */}
-        <div className="flex-1 overflow-y-auto px-2 pb-4">
-          {loading ? (
-            <div className="p-4 text-center text-[rgba(255,255,255,0.5)] text-sm">Loading...</div>
-          ) : sections.length === 0 ? (
-            <div className="p-4 text-center text-[rgba(255,255,255,0.4)] text-sm">
-              No sections yet. Click "Add Section" to create one.
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {sections.map((section, index) => (
-                <div key={section.id}>
-                  <div
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all group ${
-                      selectedSection?.id === section.id
-                        ? 'bg-[rgba(255,255,255,0.15)]'
-                        : 'hover:bg-[rgba(255,255,255,0.05)]'
-                    }`}
-                  >
-                    <button
-                      onClick={() => toggleSection(section.id)}
-                      className="p-0.5 text-[rgba(255,255,255,0.6)] hover:text-white"
-                    >
-                      {expandedSections.has(section.id) ? (
-                        <ChevronDown size={14} />
-                      ) : (
-                        <ChevronRight size={14} />
-                      )}
-                    </button>
-                    
-                    {editingSectionId === section.id ? (
-                      <input
-                        type="text"
-                        defaultValue={section.title}
-                        onBlur={(e) => {
-                          setEditingSectionId(null)
-                          if (e.target.value !== section.title) {
-                            handleUpdateSection(section.id, { 
-                              title: e.target.value,
-                              slug: generateSlug(e.target.value)
-                            })
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            setEditingSectionId(null)
-                            if ((e.target as HTMLInputElement).value !== section.title) {
-                              handleUpdateSection(section.id, { 
-                                title: (e.target as HTMLInputElement).value,
-                                slug: generateSlug((e.target as HTMLInputElement).value)
-                              })
-                            }
-                          }
-                        }}
-                        className="flex-1 bg-transparent border-b border-cyan-500 outline-none text-sm text-white"
-                        autoFocus
-                      />
-                    ) : (
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="p-4 text-center text-slate-400 text-sm">Loading...</div>
+            ) : sections.length === 0 ? (
+              <div className="p-4 text-center text-slate-400 text-sm">
+                {isAdmin ? 'Click "+ Add Section" below to create your first section' : 'No content yet'}
+              </div>
+            ) : (
+              <div>
+                {sections.map((section, index) => {
+                  const isExpanded = expandedSections.has(section.id)
+                  const sectionLessons = section.lessons || []
+                  
+                  return (
+                    <div key={section.id} className="group">
+                      {/* Section Header */}
                       <div
-                        onClick={() => {
-                          setSelectedSection(section)
-                          if (section.lessons && section.lessons.length > 0) {
-                            setSelectedLesson(section.lessons[0])
-                          } else {
-                            setSelectedLesson(null)
-                          }
-                        }}
-                        onDoubleClick={() => isAdmin && setEditingSectionId(section.id)}
-                        className="flex-1 text-sm font-medium text-white"
+                        className="px-3 py-3 border-b border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-pointer"
+                        onClick={() => toggleSection(section.id)}
                       >
-                        {section.title}
-                      </div>
-                    )}
-                    
-                    {isAdmin && (
-                      <button
-                        onClick={() => handleDeleteSection(section.id)}
-                        className="p-1 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity text-[rgba(255,255,255,0.6)]"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Lessons under section */}
-                  {expandedSections.has(section.id) && section.lessons && section.lessons.length > 0 && (
-                    <div className="ml-7 mt-1 space-y-1">
-                      {section.lessons.map((lesson: any) => (
-                        <div
-                          key={lesson.id}
-                          onClick={() => {
-                            setSelectedSection(section)
-                            setSelectedLesson(lesson)
-                          }}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer transition-all group text-sm ${
-                            selectedLesson?.id === lesson.id
-                              ? 'bg-[rgba(6,182,212,0.2)] text-cyan-300'
-                              : 'text-[rgba(255,255,255,0.6)] hover:bg-[rgba(255,255,255,0.05)] hover:text-white'
-                          }`}
-                        >
-                          {editingLessonId === lesson.id ? (
-                            <input
-                              type="text"
-                              defaultValue={lesson.title}
-                              onBlur={(e) => {
-                                setEditingLessonId(null)
-                                if (e.target.value !== lesson.title) {
-                                  handleUpdateLesson(section.id, lesson.id, {
-                                    title: e.target.value,
-                                    slug: generateSlug(e.target.value)
-                                  })
-                                }
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  setEditingLessonId(null)
-                                  if ((e.target as HTMLInputElement).value !== lesson.title) {
-                                    handleUpdateLesson(section.id, lesson.id, {
-                                      title: (e.target as HTMLInputElement).value,
-                                      slug: generateSlug((e.target as HTMLInputElement).value)
-                                    })
-                                  }
-                                }
-                              }}
-                              className="flex-1 bg-transparent border-b border-cyan-500 outline-none text-xs"
-                              autoFocus
-                            />
-                          ) : (
-                            <div
-                              onDoubleClick={() => isAdmin && setEditingLessonId(lesson.id)}
-                              className="flex-1"
-                            >
-                              {lesson.title}
+                        <div className="flex items-start gap-2">
+                          {isAdmin && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <GripVertical size={14} className="text-[rgba(255,255,255,0.3)]" />
                             </div>
                           )}
+                          
+                          <div className="flex-shrink-0">
+                            {isExpanded ? (
+                              <ChevronDown size={16} className="text-[rgba(255,255,255,0.5)]" />
+                            ) : (
+                              <ChevronRight size={16} className="text-[rgba(255,255,255,0.5)]" />
+                            )}
+                          </div>
+                          
+                          <div className="flex-1">
+                            {editingSectionId === section.id && isAdmin ? (
+                              <input
+                                type="text"
+                                defaultValue={section.title}
+                                onBlur={(e) => {
+                                  setEditingSectionId(null)
+                                  if (e.target.value !== section.title) {
+                                    handleUpdateSection(section.id, { 
+                                      title: e.target.value.toUpperCase(),
+                                      slug: generateSlug(e.target.value)
+                                    })
+                                  }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    setEditingSectionId(null)
+                                    if ((e.target as HTMLInputElement).value !== section.title) {
+                                      handleUpdateSection(section.id, { 
+                                        title: (e.target as HTMLInputElement).value.toUpperCase(),
+                                        slug: generateSlug((e.target as HTMLInputElement).value)
+                                      })
+                                    }
+                                  }
+                                }}
+                                className="w-full bg-transparent border-b border-cyan-500 outline-none text-xs font-bold uppercase tracking-wide"
+                                style={{ color: `rgba(${rgbValues},0.9)` }}
+                                autoFocus
+                              />
+                            ) : (
+                              <h4
+                                className="text-xs font-bold uppercase tracking-wide mb-1"
+                                style={{ color: `rgba(${rgbValues},0.9)` }}
+                                onDoubleClick={(e) => {
+                                  e.stopPropagation()
+                                  if (isAdmin) setEditingSectionId(section.id)
+                                }}
+                              >
+                                {section.title}
+                              </h4>
+                            )}
+                            <p className="text-[10px] text-slate-500">
+                              {sectionLessons.length} lesson{sectionLessons.length !== 1 ? 's' : ''}
+                            </p>
+                          </div>
                           
                           {isAdmin && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                handleDeleteLesson(section.id, lesson.id)
+                                handleDeleteSection(section.id)
                               }}
-                              className="p-1 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-red-400"
                             >
-                              <Trash2 size={10} />
+                              <Trash2 size={12} />
                             </button>
                           )}
                         </div>
-                      ))}
+                      </div>
+
+                      {/* Lessons */}
+                      {isExpanded && (
+                        <div className="bg-[rgba(0,0,0,0.2)]">
+                          {sectionLessons.map((lesson: any) => (
+                            <div
+                              key={lesson.id}
+                              onClick={() => {
+                                setSelectedLesson(lesson)
+                                setSelectedSectionId(section.id)
+                              }}
+                              className={`group/lesson px-3 py-2 pl-10 border-b border-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.05)] transition-colors cursor-pointer ${
+                                selectedLesson?.id === lesson.id ? 'bg-[rgba(255,255,255,0.08)]' : ''
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {isAdmin && (
+                                  <div className="opacity-0 group-hover/lesson:opacity-100 transition-opacity">
+                                    <GripVertical size={12} className="text-[rgba(255,255,255,0.3)]" />
+                                  </div>
+                                )}
+                                
+                                {editingLessonId === lesson.id && isAdmin ? (
+                                  <input
+                                    type="text"
+                                    defaultValue={lesson.title}
+                                    onBlur={(e) => {
+                                      setEditingLessonId(null)
+                                      if (e.target.value !== lesson.title) {
+                                        handleUpdateLesson(section.id, lesson.id, {
+                                          title: e.target.value,
+                                          slug: generateSlug(e.target.value)
+                                        })
+                                      }
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        setEditingLessonId(null)
+                                        if ((e.target as HTMLInputElement).value !== lesson.title) {
+                                          handleUpdateLesson(section.id, lesson.id, {
+                                            title: (e.target as HTMLInputElement).value,
+                                            slug: generateSlug((e.target as HTMLInputElement).value)
+                                          })
+                                        }
+                                      }
+                                    }}
+                                    className="flex-1 bg-transparent border-b border-cyan-500 outline-none text-xs text-white"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <span
+                                    className="flex-1 text-xs text-slate-300 hover:text-white transition-colors"
+                                    onDoubleClick={(e) => {
+                                      e.stopPropagation()
+                                      if (isAdmin) setEditingLessonId(lesson.id)
+                                    }}
+                                  >
+                                    {lesson.title}
+                                  </span>
+                                )}
+                                
+                                {isAdmin && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleDeleteLesson(section.id, lesson.id)
+                                    }}
+                                    className="opacity-0 group-hover/lesson:opacity-100 transition-opacity p-1 hover:text-red-400"
+                                  >
+                                    <Trash2 size={10} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Add Lesson Button */}
+                          {isAdmin && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleAddLesson(section.id)
+                              }}
+                              className="w-full px-3 py-2 pl-10 text-left text-[10px] text-[rgba(255,255,255,0.4)] hover:text-cyan-400 hover:bg-[rgba(255,255,255,0.02)] transition-colors flex items-center gap-2"
+                            >
+                              <Plus size={12} />
+                              Add Lesson
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Add Section Button */}
+          {isAdmin && (
+            <div className="p-3 border-t border-[rgba(255,255,255,0.1)]">
+              <button
+                onClick={handleAddSection}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.05)] rounded transition-colors"
+              >
+                <Plus size={14} />
+                Add Section
+              </button>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Right Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden relative z-10">
-        {!selectedLesson ? (
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-[rgba(255,255,255,0.5)] text-lg">
-              {selectedSection ? 'Select a lesson to start' : 'Select a section to view lessons'}
-            </p>
-            
-            {selectedSection && isAdmin && (
-              <button
-                onClick={() => handleAddLesson(selectedSection.id)}
-                className="ml-4 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm rounded-lg font-semibold transition-colors flex items-center gap-2"
-              >
-                <Plus size={16} />
-                Add First Lesson
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="flex-1 overflow-y-auto p-8">
-            <div className="max-w-4xl mx-auto">
-              {/* Lesson Title */}
-              <h1 className="text-3xl font-bold text-white mb-6">{selectedLesson.title}</h1>
-
-              {/* Save Button */}
-              {isAdmin && hasUnsavedChanges && (
-                <div className="mb-6 flex items-center gap-3">
-                  <button
-                    onClick={handleSaveLesson}
-                    disabled={saving}
-                    className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-800 text-white text-sm rounded-lg font-semibold transition-colors"
-                  >
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                  <span className="text-sm text-yellow-400">Unsaved changes</span>
-                </div>
-              )}
-
-              {/* Video URL Section */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-[rgba(255,255,255,0.7)] mb-2">
-                  Video URL (YouTube or Loom)
-                </label>
-                <input
-                  type="text"
-                  value={lessonVideoUrl}
-                  onChange={(e) => handleVideoUrlChange(e.target.value)}
-                  placeholder="https://youtube.com/watch?v=..."
-                  className="w-full bg-[rgba(255,255,255,0.05)] backdrop-blur-sm border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-white outline-none focus:border-cyan-500 transition-colors"
-                  disabled={!isAdmin}
-                />
-              </div>
-
-              {/* Notes Section - Apple Notes Style */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-[rgba(255,255,255,0.7)] mb-2">
-                  Lesson Notes
-                </label>
-                <textarea
-                  value={lessonNotes}
-                  onChange={(e) => handleNotesChange(e.target.value)}
-                  placeholder="Start typing your notes here..."
-                  className="w-full min-h-[300px] bg-[rgba(255,255,255,0.05)] backdrop-blur-sm border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-white outline-none focus:border-cyan-500 transition-colors resize-none font-sans"
-                  style={{ lineHeight: '1.6' }}
-                  disabled={!isAdmin}
-                />
-              </div>
-
-              {/* Attachments Section */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-[rgba(255,255,255,0.7)] mb-2">
-                  Attachments
-                </label>
-                
-                {/* Uploaded Files */}
-                {lessonAttachments.length > 0 && (
-                  <div className="mb-3 space-y-2">
-                    {lessonAttachments.map((attachment: any) => (
-                      <div
-                        key={attachment.id}
-                        className="flex items-center justify-between bg-[rgba(255,255,255,0.05)] backdrop-blur-sm border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3"
-                      >
-                        <div className="flex items-center gap-3 flex-1">
-                          <Paperclip size={16} className="text-cyan-400" />
-                          <div className="flex-1">
-                            <a
-                              href={attachment.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-white hover:text-cyan-400 transition-colors"
-                            >
-                              {attachment.file_name}
-                            </a>
-                            {attachment.file_size && (
-                              <p className="text-xs text-[rgba(255,255,255,0.4)]">
-                                {(attachment.file_size / 1024).toFixed(1)} KB
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        {isAdmin && (
-                          <button
-                            onClick={() => handleDeleteAttachment(attachment.id)}
-                            className="p-1 hover:text-red-400 transition-colors text-[rgba(255,255,255,0.6)]"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
+        {/* Right Content Area */}
+        <div className="flex-1 bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden ml-6 mr-6 mb-6">
+          {selectedLesson ? (
+            <div className="space-y-0 h-full overflow-y-auto">
+              {/* Video Player */}
+              <div className="aspect-video bg-slate-900 border-b border-slate-700/50 relative">
+                {lessonVideoUrl && lessonVideoUrl.includes('youtube') && (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${extractYouTubeId(lessonVideoUrl)}?rel=0`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full absolute inset-0"
+                    title={selectedLesson.title}
+                  />
+                )}
+                {lessonVideoUrl && lessonVideoUrl.includes('loom') && (
+                  <iframe
+                    src={`https://www.loom.com/embed/${extractLoomId(lessonVideoUrl)}`}
+                    frameBorder="0"
+                    allowFullScreen
+                    className="w-full h-full absolute inset-0"
+                    title={selectedLesson.title}
+                  />
+                )}
+                {!lessonVideoUrl && isAdmin && (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-slate-400">No video URL set. Add one below.</p>
                   </div>
                 )}
-
-                {/* Upload Area */}
-                {isAdmin && (
-                  <label className="block border-2 border-dashed border-[rgba(255,255,255,0.2)] rounded-lg p-6 text-center hover:border-cyan-500 transition-colors cursor-pointer bg-[rgba(255,255,255,0.02)]">
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      disabled={uploadingFile}
-                    />
-                    {uploadingFile ? (
-                      <>
-                        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                        <p className="text-sm text-cyan-400">Uploading...</p>
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={32} className="mx-auto mb-2 text-[rgba(255,255,255,0.4)]" />
-                        <p className="text-sm text-[rgba(255,255,255,0.6)] mb-1">
-                          Drop files here or click to upload
-                        </p>
-                        <p className="text-xs text-[rgba(255,255,255,0.4)]">
-                          PDFs, images, documents, etc.
-                        </p>
-                      </>
-                    )}
-                  </label>
+                {!lessonVideoUrl && !isAdmin && (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-slate-400">Video coming soon</p>
+                  </div>
                 )}
               </div>
 
-              {/* Add Lesson Button (bottom) */}
-              {isAdmin && selectedSection && (
-                <button
-                  onClick={() => handleAddLesson(selectedSection.id)}
-                  className="mt-8 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm rounded-lg font-semibold transition-colors flex items-center gap-2"
-                >
-                  <Plus size={16} />
-                  Add Another Lesson
-                </button>
-              )}
+              {/* Lesson Info & Content */}
+              <div className="p-6 space-y-6 relative z-0">
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-2">{selectedLesson.title}</h3>
+                  
+                  {/* Admin Video URL Input */}
+                  {isAdmin && (
+                    <div className="mb-4">
+                      <label className="block text-xs text-slate-400 mb-1">Video URL (YouTube or Loom)</label>
+                      <input
+                        type="text"
+                        value={lessonVideoUrl}
+                        onChange={(e) => setLessonVideoUrl(e.target.value)}
+                        onBlur={handleVideoUrlBlur}
+                        placeholder="https://youtube.com/watch?v=..."
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded px-3 py-2 text-sm text-white outline-none focus:border-cyan-500 transition-colors"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Lesson Description/Notes */}
+                  {isAdmin ? (
+                    <div>
+                      <label className="block text-xs text-slate-400 mb-1">Lesson Notes</label>
+                      <textarea
+                        value={lessonNotes}
+                        onChange={(e) => handleNotesChange(e.target.value)}
+                        placeholder="Add lesson description and notes..."
+                        className="w-full min-h-[200px] bg-slate-800/50 border border-slate-700 rounded px-3 py-2 text-sm text-slate-300 outline-none focus:border-cyan-500 transition-colors resize-none"
+                      />
+                    </div>
+                  ) : lessonNotes ? (
+                    <p className="text-slate-300 text-sm leading-relaxed">{lessonNotes}</p>
+                  ) : null}
+                </div>
+
+                {/* Attachments */}
+                {(lessonAttachments.length > 0 || isAdmin) && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-400 mb-3">Attachments</h4>
+                    
+                    {lessonAttachments.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {lessonAttachments.map((attachment: any) => (
+                          <div
+                            key={attachment.id}
+                            className="flex items-center justify-between bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-3 group"
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <Paperclip size={16} className="text-cyan-400" />
+                              <a
+                                href={attachment.file_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-slate-300 hover:text-cyan-400 transition-colors"
+                              >
+                                {attachment.file_name}
+                              </a>
+                            </div>
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleDeleteAttachment(attachment.id)}
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {isAdmin && (
+                      <label className="block border-2 border-dashed border-slate-700 rounded-lg p-4 text-center hover:border-cyan-500 transition-colors cursor-pointer">
+                        <input
+                          type="file"
+                          multiple
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          disabled={uploadingFile}
+                        />
+                        {uploadingFile ? (
+                          <>
+                            <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                            <p className="text-xs text-cyan-400">Uploading...</p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={20} className="mx-auto mb-1 text-slate-500" />
+                            <p className="text-xs text-slate-400">Click to upload files</p>
+                          </>
+                        )}
+                      </label>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="flex-1 flex items-center justify-center h-full min-h-[400px]">
+              <div className="text-center">
+                <p className="text-slate-400">
+                  {sections.length === 0 && isAdmin 
+                    ? 'Add a section and lesson to get started'
+                    : 'Select a lesson to start'
+                  }
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
