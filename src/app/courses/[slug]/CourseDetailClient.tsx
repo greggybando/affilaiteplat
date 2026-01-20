@@ -131,43 +131,57 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
 
   const fetchCourse = async () => {
     try {
-      console.log('Fetching course with slug:', slug)
-      const res = await fetch(`/api/courses-v2?courseId=${encodeURIComponent(slug)}`)
+      console.log('[CourseDetailClient] Fetching course with slug:', slug)
+      const res = await fetch(`/api/courses-v2?courseId=${encodeURIComponent(slug)}`, {
+        credentials: 'include'
+      })
       
-      console.log('API response status:', res.status)
+      console.log('[CourseDetailClient] API response status:', res.status)
       
       if (res.status === 401) {
         // Not authenticated, redirect to login
+        console.error('[CourseDetailClient] Unauthorized - redirecting to login')
         router.push('/login')
         return
       }
       
       const data = await res.json()
-      console.log('API response data:', data)
+      console.log('[CourseDetailClient] API response data:', data)
       
       if (!res.ok) {
+        console.error('[CourseDetailClient] API error:', data.error)
         setError(data.error || 'Course not found')
         setLoading(false)
         return
       }
       
       if (data.error) {
+        console.error('[CourseDetailClient] Course data error:', data.error)
         setError(data.error)
         setLoading(false)
         return
       }
       
       if (data.course) {
+        console.log('[CourseDetailClient] Course loaded:', {
+          courseId: data.course.id,
+          title: data.course.title,
+          sectionsCount: data.course.sections?.length || 0,
+          firstLessonId: data.course.sections?.[0]?.lessons?.[0]?.id
+        })
         setCourse(data.course)
         // Auto-select first lesson
         if (data.course.sections?.[0]?.lessons?.[0]) {
-          setSelectedLesson(data.course.sections[0].lessons[0])
+          const firstLesson = data.course.sections[0].lessons[0]
+          console.log('[CourseDetailClient] Auto-selecting first lesson:', firstLesson.id)
+          setSelectedLesson(firstLesson)
         }
       } else {
+        console.error('[CourseDetailClient] No course data in response')
         setError('Course not found')
       }
     } catch (error) {
-      console.error('Error fetching course:', error)
+      console.error('[CourseDetailClient] Error fetching course:', error)
       setError('Failed to load course')
     } finally {
       setLoading(false)
