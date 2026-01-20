@@ -56,6 +56,7 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
   const [lessonAttachments, setLessonAttachments] = useState<Attachment[]>([])
   const [loadingNotes, setLoadingNotes] = useState(false)
   const [loadingAttachments, setLoadingAttachments] = useState(false)
+  const [notesLoaded, setNotesLoaded] = useState(false)
 
   useEffect(() => {
     fetchCourse()
@@ -68,6 +69,7 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
     } else {
       setLessonNotes('')
       setLessonAttachments([])
+      setNotesLoaded(false)
     }
   }, [selectedLesson])
 
@@ -75,13 +77,14 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
     if (!selectedLesson) return
     
     setLoadingNotes(true)
+    setNotesLoaded(false)
     try {
       const res = await fetch(`/api/courses-v2/lesson-notes?lessonId=${selectedLesson.id}`, {
         credentials: 'include'
       })
       if (res.ok) {
         const data = await res.json()
-        console.log('[CourseDetailClient] Notes loaded:', { lessonId: selectedLesson.id, notes: data.notes, hasNotes: !!data.notes })
+        console.log('[CourseDetailClient] Notes loaded:', { lessonId: selectedLesson.id, notes: data.notes, hasNotes: !!data.notes, notesLength: data.notes?.length || 0 })
         setLessonNotes(data.notes || '')
       } else {
         const errorData = await res.json().catch(() => ({}))
@@ -93,6 +96,7 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
       setLessonNotes('')
     } finally {
       setLoadingNotes(false)
+      setNotesLoaded(true)
     }
   }
 
@@ -237,8 +241,8 @@ export default function CourseDetailClient({ slug }: { slug: string }) {
                   )}
                 </div>
 
-                {/* Notes Section - Always show if there are notes or if we're loading */}
-                {(lessonNotes || loadingNotes) && (
+                {/* Notes Section - Always show when a lesson is selected */}
+                {selectedLesson && (
                   <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
                     <div className="p-4 border-b border-slate-700/50">
                       <h4 className="text-sm font-semibold text-slate-300">Notes</h4>
