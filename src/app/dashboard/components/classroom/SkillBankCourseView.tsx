@@ -355,26 +355,42 @@ export function SkillBankCourseView({
     if (!confirm('Delete this lesson? This cannot be undone.')) return
     
     try {
-      const res = await fetch(`/api/courses-v2/${course.id}/sections/${sectionId}/lessons?id=${lessonId}`, {
+      const url = `/api/courses-v2/${course.id}/sections/${sectionId}/lessons?id=${lessonId}`
+      console.log('Deleting lesson:', { courseId: course.id, sectionId, lessonId, url })
+      
+      const res = await fetch(url, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       })
       
-      const data = await res.json().catch(() => ({}))
+      console.log('Delete lesson response status:', res.status)
+      
+      let data = {}
+      try {
+        const text = await res.text()
+        console.log('Delete lesson response text:', text)
+        data = text ? JSON.parse(text) : {}
+      } catch (e) {
+        console.error('Failed to parse response:', e)
+      }
       
       if (!res.ok) {
         console.error('Delete lesson failed:', res.status, data)
-        alert(data.error || `Failed to delete lesson (${res.status})`)
+        alert(data.error || `Failed to delete lesson (${res.status}). Check console for details.`)
         return
       }
+      
+      console.log('Lesson deleted successfully, updating UI')
       
       // Update local state immediately
       setSections(prevSections => 
         prevSections.map(section => {
           if (section.id === sectionId) {
+            const filteredLessons = section.lessons?.filter((lesson: any) => lesson.id !== lessonId) || []
+            console.log('Filtered lessons:', filteredLessons.length, 'from', section.lessons?.length)
             return {
               ...section,
-              lessons: section.lessons?.filter((lesson: any) => lesson.id !== lessonId) || []
+              lessons: filteredLessons
             }
           }
           return section
@@ -389,7 +405,7 @@ export function SkillBankCourseView({
       showSavedIndicator()
     } catch (error) {
       console.error('Error deleting lesson:', error)
-      alert('Failed to delete lesson. Please try again.')
+      alert('Failed to delete lesson. Please check console for details.')
     }
   }
 
