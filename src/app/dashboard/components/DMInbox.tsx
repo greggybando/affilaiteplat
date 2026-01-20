@@ -47,11 +47,13 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const lastProcessedInitialUserId = useRef<string | undefined>(undefined)
 
   // Handle initial user ID to open conversation with
   useEffect(() => {
-    if (initialUserId && initialUserId !== currentUserId) {
+    if (initialUserId && initialUserId !== currentUserId && lastProcessedInitialUserId.current !== initialUserId) {
       console.log('[DMInbox] Opening with initialUserId:', initialUserId)
+      lastProcessedInitialUserId.current = initialUserId
       setIsOpen(true)
       // First fetch conversations to check if one exists
       fetch('/api/messages/inbox')
@@ -122,6 +124,8 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       // Close if clicking outside
       setIsOpen(false)
       setSelectedConversation(null)
+      // Reset last processed initialUserId so it can be reopened
+      lastProcessedInitialUserId.current = undefined
     }
     // Use a delay to avoid immediate closure when opening
     // This ensures the button click completes before the listener is attached
@@ -472,11 +476,16 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
         onClick={(e) => {
           e.stopPropagation()
           e.preventDefault()
-          console.log('[DMInbox] Chat button clicked, current isOpen:', isOpen, 'initialUserId:', initialUserId)
+          console.log('[DMInbox] Chat button clicked, current isOpen:', isOpen, 'initialUserId:', initialUserId, 'lastProcessed:', lastProcessedInitialUserId.current)
           
-          // If initialUserId is set and inbox is closed, open it with that user
-          if (initialUserId && initialUserId !== currentUserId && !isOpen) {
+          // If initialUserId is set and (inbox is closed OR we haven't processed this userId yet), open it with that user
+          const shouldOpenWithInitialUser = initialUserId && 
+            initialUserId !== currentUserId && 
+            (!isOpen || lastProcessedInitialUserId.current !== initialUserId)
+          
+          if (shouldOpenWithInitialUser) {
             console.log('[DMInbox] Opening inbox with initialUserId:', initialUserId)
+            lastProcessedInitialUserId.current = initialUserId
             setIsOpen(true)
             // Fetch conversations and open the conversation for initialUserId
             fetch('/api/messages/inbox')
@@ -591,7 +600,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
               <>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-white">Messages</span>
-                  <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded text-white" title="Close">
+                  <button onClick={() => {
+                    setIsOpen(false)
+                    setSelectedConversation(null)
+                    lastProcessedInitialUserId.current = undefined
+                  }} className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded text-white" title="Close">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
