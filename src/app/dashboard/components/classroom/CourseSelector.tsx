@@ -97,17 +97,25 @@ export function CourseSelector({
         method: 'DELETE'
       })
       
-      console.log('[CourseSelector] Delete response status:', res.status)
+      console.log('[CourseSelector] Delete response status:', res.status, res.statusText)
+      
+      let data: any = {}
+      try {
+        const text = await res.text()
+        console.log('[CourseSelector] Response text:', text)
+        data = text ? JSON.parse(text) : {}
+      } catch (parseError) {
+        console.error('[CourseSelector] Failed to parse response:', parseError)
+        data = {}
+      }
       
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-        console.error('[CourseSelector] Delete error:', errorData)
-        alert('Error deleting course: ' + (errorData.error || `HTTP ${res.status}`))
+        console.error('[CourseSelector] Delete error:', data)
+        alert('Error deleting course: ' + (data.error || `HTTP ${res.status}: ${res.statusText}`))
         setOpenMenuId(null)
         return
       }
       
-      const data = await res.json()
       console.log('[CourseSelector] Delete success:', data)
       
       if (data.error) {
@@ -120,7 +128,14 @@ export function CourseSelector({
       setOpenMenuId(null)
       if (onCourseDeleted) {
         console.log('[CourseSelector] Calling onCourseDeleted callback')
-        await onCourseDeleted()
+        try {
+          await onCourseDeleted()
+          console.log('[CourseSelector] onCourseDeleted completed')
+        } catch (callbackError) {
+          console.error('[CourseSelector] Error in onCourseDeleted:', callbackError)
+        }
+      } else {
+        console.warn('[CourseSelector] onCourseDeleted callback not provided!')
       }
     } catch (error: any) {
       console.error('[CourseSelector] Error deleting course:', error)
