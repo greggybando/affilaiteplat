@@ -89,6 +89,8 @@ export function SkillBankCourseView({
   const [notesExpanded, setNotesExpanded] = useState<Record<string, boolean>>({})
   const [savingNotes, setSavingNotes] = useState<Record<string, boolean>>({})
   const [notesSaved, setNotesSaved] = useState<Record<string, boolean>>({})
+  const notesSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastSavedNotesRef = useRef<string>('')
 
   const isPublished = (courseData as any).is_published !== false
   const courseColor = courseData.color || '#06B6D4'
