@@ -236,16 +236,16 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
     setNewMessage('')
     
     // Use WebSocket if connected (message will come back via socket event)
-    if (false && useWebSocket) {
+    if (false && useWebSocket && selectedChatId) {
       console.log('[Chat] Attempting WebSocket send:', { selectedChatId, messageLength: messageToSend.length, connected: socket.connected })
-      const sent = socket.sendMessage(selectedChatId, messageToSend)
+      const sent = socket.sendMessage(selectedChatId!, messageToSend)
       if (!sent) {
         // Fallback to HTTP if socket send fails
         console.log('[Chat] WebSocket send failed, falling back to HTTP')
       } else {
         console.log('[Chat] WebSocket send succeeded, waiting for message event')
         // Stop typing indicator
-        socket.stopTyping(selectedChatId)
+        socket.stopTyping(selectedChatId!)
         return // Message will arrive via WebSocket event
       }
     } else {
