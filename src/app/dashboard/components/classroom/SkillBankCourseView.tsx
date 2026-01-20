@@ -1465,7 +1465,11 @@ export function SkillBankCourseView({
                           <div className="flex items-center gap-2">
                             {isAdmin && selectedLesson && (
                               <button
-                                onClick={saveNotes}
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  saveNotes()
+                                }}
                                 disabled={savingNotes[selectedLesson.id] || false}
                                 className={`text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
                                   notesSaved[selectedLesson.id]
