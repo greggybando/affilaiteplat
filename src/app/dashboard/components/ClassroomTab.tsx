@@ -675,12 +675,17 @@ export default function ClassroomTab({
                   }}
                   onAddCourse={async () => {
                     try {
-                      const timestamp = Date.now()
+                      const title = 'New Course'
+                      const slug = generateSlug(title)
+                      
+                      console.log('[ClassroomTab] Creating new course:', { title, slug })
+                      
                       const res = await fetch('/api/courses-v2', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                          title: 'New Course',
+                          title,
+                          slug,
                           description: '',
                           emoji: '📚',
                           color: '#06B6D4'
@@ -688,8 +693,17 @@ export default function ClassroomTab({
                       })
                       
                       const data = await res.json()
+                      console.log('[ClassroomTab] Course creation response:', data)
+                      
                       if (data.error) {
+                        console.error('[ClassroomTab] Error creating course:', data.error)
                         alert('Error creating course: ' + data.error)
+                        return
+                      }
+                      
+                      if (!data.course && !data.id) {
+                        console.error('[ClassroomTab] No course returned from API')
+                        alert('Failed to create course: No course data returned')
                         return
                       }
                       
@@ -697,12 +711,25 @@ export default function ClassroomTab({
                       const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
                       const coursesRes = await fetch(url)
                       const coursesData = await coursesRes.json()
+                      
                       if (coursesData.courses) {
+                        console.log('[ClassroomTab] Refetched courses:', coursesData.courses.length)
                         setCourses(coursesData.courses)
+                        
+                        // Auto-select the new course if it was created
+                        if (data.course) {
+                          setSelectedCourse(data.course)
+                        } else if (data.id) {
+                          // Find the course by ID
+                          const newCourse = coursesData.courses.find((c: Course) => c.id === data.id)
+                          if (newCourse) {
+                            setSelectedCourse(newCourse)
+                          }
+                        }
                       }
-                    } catch (error) {
-                      console.error('Error creating course:', error)
-                      alert('Failed to create course')
+                    } catch (error: any) {
+                      console.error('[ClassroomTab] Error creating course:', error)
+                      alert('Failed to create course: ' + (error.message || 'Unknown error'))
                     }
                   }}
                 />
