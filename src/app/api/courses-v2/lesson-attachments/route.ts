@@ -193,8 +193,9 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const attachmentId = body.attachmentId
+    // Use query params like sections/lessons do
+    const { searchParams } = new URL(request.url)
+    const attachmentId = searchParams.get('id')
 
     if (!attachmentId) {
       return NextResponse.json({ error: 'Missing attachmentId' }, { status: 400 })

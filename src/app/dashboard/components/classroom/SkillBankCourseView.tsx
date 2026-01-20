@@ -638,22 +638,21 @@ export function SkillBankCourseView({
     console.log('[CLIENT] 🗑️ Deleting attachment:', attachmentId)
     
     try {
-      const res = await fetch('/api/courses-v2/lesson-attachments', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attachmentId })
+      // Use query param like sections/lessons do
+      const res = await fetch(`/api/courses-v2/lesson-attachments?id=${attachmentId}`, {
+        method: 'DELETE'
       })
       
       console.log('[CLIENT] Delete response:', res.status, res.statusText)
       
-      const data = await res.json()
-      
       if (!res.ok) {
-        console.error('[CLIENT] ❌ Delete failed:', data)
-        alert(`Failed to delete attachment: ${data.error || data.details || `HTTP ${res.status}`}`)
+        const errorData = await res.json().catch(() => ({}))
+        console.error('[CLIENT] ❌ Delete failed:', errorData)
+        alert(`Failed to delete attachment: ${errorData.error || `HTTP ${res.status}`}`)
         return
       }
       
+      const data = await res.json()
       console.log('[CLIENT] ✅ Attachment deleted:', data)
       
       // Reload attachments to update UI
