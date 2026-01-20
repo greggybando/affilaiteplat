@@ -200,28 +200,56 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Attachment ID is required' }, { status: 400 })
     }
 
-    // Delete directly - no checks, just delete (like sections/lessons)
-    const { error } = await supabaseAdmin
+    console.log('[DELETE] Attempting to delete attachment:', id)
+
+    // First check if it exists
+    const { data: existing, error: selectError } = await (supabaseAdmin as any)
+      .from('course_attachments')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    console.log('[DELETE] Existing attachment:', existing)
+    console.log('[DELETE] Select error:', selectError)
+
+    if (selectError) {
+      return NextResponse.json({ 
+        error: 'Attachment not found',
+        details: selectError.message,
+        code: selectError.code
+      }, { status: 404 })
+    }
+
+    // Delete with .select() to see what was deleted
+    const { data: deleted, error } = await (supabaseAdmin as any)
       .from('course_attachments')
       .delete()
       .eq('id', id)
+      .select()
+
+    console.log('[DELETE] Deleted data:', deleted)
+    console.log('[DELETE] Delete error:', error)
 
     if (error) {
-      console.error('Error deleting attachment:', error)
+      console.error('[DELETE] Error deleting attachment:', error)
       return NextResponse.json({ 
-        error: error.message || 'Failed to delete attachment',
+        error: error.message,
         code: error.code,
         details: error.details
       }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    if (!deleted || deleted.length === 0) {
+      return NextResponse.json({ 
+        error: 'No attachment deleted - possible RLS policy issue',
+        hint: 'Check Supabase RLS policies on course_attachments table'
+      }, { status: 403 })
+    }
+
+    return NextResponse.json({ success: true, deleted })
   } catch (error: any) {
-    console.error('Error in attachment delete API:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Server error',
-      details: error.toString()
-    }, { status: 500 })
+    console.error('[DELETE] Exception:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
