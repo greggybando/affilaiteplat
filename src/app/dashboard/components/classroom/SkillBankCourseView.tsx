@@ -351,29 +351,36 @@ export function SkillBankCourseView({
       const updatedLesson = data.lesson || { ...updates, id: lessonId }
       console.log('Updated lesson data:', updatedLesson)
       
-      // Reload sections to get fresh data from server
-      const reloadedSections = await loadSections()
+      // Update sections state immediately with the response data
+      setSections(prevSections => 
+        prevSections.map(section => {
+          if (section.id === sectionId) {
+            return {
+              ...section,
+              lessons: section.lessons?.map((lesson: any) => 
+                lesson.id === lessonId ? { ...lesson, ...updatedLesson } : lesson
+              )
+            }
+          }
+          return section
+        })
+      )
       
       // Update selected lesson if it's the one we just updated
-      // Use a timeout to ensure state has updated
-      setTimeout(() => {
-        setSections(currentSections => {
-          const updatedSection = currentSections.find(s => s.id === sectionId)
-          const updatedLessonFromServer = updatedSection?.lessons?.find((l: any) => l.id === lessonId)
-          
-          if (updatedLessonFromServer && selectedLesson?.id === lessonId) {
-            console.log('Updating selected lesson from reloaded data:', updatedLessonFromServer)
-            setSelectedLesson(updatedLessonFromServer)
-          }
-          
-          return currentSections
-        })
-      }, 100)
+      if (selectedLesson?.id === lessonId) {
+        console.log('Updating selected lesson:', updatedLesson)
+        setSelectedLesson({ ...selectedLesson, ...updatedLesson })
+      }
       
       // Update editing title state to match saved value
       if (updates.title) {
         setEditingLessonTitle(updates.title)
       }
+      
+      // Reload sections to ensure we have latest data from server
+      loadSections().then(() => {
+        console.log('Sections reloaded after update')
+      })
       
       showSavedIndicator()
       return true
