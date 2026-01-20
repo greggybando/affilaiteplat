@@ -44,8 +44,11 @@ export function SkillBankCourseView({
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
   const [lessonNotes, setLessonNotes] = useState('')
   const [lessonVideoUrl, setLessonVideoUrl] = useState('')
+  const [lessonAttachments, setLessonAttachments] = useState<any[]>([])
+  const [uploadingFile, setUploadingFile] = useState(false)
   
   const [saving, setSaving] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   const isPublished = (courseData as any).is_published !== false
   const courseColor = courseData.color || '#06B6D4'
@@ -61,8 +64,22 @@ export function SkillBankCourseView({
     if (selectedLesson) {
       setLessonNotes(selectedLesson.description || '')
       setLessonVideoUrl(selectedLesson.video_url || '')
+      loadLessonAttachments()
+      setHasUnsavedChanges(false)
     }
   }, [selectedLesson])
+
+  const loadLessonAttachments = async () => {
+    if (!selectedLesson) return
+    
+    try {
+      const res = await fetch(`/api/courses-v2/lesson-attachments?lessonId=${selectedLesson.id}`)
+      const data = await res.json()
+      setLessonAttachments(data.attachments || [])
+    } catch (error) {
+      console.error('Error loading attachments:', error)
+    }
+  }
 
   const loadSections = async () => {
     try {
@@ -280,23 +297,92 @@ export function SkillBankCourseView({
     setExpandedSections(newExpanded)
   }
 
-  // Auto-save lesson notes
+  // Mark as changed when editing
   const handleNotesChange = (value: string) => {
     setLessonNotes(value)
+    setHasUnsavedChanges(true)
+  }
+
+  const handleVideoUrlChange = (value: string) => {
+    setLessonVideoUrl(value)
+    setHasUnsavedChanges(true)
+  }
+
+  // Save all lesson changes
+  const handleSaveLesson = async () => {
+    if (!selectedLesson || !selectedSection) return
     
-    // Debounced save
-    if (selectedLesson && selectedSection) {
-      clearTimeout((window as any).notesSaveTimer)
-      ;(window as any).notesSaveTimer = setTimeout(() => {
-        handleUpdateLesson(selectedSection.id, selectedLesson.id, { description: value })
-      }, 1000)
+    try {
+      setSaving(true)
+      await handleUpdateLesson(selectedSection.id, selectedLesson.id, {
+        description: lessonNotes,
+        video_url: lessonVideoUrl
+      })
+      setHasUnsavedChanges(false)
+      
+      // Show success message briefly
+      setTimeout(() => setSaving(false), 500)
+    } catch (error) {
+      setSaving(false)
+      alert('Failed to save changes')
     }
   }
 
-  // Save video URL on blur
-  const handleVideoUrlBlur = () => {
-    if (selectedLesson && selectedSection && lessonVideoUrl !== selectedLesson.video_url) {
-      handleUpdateLesson(selectedSection.id, selectedLesson.id, { video_url: lessonVideoUrl })
+  // Handle file upload
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0 || !selectedLesson) return
+    
+    setUploadingFile(true)
+    
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('lessonId', selectedLesson.id)
+        formData.append('fileName', file.name)
+        
+        const res = await fetch('/api/courses-v2/lesson-attachments', {
+          method: 'POST',
+          body: formData
+        })
+        
+        const data = await res.json()
+        if (data.error) {
+          alert(`Error uploading ${file.name}: ${data.error}`)
+        }
+      }
+      
+      // Reload attachments
+      await loadLessonAttachments()
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      alert('Failed to upload file')
+    } finally {
+      setUploadingFile(false)
+      // Reset input
+      e.target.value = ''
+    }
+  }
+
+  // Delete attachment
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    if (!confirm('Delete this attachment?')) return
+    
+    try {
+      const res = await fetch(`/api/courses-v2/lesson-attachments?id=${attachmentId}`, {
+        method: 'DELETE'
+      })
+      
+      if (!res.ok) {
+        alert('Failed to delete attachment')
+        return
+      }
+      
+      await loadLessonAttachments()
+    } catch (error) {
+      console.error('Error deleting attachment:', error)
+      alert('Failed to delete attachment')
     }
   }
 
@@ -557,6 +643,20 @@ export function SkillBankCourseView({
               {/* Lesson Title */}
               <h1 className="text-3xl font-bold text-white mb-6">{selectedLesson.title}</h1>
 
+              {/* Save Button */}
+              {isAdmin && hasUnsavedChanges && (
+                <div className="mb-6 flex items-center gap-3">
+                  <button
+                    onClick={handleSaveLesson}
+                    disabled={saving}
+                    className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-800 text-white text-sm rounded-lg font-semibold transition-colors"
+                  >
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <span className="text-sm text-yellow-400">Unsaved changes</span>
+                </div>
+              )}
+
               {/* Video URL Section */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-[rgba(255,255,255,0.7)] mb-2">
@@ -565,8 +665,7 @@ export function SkillBankCourseView({
                 <input
                   type="text"
                   value={lessonVideoUrl}
-                  onChange={(e) => setLessonVideoUrl(e.target.value)}
-                  onBlur={handleVideoUrlBlur}
+                  onChange={(e) => handleVideoUrlChange(e.target.value)}
                   placeholder="https://youtube.com/watch?v=..."
                   className="w-full bg-[rgba(255,255,255,0.05)] backdrop-blur-sm border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-white outline-none focus:border-cyan-500 transition-colors"
                   disabled={!isAdmin}
@@ -586,9 +685,6 @@ export function SkillBankCourseView({
                   style={{ lineHeight: '1.6' }}
                   disabled={!isAdmin}
                 />
-                <p className="text-xs text-[rgba(255,255,255,0.4)] mt-2">
-                  {saving ? 'Saving...' : 'Auto-saves as you type'}
-                </p>
               </div>
 
               {/* Attachments Section */}
@@ -596,15 +692,74 @@ export function SkillBankCourseView({
                 <label className="block text-sm font-semibold text-[rgba(255,255,255,0.7)] mb-2">
                   Attachments
                 </label>
-                <div className="border-2 border-dashed border-[rgba(255,255,255,0.2)] rounded-lg p-6 text-center hover:border-cyan-500 transition-colors cursor-pointer bg-[rgba(255,255,255,0.02)]">
-                  <Upload size={32} className="mx-auto mb-2 text-[rgba(255,255,255,0.4)]" />
-                  <p className="text-sm text-[rgba(255,255,255,0.6)] mb-1">
-                    Drop files here or click to upload
-                  </p>
-                  <p className="text-xs text-[rgba(255,255,255,0.4)]">
-                    PDFs, images, documents, etc.
-                  </p>
-                </div>
+                
+                {/* Uploaded Files */}
+                {lessonAttachments.length > 0 && (
+                  <div className="mb-3 space-y-2">
+                    {lessonAttachments.map((attachment: any) => (
+                      <div
+                        key={attachment.id}
+                        className="flex items-center justify-between bg-[rgba(255,255,255,0.05)] backdrop-blur-sm border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <Paperclip size={16} className="text-cyan-400" />
+                          <div className="flex-1">
+                            <a
+                              href={attachment.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-white hover:text-cyan-400 transition-colors"
+                            >
+                              {attachment.file_name}
+                            </a>
+                            {attachment.file_size && (
+                              <p className="text-xs text-[rgba(255,255,255,0.4)]">
+                                {(attachment.file_size / 1024).toFixed(1)} KB
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDeleteAttachment(attachment.id)}
+                            className="p-1 hover:text-red-400 transition-colors text-[rgba(255,255,255,0.6)]"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Upload Area */}
+                {isAdmin && (
+                  <label className="block border-2 border-dashed border-[rgba(255,255,255,0.2)] rounded-lg p-6 text-center hover:border-cyan-500 transition-colors cursor-pointer bg-[rgba(255,255,255,0.02)]">
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={uploadingFile}
+                    />
+                    {uploadingFile ? (
+                      <>
+                        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                        <p className="text-sm text-cyan-400">Uploading...</p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={32} className="mx-auto mb-2 text-[rgba(255,255,255,0.4)]" />
+                        <p className="text-sm text-[rgba(255,255,255,0.6)] mb-1">
+                          Drop files here or click to upload
+                        </p>
+                        <p className="text-xs text-[rgba(255,255,255,0.4)]">
+                          PDFs, images, documents, etc.
+                        </p>
+                      </>
+                    )}
+                  </label>
+                )}
               </div>
 
               {/* Add Lesson Button (bottom) */}
