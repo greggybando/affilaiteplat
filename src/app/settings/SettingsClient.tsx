@@ -394,121 +394,74 @@ export function SettingsClient({ affiliate }: SettingsClientProps) {
             </form>
 
             {/* Email Preferences Section */}
-            <div className="mt-8 pt-8 border-t border-[rgba(6,182,212,0.3)]">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-lg">
-                  <Mail className="w-5 h-5 text-cyan-400" />
-                </div>
-                <h2 className="text-2xl font-bold text-white">Email Notifications</h2>
+            <div className="mt-6 pt-6 border-t border-[rgba(6,182,212,0.3)]">
+              <div className="flex items-center gap-2 mb-4">
+                <Mail className="w-4 h-4 text-cyan-400" />
+                <h2 className="text-lg font-semibold text-white">Email Notifications</h2>
               </div>
 
-              <div className="space-y-4">
-                {/* Master Toggle */}
-                <div className="flex items-center justify-between p-4 bg-[rgba(255,255,255,0.05)] border border-[rgba(6,182,212,0.3)] rounded-lg">
-                  <div>
-                    <p className="text-white font-medium">Email Notifications</p>
-                    <p className="text-sm text-[rgba(255,255,255,0.6)]">Receive email notifications for community activity</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={emailPreferences.notify_replies || emailPreferences.notify_reply_to_comment || emailPreferences.notify_mentions}
-                      onChange={(e) => {
-                        const enabled = e.target.checked
-                        setEmailPreferences({
-                          ...emailPreferences,
-                          notify_replies: enabled,
-                          notify_reply_to_comment: enabled,
-                          notify_mentions: enabled
-                        })
-                      }}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-[rgba(255,255,255,0.1)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-cyan-500 peer-checked:to-blue-500"></div>
-                  </label>
-                </div>
-
+              <div className="space-y-2">
                 {/* Individual Notification Types */}
-                <div className="space-y-3 pl-4 border-l-2 border-[rgba(6,182,212,0.3)]">
-                  <label className="flex items-center justify-between p-3 bg-[rgba(255,255,255,0.05)] border border-[rgba(6,182,212,0.2)] rounded-lg cursor-pointer hover:bg-[rgba(255,255,255,0.08)] transition-colors">
-                    <div>
-                      <p className="text-white text-sm font-medium">Replies to my posts</p>
-                      <p className="text-xs text-[rgba(255,255,255,0.6)]">Get notified when someone replies to your posts</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={emailPreferences.notify_replies}
-                      onChange={(e) => setEmailPreferences({ ...emailPreferences, notify_replies: e.target.checked })}
-                      className="w-4 h-4 text-cyan-500 bg-[rgba(255,255,255,0.1)] border-[rgba(6,182,212,0.3)] rounded focus:ring-cyan-500"
-                    />
-                  </label>
+                <label className="flex items-center justify-between py-2 cursor-pointer hover:bg-[rgba(255,255,255,0.03)] rounded px-2 -mx-2 transition-colors">
+                  <span className="text-sm text-white">Replies to my posts</span>
+                  <input
+                    type="checkbox"
+                    checked={emailPreferences.notify_replies}
+                    onChange={(e) => setEmailPreferences({ ...emailPreferences, notify_replies: e.target.checked })}
+                    className="w-4 h-4 text-cyan-500 bg-[rgba(255,255,255,0.1)] border-[rgba(6,182,212,0.3)] rounded focus:ring-cyan-500"
+                  />
+                </label>
 
-                  <label className="flex items-center justify-between p-3 bg-[rgba(255,255,255,0.05)] border border-[rgba(6,182,212,0.2)] rounded-lg cursor-pointer hover:bg-[rgba(255,255,255,0.08)] transition-colors">
-                    <div>
-                      <p className="text-white text-sm font-medium">Replies to my comments</p>
-                      <p className="text-xs text-[rgba(255,255,255,0.6)]">Get notified when someone replies to your comments</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={emailPreferences.notify_reply_to_comment}
-                      onChange={(e) => setEmailPreferences({ ...emailPreferences, notify_reply_to_comment: e.target.checked })}
-                      className="w-4 h-4 text-cyan-500 bg-[rgba(255,255,255,0.1)] border-[rgba(6,182,212,0.3)] rounded focus:ring-cyan-500"
-                    />
-                  </label>
+                <label className="flex items-center justify-between py-2 cursor-pointer hover:bg-[rgba(255,255,255,0.03)] rounded px-2 -mx-2 transition-colors">
+                  <span className="text-sm text-white">Replies to my comments</span>
+                  <input
+                    type="checkbox"
+                    checked={emailPreferences.notify_reply_to_comment}
+                    onChange={(e) => setEmailPreferences({ ...emailPreferences, notify_reply_to_comment: e.target.checked })}
+                    className="w-4 h-4 text-cyan-500 bg-[rgba(255,255,255,0.1)] border-[rgba(6,182,212,0.3)] rounded focus:ring-cyan-500"
+                  />
+                </label>
 
-                  <label className="flex items-center justify-between p-3 bg-[rgba(255,255,255,0.05)] border border-[rgba(6,182,212,0.2)] rounded-lg cursor-pointer hover:bg-[rgba(255,255,255,0.08)] transition-colors">
-                    <div>
-                      <p className="text-white text-sm font-medium">Mentions</p>
-                      <p className="text-xs text-[rgba(255,255,255,0.6)]">Get notified when someone mentions you (@username)</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={emailPreferences.notify_mentions}
-                      onChange={(e) => setEmailPreferences({ ...emailPreferences, notify_mentions: e.target.checked })}
-                      className="w-4 h-4 text-cyan-500 bg-[rgba(255,255,255,0.1)] border-[rgba(6,182,212,0.3)] rounded focus:ring-cyan-500"
-                    />
-                  </label>
+                <label className="flex items-center justify-between py-2 cursor-pointer hover:bg-[rgba(255,255,255,0.03)] rounded px-2 -mx-2 transition-colors">
+                  <span className="text-sm text-white">Mentions</span>
+                  <input
+                    type="checkbox"
+                    checked={emailPreferences.notify_mentions}
+                    onChange={(e) => setEmailPreferences({ ...emailPreferences, notify_mentions: e.target.checked })}
+                    className="w-4 h-4 text-cyan-500 bg-[rgba(255,255,255,0.1)] border-[rgba(6,182,212,0.3)] rounded focus:ring-cyan-500"
+                  />
+                </label>
 
-                  <label className="flex items-center justify-between p-3 bg-[rgba(255,255,255,0.05)] border border-[rgba(6,182,212,0.2)] rounded-lg cursor-pointer hover:bg-[rgba(255,255,255,0.08)] transition-colors">
-                    <div>
-                      <p className="text-white text-sm font-medium">Likes</p>
-                      <p className="text-xs text-[rgba(255,255,255,0.6)]">Get notified when someone likes your posts (can be noisy)</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={emailPreferences.notify_likes}
-                      onChange={(e) => setEmailPreferences({ ...emailPreferences, notify_likes: e.target.checked })}
-                      className="w-4 h-4 text-cyan-500 bg-[rgba(255,255,255,0.1)] border-[rgba(6,182,212,0.3)] rounded focus:ring-cyan-500"
-                    />
-                  </label>
-                </div>
+                <label className="flex items-center justify-between py-2 cursor-pointer hover:bg-[rgba(255,255,255,0.03)] rounded px-2 -mx-2 transition-colors">
+                  <span className="text-sm text-white">Likes</span>
+                  <input
+                    type="checkbox"
+                    checked={emailPreferences.notify_likes}
+                    onChange={(e) => setEmailPreferences({ ...emailPreferences, notify_likes: e.target.checked })}
+                    className="w-4 h-4 text-cyan-500 bg-[rgba(255,255,255,0.1)] border-[rgba(6,182,212,0.3)] rounded focus:ring-cyan-500"
+                  />
+                </label>
 
                 {/* Digest Frequency */}
-                <div className="p-4 bg-[rgba(255,255,255,0.05)] border border-[rgba(6,182,212,0.3)] rounded-lg">
-                  <label className="block text-white text-sm font-medium mb-2">
-                    Digest Emails
-                  </label>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-white">Digest Emails</span>
                   <select
                     value={emailPreferences.digest_frequency}
                     onChange={(e) => setEmailPreferences({ ...emailPreferences, digest_frequency: e.target.value as any })}
-                    className="w-full px-4 py-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(6,182,212,0.3)] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
+                    className="px-3 py-1 text-sm bg-[rgba(255,255,255,0.05)] border border-[rgba(6,182,212,0.3)] rounded text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
                   >
                     <option value="none">Off</option>
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
                   </select>
-                  <p className="text-xs text-[rgba(255,255,255,0.6)] mt-1">
-                    Receive a summary of community activity
-                  </p>
                 </div>
 
                 <button
                   onClick={handleEmailPreferencesSave}
                   disabled={savingEmailPrefs}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:from-cyan-500/50 disabled:to-blue-500/50 text-white font-semibold rounded-lg transition-all shadow-lg"
-                  style={{ boxShadow: savingEmailPrefs ? 'none' : '0 0 20px rgba(6,182,212,0.5)' }}
+                  className="w-full mt-3 px-4 py-2 text-sm bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:from-cyan-500/50 disabled:to-blue-500/50 text-white font-medium rounded-lg transition-all"
                 >
-                  {savingEmailPrefs ? 'Saving...' : 'Save Email Preferences'}
+                  {savingEmailPrefs ? 'Saving...' : 'Save Preferences'}
                 </button>
               </div>
             </div>
