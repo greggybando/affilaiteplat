@@ -47,6 +47,7 @@ export function SkillBankCourseView({
   // Editing states
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
+  const [editingLessonTitle, setEditingLessonTitle] = useState<string>('')
   const [editingCourseTitle, setEditingCourseTitle] = useState(false)
   const [courseTitle, setCourseTitle] = useState(course.title)
   
@@ -258,6 +259,7 @@ export function SkillBankCourseView({
         setSelectedLesson(data.lesson)
         setSelectedSectionId(sectionId)
         setEditingLessonId(data.lesson.id)
+        setEditingLessonTitle(data.lesson.title || 'Untitled Lesson')
         // Make sure section is expanded
         setExpandedSections(prev => new Set([...prev, sectionId]))
       }
@@ -729,7 +731,8 @@ export function SkillBankCourseView({
                                 {editingLessonId === lesson.id && isAdmin ? (
                                   <input
                                     type="text"
-                                    defaultValue={lesson.title}
+                                    value={editingLessonTitle}
+                                    onChange={(e) => setEditingLessonTitle(e.target.value)}
                                     onBlur={(e) => {
                                       const newValue = e.target.value.trim()
                                       setEditingLessonId(null)
@@ -741,12 +744,13 @@ export function SkillBankCourseView({
                                         })
                                       } else if (!newValue) {
                                         console.log('Empty lesson name, reverting to:', lesson.title)
+                                        setEditingLessonTitle(lesson.title)
                                       }
                                     }}
                                     onClick={(e) => e.stopPropagation()}
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') {
-                                        const newValue = (e.target as HTMLInputElement).value.trim()
+                                        const newValue = editingLessonTitle.trim()
                                         setEditingLessonId(null)
                                         if (newValue && newValue !== lesson.title) {
                                           console.log('Saving lesson name on Enter:', newValue)
@@ -756,10 +760,12 @@ export function SkillBankCourseView({
                                           })
                                         } else if (!newValue) {
                                           console.log('Empty lesson name, reverting to:', lesson.title)
+                                          setEditingLessonTitle(lesson.title)
                                         }
                                       }
                                       if (e.key === 'Escape') {
                                         setEditingLessonId(null)
+                                        setEditingLessonTitle(lesson.title)
                                       }
                                     }}
                                     className="flex-1 bg-transparent border-b border-cyan-500 outline-none text-sm text-white"
@@ -772,7 +778,10 @@ export function SkillBankCourseView({
                                     }`}
                                     onDoubleClick={(e) => {
                                       e.stopPropagation()
-                                      if (isAdmin) setEditingLessonId(lesson.id)
+                                      if (isAdmin) {
+                                        setEditingLessonId(lesson.id)
+                                        setEditingLessonTitle(lesson.title)
+                                      }
                                     }}
                                   >
                                     {lesson.title}
