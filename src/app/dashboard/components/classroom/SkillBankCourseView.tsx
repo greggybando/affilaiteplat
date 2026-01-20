@@ -1309,7 +1309,7 @@ export function SkillBankCourseView({
                 <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
                   {(() => {
                     const hasNotes = lessonNotes && lessonNotes.trim().length > 0
-                    const isExpanded = notesExpanded[selectedLesson.id] || false
+                    const isExpanded = notesExpanded[selectedLesson?.id] || false
                     const shouldAutoExpand = hasNotes && lessonNotes.length > 200
                     
                     return (
@@ -1317,10 +1317,10 @@ export function SkillBankCourseView({
                         <div className="flex items-center justify-between p-4">
                           <h3 className="text-sm font-semibold text-slate-300">Notes</h3>
                           <div className="flex items-center gap-2">
-                            {isAdmin && (
+                            {isAdmin && selectedLesson && (
                               <button
                                 onClick={saveNotes}
-                                disabled={savingNotes[selectedLesson.id]}
+                                disabled={savingNotes[selectedLesson.id] || false}
                                 className={`text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
                                   notesSaved[selectedLesson.id]
                                     ? 'bg-cyan-600 text-white'
@@ -1347,7 +1347,7 @@ export function SkillBankCourseView({
                                 )}
                               </button>
                             )}
-                            {hasNotes && (
+                            {hasNotes && selectedLesson && (
                               <button
                                 onClick={() => setNotesExpanded(prev => ({ ...prev, [selectedLesson.id]: !isExpanded }))}
                                 className="text-xs text-slate-400 hover:text-slate-300 transition-colors flex items-center gap-1"
