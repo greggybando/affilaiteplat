@@ -213,7 +213,15 @@ export function CourseSelector({
                 }}
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="text-4xl">{course.emoji || '📚'}</div>
+                  <div 
+                    className="text-4xl"
+                    style={{
+                      textShadow: glowShadow(`0 0 20px rgba(${rgbValues},0.8), 0 0 40px rgba(${rgbValues},0.6), 0 0 60px rgba(${rgbValues},0.4)`, glowIntensity),
+                      filter: glowIntensity > 0 ? `drop-shadow(0 0 ${glowIntensity * 0.3}px rgba(${rgbValues},${glowIntensity / 100 * 0.6}))` : 'none'
+                    } as React.CSSProperties}
+                  >
+                    {course.emoji || '📚'}
+                  </div>
                   {!isPublished && (
                     <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-semibold border border-yellow-500/30">
                       Draft
