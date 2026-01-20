@@ -321,8 +321,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
               created_at: optimisticTimestamp
             }
             
-            // Return updated array without sorting to preserve grouping
-            return updated
+            // Sort to ensure proper order for timestamp comparisons
+            // This is safe because we're preserving the optimistic timestamp
+            return updated.sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            )
           })
         } else {
           // Fallback: refetch after a delay if response doesn't include message
