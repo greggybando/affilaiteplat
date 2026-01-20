@@ -681,8 +681,7 @@ export default function ClassroomTab({
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                           title: 'New Course',
-                          slug: `new-course-${timestamp}`,
-                          description: 'Click to edit description',
+                          description: '',
                           emoji: '📚',
                           color: '#06B6D4'
                         })
