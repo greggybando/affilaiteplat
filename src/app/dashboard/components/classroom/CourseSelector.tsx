@@ -86,29 +86,49 @@ export function CourseSelector({
     e.preventDefault()
     
     if (!confirm(`Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`)) {
+      setOpenMenuId(null)
       return
     }
     
     try {
+      console.log('[CourseSelector] Deleting course:', { courseId, courseTitle })
+      
       const res = await fetch(`/api/courses-v2/${courseId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
       
+      console.log('[CourseSelector] Delete response status:', res.status)
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+        console.error('[CourseSelector] Delete error:', errorData)
+        alert('Error deleting course: ' + (errorData.error || `HTTP ${res.status}`))
+        setOpenMenuId(null)
+        return
+      }
+      
       const data = await res.json()
+      console.log('[CourseSelector] Delete success:', data)
       
       if (data.error) {
         alert('Error deleting course: ' + data.error)
+        setOpenMenuId(null)
         return
       }
       
       // Close menu and refresh course list
       setOpenMenuId(null)
       if (onCourseDeleted) {
-        onCourseDeleted()
+        console.log('[CourseSelector] Calling onCourseDeleted callback')
+        await onCourseDeleted()
       }
-    } catch (error) {
-      console.error('Error deleting course:', error)
-      alert('Failed to delete course')
+    } catch (error: any) {
+      console.error('[CourseSelector] Error deleting course:', error)
+      alert('Failed to delete course: ' + (error.message || 'Unknown error'))
+      setOpenMenuId(null)
     }
   }
 
@@ -233,7 +253,7 @@ export function CourseSelector({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-fr">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" style={{ gridAutoRows: 'minmax(200px, auto)' }}>
           {skillbankCourses.map((course) => {
             const courseColor = course.color || '#06B6D4'
             const rgbValues = hexToRgb(courseColor)
@@ -255,7 +275,7 @@ export function CourseSelector({
                     onSelectCourse(course)
                   }
                 }}
-                className={`bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 rounded-2xl p-6 transition-all hover:shadow-lg group relative ${(isPublished || isAdmin) && onSelectCourse ? 'cursor-pointer' : 'cursor-not-allowed'} flex flex-col`}
+                className={`bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 rounded-2xl p-6 transition-all hover:shadow-lg group relative ${(isPublished || isAdmin) && onSelectCourse ? 'cursor-pointer' : 'cursor-not-allowed'} flex flex-col h-full`}
                 style={{
                   backdropFilter: 'blur(10px)',
                   borderColor: borderColor,

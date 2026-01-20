@@ -711,12 +711,20 @@ export default function ClassroomTab({
                     setSelectedWorld('dreamjob')
                   }}
                   onCourseDeleted={async () => {
-                    // Refetch courses after deletion
-                    const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
-                    const res = await fetch(url)
-                    const data = await res.json()
-                    if (data.courses) {
-                      setCourses(data.courses)
+                    console.log('[ClassroomTab] onCourseDeleted called, refetching courses')
+                    try {
+                      // Refetch courses after deletion
+                      const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
+                      const res = await fetch(url)
+                      const data = await res.json()
+                      console.log('[ClassroomTab] Refetched courses:', data.courses?.length || 0)
+                      if (data.courses) {
+                        setCourses(data.courses)
+                        // Clear selected course if it was deleted
+                        setSelectedCourse(null)
+                      }
+                    } catch (error) {
+                      console.error('[ClassroomTab] Error refetching courses:', error)
                     }
                   }}
                   onAddCourse={async () => {
