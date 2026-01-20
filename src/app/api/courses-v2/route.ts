@@ -160,6 +160,20 @@ export async function DELETE(request: NextRequest) {
 
     console.log('[API DELETE /courses-v2] Attempting to delete course:', id)
     
+    // First, check if course exists
+    const { data: existingCourse, error: checkError } = await supabaseAdmin
+      .from('courses')
+      .select('id, title')
+      .eq('id', id)
+      .single()
+    
+    if (checkError || !existingCourse) {
+      console.error('[API DELETE /courses-v2] Course not found:', checkError)
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    }
+    
+    console.log('[API DELETE /courses-v2] Course exists:', existingCourse.title)
+    
     // CASCADE delete will handle sections, lessons, attachments
     const { data, error } = await supabaseAdmin
       .from('courses')
@@ -167,18 +181,35 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id)
       .select()
 
-    console.log('[API DELETE /courses-v2] Delete result - data:', data, 'error:', error)
+    console.log('[API DELETE /courses-v2] Delete result - data:', JSON.stringify(data), 'error:', JSON.stringify(error))
 
     if (error) {
-      console.error('[API DELETE /courses-v2] Error deleting course:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[API DELETE /courses-v2] Error deleting course:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      })
+      return NextResponse.json({ 
+        error: error.message || 'Failed to delete course',
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      }, { status: 500 })
     }
 
     console.log('[API DELETE /courses-v2] Course deleted successfully:', id)
     return NextResponse.json({ success: true, deleted: data })
   } catch (error: any) {
-    console.error('[API DELETE /courses-v2] Exception:', error)
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+    console.error('[API DELETE /courses-v2] Exception:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name
+    })
+    return NextResponse.json({ 
+      error: error?.message || 'Internal server error',
+      stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+    }, { status: 500 })
   }
 }
 
