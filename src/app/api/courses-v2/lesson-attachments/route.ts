@@ -204,14 +204,30 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Missing attachmentId' }, { status: 400 })
     }
 
-    // Delete from database FIRST (this is the critical operation)
+    // First, fetch the attachment to get file_url before deleting
+    console.log('[API] Fetching attachment before deletion:', attachmentId)
+    const { data: attachment, error: fetchError } = await (supabaseAdmin as any)
+      .from('course_attachments')
+      .select('id, file_url')
+      .eq('id', attachmentId)
+      .single()
+
+    if (fetchError || !attachment) {
+      console.error('[API] ❌ Attachment not found:', { attachmentId, fetchError })
+      return NextResponse.json({ 
+        error: 'Attachment not found',
+        details: fetchError?.message
+      }, { status: 404 })
+    }
+
+    console.log('[API] Attachment found:', attachment)
+
+    // Delete from database
     console.log('[API] Deleting from database:', attachmentId)
-    const { data: deletedAttachment, error: deleteError } = await (supabaseAdmin as any)
+    const { error: deleteError } = await (supabaseAdmin as any)
       .from('course_attachments')
       .delete()
       .eq('id', attachmentId)
-      .select('file_url')
-      .single()
 
     if (deleteError) {
       console.error('[API] ❌ Database deletion failed:')
@@ -226,15 +242,10 @@ export async function DELETE(request: NextRequest) {
       }, { status: 500 })
     }
 
-    if (!deletedAttachment) {
-      console.error('[API] ❌ No attachment was deleted (not found)')
-      return NextResponse.json({ error: 'Attachment not found' }, { status: 404 })
-    }
-
-    console.log('[API] ✅ Database record deleted:', deletedAttachment)
+    console.log('[API] ✅ Database record deleted')
 
     // Try to delete from storage (best effort - don't fail if this fails)
-    if (deletedAttachment.file_url) {
+    if (attachment.file_url) {
       try {
         // Extract file path from URL
         // Supabase storage URLs: https://[project].supabase.co/storage/v1/object/public/course-files/course-attachments/[lessonId]/[filename]
@@ -242,7 +253,7 @@ export async function DELETE(request: NextRequest) {
         let filePath = ''
         
         try {
-          const url = new URL(deletedAttachment.file_url)
+          const url = new URL(attachment.file_url)
           const pathParts = url.pathname.split('/')
           const courseFilesIndex = pathParts.findIndex(part => part === 'course-files')
           if (courseFilesIndex !== -1 && courseFilesIndex < pathParts.length - 1) {
@@ -250,7 +261,7 @@ export async function DELETE(request: NextRequest) {
           }
         } catch {
           // Try regex fallback
-          const match = deletedAttachment.file_url.match(/course-files\/(.+)$/)
+          const match = attachment.file_url.match(/course-files\/(.+)$/)
           if (match) filePath = match[1]
         }
 
@@ -275,7 +286,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     console.log('[API] ✅ Attachment deleted successfully')
-    return NextResponse.json({ success: true, deleted: deletedAttachment })
+    return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('[API] ❌ Exception in DELETE attachment:')
     console.error('[API]   Error:', error)
