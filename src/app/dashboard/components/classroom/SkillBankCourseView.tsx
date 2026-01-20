@@ -80,6 +80,7 @@ export function SkillBankCourseView({
   
   const [lessonNotes, setLessonNotes] = useState('')
   const [lessonVideoUrl, setLessonVideoUrl] = useState('')
+  const [videoKey, setVideoKey] = useState(0) // Force iframe remount
   const [lessonAttachments, setLessonAttachments] = useState<any[]>([])
   const [uploadingFile, setUploadingFile] = useState(false)
   
@@ -134,12 +135,22 @@ export function SkillBankCourseView({
   // Update when lesson changes
   useEffect(() => {
     if (selectedLesson) {
-      // Reset video URL first to force iframe unmount, then set new URL
+      console.log('[SkillBankCourseView] Lesson changed:', {
+        lessonId: selectedLesson.id,
+        videoUrl: selectedLesson.video_url,
+        title: selectedLesson.title
+      })
+      
+      // Reset video URL and increment key to force iframe remount
       setLessonVideoUrl('')
+      setVideoKey(prev => prev + 1)
+      
       // Use setTimeout to ensure React unmounts old iframe before mounting new one
       const timer = setTimeout(() => {
+        console.log('[SkillBankCourseView] Setting video URL:', selectedLesson.video_url)
         setLessonVideoUrl(selectedLesson.video_url || '')
-      }, 10)
+      }, 50) // Increased delay to ensure unmount
+      
       setLessonNotes('') // Reset notes first, then load from API
       
       // Debug: Check what data exists for this lesson
@@ -169,6 +180,7 @@ export function SkillBankCourseView({
       setLessonNotes('')
       setLessonVideoUrl('')
       setLessonAttachments([])
+      setVideoKey(0)
     }
   }, [selectedLesson, selectedSectionId])
   
@@ -1427,35 +1439,39 @@ export function SkillBankCourseView({
             <div className="space-y-0 h-full overflow-y-auto">
               {/* Video Player */}
               <div className="aspect-video bg-slate-900 border-b border-slate-700/50 relative">
-                {lessonVideoUrl && (lessonVideoUrl.includes('youtube') || lessonVideoUrl.includes('youtu.be')) && extractYouTubeId(lessonVideoUrl) && (
+                {selectedLesson.video_url && (selectedLesson.video_url.includes('youtube') || selectedLesson.video_url.includes('youtu.be')) && extractYouTubeId(selectedLesson.video_url) && (
                   <iframe
-                    key={`youtube-${selectedLesson.id}-${extractYouTubeId(lessonVideoUrl)}`}
-                    src={`https://www.youtube.com/embed/${extractYouTubeId(lessonVideoUrl)}?rel=0`}
+                    key={`youtube-${selectedLesson.id}-${videoKey}`}
+                    src={`https://www.youtube.com/embed/${extractYouTubeId(selectedLesson.video_url)}?rel=0`}
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                     className="w-full h-full absolute inset-0"
                     title={selectedLesson.title}
                     loading="eager"
+                    onLoad={() => console.log('[SkillBankCourseView] YouTube iframe loaded:', selectedLesson.id)}
+                    onError={(e) => console.error('[SkillBankCourseView] YouTube iframe error:', e)}
                   />
                 )}
-                {lessonVideoUrl && lessonVideoUrl.includes('loom') && extractLoomId(lessonVideoUrl) && (
+                {selectedLesson.video_url && selectedLesson.video_url.includes('loom') && extractLoomId(selectedLesson.video_url) && (
                   <iframe
-                    key={`loom-${selectedLesson.id}-${extractLoomId(lessonVideoUrl)}`}
-                    src={`https://www.loom.com/embed/${extractLoomId(lessonVideoUrl)}`}
+                    key={`loom-${selectedLesson.id}-${videoKey}`}
+                    src={`https://www.loom.com/embed/${extractLoomId(selectedLesson.video_url)}`}
                     frameBorder="0"
                     allowFullScreen
                     className="w-full h-full absolute inset-0"
                     title={selectedLesson.title}
                     loading="eager"
+                    onLoad={() => console.log('[SkillBankCourseView] Loom iframe loaded:', selectedLesson.id)}
+                    onError={(e) => console.error('[SkillBankCourseView] Loom iframe error:', e)}
                   />
                 )}
-                {!lessonVideoUrl && isAdmin && (
+                {!selectedLesson.video_url && isAdmin && (
                   <div className="w-full h-full flex items-center justify-center">
                     <p className="text-slate-400">No video URL set. Add one below.</p>
                   </div>
                 )}
-                {!lessonVideoUrl && !isAdmin && (
+                {!selectedLesson.video_url && !isAdmin && (
                   <div className="w-full h-full flex items-center justify-center">
                     <p className="text-slate-400">Video coming soon</p>
                   </div>
