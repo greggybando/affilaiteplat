@@ -130,12 +130,15 @@ export function CourseSelector({
       try {
         data = text ? JSON.parse(text) : {}
       } catch (e) {
-        console.error('[CourseSelector] Parse error:', e)
+        console.error('[CourseSelector] Parse error:', e, 'text:', text)
       }
       
       if (!res.ok) {
-        console.error('[CourseSelector] ❌ Delete failed:', res.status, data)
-        alert(`Failed to delete: ${data.error || res.statusText || 'Unknown error'}`)
+        console.error('[CourseSelector] ❌ Delete failed:', res.status, 'data:', JSON.stringify(data, null, 2))
+        const errorMsg = data.error || data.message || res.statusText || 'Unknown error'
+        const errorDetails = data.details ? `\nDetails: ${data.details}` : ''
+        const errorHint = data.hint ? `\nHint: ${data.hint}` : ''
+        alert(`Failed to delete: ${errorMsg}${errorDetails}${errorHint}`)
         return
       }
       
