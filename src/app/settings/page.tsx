@@ -11,15 +11,14 @@ export default async function SettingsPage() {
   }
 
   // Fetch bio separately since it's not in getCurrentAffiliate
-  const { data: affiliateData } = await supabaseAdmin
-    .from('affiliates')
+  const { data: affiliateData } = await (supabaseAdmin.from('affiliates') as any)
     .select('bio')
     .eq('id', affiliate.id)
     .single()
 
   return (
     <div className="min-h-screen bg-[#0f0f1a]">
-      <SettingsClient affiliate={{ ...affiliate, bio: affiliateData?.bio || null } as any} />
+      <SettingsClient affiliate={{ ...affiliate, bio: (affiliateData as any)?.bio || null } as any} />
     </div>
   )
 }
