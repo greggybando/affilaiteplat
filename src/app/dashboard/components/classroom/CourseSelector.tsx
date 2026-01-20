@@ -72,11 +72,13 @@ export function CourseSelector({
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      Object.values(menuRefs.current).forEach((ref) => {
+      // Only check the currently open menu's ref
+      if (openMenuId && menuRefs.current[openMenuId]) {
+        const ref = menuRefs.current[openMenuId]
         if (ref && !ref.contains(event.target as Node)) {
           setOpenMenuId(null)
         }
-      })
+      }
     }
     
     if (openMenuId) {
