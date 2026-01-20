@@ -308,10 +308,22 @@ export function SkillBankCourseView({
   }
 
   const handleUpdateLesson = async (sectionId: string, lessonId: string, updates: any) => {
+    console.log('[CLIENT] ===== handleUpdateLesson CALLED =====')
+    console.log('[CLIENT] Section ID:', sectionId, typeof sectionId)
+    console.log('[CLIENT] Lesson ID:', lessonId, typeof lessonId)
+    console.log('[CLIENT] Updates:', updates)
+    console.log('[CLIENT] Course:', course)
+    console.log('[CLIENT] Course ID:', course?.id, typeof course?.id)
+    
     try {
       // Ensure we have valid IDs
       if (!course?.id || !sectionId || !lessonId) {
-        console.error('Missing required IDs:', { courseId: course?.id, sectionId, lessonId })
+        console.error('[CLIENT] ❌ Missing required IDs:', { 
+          courseId: course?.id, 
+          sectionId, 
+          lessonId,
+          course: course
+        })
         alert('Error: Missing course or section information')
         return false
       }
@@ -319,8 +331,13 @@ export function SkillBankCourseView({
       const url = `/api/courses-v2/${course.id}/sections/${sectionId}/lessons`
       const body = { id: lessonId, ...updates }
       
-      console.log('[CLIENT] Updating lesson:', { url, body, sectionId, lessonId })
+      console.log('[CLIENT] 📤 Sending PATCH request:')
+      console.log('[CLIENT]   URL:', url)
+      console.log('[CLIENT]   Method: PATCH')
+      console.log('[CLIENT]   Body:', JSON.stringify(body, null, 2))
+      console.log('[CLIENT]   Full URL:', window.location.origin + url)
       
+      const startTime = Date.now()
       const res = await fetch(url, {
         method: 'PATCH',
         headers: { 
@@ -328,8 +345,14 @@ export function SkillBankCourseView({
         },
         body: JSON.stringify(body)
       })
+      const duration = Date.now() - startTime
       
-      console.log('[CLIENT] Response:', res.status, res.statusText)
+      console.log('[CLIENT] 📥 Response received:', {
+        status: res.status,
+        statusText: res.statusText,
+        duration: `${duration}ms`,
+        headers: Object.fromEntries(res.headers.entries())
+      })
       
       if (!res.ok) {
         const errorText = await res.text()
@@ -340,53 +363,74 @@ export function SkillBankCourseView({
           errorData = { error: errorText || `HTTP ${res.status}` }
         }
         
-        console.error('[CLIENT] Update failed:', res.status, errorData)
-        alert(`Failed to save: ${errorData.error || `HTTP ${res.status}`}`)
+        console.error('[CLIENT] ❌ UPDATE FAILED:')
+        console.error('[CLIENT]   Status:', res.status, res.statusText)
+        console.error('[CLIENT]   Error data:', errorData)
+        console.error('[CLIENT]   Error text:', errorText)
+        
+        alert(`Failed to save: ${errorData.error || `HTTP ${res.status}`}\n\nCheck console for details.`)
         return false
       }
       
       const data = await res.json()
-      console.log('[CLIENT] Update success:', data)
+      console.log('[CLIENT] ✅ UPDATE SUCCESS:')
+      console.log('[CLIENT]   Response data:', JSON.stringify(data, null, 2))
       
       if (!data.lesson) {
-        console.error('[CLIENT] No lesson in response:', data)
-        alert('Save succeeded but no data returned. Reloading...')
+        console.error('[CLIENT] ⚠️ No lesson in response:', data)
+        console.log('[CLIENT] Reloading sections...')
         await loadSections()
         return true
       }
       
       const updatedLesson = data.lesson
+      console.log('[CLIENT] 📝 Updated lesson object:', updatedLesson)
       
       // Update state immediately
-      setSections(prevSections => 
-        prevSections.map(section => {
+      console.log('[CLIENT] 🔄 Updating local state...')
+      setSections(prevSections => {
+        const updated = prevSections.map(section => {
           if (section.id === sectionId) {
+            const updatedLessons = section.lessons?.map((lesson: any) => 
+              lesson.id === lessonId ? updatedLesson : lesson
+            )
+            console.log('[CLIENT]   Section found, updating lessons:', {
+              sectionId: section.id,
+              oldLessons: section.lessons,
+              newLessons: updatedLessons
+            })
             return {
               ...section,
-              lessons: section.lessons?.map((lesson: any) => 
-                lesson.id === lessonId ? updatedLesson : lesson
-              )
+              lessons: updatedLessons
             }
           }
           return section
         })
-      )
+        console.log('[CLIENT]   Updated sections:', updated)
+        return updated
+      })
       
       // Update selected lesson
       if (selectedLesson?.id === lessonId) {
+        console.log('[CLIENT] 🔄 Updating selected lesson:', updatedLesson)
         setSelectedLesson(updatedLesson)
       }
       
       // Update editing state
       if (updates.title) {
+        console.log('[CLIENT] 🔄 Updating editing title:', updates.title)
         setEditingLessonTitle(updates.title)
       }
       
+      console.log('[CLIENT] ✅ State update complete')
       showSavedIndicator()
       return true
     } catch (error: any) {
-      console.error('[CLIENT] Update error:', error)
-      alert(`Error: ${error.message || 'Failed to save lesson'}`)
+      console.error('[CLIENT] ❌ EXCEPTION in handleUpdateLesson:')
+      console.error('[CLIENT]   Error:', error)
+      console.error('[CLIENT]   Error message:', error.message)
+      console.error('[CLIENT]   Error stack:', error.stack)
+      alert(`Error: ${error.message || 'Failed to save lesson'}\n\nCheck console for details.`)
       return false
     }
   }
@@ -786,29 +830,46 @@ export function SkillBankCourseView({
                                       e.preventDefault()
                                       e.stopPropagation()
                                       
+                                      console.log('[CLIENT] 🔵 onBlur triggered')
+                                      console.log('[CLIENT]   Current value:', e.target.value)
+                                      console.log('[CLIENT]   Lesson:', lesson)
+                                      
                                       const newValue = e.target.value.trim()
                                       
                                       if (!newValue) {
+                                        console.log('[CLIENT] ⚠️ Empty value, reverting')
                                         setEditingLessonId(null)
                                         setEditingLessonTitle(lesson.title)
                                         return
                                       }
                                       
                                       if (newValue === lesson.title) {
+                                        console.log('[CLIENT] ℹ️ No change, closing editor')
                                         setEditingLessonId(null)
                                         return
                                       }
                                       
-                                      console.log('[CLIENT] Saving on blur:', newValue)
+                                      console.log('[CLIENT] 💾 Saving on blur:', {
+                                        oldTitle: lesson.title,
+                                        newTitle: newValue,
+                                        sectionId: section.id,
+                                        lessonId: lesson.id
+                                      })
+                                      
                                       const success = await handleUpdateLesson(section.id, lesson.id, {
                                         title: newValue,
                                         slug: generateSlug(newValue)
                                       })
                                       
-                                      setEditingLessonId(null)
-                                      if (!success) {
-                                        // Revert on failure
-                                        setEditingLessonTitle(lesson.title)
+                                      console.log('[CLIENT] 💾 Save result:', success)
+                                      
+                                      if (success) {
+                                        setEditingLessonId(null)
+                                        console.log('[CLIENT] ✅ Editor closed after successful save')
+                                      } else {
+                                        console.log('[CLIENT] ❌ Save failed, keeping editor open')
+                                        // Don't close editor on failure - let user try again
+                                        setEditingLessonTitle(newValue) // Keep their input
                                       }
                                     }}
                                     onClick={(e) => e.stopPropagation()}
@@ -817,32 +878,49 @@ export function SkillBankCourseView({
                                         e.preventDefault()
                                         e.stopPropagation()
                                         
+                                        console.log('[CLIENT] ⏎ Enter key pressed')
+                                        console.log('[CLIENT]   Current editingLessonTitle:', editingLessonTitle)
+                                        
                                         const newValue = editingLessonTitle.trim()
                                         
                                         if (!newValue) {
+                                          console.log('[CLIENT] ⚠️ Empty value on Enter, reverting')
                                           setEditingLessonId(null)
                                           setEditingLessonTitle(lesson.title)
                                           return
                                         }
                                         
                                         if (newValue === lesson.title) {
+                                          console.log('[CLIENT] ℹ️ No change on Enter, closing editor')
                                           setEditingLessonId(null)
                                           return
                                         }
                                         
-                                        console.log('[CLIENT] Saving on Enter:', newValue)
+                                        console.log('[CLIENT] 💾 Saving on Enter:', {
+                                          oldTitle: lesson.title,
+                                          newTitle: newValue,
+                                          sectionId: section.id,
+                                          lessonId: lesson.id
+                                        })
+                                        
                                         const success = await handleUpdateLesson(section.id, lesson.id, {
                                           title: newValue,
                                           slug: generateSlug(newValue)
                                         })
                                         
-                                        setEditingLessonId(null)
-                                        if (!success) {
-                                          setEditingLessonTitle(lesson.title)
+                                        console.log('[CLIENT] 💾 Save result:', success)
+                                        
+                                        if (success) {
+                                          setEditingLessonId(null)
+                                          console.log('[CLIENT] ✅ Editor closed after successful save')
+                                        } else {
+                                          console.log('[CLIENT] ❌ Save failed, keeping editor open')
+                                          setEditingLessonTitle(newValue) // Keep their input
                                         }
                                       }
                                       if (e.key === 'Escape') {
                                         e.preventDefault()
+                                        console.log('[CLIENT] ⎋ Escape key pressed, canceling edit')
                                         setEditingLessonId(null)
                                         setEditingLessonTitle(lesson.title)
                                       }
@@ -857,9 +935,17 @@ export function SkillBankCourseView({
                                     }`}
                                     onDoubleClick={(e) => {
                                       e.stopPropagation()
+                                      console.log('[CLIENT] 👆 Double-click detected on lesson:', {
+                                        lessonId: lesson.id,
+                                        lessonTitle: lesson.title,
+                                        isAdmin
+                                      })
                                       if (isAdmin) {
+                                        console.log('[CLIENT] ✏️ Opening editor for lesson:', lesson.id)
                                         setEditingLessonId(lesson.id)
                                         setEditingLessonTitle(lesson.title)
+                                      } else {
+                                        console.log('[CLIENT] ⚠️ Not admin, cannot edit')
                                       }
                                     }}
                                   >
