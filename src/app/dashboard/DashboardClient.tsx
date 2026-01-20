@@ -192,7 +192,25 @@ const mockPosts: Post[] = [
 
 // Glow utility function
 const glowShadow = (shadows: string, glowIntensity: number) => {
-  return shadows
+  if (!glowIntensity || glowIntensity === 0) return 'none'
+  const intensity = glowIntensity / 100
+  const boosted = intensity * 0.69
+  return shadows.split(', ').map(shadow => {
+    return shadow.replace(/(\d+)px/g, (match, num) => {
+      const val = parseInt(num)
+      if (val > 8) {
+        return `${Math.round(val * boosted)}px`
+      }
+      return match
+    }).replace(/rgba?\(([^)]+)\)/g, (match, content) => {
+      const parts = content.split(',')
+      if (parts.length === 4) {
+        const alpha = Math.min(1, parseFloat(parts[3].trim()) * boosted)
+        return `rgba(${parts.slice(0,3).join(',')},${alpha.toFixed(2)})`
+      }
+      return match
+    })
+  }).join(', ')
 }
 
 export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientProps) {
