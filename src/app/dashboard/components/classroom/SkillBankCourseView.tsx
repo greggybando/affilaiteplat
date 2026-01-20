@@ -646,19 +646,21 @@ export function SkillBankCourseView({
       
       console.log('[CLIENT] Delete response:', res.status, res.statusText)
       
+      const data = await res.json()
+      
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        console.error('[CLIENT] Delete error:', errorData)
-        alert(`Failed to delete attachment: ${errorData.error || `HTTP ${res.status}`}`)
+        console.error('[CLIENT] ❌ Delete failed:', data)
+        alert(`Failed to delete attachment: ${data.error || data.details || `HTTP ${res.status}`}`)
         return
       }
       
-      const data = await res.json()
       console.log('[CLIENT] ✅ Attachment deleted:', data)
+      
+      // Reload attachments to update UI
       await loadLessonAttachments()
       showSavedIndicator()
     } catch (error: any) {
-      console.error('[CLIENT] ❌ Error deleting attachment:', error)
+      console.error('[CLIENT] ❌ Exception deleting attachment:', error)
       alert(`Failed to delete attachment: ${error.message || 'Unknown error'}`)
     }
   }
