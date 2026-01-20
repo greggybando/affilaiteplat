@@ -1066,7 +1066,15 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                 onClick={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
-                                  window.location.href = `/dashboard?openDM=${post.user.id}`
+                                  const currentPath = window.location.pathname
+                                  if (currentPath === '/dashboard') {
+                                    window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: post.user.id } }))
+                                  } else {
+                                    router.replace('/dashboard')
+                                    requestAnimationFrame(() => {
+                                      window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: post.user.id } }))
+                                    })
+                                  }
                                 }}
                                 className="p-1.5 hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors"
                                 title={`Message ${post.user.name}`}
