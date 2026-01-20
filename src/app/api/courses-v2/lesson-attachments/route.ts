@@ -187,32 +187,41 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Remove attachment
 export async function DELETE(request: NextRequest) {
+  console.log('[DELETE] ========== START ==========')
+  console.log('[DELETE] Request URL:', request.url)
+  
   try {
+    console.log('[DELETE] Step 1: Getting affiliate')
     const affiliate = await getCurrentAffiliate()
+    console.log('[DELETE] Affiliate result:', affiliate ? `${affiliate.id} (${affiliate.role})` : 'null')
+    
     if (!affiliate || (affiliate.role !== 'admin' && affiliate.role !== 'moderator')) {
+      console.log('[DELETE] UNAUTHORIZED')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    console.log('[DELETE] Step 2: Parsing URL')
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
+    console.log('[DELETE] Attachment ID:', id)
 
     if (!id) {
+      console.log('[DELETE] ERROR: No ID provided')
       return NextResponse.json({ error: 'Attachment ID is required' }, { status: 400 })
     }
 
-    console.log('[DELETE] Attempting to delete attachment:', id)
-
-    // First check if it exists
+    console.log('[DELETE] Step 3: Checking if attachment exists')
     const { data: existing, error: selectError } = await (supabaseAdmin as any)
       .from('course_attachments')
       .select('*')
       .eq('id', id)
       .single()
 
-    console.log('[DELETE] Existing attachment:', existing)
-    console.log('[DELETE] Select error:', selectError)
+    console.log('[DELETE] Existing attachment:', JSON.stringify(existing, null, 2))
+    console.log('[DELETE] Select error:', JSON.stringify(selectError, null, 2))
 
     if (selectError) {
+      console.log('[DELETE] ERROR: Attachment not found')
       return NextResponse.json({ 
         error: 'Attachment not found',
         details: selectError.message,
@@ -220,36 +229,47 @@ export async function DELETE(request: NextRequest) {
       }, { status: 404 })
     }
 
-    // Delete with .select() to see what was deleted
-    const { data: deleted, error } = await (supabaseAdmin as any)
+    console.log('[DELETE] Step 4: Deleting attachment')
+    const { data: deleted, error: deleteError } = await (supabaseAdmin as any)
       .from('course_attachments')
       .delete()
       .eq('id', id)
       .select()
 
-    console.log('[DELETE] Deleted data:', deleted)
-    console.log('[DELETE] Delete error:', error)
+    console.log('[DELETE] Deleted data:', JSON.stringify(deleted, null, 2))
+    console.log('[DELETE] Delete error:', JSON.stringify(deleteError, null, 2))
 
-    if (error) {
-      console.error('[DELETE] Error deleting attachment:', error)
+    if (deleteError) {
+      console.error('[DELETE] ERROR: Delete failed')
+      console.error('[DELETE] Error code:', deleteError.code)
+      console.error('[DELETE] Error message:', deleteError.message)
+      console.error('[DELETE] Error details:', deleteError.details)
       return NextResponse.json({ 
-        error: error.message,
-        code: error.code,
-        details: error.details
+        error: deleteError.message || 'Failed to delete',
+        code: deleteError.code,
+        details: deleteError.details
       }, { status: 500 })
     }
 
     if (!deleted || deleted.length === 0) {
+      console.log('[DELETE] ERROR: Nothing deleted (RLS?)')
       return NextResponse.json({ 
         error: 'No attachment deleted - possible RLS policy issue',
         hint: 'Check Supabase RLS policies on course_attachments table'
       }, { status: 403 })
     }
 
+    console.log('[DELETE] ========== SUCCESS ==========')
     return NextResponse.json({ success: true, deleted })
   } catch (error: any) {
-    console.error('[DELETE] Exception:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('[DELETE] ========== EXCEPTION ==========')
+    console.error('[DELETE] Error type:', error.constructor.name)
+    console.error('[DELETE] Error message:', error.message)
+    console.error('[DELETE] Error stack:', error.stack)
+    return NextResponse.json({ 
+      error: error.message || 'Internal server error',
+      type: error.constructor.name
+    }, { status: 500 })
   }
 }
 
