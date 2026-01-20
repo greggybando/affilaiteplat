@@ -149,15 +149,16 @@ export function CourseSelector({
               <div
                 key={course.id}
                 onClick={() => {
-                  if (isPublished && onSelectCourse) {
+                  if ((isPublished || isAdmin) && onSelectCourse) {
                     onSelectCourse(course)
                   }
                 }}
-                className={`bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 rounded-2xl p-6 transition-all hover:shadow-lg group ${isPublished && onSelectCourse ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                className={`bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 rounded-2xl p-6 transition-all hover:shadow-lg group ${(isPublished || isAdmin) && onSelectCourse ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                 style={{
                   backdropFilter: 'blur(10px)',
                   borderColor: borderColor,
                   opacity: !isPublished && !isAdmin ? 0.6 : 1,
+                  pointerEvents: ((!isPublished && !isAdmin) || !onSelectCourse) ? 'none' : 'auto',
                   boxShadow: isPublished 
                     ? glowShadow(`0 0 30px rgba(${rgbValues},0.3), 0 0 60px rgba(${rgbValues},0.2)`, glowIntensity)
                     : glowShadow('0 0 20px rgba(252,211,77,0.3), 0 0 40px rgba(252,211,77,0.2)', glowIntensity)

@@ -8,6 +8,7 @@ import { useAdmin } from '@/lib/hooks/useAdmin'
 import { CourseSelector } from './classroom/CourseSelector'
 import { ModuleCard } from './classroom/ModuleCard'
 import { CheckpointGate } from './classroom/CheckpointGate'
+import { SkillBankCourseView } from './classroom/SkillBankCourseView'
 import { Settings, LogOut } from 'lucide-react'
 import { MindsetModuleListRefactored as MindsetModuleList } from '@/app/mindset/components/MindsetModuleListRefactored'
 import { DreamJobModuleListRefactored as DreamJobModuleList } from '@/app/dreamjob/components/DreamJobModuleListRefactored'
@@ -793,6 +794,24 @@ export default function ClassroomTab({
                 </div>
               )
             ) : selectedCourse ? (
+              // Check if this is a SkillBank course (has type property)
+              (selectedCourse as any).type === 'skillbank' || (selectedCourse as any).is_published === false ? (
+                <SkillBankCourseView
+                  course={selectedCourse}
+                  isAdmin={isAdmin}
+                  onBack={() => setSelectedCourse(null)}
+                  onPublish={async () => {
+                    // Refetch courses after publishing
+                    const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
+                    const res = await fetch(url)
+                    const data = await res.json()
+                    if (data.courses) {
+                      setCourses(data.courses)
+                    }
+                  }}
+                  glowIntensity={glowIntensity}
+                />
+              ) : (
               <div className="flex gap-6">
                 {/* Left Sidebar - Course Navigation */}
                 <div className="w-80 rounded-lg overflow-hidden flex flex-col max-h-[calc(100vh-200px)] sticky top-4" style={{
@@ -914,6 +933,7 @@ export default function ClassroomTab({
                   )}
                 </div>
               </div>
+              )
             ) : null}
           </div>
         </div>
