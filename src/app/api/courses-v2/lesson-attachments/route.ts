@@ -208,7 +208,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     console.log('🔴 Calling supabase delete...')
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as any)
       .from('course_attachments')
       .delete()
       .eq('id', id)
