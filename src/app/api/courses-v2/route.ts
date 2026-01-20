@@ -172,7 +172,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
     
-    console.log('[API DELETE /courses-v2] Course exists:', existingCourse.title)
+    console.log('[API DELETE /courses-v2] Course exists:', (existingCourse as any)?.title || 'Unknown')
     
     // CASCADE delete will handle sections, lessons, attachments
     const { data, error } = await supabaseAdmin
@@ -181,21 +181,33 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id)
       .select()
 
-    console.log('[API DELETE /courses-v2] Delete result - data:', JSON.stringify(data), 'error:', JSON.stringify(error))
+    console.log('[API DELETE /courses-v2] Delete result - data:', data ? JSON.stringify(data) : 'null', 'error:', error ? JSON.stringify(error) : 'null')
 
     if (error) {
-      console.error('[API DELETE /courses-v2] Error deleting course:', {
+      const errorDetails = {
         message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      })
+        code: (error as any).code,
+        details: (error as any).details,
+        hint: (error as any).hint
+      }
+      console.error('[API DELETE /courses-v2] Error deleting course:', errorDetails)
       return NextResponse.json({ 
         error: error.message || 'Failed to delete course',
-        code: error.code,
-        details: error.details,
-        hint: error.hint
+        code: (error as any).code,
+        details: (error as any).details,
+        hint: (error as any).hint
       }, { status: 500 })
+    }
+
+    // Supabase delete with .select() returns deleted rows, but can be empty array if nothing matched
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      console.warn('[API DELETE /courses-v2] Delete returned no data - course may not exist or already deleted')
+      // Still return success since the course is gone (either deleted or never existed)
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Course deleted (or did not exist)',
+        deleted: [] 
+      })
     }
 
     console.log('[API DELETE /courses-v2] Course deleted successfully:', id)
