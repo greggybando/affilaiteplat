@@ -8,18 +8,26 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const affiliate = await getCurrentAffiliate()
-    if (!affiliate || (affiliate.role !== 'admin' && affiliate.role !== 'moderator')) {
+    if (!affiliate) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const showAll = request.nextUrl.searchParams.get('all') === 'true'
+    const isAdmin = affiliate.role === 'admin' || affiliate.role === 'moderator'
+
+    // Only admins can use ?all=true to see drafts
+    if (showAll && !isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
 
     let query = supabaseAdmin
       .from('courses')
       .select('*')
       .order('sort_order', { ascending: true })
 
-    if (!showAll) {
+    // Non-admins always see only published courses
+    // Admins see all if ?all=true, otherwise only published
+    if (!showAll || !isAdmin) {
       query = query.eq('is_published', true)
     }
 
