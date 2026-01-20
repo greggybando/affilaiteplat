@@ -1253,7 +1253,7 @@ export function SkillBankCourseView({
 
               {/* Checkpoint Button - Centered above Notes */}
               {selectedLesson && selectedSectionId && (
-                <div className="px-6 mt-4 flex justify-center relative z-10">
+                <div className="mt-4 flex justify-center relative z-10 px-6">
                   {(() => {
                     const checkpoint = checkpoints[selectedSectionId]
                     const isLoading = loadingCheckpoints[selectedSectionId]
@@ -1338,10 +1338,8 @@ export function SkillBankCourseView({
                 </div>
               )}
 
-              {/* Notes/Attachments Section */}
-              <div className="p-6 space-y-4">
-                {/* Notes Section */}
-                <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+              {/* Notes Section */}
+              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4 mx-6">
                   {(() => {
                     const hasNotes = lessonNotes && lessonNotes.trim().length > 0
                     const isExpanded = notesExpanded[selectedLesson.id] || false
@@ -1445,8 +1443,8 @@ export function SkillBankCourseView({
                   })()}
                 </div>
 
-                {/* Course Materials Section */}
-                <div className="bg-slate-900/50 rounded-lg border border-slate-700/50">
+              {/* Course Materials Section */}
+              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4 mx-6 mb-6">
                   <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
                     <h4 className="text-sm font-semibold text-slate-300">Course Materials</h4>
                     {isAdmin && (
