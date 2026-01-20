@@ -148,7 +148,12 @@ export function CourseSelector({
             return (
               <div
                 key={course.id}
-                className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 rounded-2xl p-6 transition-all hover:shadow-lg group"
+                onClick={() => {
+                  if (isPublished && onSelectCourse) {
+                    onSelectCourse(course)
+                  }
+                }}
+                className={`bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 rounded-2xl p-6 transition-all hover:shadow-lg group ${isPublished && onSelectCourse ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                 style={{
                   backdropFilter: 'blur(10px)',
                   borderColor: borderColor,
@@ -189,17 +194,11 @@ export function CourseSelector({
                   </div>
                 )}
                 
-                <div className="flex flex-col gap-2 mt-4">
-                  {isPublished && onSelectCourse && (
-                    <button
-                      onClick={() => onSelectCourse(course)}
-                      className="w-full px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white text-sm rounded-lg font-semibold transition-all hover:shadow-lg hover:shadow-cyan-500/50 flex items-center justify-center gap-2 group-hover:scale-[1.02]"
-                    >
-                      <span>View Course</span>
-                      <span className="group-hover:translate-x-1 transition-transform">→</span>
-                    </button>
-                  )}
-                </div>
+                {isPublished && (
+                  <div className="text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1 mt-2" style={{ color: courseColor }}>
+                    Start →
+                  </div>
+                )}
               </div>
             )
           })}
