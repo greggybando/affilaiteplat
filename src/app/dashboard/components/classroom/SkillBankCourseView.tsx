@@ -5,7 +5,6 @@ import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, 
 import { Course, Module, Lesson } from '@/lib/types/courses'
 import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 import { CourseImporter } from './CourseImporter'
-import { CourseImporter } from './CourseImporter'
 
 interface SkillBankCourseViewProps {
   course: Course
