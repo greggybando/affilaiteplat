@@ -80,6 +80,15 @@ export async function POST(request: NextRequest) {
     const fileType = file.type || (fileExt === 'pdf' ? 'application/pdf' : 'application/octet-stream')
 
     // Save attachment record
+    console.log('[API] Inserting attachment record:', {
+      lesson_id: lessonId,
+      title: file.name,
+      file_url: urlData.publicUrl,
+      file_type: fileType,
+      file_size: file.size,
+      sort_order: 0
+    })
+
     const { data: attachment, error: dbError } = await (supabaseAdmin as any)
       .from('course_attachments')
       .insert({
@@ -94,11 +103,29 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (dbError) {
-      console.error('Database error:', dbError)
+      console.error('[API] ❌ Database error details:')
+      console.error('[API]   Error code:', dbError.code)
+      console.error('[API]   Error message:', dbError.message)
+      console.error('[API]   Error details:', dbError.details)
+      console.error('[API]   Error hint:', dbError.hint)
+      console.error('[API]   Full error:', JSON.stringify(dbError, null, 2))
+      
       // Try to clean up uploaded file
-      await supabaseAdmin.storage.from('course-files').remove([filePath])
-      return NextResponse.json({ error: 'Failed to save attachment record' }, { status: 500 })
+      try {
+        await supabaseAdmin.storage.from('course-files').remove([filePath])
+        console.log('[API] Cleaned up uploaded file')
+      } catch (cleanupError) {
+        console.error('[API] Failed to cleanup file:', cleanupError)
+      }
+      
+      return NextResponse.json({ 
+        error: 'Failed to save attachment record',
+        details: dbError.message,
+        code: dbError.code
+      }, { status: 500 })
     }
+
+    console.log('[API] ✅ Attachment record saved:', attachment)
 
     return NextResponse.json({ attachment })
   } catch (error: any) {
