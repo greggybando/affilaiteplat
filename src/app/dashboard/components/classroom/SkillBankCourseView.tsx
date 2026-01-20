@@ -58,6 +58,13 @@ export function SkillBankCourseView({
   glowIntensity 
 }: SkillBankCourseViewProps) {
   const [courseData, setCourseData] = useState(course)
+  
+  // Update courseTitle when course prop changes
+  useEffect(() => {
+    setCourseTitle(course.title)
+    setCourseData(course)
+  }, [course.title])
+  
   const [sections, setSections] = useState<any[]>([])
   const [selectedLesson, setSelectedLesson] = useState<any>(null)
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
