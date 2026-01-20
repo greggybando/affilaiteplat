@@ -224,10 +224,13 @@ export async function DELETE(request: NextRequest) {
 
     // Delete from database
     console.log('[API] Deleting from database:', attachmentId)
-    const { error: deleteError } = await (supabaseAdmin as any)
+    const { data: deleteResult, error: deleteError } = await (supabaseAdmin as any)
       .from('course_attachments')
       .delete()
       .eq('id', attachmentId)
+      .select()
+
+    console.log('[API] Delete result:', { deleteResult, deleteError })
 
     if (deleteError) {
       console.error('[API] ❌ Database deletion failed:')
@@ -238,11 +241,18 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ 
         error: 'Failed to delete attachment from database',
         details: deleteError.message,
-        code: deleteError.code
+        code: deleteError.code,
+        hint: deleteError.hint
       }, { status: 500 })
     }
 
-    console.log('[API] ✅ Database record deleted')
+    // Verify deletion worked
+    if (!deleteResult || deleteResult.length === 0) {
+      console.warn('[API] ⚠️ Delete returned no rows - attachment may not exist')
+      // Don't fail - maybe it was already deleted
+    }
+
+    console.log('[API] ✅ Database record deleted:', deleteResult)
 
     // Try to delete from storage (best effort - don't fail if this fails)
     if (attachment.file_url) {
