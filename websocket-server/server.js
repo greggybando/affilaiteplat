@@ -263,7 +263,7 @@ io.on('connection', (socket) => {
       // Verify ownership or admin status
       const { data: message } = await supabase
         .from('group_chat_messages')
-        .select('user_id')
+        .select('affiliate_id')
         .eq('id', messageId)
         .single()
       
@@ -273,7 +273,7 @@ io.on('connection', (socket) => {
         .eq('id', socket.userId)
         .single()
       
-      if (message?.user_id !== socket.userId && user?.role !== 'admin') {
+      if (message?.affiliate_id !== socket.userId && user?.role !== 'admin') {
         socket.emit('error', { message: 'Unauthorized to delete this message' })
         return
       }
