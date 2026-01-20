@@ -710,6 +710,15 @@ export default function ClassroomTab({
                     console.log('[ClassroomTab] onSelectDreamJob called, setting selectedWorld to "dreamjob"')
                     setSelectedWorld('dreamjob')
                   }}
+                  onCourseDeleted={async () => {
+                    // Refetch courses after deletion
+                    const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
+                    const res = await fetch(url)
+                    const data = await res.json()
+                    if (data.courses) {
+                      setCourses(data.courses)
+                    }
+                  }}
                   onAddCourse={async () => {
                     try {
                       const title = 'New Course'

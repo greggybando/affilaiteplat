@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { useState, useRef, useEffect } from 'react'
 import { Course } from '@/lib/types/courses'
-import { Plus } from 'lucide-react'
+import { Plus, MoreVertical, Trash2 } from 'lucide-react'
 
 interface CourseSelectorProps {
   courses: Course[]
@@ -12,6 +13,7 @@ interface CourseSelectorProps {
   onSelectMindset: () => void
   onSelectDreamJob: () => void
   onAddCourse?: () => void
+  onCourseDeleted?: () => void
 }
 
 // Helper function to convert hex to RGB
@@ -53,10 +55,62 @@ export function CourseSelector({
   onSelectCourse,
   onSelectMindset,
   onSelectDreamJob,
-  onAddCourse
+  onAddCourse,
+  onCourseDeleted
 }: CourseSelectorProps) {
   // Filter out foundation courses (mindset, dream-job, side-income)
   const skillbankCourses = courses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug))
+  
+  // State for dropdown menu
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      Object.values(menuRefs.current).forEach((ref) => {
+        if (ref && !ref.contains(event.target as Node)) {
+          setOpenMenuId(null)
+        }
+      })
+    }
+    
+    if (openMenuId) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [openMenuId])
+  
+  const handleDeleteCourse = async (courseId: string, courseTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    
+    if (!confirm(`Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`)) {
+      return
+    }
+    
+    try {
+      const res = await fetch(`/api/courses-v2/${courseId}`, {
+        method: 'DELETE'
+      })
+      
+      const data = await res.json()
+      
+      if (data.error) {
+        alert('Error deleting course: ' + data.error)
+        return
+      }
+      
+      // Close menu and refresh course list
+      setOpenMenuId(null)
+      if (onCourseDeleted) {
+        onCourseDeleted()
+      }
+    } catch (error) {
+      console.error('Error deleting course:', error)
+      alert('Failed to delete course')
+    }
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -212,7 +266,7 @@ export function CourseSelector({
                     : glowShadow('0 0 20px rgba(252,211,77,0.3), 0 0 40px rgba(252,211,77,0.2)', glowIntensity)
                 }}
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start justify-between mb-4 relative">
                   <div 
                     className="text-4xl"
                     style={{
@@ -222,16 +276,47 @@ export function CourseSelector({
                   >
                     {course.emoji || '📚'}
                   </div>
-                  {!isPublished && (
-                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-semibold border border-yellow-500/30">
-                      Draft
-                    </span>
-                  )}
-                  {isPublished && (
-                    <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full font-semibold border border-green-500/30">
-                      Live
-                    </span>
-                  )}
+                  
+                  <div className="flex items-center gap-2">
+                    {!isPublished && (
+                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-semibold border border-yellow-500/30">
+                        Draft
+                      </span>
+                    )}
+                    {isPublished && (
+                      <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full font-semibold border border-green-500/30">
+                        Live
+                      </span>
+                    )}
+                    
+                    {isAdmin && (
+                      <div className="relative" ref={(el) => { menuRefs.current[course.id] = el }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            e.preventDefault()
+                            setOpenMenuId(openMenuId === course.id ? null : course.id)
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.1)] transition-colors text-[rgba(255,255,255,0.6)] hover:text-white"
+                          title="Course options"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        
+                        {openMenuId === course.id && (
+                          <div className="absolute top-8 right-0 z-50 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-lg shadow-xl min-w-[160px] overflow-hidden">
+                            <button
+                              onClick={(e) => handleDeleteCourse(course.id, course.title, e)}
+                              className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.1)] transition-colors flex items-center gap-2"
+                            >
+                              <Trash2 size={14} />
+                              Delete Course
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">{course.title}</h3>
