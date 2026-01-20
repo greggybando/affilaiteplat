@@ -98,8 +98,11 @@ export default function ClassroomTab({
     const loadCourses = async () => {
       try {
         setLoading(true)
-        const allCourses = await fetchCourses()
-        setCourses(allCourses)
+        // Fetch courses - admins see drafts too
+        const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
+        const res = await fetch(url)
+        const data = await res.json()
+        setCourses(data.courses || [])
       } catch (error) {
         console.error('Error loading courses:', error)
       } finally {
@@ -107,7 +110,7 @@ export default function ClassroomTab({
       }
     }
     loadCourses()
-  }, [])
+  }, [isAdmin])
 
   // Fetch mindset data when selected
   useEffect(() => {
@@ -669,9 +672,38 @@ export default function ClassroomTab({
                     console.log('[ClassroomTab] onSelectDreamJob called, setting selectedWorld to "dreamjob"')
                     setSelectedWorld('dreamjob')
                   }}
-                  onAddCourse={() => {
-                    // Handle add course
-                    console.log('Add course')
+                  onAddCourse={async () => {
+                    try {
+                      const timestamp = Date.now()
+                      const res = await fetch('/api/courses-v2', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          title: 'New Course',
+                          slug: `new-course-${timestamp}`,
+                          description: 'Click to edit description',
+                          emoji: '📚',
+                          color: '#06B6D4'
+                        })
+                      })
+                      
+                      const data = await res.json()
+                      if (data.error) {
+                        alert('Error creating course: ' + data.error)
+                        return
+                      }
+                      
+                      // Refetch courses to show the new one
+                      const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
+                      const coursesRes = await fetch(url)
+                      const coursesData = await coursesRes.json()
+                      if (coursesData.courses) {
+                        setCourses(coursesData.courses)
+                      }
+                    } catch (error) {
+                      console.error('Error creating course:', error)
+                      alert('Failed to create course')
+                    }
                   }}
                 />
               </div>
