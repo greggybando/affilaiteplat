@@ -289,9 +289,13 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     const tempId = 'temp-' + Date.now()
     setNewMessage('')
 
-    // Use current timestamp for optimistic update (will be newest)
-    // This ensures proper session grouping (Today) and timestamp display
-    const optimisticTimestamp = new Date().toISOString()
+    // Ensure optimistic timestamp is always newer than existing messages
+    // This guarantees the message appears at the bottom after sorting
+    const now = Date.now()
+    const latestExistingTime = messages.length > 0 
+      ? Math.max(...messages.map(m => new Date(m.created_at).getTime()))
+      : 0
+    const optimisticTimestamp = new Date(Math.max(now, latestExistingTime + 1000)).toISOString()
 
     // Optimistic update - add message with timestamp guaranteed to be newest
     const tempMessage: Message = {
@@ -301,7 +305,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       created_at: optimisticTimestamp
     }
     setMessages(prev => {
-      // Add to end and sort - newest messages will be at the bottom
+      // Add to end and sort ascending (oldest first) - newest will be at bottom
       const updated = [...prev, tempMessage]
       return updated.sort((a, b) => 
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
