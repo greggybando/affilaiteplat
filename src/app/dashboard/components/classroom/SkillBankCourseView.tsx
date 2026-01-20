@@ -252,10 +252,10 @@ export function SkillBankCourseView({
 
   const handleUpdateSection = async (sectionId: string, updates: any) => {
     try {
-      const res = await fetch(`/api/courses-v2/${course.id}/sections/${sectionId}`, {
+      const res = await fetch(`/api/courses-v2/${course.id}/sections`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
+        body: JSON.stringify({ id: sectionId, ...updates })
       })
       
       if (!res.ok) {
@@ -316,26 +316,35 @@ export function SkillBankCourseView({
   }
 
   const handleDeleteSection = async (sectionId: string) => {
-    if (!confirm('Delete this section? This cannot be undone.')) return
+    if (!confirm('Delete this section and all its lessons? This cannot be undone.')) return
     
     try {
-      const res = await fetch(`/api/courses-v2/${course.id}/sections/${sectionId}`, {
-        method: 'DELETE'
+      const res = await fetch(`/api/courses-v2/${course.id}/sections?id=${sectionId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
       })
       
+      const data = await res.json().catch(() => ({}))
+      
       if (!res.ok) {
-        alert('Failed to delete section')
+        console.error('Delete section failed:', data)
+        alert(data.error || 'Failed to delete section')
         return
       }
       
-      await loadSections()
-      showSavedIndicator()
+      // Update local state immediately
+      setSections(prevSections => prevSections.filter(s => s.id !== sectionId))
+      
+      // Clear selection if this was the selected section
       if (selectedSectionId === sectionId) {
         setSelectedSectionId(null)
         setSelectedLesson(null)
       }
+      
+      showSavedIndicator()
     } catch (error) {
       console.error('Error deleting section:', error)
+      alert('Failed to delete section. Please try again.')
     }
   }
 
@@ -344,21 +353,40 @@ export function SkillBankCourseView({
     
     try {
       const res = await fetch(`/api/courses-v2/${course.id}/sections/${sectionId}/lessons/${lessonId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
       })
       
+      const data = await res.json().catch(() => ({}))
+      
       if (!res.ok) {
-        alert('Failed to delete lesson')
+        console.error('Delete lesson failed:', data)
+        alert(data.error || 'Failed to delete lesson')
         return
       }
       
-      await loadSections()
-      showSavedIndicator()
+      // Update local state immediately
+      setSections(prevSections => 
+        prevSections.map(section => {
+          if (section.id === sectionId) {
+            return {
+              ...section,
+              lessons: section.lessons?.filter((lesson: any) => lesson.id !== lessonId) || []
+            }
+          }
+          return section
+        })
+      )
+      
+      // Clear selection if this was the selected lesson
       if (selectedLesson?.id === lessonId) {
         setSelectedLesson(null)
       }
+      
+      showSavedIndicator()
     } catch (error) {
       console.error('Error deleting lesson:', error)
+      alert('Failed to delete lesson. Please try again.')
     }
   }
 
