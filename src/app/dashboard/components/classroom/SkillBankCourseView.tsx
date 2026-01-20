@@ -1343,8 +1343,8 @@ export function SkillBankCourseView({
                 </div>
               )}
 
-              {/* Notes Section */}
-              <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4 mx-6">
+                {/* Notes Section */}
+                <div className="bg-slate-900/50 rounded-lg border border-slate-700/50 mt-4">
                   {(() => {
                     const hasNotes = lessonNotes && lessonNotes.trim().length > 0
                     const isExpanded = notesExpanded[selectedLesson.id] || false
