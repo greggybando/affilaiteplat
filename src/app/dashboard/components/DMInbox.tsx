@@ -472,12 +472,64 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
         onClick={(e) => {
           e.stopPropagation()
           e.preventDefault()
-          console.log('[DMInbox] Chat button clicked, current isOpen:', isOpen)
-          setIsOpen(prev => {
-            const newValue = !prev
-            console.log('[DMInbox] Toggling isOpen from', prev, 'to', newValue)
-            return newValue
-          })
+          console.log('[DMInbox] Chat button clicked, current isOpen:', isOpen, 'initialUserId:', initialUserId)
+          
+          // If initialUserId is set and inbox is closed, open it with that user
+          if (initialUserId && initialUserId !== currentUserId && !isOpen) {
+            console.log('[DMInbox] Opening inbox with initialUserId:', initialUserId)
+            setIsOpen(true)
+            // Fetch conversations and open the conversation for initialUserId
+            fetch('/api/messages/inbox')
+              .then(res => res.json())
+              .then(data => {
+                const allConversations = (data.conversations || []).map((c: any) => ({
+                  id: c.conversation_id || c.id,
+                  participant: {
+                    id: c.other_user?.id || c.participant?.id,
+                    name: c.other_user?.name || c.participant?.name || 'Unknown',
+                    avatar_url: c.other_user?.avatar || c.participant?.avatar_url || null
+                  },
+                  last_message: c.last_message || null,
+                  last_message_at: c.updated_at || c.last_message_at || null,
+                  unread_count: c.unread_count || 0
+                })).filter((c: Conversation) => c.participant && c.participant.id)
+                
+                const existingConv = allConversations.find((c: Conversation) => c.participant && c.participant.id === initialUserId)
+                if (existingConv) {
+                  setConversations(allConversations)
+                  setSelectedConversation(existingConv)
+                } else {
+                  fetch(`/api/affiliates/${initialUserId}`)
+                    .then(res => res.json())
+                    .then(userData => {
+                      if (userData.id) {
+                        setConversations(allConversations)
+                        const newConversation: Conversation = {
+                          id: 'new-' + userData.id,
+                          participant: {
+                            id: userData.id,
+                            name: userData.avatar_name || userData.name,
+                            avatar_url: userData.avatar_url
+                          },
+                          last_message: null,
+                          last_message_at: null,
+                          unread_count: 0
+                        }
+                        setSelectedConversation(newConversation)
+                      }
+                    })
+                    .catch(err => console.error('[DMInbox] Failed to fetch user:', err))
+                }
+              })
+              .catch(err => console.error('[DMInbox] Failed to fetch conversations:', err))
+          } else {
+            // Normal toggle behavior
+            setIsOpen(prev => {
+              const newValue = !prev
+              console.log('[DMInbox] Toggling isOpen from', prev, 'to', newValue)
+              return newValue
+            })
+          }
         }}
         className="relative p-2 bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.16)] rounded-xl border border-[rgba(255,255,255,0.18)] transition-colors"
         title="Messages"
