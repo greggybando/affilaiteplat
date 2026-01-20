@@ -297,46 +297,61 @@ export function SkillBankCourseView({
 
   const handleUpdateLesson = async (sectionId: string, lessonId: string, updates: any) => {
     try {
-      console.log('Updating lesson:', { courseId: course.id, sectionId, lessonId, updates })
+      const url = `/api/courses-v2/${course.id}/sections/${sectionId}/lessons`
+      const body = { id: lessonId, ...updates }
       
-      const res = await fetch(`/api/courses-v2/${course.id}/sections/${sectionId}/lessons`, {
+      console.log('=== UPDATING LESSON ===')
+      console.log('URL:', url)
+      console.log('Body:', body)
+      console.log('Course ID:', course.id)
+      console.log('Section ID:', sectionId)
+      console.log('Lesson ID:', lessonId)
+      
+      const res = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: lessonId, ...updates })
+        body: JSON.stringify(body)
       })
       
-      const data = await res.json().catch(() => ({}))
+      console.log('Response status:', res.status, res.statusText)
+      
+      let data = {}
+      try {
+        const text = await res.text()
+        console.log('Response text:', text)
+        data = text ? JSON.parse(text) : {}
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError)
+      }
       
       if (!res.ok) {
-        console.error('Failed to update lesson:', res.status, data)
-        alert(data.error || `Failed to save lesson changes (${res.status})`)
+        console.error('=== UPDATE FAILED ===')
+        console.error('Status:', res.status)
+        console.error('Data:', data)
+        alert(data.error || `Failed to save lesson changes (${res.status}). Check console for details.`)
         return false
       }
       
-      console.log('Lesson updated successfully:', data)
+      console.log('=== UPDATE SUCCESS ===')
+      console.log('Response data:', data)
       
       // Use the response data if available, otherwise use updates
       const updatedLesson = data.lesson || { ...updates, id: lessonId }
+      console.log('Updated lesson data:', updatedLesson)
       
-      // Update selected lesson immediately
+      // Reload sections to get fresh data from server
+      await loadSections()
+      
+      // Update selected lesson if it's the one we just updated
       if (selectedLesson?.id === lessonId) {
-        setSelectedLesson({ ...selectedLesson, ...updatedLesson })
+        // Find the updated lesson from the reloaded sections
+        const updatedSection = sections.find(s => s.id === sectionId)
+        const updatedLessonFromServer = updatedSection?.lessons?.find((l: any) => l.id === lessonId)
+        if (updatedLessonFromServer) {
+          console.log('Updating selected lesson:', updatedLessonFromServer)
+          setSelectedLesson(updatedLessonFromServer)
+        }
       }
-      
-      // Update sections state immediately with the actual updated data
-      setSections(prevSections => 
-        prevSections.map(section => {
-          if (section.id === sectionId) {
-            return {
-              ...section,
-              lessons: section.lessons?.map((lesson: any) => 
-                lesson.id === lessonId ? { ...lesson, ...updatedLesson } : lesson
-              )
-            }
-          }
-          return section
-        })
-      )
       
       // Update editing title state to match saved value
       if (updates.title) {
@@ -346,8 +361,9 @@ export function SkillBankCourseView({
       showSavedIndicator()
       return true
     } catch (error) {
-      console.error('Error updating lesson:', error)
-      alert('Failed to save lesson changes. Please try again.')
+      console.error('=== UPDATE ERROR ===')
+      console.error('Error:', error)
+      alert('Failed to save lesson changes. Please check console for details.')
       return false
     }
   }
