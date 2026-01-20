@@ -82,8 +82,8 @@ export function CourseSelector({
     }
     
     if (openMenuId) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
     }
   }, [openMenuId])
   
