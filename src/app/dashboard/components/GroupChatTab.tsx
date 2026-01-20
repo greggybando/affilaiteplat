@@ -113,6 +113,17 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
     }
   }, [useWebSocket, socket.onlineCount])
 
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowUserMenu(null)
+    }
+    if (showUserMenu) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showUserMenu])
+
   useEffect(() => {
     // Auto-join Main Group Chat first, then fetch chats
     const initializeChat = async () => {
