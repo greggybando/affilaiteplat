@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import { Course } from '@/lib/types/courses'
-import { Plus, MoreVertical, Trash2 } from 'lucide-react'
+import { Plus, MoreVertical, Trash2, FileText } from 'lucide-react'
 
 interface CourseSelectorProps {
   courses: Course[]
@@ -69,6 +69,11 @@ export function CourseSelector({
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
   
+  // State for edit description modal
+  const [editingDescriptionCourseId, setEditingDescriptionCourseId] = useState<string | null>(null)
+  const [descriptionText, setDescriptionText] = useState<string>('')
+  const [savingDescription, setSavingDescription] = useState(false)
+  
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -87,6 +92,48 @@ export function CourseSelector({
     }
   }, [openMenuId])
   
+  const handleEditDescription = (course: Course, e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setOpenMenuId(null)
+    setEditingDescriptionCourseId(course.id)
+    setDescriptionText(course.description || '')
+  }
+
+  const handleSaveDescription = async () => {
+    if (!editingDescriptionCourseId) return
+    
+    setSavingDescription(true)
+    try {
+      const res = await fetch('/api/courses-v2', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          id: editingDescriptionCourseId, 
+          description: descriptionText.trim() || undefined 
+        })
+      })
+      
+      if (!res.ok) {
+        const data = await res.json()
+        alert(`Failed to save description: ${data.error || 'Unknown error'}`)
+        return
+      }
+      
+      // Refresh courses
+      if (onCourseDeleted) {
+        await onCourseDeleted()
+      }
+      
+      setEditingDescriptionCourseId(null)
+      setDescriptionText('')
+    } catch (error: any) {
+      alert(`Error: ${error.message || 'Failed to save description'}`)
+    } finally {
+      setSavingDescription(false)
+    }
+  }
+
   const handleDeleteCourse = async (courseId: string, courseTitle: string, e: React.MouseEvent) => {
     // Prevent any event bubbling
     if (e) {
@@ -367,6 +414,14 @@ export function CourseSelector({
                           >
                             <button
                               type="button"
+                              onClick={(e) => handleEditDescription(course, e)}
+                              className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] transition-colors flex items-center gap-2 border-b border-[rgba(255,255,255,0.1)]"
+                            >
+                              <FileText size={14} />
+                              Edit Description
+                            </button>
+                            <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 e.preventDefault()
@@ -425,6 +480,56 @@ export function CourseSelector({
           )}
         </div>
       </div>
+      
+      {/* Edit Description Modal */}
+      {editingDescriptionCourseId && (
+        <div 
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => {
+            setEditingDescriptionCourseId(null)
+            setDescriptionText('')
+          }}
+        >
+          <div 
+            className="bg-[rgba(26,26,46,0.98)] border border-[rgba(255,255,255,0.2)] rounded-lg shadow-2xl w-full max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-[rgba(255,255,255,0.1)]">
+              <h3 className="text-lg font-semibold text-white">Edit Course Description</h3>
+            </div>
+            <div className="p-6">
+              <textarea
+                value={descriptionText}
+                onChange={(e) => setDescriptionText(e.target.value)}
+                placeholder="Enter course description..."
+                className="w-full h-32 px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                autoFocus
+              />
+            </div>
+            <div className="p-6 border-t border-[rgba(255,255,255,0.1)] flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingDescriptionCourseId(null)
+                  setDescriptionText('')
+                }}
+                className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
+                disabled={savingDescription}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveDescription}
+                disabled={savingDescription}
+                className="px-4 py-2 text-sm bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {savingDescription ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

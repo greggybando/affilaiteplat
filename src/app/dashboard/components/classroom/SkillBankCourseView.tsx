@@ -62,9 +62,8 @@ export function SkillBankCourseView({
   // Update courseTitle when course prop changes
   useEffect(() => {
     setCourseTitle(course.title)
-    setCourseDescription(course.description || '')
     setCourseData(course)
-  }, [course.title, course.description])
+  }, [course.title])
   
   const [sections, setSections] = useState<any[]>([])
   const [selectedLesson, setSelectedLesson] = useState<any>(null)
@@ -78,8 +77,6 @@ export function SkillBankCourseView({
   const [editingLessonTitle, setEditingLessonTitle] = useState<string>('')
   const [editingCourseTitle, setEditingCourseTitle] = useState(false)
   const [courseTitle, setCourseTitle] = useState(course.title)
-  const [editingCourseDescription, setEditingCourseDescription] = useState(false)
-  const [courseDescription, setCourseDescription] = useState(course.description || '')
   
   const [lessonNotes, setLessonNotes] = useState('')
   const [lessonVideoUrl, setLessonVideoUrl] = useState('')
@@ -380,25 +377,6 @@ export function SkillBankCourseView({
       showSavedIndicator()
     } catch (error) {
       console.error('Error saving course title:', error)
-    }
-  }
-
-  const handleSaveCourseDescription = async () => {
-    const descriptionToSave = courseDescription.trim()
-    if (descriptionToSave === (courseData.description || '')) return
-    
-    try {
-      const res = await fetch('/api/courses-v2', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: course.id, description: descriptionToSave || undefined })
-      })
-      
-      if (!res.ok) return
-      setCourseData({ ...courseData, description: descriptionToSave || undefined })
-      showSavedIndicator()
-    } catch (error) {
-      console.error('Error saving course description:', error)
     }
   }
 
@@ -1055,65 +1033,6 @@ export function SkillBankCourseView({
                 >
                   {courseData.title}
                 </h3>
-              )}
-            </div>
-            {/* Course Description Editor */}
-            <div className="mt-2">
-              {isAdmin && editingCourseDescription ? (
-                <textarea
-                  value={courseDescription}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    setCourseDescription(e.target.value)
-                  }}
-                  onBlur={(e) => {
-                    e.stopPropagation()
-                    setEditingCourseDescription(false)
-                    handleSaveCourseDescription()
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    e.stopPropagation()
-                    if (e.key === 'Escape') {
-                      e.preventDefault()
-                      setCourseDescription(courseData.description || '')
-                      setEditingCourseDescription(false)
-                    }
-                    // Allow Ctrl/Cmd+Enter to save
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                      e.preventDefault()
-                      setEditingCourseDescription(false)
-                      handleSaveCourseDescription()
-                    }
-                  }}
-                  className="w-full bg-transparent border-b-2 border-cyan-500 outline-none text-xs text-white px-1 min-w-0 resize-none"
-                  style={{
-                    color: `rgba(${rgbValues},0.7)`,
-                  }}
-                  rows={3}
-                  placeholder="Add a course description..."
-                  autoFocus
-                />
-              ) : (
-                <div
-                  className={`text-xs text-[rgba(255,255,255,0.6)] cursor-pointer hover:opacity-80 transition-opacity ${isAdmin ? '' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (isAdmin) {
-                      setEditingCourseDescription(true)
-                    }
-                  }}
-                  style={{
-                    color: `rgba(${rgbValues},0.6)`,
-                  }}
-                  title={isAdmin ? 'Click to edit description' : ''}
-                >
-                  {courseData.description ? (
-                    <p className="line-clamp-2">{courseData.description}</p>
-                  ) : (
-                    <p className="italic opacity-50">{isAdmin ? 'Click to add description...' : ''}</p>
-                  )}
-                </div>
               )}
             </div>
           </div>
