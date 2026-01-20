@@ -837,10 +837,10 @@ export function SkillBankCourseView({
           Back to Courses
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           {isAdmin && (
             <>
-              <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30">
+              <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30 whitespace-nowrap">
                 Admin Mode
               </span>
               <button
@@ -848,18 +848,11 @@ export function SkillBankCourseView({
                   console.log('[SkillBank] Import button clicked, isAdmin:', isAdmin)
                   setImportModalOpen(true)
                 }}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-purple-500/20"
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-purple-500/20 whitespace-nowrap"
                 title="Import course from Google Docs"
-                style={{ 
-                  display: 'flex !important',
-                  visibility: 'visible !important',
-                  opacity: '1 !important',
-                  position: 'relative',
-                  zIndex: 10
-                }}
               >
                 <Upload size={14} />
-                <span>Import Course</span>
+                Import Course
               </button>
             </>
           )}
