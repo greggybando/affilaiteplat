@@ -59,9 +59,12 @@ export function CourseSelector({
   onCourseDeleted
 }: CourseSelectorProps) {
   console.log('[CourseSelector] RENDER - isAdmin:', isAdmin, 'courses:', courses.length)
+  console.log('[CourseSelector] isAdmin type:', typeof isAdmin, 'value:', isAdmin)
   
   // Filter out foundation courses (mindset, dream-job, side-income)
   const skillbankCourses = courses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug))
+  
+  console.log('[CourseSelector] SkillBank courses:', skillbankCourses.length, 'isAdmin:', isAdmin)
   
   console.log('[CourseSelector] SkillBank courses:', skillbankCourses.length, 'isAdmin:', isAdmin)
   
