@@ -845,11 +845,18 @@ export function SkillBankCourseView({
               </span>
               <button
                 onClick={() => {
-                  console.log('[SkillBank] Import button clicked')
+                  console.log('[SkillBank] Import button clicked, isAdmin:', isAdmin)
                   setImportModalOpen(true)
                 }}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-purple-500/20 z-10"
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-purple-500/20"
                 title="Import course from Google Docs"
+                style={{ 
+                  display: 'flex !important',
+                  visibility: 'visible !important',
+                  opacity: '1 !important',
+                  position: 'relative',
+                  zIndex: 10
+                }}
               >
                 <Upload size={14} />
                 <span>Import Course</span>
