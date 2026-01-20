@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
     const avatarName = formData.get('avatarName') as string | null
     const avatarFile = formData.get('avatarFile') as File | null
     const signature = formData.get('signature') as string | null
+    const bio = formData.get('bio') as string | null
 
     if (!avatarName || !avatarName.trim()) {
       return NextResponse.json({ error: 'Avatar name is required' }, { status: 400 })
@@ -139,6 +140,15 @@ export async function POST(request: NextRequest) {
     if (signature !== null) {
       // Allow empty string to clear signature
       updateData.signature = signature.trim() || null
+    }
+
+    if (bio !== null) {
+      // Allow empty string to clear bio, max 200 characters
+      const trimmedBio = bio.trim()
+      if (trimmedBio.length > 200) {
+        return NextResponse.json({ error: 'Bio must be 200 characters or less' }, { status: 400 })
+      }
+      updateData.bio = trimmedBio || null
     }
 
     console.log('Updating affiliate with data:', {

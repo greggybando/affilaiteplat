@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getCurrentAffiliate } from '@/lib/auth'
 import { SettingsClient } from './SettingsClient'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export default async function SettingsPage() {
   const affiliate = await getCurrentAffiliate()
@@ -9,9 +10,16 @@ export default async function SettingsPage() {
     redirect('/login')
   }
 
+  // Fetch bio separately since it's not in getCurrentAffiliate
+  const { data: affiliateData } = await supabaseAdmin
+    .from('affiliates')
+    .select('bio')
+    .eq('id', affiliate.id)
+    .single()
+
   return (
-    <div className="min-h-screen bg-gray-950">
-      <SettingsClient affiliate={affiliate as any} />
+    <div className="min-h-screen bg-[#0f0f1a]">
+      <SettingsClient affiliate={{ ...affiliate, bio: affiliateData?.bio || null } as any} />
     </div>
   )
 }
