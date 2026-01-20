@@ -29,8 +29,21 @@ export function CourseImporter({ courseId, onImportComplete, onClose }: CourseIm
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0)
     
     let currentSection: ParsedSection | null = null
+    let previousLine: string | null = null
     
-    for (const line of lines) {
+    // Create default section if none exists
+    const ensureSection = () => {
+      if (!currentSection) {
+        currentSection = {
+          title: 'LESSONS',
+          lessons: []
+        }
+      }
+    }
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
       // Check for section header (various formats)
       // Format 1: "SECTION: Title" or "Section: Title"
       // Format 2: "# Title" (markdown heading)
@@ -58,45 +71,73 @@ export function CourseImporter({ courseId, onImportComplete, onClose }: CourseIm
           title: sectionTitle.toUpperCase().trim(),
           lessons: []
         }
+        previousLine = null
         continue
       }
       
-      // Check for lesson with video URL
+      // Check if this line is a URL
+      const urlMatch = line.match(/^(https?:\/\/.+)$/i)
+      
+      if (urlMatch) {
+        ensureSection()
+        
+        // This is a URL - check if previous line was a title
+        let lessonTitle = ''
+        
+        if (previousLine && !previousLine.match(/^(https?:\/\/.+)$/i) && !previousLine.match(/^(?:SECTION|Section):/i) && !previousLine.match(/^#+\s/)) {
+          // Previous line is text and not a URL or section header - use it as title
+          lessonTitle = previousLine.trim()
+          // Remove trailing colon if present
+          lessonTitle = lessonTitle.replace(/:\s*$/, '')
+        } else {
+          // No previous line text, extract from URL
+          lessonTitle = extractVideoTitle(urlMatch[1])
+        }
+        
+        currentSection!.lessons.push({
+          title: lessonTitle,
+          videoUrl: urlMatch[1].trim()
+        })
+        previousLine = null // Reset after using it
+        continue
+      }
+      
+      // Check for lesson with video URL on same line
       // Format 1: "- Lesson Title: https://..."
-      // Format 2: "- https://..." (just URL, use as title)
+      // Format 2: "- https://..." (just URL, use previous line or extract)
       // Format 3: "Lesson Title: https://..."
-      // Format 4: Just a URL on its own line
       const lessonMatch1 = line.match(/^[-•]\s*(.+?):\s*(https?:\/\/.+)$/i)
       const lessonMatch2 = line.match(/^[-•]\s*(https?:\/\/.+)$/i)
       const lessonMatch3 = line.match(/^(.+?):\s*(https?:\/\/.+)$/i)
-      const lessonMatch4 = line.match(/^(https?:\/\/.+)$/i)
       
-      if (currentSection) {
-        if (lessonMatch1) {
-          // Format 1: "- Lesson Title: https://..."
-          currentSection.lessons.push({
-            title: lessonMatch1[1].trim(),
-            videoUrl: lessonMatch1[2].trim()
-          })
-        } else if (lessonMatch2) {
-          // Format 2: "- https://..."
-          currentSection.lessons.push({
-            title: extractVideoTitle(lessonMatch2[1]),
-            videoUrl: lessonMatch2[1].trim()
-          })
-        } else if (lessonMatch3) {
-          // Format 3: "Lesson Title: https://..."
-          currentSection.lessons.push({
-            title: lessonMatch3[1].trim(),
-            videoUrl: lessonMatch3[2].trim()
-          })
-        } else if (lessonMatch4) {
-          // Format 4: Just a URL on its own line
-          currentSection.lessons.push({
-            title: extractVideoTitle(lessonMatch4[1]),
-            videoUrl: lessonMatch4[1].trim()
-          })
-        }
+      if (lessonMatch1) {
+        // Format 1: "- Lesson Title: https://..."
+        ensureSection()
+        currentSection!.lessons.push({
+          title: lessonMatch1[1].trim(),
+          videoUrl: lessonMatch1[2].trim()
+        })
+        previousLine = null
+      } else if (lessonMatch2) {
+        // Format 2: "- https://..." - check previous line
+        ensureSection()
+        let title = previousLine && !previousLine.match(/^(https?:\/\/.+)$/i) ? previousLine.replace(/:\s*$/, '').trim() : extractVideoTitle(lessonMatch2[1])
+        currentSection!.lessons.push({
+          title: title,
+          videoUrl: lessonMatch2[1].trim()
+        })
+        previousLine = null
+      } else if (lessonMatch3) {
+        // Format 3: "Lesson Title: https://..."
+        ensureSection()
+        currentSection!.lessons.push({
+          title: lessonMatch3[1].trim(),
+          videoUrl: lessonMatch3[2].trim()
+        })
+        previousLine = null
+      } else {
+        // Not a URL or lesson format - save as potential title for next line
+        previousLine = line
       }
     }
     
