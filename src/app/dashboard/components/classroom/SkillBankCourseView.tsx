@@ -635,31 +635,55 @@ export function SkillBankCourseView({
   const handleDeleteAttachment = async (attachmentId: string) => {
     if (!confirm('Delete this attachment?')) return
     
-    console.log('[CLIENT] 🗑️ Deleting attachment:', attachmentId)
+    console.log('[CLIENT] ===== DELETE ATTACHMENT =====')
+    console.log('[CLIENT] Attachment ID:', attachmentId)
+    console.log('[CLIENT] URL:', `/api/courses-v2/lesson-attachments?id=${attachmentId}`)
     
     try {
-      // Use query param like sections/lessons do
-      const res = await fetch(`/api/courses-v2/lesson-attachments?id=${attachmentId}`, {
+      const url = `/api/courses-v2/lesson-attachments?id=${attachmentId}`
+      console.log('[CLIENT] Sending DELETE request to:', url)
+      
+      const res = await fetch(url, {
         method: 'DELETE'
       })
       
-      console.log('[CLIENT] Delete response:', res.status, res.statusText)
+      console.log('[CLIENT] Response received:', {
+        status: res.status,
+        statusText: res.statusText,
+        ok: res.ok,
+        headers: Object.fromEntries(res.headers.entries())
+      })
+      
+      const responseText = await res.text()
+      console.log('[CLIENT] Response text:', responseText)
+      
+      let data = {}
+      try {
+        data = JSON.parse(responseText)
+        console.log('[CLIENT] Parsed response data:', data)
+      } catch (parseError) {
+        console.error('[CLIENT] Failed to parse response:', parseError)
+        console.error('[CLIENT] Raw response:', responseText)
+      }
       
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        console.error('[CLIENT] ❌ Delete failed:', errorData)
-        alert(`Failed to delete attachment: ${errorData.error || `HTTP ${res.status}`}`)
+        console.error('[CLIENT] ❌ DELETE FAILED:')
+        console.error('[CLIENT]   Status:', res.status)
+        console.error('[CLIENT]   Data:', data)
+        alert(`Failed to delete attachment: ${(data as any).error || (data as any).details || `HTTP ${res.status}`}`)
         return
       }
       
-      const data = await res.json()
-      console.log('[CLIENT] ✅ Attachment deleted:', data)
+      console.log('[CLIENT] ✅ DELETE SUCCESS:', data)
       
       // Reload attachments to update UI
       await loadLessonAttachments()
       showSavedIndicator()
     } catch (error: any) {
-      console.error('[CLIENT] ❌ Exception deleting attachment:', error)
+      console.error('[CLIENT] ❌ EXCEPTION:')
+      console.error('[CLIENT]   Error:', error)
+      console.error('[CLIENT]   Message:', error.message)
+      console.error('[CLIENT]   Stack:', error.stack)
       alert(`Failed to delete attachment: ${error.message || 'Unknown error'}`)
     }
   }
