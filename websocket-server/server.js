@@ -159,7 +159,10 @@ io.on('connection', (socket) => {
   socket.on('send_message', async (data) => {
     const { chatId, message, replyToId } = data
     
+    console.log('[WebSocket] send_message received:', { chatId, messageLength: message?.length, userId: socket.userId })
+    
     if (!chatId || !message?.trim()) {
+      console.error('[WebSocket] Invalid message data:', { chatId, message })
       socket.emit('error', { message: 'Invalid message data' })
       return
     }
@@ -189,10 +192,12 @@ io.on('connection', (socket) => {
         .single()
       
       if (error) {
-        console.error('Error saving message:', error)
-        socket.emit('error', { message: 'Failed to save message' })
+        console.error('[WebSocket] Error saving message:', error)
+        socket.emit('error', { message: 'Failed to save message', details: error.message })
         return
       }
+      
+      console.log('[WebSocket] Message saved successfully:', newMessage.id)
       
       // Format message for clients
       const formattedMessage = {
