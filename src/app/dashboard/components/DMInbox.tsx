@@ -1065,28 +1065,52 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 <>
                   {/* Backdrop */}
                   <div
-                    className="fixed inset-0 z-[10000] bg-black/90 backdrop-blur-sm flex items-center justify-center"
+                    className="fixed inset-0 z-[10000] bg-black/80 flex items-center justify-center p-4"
                     onClick={() => setEnlargedImage(null)}
+                    style={{
+                      position: 'fixed',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      zIndex: 10000
+                    }}
                   >
                     {/* Close button */}
                     <button
-                      onClick={() => setEnlargedImage(null)}
-                      className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] flex items-center justify-center transition-all"
-                      style={{ zIndex: 10001 }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setEnlargedImage(null)
+                      }}
+                      className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.3)] flex items-center justify-center transition-all z-[10001]"
+                      style={{
+                        zIndex: 10001
+                      }}
                     >
                       <X className="w-5 h-5 text-white" />
                     </button>
                     
-                    {/* Enlarged Image */}
+                    {/* Enlarged Image Container */}
                     <div
-                      className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+                      className="relative flex items-center justify-center"
                       onClick={(e) => e.stopPropagation()}
+                      style={{
+                        maxWidth: '80vw',
+                        maxHeight: '80vh',
+                        width: 'auto',
+                        height: 'auto'
+                      }}
                     >
                       <img
                         src={enlargedImage}
                         alt="Enlarged attachment"
-                        className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                        className="object-contain rounded-lg"
                         style={{
+                          maxWidth: '80vw',
+                          maxHeight: '80vh',
+                          width: 'auto',
+                          height: 'auto',
                           boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
                         }}
                       />
