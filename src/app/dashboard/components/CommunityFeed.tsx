@@ -1191,7 +1191,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                 <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{post.user.name}</span>
                                 {(post.user.role === 'admin' || post.user.role === 'moderator') && (
                                   <Zap 
-                                    className="w-5 h-5 text-yellow-400 flex-shrink-0 animate-pulse" 
+                                    className="w-5 h-5 text-yellow-400 flex-shrink-0" 
                                     fill="currentColor"
                                     style={{
                                       filter: 'drop-shadow(0 0 4px rgba(250,204,21,0.8)) drop-shadow(0 0 8px rgba(250,204,21,0.6))'
@@ -1545,7 +1545,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                         <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{selectedPost.user.name}</span>
                         {(selectedPost.user.role === 'admin' || selectedPost.user.role === 'moderator') && (
                           <Zap 
-                            className="w-5 h-5 text-yellow-400 flex-shrink-0 animate-pulse" 
+                            className="w-5 h-5 text-yellow-400 flex-shrink-0" 
                             fill="currentColor"
                             style={{
                               filter: 'drop-shadow(0 0 5px rgba(250,204,21,0.8)) drop-shadow(0 0 10px rgba(250,204,21,0.6))'
@@ -1690,7 +1690,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                   <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{reply.user.name}</span>
                                   {(reply.user.role === 'admin' || reply.user.role === 'moderator') && (
                                     <Zap 
-                                      className="w-4 h-4 text-yellow-400 flex-shrink-0 animate-pulse" 
+                                      className="w-4 h-4 text-yellow-400 flex-shrink-0" 
                                       fill="currentColor"
                                       style={{
                                         filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.8)) drop-shadow(0 0 6px rgba(250,204,21,0.6))'
@@ -1785,7 +1785,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                         <span className="font-semibold text-white text-sm hover:text-cyan-400 transition-colors cursor-pointer">{nestedReply.user.name}</span>
                                         {(nestedReply.user.role === 'admin' || nestedReply.user.role === 'moderator') && (
                                           <Zap 
-                                            className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0 animate-pulse" 
+                                            className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" 
                                             fill="currentColor"
                                             style={{
                                               filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.8)) drop-shadow(0 0 6px rgba(250,204,21,0.6))'
