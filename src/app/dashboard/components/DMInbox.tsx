@@ -454,12 +454,22 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       // Using Giphy API (free tier)
       const apiKey = 'dc6zaTOxFJmzC' // Giphy public beta key
       const endpoint = query === 'trending' 
-        ? `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=20`
-        : `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=20`
+        ? `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=20&rating=g`
+        : `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=20&rating=g`
       
+      console.log('Fetching GIFs from:', endpoint)
       const res = await fetch(endpoint)
+      if (!res.ok) {
+        throw new Error(`Giphy API error: ${res.status} ${res.statusText}`)
+      }
       const data = await res.json()
-      setGifResults(data.data || [])
+      console.log('GIF API response:', data)
+      if (data.data && Array.isArray(data.data)) {
+        setGifResults(data.data)
+      } else {
+        console.error('Unexpected GIF API response format:', data)
+        setGifResults([])
+      }
     } catch (error) {
       console.error('Error fetching GIFs:', error)
       setGifResults([])
