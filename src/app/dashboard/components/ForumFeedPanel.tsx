@@ -89,14 +89,28 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
 
   // Listen for refresh events (when post is created from top composer)
   useEffect(() => {
-    const handleRefresh = () => {
+    const handleRefresh = (event: Event) => {
+      const customEvent = event as CustomEvent<{ newPost?: Post }>
+      // Optimistic update - add post immediately if provided
+      if (customEvent.detail?.newPost) {
+        const newPost = customEvent.detail.newPost
+        // Only add if it matches the current category
+        const postCategory = newPost.category
+        const expectedCategory = category === 'Global Sends' ? 'Global Sends' : 
+                                 category === 'Organize Grindhouse' ? 'Organize Grindhouse' : 
+                                 category === 'Meetups' ? 'Meetups' : category
+        if (postCategory === expectedCategory) {
+          setPosts(prevPosts => [newPost, ...prevPosts])
+        }
+      }
+      // Then refresh in background to ensure consistency
       fetchPosts(false) // Don't show loading on refresh
     }
     window.addEventListener('refreshForumFeed', handleRefresh)
     return () => {
       window.removeEventListener('refreshForumFeed', handleRefresh)
     }
-  }, [fetchPosts])
+  }, [fetchPosts, category])
 
   const handleLike = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation()

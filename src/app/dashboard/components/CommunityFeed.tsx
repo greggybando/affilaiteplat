@@ -329,9 +329,9 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
 
       const data = await res.json()
       
-      // If we're on a special tab (Global Sends/Grindhouses/Meetups), trigger refresh event
+      // If we're on a special tab (Global Sends/Grindhouses/Meetups), trigger refresh event with post data
       if (selectedCategory === 'Global Sends' || selectedCategory === 'Grindhouses' || selectedCategory === 'Meetups') {
-        window.dispatchEvent(new CustomEvent('refreshForumFeed'))
+        window.dispatchEvent(new CustomEvent('refreshForumFeed', { detail: { newPost: data.post } }))
       } else {
         // Optimistic update for regular feed
         setPosts([data.post, ...posts])
