@@ -1035,8 +1035,6 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                       )}
                     </div>
                   </div>
-                </>,
-                document.body
               )}
 
               {/* Emoji Picker */}
