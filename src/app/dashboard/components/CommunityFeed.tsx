@@ -1281,11 +1281,11 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                     </button>
                     {post.lastReply && (
                       <ProfileHoverCard
-                        userId={post.lastReply.user.id || ''}
+                        userId={(post.lastReply.user as any).id || ''}
                         userName={post.lastReply.user.name}
                         userAvatar={post.lastReply.user.avatar}
                       >
-                        <Link href={`/profile/${post.lastReply.user.id || ''}`} className="flex items-center gap-2 ml-auto text-xs text-slate-500">
+                        <Link href={`/profile/${(post.lastReply.user as any).id || ''}`} className="flex items-center gap-2 ml-auto text-xs text-slate-500">
                           <div className="flex -space-x-2">
                             {post.lastReply.user.avatar ? (
                               <img
