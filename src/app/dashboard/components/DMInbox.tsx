@@ -712,12 +712,18 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                                               const srcMatch = part.match(/src=["']([^"']+)["']/)
                                               const altMatch = part.match(/alt=["']([^"']*)["']/)
                                               if (srcMatch) {
+                                                const imageUrl = srcMatch[1]
                                                 return (
                                                   <img
                                                     key={idx}
-                                                    src={srcMatch[1]}
+                                                    src={imageUrl}
                                                     alt={altMatch ? altMatch[1] : 'Attachment'}
-                                                    onClick={() => setEnlargedImage(srcMatch[1])}
+                                                    onClick={(e) => {
+                                                      e.preventDefault()
+                                                      e.stopPropagation()
+                                                      console.log('Image clicked, setting enlarged image to:', imageUrl)
+                                                      setEnlargedImage(imageUrl)
+                                                    }}
                                                     style={{
                                                       maxWidth: '200px',
                                                       borderRadius: '8px',
@@ -1066,7 +1072,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                   {/* Backdrop */}
                   <div
                     className="fixed inset-0 bg-black/85 flex items-center justify-center p-4"
-                    onClick={() => setEnlargedImage(null)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setEnlargedImage(null)
+                    }}
                     style={{
                       position: 'fixed',
                       top: 0,
