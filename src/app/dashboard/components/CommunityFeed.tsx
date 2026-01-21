@@ -229,12 +229,18 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
     }
   }, [composerExpanded])
 
+  const filterBarRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (composerRef.current && !composerRef.current.contains(event.target as Node)) {
-        if (!composerContent && composerImages.length === 0 && !composerVideo) {
-          setComposerExpanded(false)
-        }
+      const target = event.target as Node
+      // Don't collapse if clicking on composer or filter bar
+      if (composerRef.current && composerRef.current.contains(target)) return
+      if (filterBarRef.current && filterBarRef.current.contains(target)) return
+      
+      // Only collapse if composer is empty
+      if (!composerContent && composerImages.length === 0 && !composerVideo) {
+        setComposerExpanded(false)
       }
     }
 
