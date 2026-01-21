@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
         budget: budget || null,
         participants: [],
         itinerary: []
-      })
+      } as any)
       .select()
       .single()
 
