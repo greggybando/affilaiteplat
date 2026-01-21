@@ -167,7 +167,19 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       const res = await fetch('/api/messages/inbox')
       if (res.ok) {
         const data = await res.json()
-        setConversations(data.conversations || [])
+        // Map API response (uses other_user) to component format (uses participant)
+        const mappedConversations = (data.conversations || []).map((c: any) => ({
+          id: c.conversation_id || c.id,
+          participant: {
+            id: c.other_user?.id || c.participant?.id,
+            name: c.other_user?.name || c.participant?.name || 'Unknown',
+            avatar_url: c.other_user?.avatar || c.participant?.avatar_url || null
+          },
+          last_message: c.last_message || null,
+          last_message_at: c.updated_at || c.last_message_at || null,
+          unread_count: c.unread_count || 0
+        })).filter((c: Conversation) => c.participant && c.participant.id)
+        setConversations(mappedConversations)
       }
     } catch (e) {
       console.error('Failed to fetch conversations:', e)
