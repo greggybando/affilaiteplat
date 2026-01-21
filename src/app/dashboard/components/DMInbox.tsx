@@ -1065,7 +1065,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 <>
                   {/* Backdrop */}
                   <div
-                    className="fixed inset-0 z-[10000] bg-black/80 flex items-center justify-center p-4"
+                    className="fixed inset-0 bg-black/85 flex items-center justify-center p-4"
                     onClick={() => setEnlargedImage(null)}
                     style={{
                       position: 'fixed',
@@ -1073,7 +1073,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      zIndex: 10000
+                      zIndex: 99999
                     }}
                   >
                     {/* Close button */}
@@ -1083,9 +1083,9 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                         e.stopPropagation()
                         setEnlargedImage(null)
                       }}
-                      className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.3)] flex items-center justify-center transition-all z-[10001]"
+                      className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.3)] flex items-center justify-center transition-all"
                       style={{
-                        zIndex: 10001
+                        zIndex: 100000
                       }}
                     >
                       <X className="w-5 h-5 text-white" />
@@ -1096,8 +1096,8 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                       className="relative flex items-center justify-center"
                       onClick={(e) => e.stopPropagation()}
                       style={{
-                        maxWidth: '80vw',
-                        maxHeight: '80vh',
+                        maxWidth: '60vw',
+                        maxHeight: '70vh',
                         width: 'auto',
                         height: 'auto'
                       }}
@@ -1107,11 +1107,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                         alt="Enlarged attachment"
                         className="object-contain rounded-lg"
                         style={{
-                          maxWidth: '80vw',
-                          maxHeight: '80vh',
+                          maxWidth: '60vw',
+                          maxHeight: '70vh',
                           width: 'auto',
                           height: 'auto',
-                          boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+                          boxShadow: '0 20px 60px rgba(0,0,0,0.7)'
                         }}
                       />
                     </div>
