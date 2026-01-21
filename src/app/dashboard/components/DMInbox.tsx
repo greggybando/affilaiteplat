@@ -43,6 +43,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [participantLastActive, setParticipantLastActive] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
