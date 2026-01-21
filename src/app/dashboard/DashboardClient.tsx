@@ -241,7 +241,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
         window.history.replaceState({}, '', url.pathname + url.search)
       }
     }
-  }, []) // Only run once on mount
+  }, [searchParams]) // Run when searchParams change
   
   // Listen for custom openDM event (when already on dashboard)
   useEffect(() => {
