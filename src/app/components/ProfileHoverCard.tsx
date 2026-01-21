@@ -198,25 +198,29 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
   }
 
   return (
-    <div 
-      ref={triggerRef}
-      className="relative inline-block"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {children}
+    <>
+      <div 
+        ref={triggerRef}
+        className="relative inline-block"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {children}
+      </div>
       
-      {showCard && (
+      {showCard && typeof window !== 'undefined' && createPortal(
         <div
           ref={cardRef}
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
-          className="absolute mt-2 left-0 w-80"
+          className="fixed w-80"
           style={{
             pointerEvents: 'auto',
             maxHeight: 'calc(100vh - 32px)',
             overflowY: 'auto',
-            zIndex: 9999
+            zIndex: 99999,
+            top: `${position.top}px`,
+            left: `${position.left}px`
           }}
         >
           <div 
