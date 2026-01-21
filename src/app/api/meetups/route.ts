@@ -44,10 +44,11 @@ export async function GET(request: NextRequest) {
       id: meetup.id,
       name: meetup.name,
       location: meetup.location,
-      date: meetup.date,
-      time: meetup.time || null,
+      date: meetup.date_time ? meetup.date_time.split('T')[0] : meetup.date,
+      time: meetup.date_time ? meetup.date_time.split('T')[1]?.substring(0, 5) : meetup.time || null,
       description: meetup.description || null,
-      maxParticipants: meetup.max_participants || null,
+      maxParticipants: meetup.max_attendees || meetup.max_participants || null,
+      type: meetup.type || null,
       participants: meetup.participants || [],
       created_at: meetup.created_at
     }))
@@ -67,9 +68,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, location, date, time, description, max_participants } = body
+    const { name, location, date, time, date_time, description, max_participants, max_attendees, type, forum_post_id } = body
 
-    if (!name || !location || !date) {
+    // Support both old format (date + time) and new format (date_time)
+    const meetupDateTime = date_time || (date && time ? `${date}T${time}` : date)
+
+    if (!name || !location || !meetupDateTime) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -79,10 +83,14 @@ export async function POST(request: NextRequest) {
         user_id: affiliate.id,
         name,
         location,
-        date,
-        time: time || null,
+        date: date || null, // Keep for backward compatibility
+        time: time || null, // Keep for backward compatibility
+        date_time: meetupDateTime || null,
         description: description || null,
-        max_participants: max_participants || null,
+        max_participants: max_participants || max_attendees || null,
+        max_attendees: max_attendees || max_participants || null,
+        type: type || null,
+        forum_post_id: forum_post_id || null,
         participants: []
       } as any)
       .select()
@@ -100,10 +108,11 @@ export async function POST(request: NextRequest) {
         id: meetupData.id,
         name: meetupData.name,
         location: meetupData.location,
-        date: meetupData.date,
-        time: meetupData.time || null,
+        date: meetupData.date_time ? meetupData.date_time.split('T')[0] : meetupData.date,
+        time: meetupData.date_time ? meetupData.date_time.split('T')[1]?.substring(0, 5) : meetupData.time || null,
         description: meetupData.description || null,
-        maxParticipants: meetupData.max_participants || null,
+        maxParticipants: meetupData.max_attendees || meetupData.max_participants || null,
+        type: meetupData.type || null,
         participants: meetupData.participants || [],
         created_at: meetupData.created_at
       }
