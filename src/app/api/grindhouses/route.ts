@@ -67,38 +67,51 @@ export async function POST(request: NextRequest) {
   try {
     const affiliate = await getCurrentAffiliate()
     if (!affiliate) {
+      console.error('[Grindhouses API POST] No affiliate found - auth failed')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
+    console.log('[Grindhouses API POST] Received body:', JSON.stringify(body, null, 2))
     const { name, location, start_date, end_date, description, max_participants, preferred_people, duration, vibe_focus, forum_post_id } = body
 
     if (!name || !location || !start_date || !end_date) {
+      console.error('[Grindhouses API POST] Missing required fields:', { name, location, start_date, end_date })
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    const insertData = {
+      user_id: affiliate.id,
+      name,
+      location,
+      start_date,
+      end_date,
+      description: description || null,
+      max_participants: max_participants || null,
+      preferred_people: preferred_people || null,
+      duration: duration || null,
+      vibe_focus: vibe_focus || null,
+      forum_post_id: forum_post_id || null,
+      participants: [],
+      goals: []
+    }
+    
+    console.log('[Grindhouses API POST] Inserting data:', JSON.stringify(insertData, null, 2))
+
     const { data: grindhouse, error } = await supabaseAdmin
       .from('grindhouses')
-      .insert({
-        user_id: affiliate.id,
-        name,
-        location,
-        start_date,
-        end_date,
-        description: description || null,
-        max_participants: max_participants || null,
-        preferred_people: preferred_people || null,
-        duration: duration || null,
-        vibe_focus: vibe_focus || null,
-        forum_post_id: forum_post_id || null,
-        participants: [],
-        goals: []
-      } as any)
+      .insert(insertData as any)
       .select()
       .single()
 
     if (error) {
-      console.error('Grindhouse creation error:', error)
+      console.error('[Grindhouses API POST] Supabase error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        fullError: JSON.stringify(error, null, 2)
+      })
       return NextResponse.json({ 
         error: 'Failed to create grindhouse',
         details: error.message,
@@ -106,6 +119,8 @@ export async function POST(request: NextRequest) {
         hint: error.hint
       }, { status: 500 })
     }
+    
+    console.log('[Grindhouses API POST] Successfully created grindhouse:', grindhouse)
 
     const grindhouseData = grindhouse as any
 
