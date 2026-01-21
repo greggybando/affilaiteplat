@@ -262,6 +262,36 @@ export function ResubscribeClient({
                 P.S: The craziest part is there's literally NOTHING better for you to spend $40 on that exists. You are built for too much more to ever settle, and I want you to live the life that makes you smile every f***ing day. i've carefully hand-selected & curated every possible skill/mental model you possibly need to do that inside. Subscribe below and i'll see you there. Hope you're ready to LEVEL TF UP.
               </p>
             </div>
+
+            {/* CTA */}
+            <button
+              onClick={handleSubscribe}
+              disabled={isLoading}
+              className="w-full py-4 px-6 font-semibold rounded-xl transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 relative overflow-hidden group"
+              style={{
+                background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                boxShadow: isLoading 
+                  ? '0 0 10px rgba(34,211,238,0.3)' 
+                  : '0 0 20px rgba(34,211,238,0.5), 0 4px 20px rgba(0,0,0,0.3)',
+                color: '#0f0f1a'
+              }}
+            >
+              <span className="relative z-10 font-bold">
+                {isLoading
+                  ? 'Processing...'
+                  : selectedPlan === 'monthly'
+                  ? 'Resubscribe for $40/month'
+                  : 'Resubscribe for $360/year'}
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+            </button>
+            
+            <p className="text-xs text-[rgba(255,255,255,0.5)] text-center mt-4">
+              Cancel anytime. Your links stay active as long as you're subscribed.
+            </p>
+
+            {/* What You Get */}
+            <div className="mt-8 mb-6">
               <h3 className="text-2xl font-semibold text-white mb-6 text-center">What you get:</h3>
               
               {/* Benefits Grid */}
@@ -371,36 +401,6 @@ export function ResubscribeClient({
                 </p>
               </div>
             </div>
-
-            {/* CTA */}
-            <button
-              onClick={handleSubscribe}
-              disabled={isLoading}
-              className="w-full py-4 px-6 font-semibold rounded-xl transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 relative overflow-hidden group"
-              style={{
-                background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                boxShadow: isLoading 
-                  ? '0 0 10px rgba(34,211,238,0.3)' 
-                  : '0 0 20px rgba(34,211,238,0.5), 0 4px 20px rgba(0,0,0,0.3)',
-                color: '#0f0f1a'
-              }}
-            >
-              <span className="relative z-10 font-bold">
-                {isLoading
-                  ? 'Processing...'
-                  : selectedPlan === 'monthly'
-                  ? 'Resubscribe for $40/month'
-                  : 'Resubscribe for $360/year'}
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-            </button>
-            
-            <p className="text-xs text-[rgba(255,255,255,0.5)] text-center mt-4">
-              Cancel anytime. Your links stay active as long as you're subscribed.
-            </p>
-
-            {/* What You Get */}
-            <div className="mt-8 mb-6">
 
         {/* Help */}
         <p className="text-center text-[rgba(255,255,255,0.6)] text-sm mt-6">
