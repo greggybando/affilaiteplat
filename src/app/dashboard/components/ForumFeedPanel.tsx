@@ -64,6 +64,12 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
   
   const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator'
+  
+  // Debug: Log admin status
+  useEffect(() => {
+    console.log('ForumFeedPanel - currentUser:', currentUser)
+    console.log('ForumFeedPanel - isAdmin:', isAdmin)
+  }, [currentUser, isAdmin])
 
   const fetchPosts = useCallback(async (showLoading = true) => {
     if (showLoading) {
