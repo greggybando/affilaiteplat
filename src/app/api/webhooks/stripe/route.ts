@@ -40,7 +40,7 @@ export async function POST(req: Request) {
           
           if (customerEmail) {
             // Activate user subscription
-            const { error } = await supabaseAdmin
+            const { error } = await (supabaseAdmin as any)
               .from('affiliates')
               .update({ 
                 status: 'active',
@@ -67,14 +67,14 @@ export async function POST(req: Request) {
           
           if (customerEmail) {
             // Get user info before updating
-            const { data: affiliate } = await supabaseAdmin
+            const { data: affiliate } = await (supabaseAdmin as any)
               .from('affiliates')
               .select('id, name, email, subscription_started_at')
               .eq('email', customerEmail)
               .single();
             
             // Update user status to cancelled
-            const { error: updateError } = await supabaseAdmin
+            const { error: updateError } = await (supabaseAdmin as any)
               .from('affiliates')
               .update({ status: 'cancelled' })
               .eq('email', customerEmail);
@@ -118,13 +118,13 @@ export async function POST(req: Request) {
             
             if (customerEmail && subscription.status === 'canceled') {
               // Same logic as deleted
-              const { data: affiliate } = await supabaseAdmin
+              const { data: affiliate } = await (supabaseAdmin as any)
                 .from('affiliates')
                 .select('id, name, email, subscription_started_at')
                 .eq('email', customerEmail)
                 .single();
               
-              await supabaseAdmin
+              await (supabaseAdmin as any)
                 .from('affiliates')
                 .update({ status: 'cancelled' })
                 .eq('email', customerEmail);
