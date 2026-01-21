@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState, useMemo } from 'react'
-import { ArrowLeft, MessageCircle, Search, Send, X } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Search, Send, X, Paperclip, Smile, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
 import { formatDistanceToNow } from 'date-fns'
+import { createPortal } from 'react-dom'
 
 interface Conversation {
   id: string
@@ -44,9 +45,14 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [participantLastActive, setParticipantLastActive] = useState<string | null>(null)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [emojiPickerPosition, setEmojiPickerPosition] = useState({ top: 0, left: 0 })
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const emojiButtonRef = useRef<HTMLButtonElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Derived state - no separate tracking needed
   const isOpen = openUserId !== null
