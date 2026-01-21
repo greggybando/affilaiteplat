@@ -215,6 +215,7 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
           ref={cardRef}
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
+          onClick={(e) => e.stopPropagation()}
           className="fixed w-80"
           style={{
             pointerEvents: 'auto',
@@ -298,6 +299,12 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
                   <div className="flex gap-3">
                     <Link
                       href={`/profile/${profileData.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        e.preventDefault()
+                        setShowCard(false)
+                        router.push(`/profile/${profileData.id}`)
+                      }}
                       className="flex-1 px-5 py-3 rounded-lg text-white font-semibold text-sm transition-all transform hover:scale-[1.02] relative overflow-hidden group"
                       style={{
                         background: 'rgba(255,255,255,0.1)',
@@ -311,7 +318,9 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
                       </span>
                     </Link>
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        e.preventDefault()
                         setShowCard(false)
                         if (onChatClick) {
                           onChatClick()
