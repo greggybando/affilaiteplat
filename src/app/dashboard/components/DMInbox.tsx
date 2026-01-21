@@ -632,7 +632,68 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 )}
                 <div ref={messagesEndRef} />
               </div>
-              <div className="px-3 py-2 border-t border-[rgba(255,255,255,0.1)] flex gap-2" style={{ background: '#000000' }}>
+              <div className="px-3 py-2 border-t border-[rgba(255,255,255,0.1)] flex gap-2 items-center" style={{ background: '#000000' }}>
+                {/* Attachment Button */}
+                <label className="cursor-pointer">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    onChange={(e) => {
+                      const files = e.target.files
+                      if (files) {
+                        setAttachedFiles(Array.from(files))
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70"
+                    style={{ color: 'rgba(255,255,255,0.6)' }}
+                    title="Attach file"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                  </button>
+                </label>
+
+                {/* Emoji Button */}
+                <button
+                  ref={emojiButtonRef}
+                  type="button"
+                  onClick={() => {
+                    if (!showEmojiPicker && emojiButtonRef.current) {
+                      const rect = emojiButtonRef.current.getBoundingClientRect()
+                      setEmojiPickerPosition({
+                        top: rect.top - 200,
+                        left: rect.left
+                      })
+                    }
+                    setShowEmojiPicker(!showEmojiPicker)
+                  }}
+                  className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70"
+                  style={{ color: 'rgba(255,255,255,0.6)' }}
+                  title="Emoji"
+                >
+                  <Smile className="w-4 h-4" />
+                </button>
+
+                {/* GIF Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    // TODO: Implement GIF picker
+                    alert('GIF picker coming soon!')
+                  }}
+                  className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70 text-xs font-medium"
+                  style={{ color: 'rgba(255,255,255,0.6)' }}
+                  title="GIF"
+                >
+                  GIF
+                </button>
+
+                {/* Message Input */}
                 <div className="flex-1 rounded-full overflow-hidden" style={{ background: '#1C1C1E', border: '1px solid rgba(255,255,255,0.1)' }}>
                   <input
                     type="text"
@@ -644,17 +705,19 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                         sendMessage()
                       }
                     }}
-                    placeholder="iMessage"
+                    placeholder={selectedConversation ? `Message ${selectedConversation.participant.name}` : 'iMessage'}
                     className="w-full px-4 py-2.5 text-sm text-white placeholder-[rgba(255,255,255,0.4)] focus:outline-none"
                     style={{ background: 'transparent' }}
                   />
                 </div>
+
+                {/* Send Button */}
                 <button
                   onClick={sendMessage}
-                  disabled={!newMessage.trim()}
+                  disabled={!newMessage.trim() && attachedFiles.length === 0}
                   className="w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-40"
                   style={{
-                    background: newMessage.trim() ? '#007AFF' : 'rgba(255,255,255,0.1)',
+                    background: (newMessage.trim() || attachedFiles.length > 0) ? '#007AFF' : 'rgba(255,255,255,0.1)',
                     color: '#FFFFFF'
                   }}
                   title="Send"
@@ -662,6 +725,74 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                   <Send className="w-5 h-5" />
                 </button>
               </div>
+
+              {/* Emoji Picker */}
+              {showEmojiPicker && typeof document !== 'undefined' && createPortal(
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-[9998]"
+                    onClick={() => setShowEmojiPicker(false)}
+                  />
+                  {/* Emoji Picker */}
+                  <div
+                    className="emoji-picker-scroll fixed bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-1.5 z-[9999] shadow-2xl"
+                    style={{
+                      top: `${emojiPickerPosition.top}px`,
+                      left: `${emojiPickerPosition.left}px`,
+                      maxWidth: '280px',
+                      maxHeight: '200px',
+                      overflowY: 'auto'
+                    }}
+                  >
+                    <div className="grid grid-cols-8 gap-1">
+                      {[
+                        '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂',
+                        '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩',
+                        '😘', '😗', '☺️', '😚', '😙', '🥲', '😋', '😛',
+                        '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔',
+                        '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄',
+                        '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷',
+                        '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '😶‍🌫️',
+                        '😵', '😵‍💫', '🤯', '🤠', '🥳', '🥸', '😎', '🤓',
+                        '🧐', '😕', '😟', '🙁', '☹️', '😮', '😯', '😲',
+                        '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢',
+                        '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫',
+                        '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀',
+                        '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖',
+                        '👍', '👎', '👊', '✊', '🤛', '🤜', '🤞', '✌️',
+                        '🤟', '🤘', '🤙', '👌', '🤌', '🤏', '👈', '👉',
+                        '👆', '👇', '☝️', '👋', '🤚', '🖐️', '✋', '🖖',
+                        '👏', '🙌', '🤲', '🤝', '🙏', '✍️', '💪', '🦾',
+                        '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀',
+                        '🫁', '🦷', '🦴', '👀', '👁️', '👅', '👄', '💋',
+                        '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍',
+                        '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖',
+                        '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️',
+                        '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈',
+                        '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐',
+                        '♑', '♒', '♓', '🆔', '⚛️', '🉑', '☢️', '☣️',
+                        '🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘',
+                        '🌙', '🌚', '🌛', '🌜', '🌝', '🌞', '⭐', '🌟',
+                        '💫', '✨', '☄️', '💥', '🔥', '💢', '💯', '💢',
+                        '🌫️', '🌈'
+                      ].map(emoji => (
+                        <button
+                          key={emoji}
+                          onClick={() => {
+                            setNewMessage(prev => prev + emoji)
+                            setShowEmojiPicker(false)
+                          }}
+                          className="text-base hover:scale-125 transition-transform p-0.5"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>,
+                document.body
+              )}
             </div>
           ) : (
             // Conversation List or Search Results
