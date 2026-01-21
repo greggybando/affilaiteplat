@@ -688,7 +688,46 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                                     overflowWrap: 'break-word'
                                   }}
                                 >
-                                  {msg.content}
+                                  {(() => {
+                                    // Check if content contains HTML (like images)
+                                    if (msg.content.includes('<img')) {
+                                      // Extract text and images separately
+                                      const parts = msg.content.split(/(<img[^>]*>)/g)
+                                      return (
+                                        <>
+                                          {parts.map((part, idx) => {
+                                            if (part.startsWith('<img')) {
+                                              // Extract src from img tag
+                                              const srcMatch = part.match(/src=["']([^"']+)["']/)
+                                              const altMatch = part.match(/alt=["']([^"']*)["']/)
+                                              if (srcMatch) {
+                                                return (
+                                                  <img
+                                                    key={idx}
+                                                    src={srcMatch[1]}
+                                                    alt={altMatch ? altMatch[1] : 'Attachment'}
+                                                    style={{
+                                                      maxWidth: '200px',
+                                                      borderRadius: '8px',
+                                                      margin: '4px 0',
+                                                      display: 'block'
+                                                    }}
+                                                  />
+                                                )
+                                              }
+                                              return null
+                                            }
+                                            // Regular text content
+                                            return part.trim() ? (
+                                              <span key={idx} className="whitespace-pre-wrap">{part}</span>
+                                            ) : null
+                                          })}
+                                        </>
+                                      )
+                                    }
+                                    // Plain text
+                                    return <span className="whitespace-pre-wrap">{msg.content}</span>
+                                  })()}
                                 </div>
                               </div>
                             </div>
@@ -836,10 +875,13 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
               {/* GIF Picker */}
               {showGifPicker && typeof document !== 'undefined' && createPortal(
                 <>
-                  {/* Backdrop */}
+                  {/* Backdrop - only closes GIF picker, not the messaging panel */}
                   <div
                     className="fixed inset-0 z-[9998]"
-                    onClick={() => setShowGifPicker(false)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowGifPicker(false)
+                    }}
                   />
                   {/* GIF Picker */}
                   <div
@@ -883,16 +925,22 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                         gifResults.map((gif: any) => {
                           const gifUrl = gif.images?.fixed_height?.url || gif.images?.original?.url || gif.url || gif.images?.downsized?.url
                           const previewUrl = gif.images?.fixed_height_small?.url || gif.images?.fixed_height?.url || gif.images?.downsized_small?.url || gifUrl
-                          if (!gifUrl) return null
+                          if (!gifUrl) {
+                            console.log('No GIF URL found for:', gif)
+                            return null
+                          }
                           return (
                             <button
                               key={gif.id || Math.random()}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                console.log('GIF selected:', gifUrl)
                                 setAttachedImageUrls(prev => [...prev, gifUrl])
                                 setShowGifPicker(false)
                                 setGifSearchQuery('')
                               }}
-                              className="relative w-full aspect-square rounded-lg overflow-hidden hover:opacity-80 transition-opacity bg-[rgba(255,255,255,0.1)]"
+                              className="relative w-full aspect-square rounded-lg overflow-hidden hover:opacity-80 transition-opacity bg-[rgba(255,255,255,0.1)] cursor-pointer"
                             >
                               <img
                                 src={previewUrl}
@@ -916,10 +964,13 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
               {/* Emoji Picker */}
               {showEmojiPicker && typeof document !== 'undefined' && createPortal(
                 <>
-                  {/* Backdrop */}
+                  {/* Backdrop - only closes emoji picker, not the messaging panel */}
                   <div
                     className="fixed inset-0 z-[9998]"
-                    onClick={() => setShowEmojiPicker(false)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowEmojiPicker(false)
+                    }}
                   />
                   {/* Emoji Picker */}
                   <div
@@ -970,11 +1021,13 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                       ].map(emoji => (
                         <button
                           key={emoji}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
                             setNewMessage(prev => prev + emoji)
                             setShowEmojiPicker(false)
                           }}
-                          className="text-base hover:scale-125 transition-transform p-0.5"
+                          className="text-base hover:scale-125 transition-transform p-0.5 cursor-pointer"
                         >
                           {emoji}
                         </button>
