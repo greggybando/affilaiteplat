@@ -138,6 +138,15 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     if (selectedConversation) {
       fetchMessages(selectedConversation.participant.id)
       fetchParticipantLastActive(selectedConversation.participant.id)
+      // Poll for last active updates every 30 seconds
+      const interval = setInterval(() => {
+        if (selectedConversation) {
+          fetchParticipantLastActive(selectedConversation.participant.id)
+        }
+      }, 30000)
+      return () => clearInterval(interval)
+    } else {
+      setParticipantLastActive(null)
     }
   }, [selectedConversation])
   
@@ -151,6 +160,21 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     } catch (e) {
       console.error('Failed to fetch participant last active:', e)
     }
+  }
+  
+  function getDateSession(date: Date): string {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const diffDays = Math.floor((today.getTime() - messageDate.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      return days[date.getDay()]
+    }
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
   }
 
   // Poll for unread count
