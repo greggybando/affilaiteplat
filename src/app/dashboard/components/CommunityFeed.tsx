@@ -7,7 +7,7 @@ import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
-import TripsTab from './TripsTab'
+import GlobalSendsTab from './GlobalSendsTab'
 import GrindhouseTab from './GrindhouseTab'
 import MeetupsTab from './MeetupsTab'
 
@@ -139,7 +139,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
     'lifedesign Q\'s': 'lifedesign questions',
     'make money Q\'s': 'make money questions',
     'Wins': 'Wins',
-    'Global Sends': 'Organize Trips',
+    'Global Sends': 'Global Sends',
     'Grindhouses': 'Organize Grindhouse',
     'Meetups': 'Meetups'
   }
@@ -151,7 +151,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
     'lifedesign questions': 'lifedesign Q\'s',
     'make money questions': 'make money Q\'s',
     'Wins': 'Wins',
-    'Organize Trips': 'Global Sends',
+    'Global Sends': 'Global Sends',
     'Organize Grindhouse': 'Grindhouses',
     'Meetups': 'Meetups'
   }
@@ -1020,9 +1020,9 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
             </div>
           </div>
 
-          {/* Show TripsTab when Global Sends category is selected */}
+          {/* Show GlobalSendsTab when Global Sends category is selected */}
           {selectedCategory === 'Global Sends' ? (
-            <TripsTab 
+            <GlobalSendsTab 
               affiliate={{
                 id: currentUser.id,
                 name: currentUser.name,

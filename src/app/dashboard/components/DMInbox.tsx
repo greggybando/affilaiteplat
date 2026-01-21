@@ -33,9 +33,9 @@ interface UserSearchResult {
 }
 
 export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplete, onClose }: { currentUserId: string; forceOpen?: boolean; initialUserId?: string; onOpenComplete?: () => void; onClose?: () => void }) {
-  const [isOpen, setIsOpen] = useState(false)
+  // Single source of truth: null = closed, 'inbox' = inbox list, userId = conversation with that user
+  const [openUserId, setOpenUserId] = useState<string | 'inbox' | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [unreadTotal, setUnreadTotal] = useState(0)
@@ -47,15 +47,17 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const lastProcessedInitialUserId = useRef<string | undefined>(undefined)
+  
+  // Derived state - no separate tracking needed
+  const isOpen = openUserId !== null
+  const selectedConversation = openUserId && openUserId !== 'inbox' 
+    ? conversations.find(c => c.participant.id === openUserId) || null
+    : null
 
-  // Handle initial user ID to open conversation with
+  // Handle initialUserId prop - idempotent: setting same value does nothing
   useEffect(() => {
-    if (initialUserId && initialUserId !== currentUserId && lastProcessedInitialUserId.current !== initialUserId) {
-      console.log('[DMInbox] Opening with initialUserId:', initialUserId)
-      lastProcessedInitialUserId.current = initialUserId
-      setIsOpen(true)
-      // First fetch conversations to check if one exists
+    if (initialUserId && initialUserId !== currentUserId && openUserId !== initialUserId) {
+      // Fetch conversations first to check if one exists
       fetch('/api/messages/inbox')
         .then(res => res.json())
         .then(data => {
@@ -71,20 +73,18 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
             unread_count: c.unread_count || 0
           })).filter((c: Conversation) => c.participant && c.participant.id)
           
-          // Try to find existing conversation first
-          const existingConv = allConversations.find((c: Conversation) => c.participant && c.participant.id === initialUserId)
+          setConversations(allConversations)
+          
+          // Check if conversation exists, otherwise fetch user to create temp conversation
+          const existingConv = allConversations.find((c: Conversation) => c.participant.id === initialUserId)
           if (existingConv) {
-            console.log('[DMInbox] Found existing conversation:', existingConv)
-            setConversations(allConversations)
-            setSelectedConversation(existingConv)
+            setOpenUserId(initialUserId)
           } else {
-            // Fetch user details and create new conversation
-            console.log('[DMInbox] Creating new conversation for user:', initialUserId)
+            // Fetch user details to create temp conversation entry
             fetch(`/api/affiliates/${initialUserId}`)
               .then(res => res.json())
               .then(userData => {
                 if (userData.id) {
-                  setConversations(allConversations)
                   const newConversation: Conversation = {
                     id: 'new-' + userData.id,
                     participant: {
@@ -96,8 +96,9 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     last_message_at: null,
                     unread_count: 0
                   }
-                  console.log('[DMInbox] Setting new conversation:', newConversation)
-                  setSelectedConversation(newConversation)
+                  // Add temp conversation to list so it can be found by derived state
+                  setConversations(prev => [...prev, newConversation])
+                  setOpenUserId(initialUserId)
                 }
               })
               .catch(err => console.error('[DMInbox] Failed to fetch user:', err))
@@ -105,11 +106,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
         })
         .catch(err => console.error('[DMInbox] Failed to fetch conversations:', err))
     }
-  }, [initialUserId, currentUserId])
+  }, [initialUserId, currentUserId, openUserId])
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    if (!isOpen) return // Don't set up listener if already closed
+    if (!isOpen) return
     
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as HTMLElement
@@ -121,60 +122,50 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       if (dropdownRef.current && dropdownRef.current.contains(target)) {
         return
       }
-      // Close if clicking outside
-      setIsOpen(false)
-      setSelectedConversation(null)
-      // Reset last processed initialUserId so it can be reopened
-      lastProcessedInitialUserId.current = undefined
-      // Notify parent to clear initialUserId state
+      // Close - single state update
+      setOpenUserId(null)
       if (onClose) {
         onClose()
       }
     }
     // Use a delay to avoid immediate closure when opening
-    // This ensures the button click completes before the listener is attached
     const timeout = setTimeout(() => {
-      document.addEventListener('click', handleClickOutside, true) // Use capture phase
+      document.addEventListener('click', handleClickOutside, true)
     }, 150)
     return () => {
       clearTimeout(timeout)
       document.removeEventListener('click', handleClickOutside, true)
     }
-  }, [isOpen])
+  }, [isOpen, onClose])
 
-  // Fetch conversations when dropdown opens
+  // Fetch conversations when inbox list is shown
   useEffect(() => {
-    if (isOpen && !selectedConversation) {
+    if (openUserId === 'inbox') {
       fetchConversations()
     }
-  }, [isOpen, selectedConversation])
+  }, [openUserId])
 
   // External control to force open/close
   useEffect(() => {
     if (forceOpen !== undefined) {
-      setIsOpen(forceOpen)
-      if (!forceOpen) {
-        setSelectedConversation(null)
-      }
+      setOpenUserId(forceOpen ? (openUserId || 'inbox') : null)
     }
-  }, [forceOpen])
+  }, [forceOpen, openUserId])
 
   // Fetch messages and last active time when conversation selected
   useEffect(() => {
-    if (selectedConversation) {
-      fetchMessages(selectedConversation.participant.id)
-      fetchParticipantLastActive(selectedConversation.participant.id)
+    if (openUserId && openUserId !== 'inbox') {
+      fetchMessages(openUserId)
+      fetchParticipantLastActive(openUserId)
       // Poll for last active updates every 30 seconds
       const interval = setInterval(() => {
-        if (selectedConversation) {
-          fetchParticipantLastActive(selectedConversation.participant.id)
-        }
+        fetchParticipantLastActive(openUserId)
       }, 30000)
       return () => clearInterval(interval)
     } else {
       setParticipantLastActive(null)
     }
-  }, [selectedConversation])
+  }, [openUserId])
   
   async function fetchParticipantLastActive(userId: string) {
     try {
@@ -313,7 +304,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   }
 
   async function sendMessage() {
-    if (!newMessage.trim() || !selectedConversation) return
+    if (!newMessage.trim() || !openUserId || openUserId === 'inbox') return
 
     const content = newMessage.trim()
     const tempId = 'temp-' + Date.now()
@@ -348,7 +339,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     }, 50)
 
     try {
-      const res = await fetch(`/api/messages/${selectedConversation.participant.id}`, {
+      const res = await fetch(`/api/messages/${openUserId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content })
@@ -390,7 +381,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
         } else {
           // Fallback: refetch after a delay if response doesn't include message
           setTimeout(() => {
-            fetchMessages(selectedConversation.participant.id)
+            fetchMessages(openUserId)
           }, 1000)
         }
       } else {
@@ -424,7 +415,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   }
 
   function startConversationWithUser(user: UserSearchResult) {
-    // Create a temporary conversation object
+    // Create a temporary conversation object and add to list
     const newConversation: Conversation = {
       id: 'new-' + user.id,
       participant: {
@@ -436,7 +427,8 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       last_message_at: null,
       unread_count: 0
     }
-    setSelectedConversation(newConversation)
+    setConversations(prev => [...prev, newConversation])
+    setOpenUserId(user.id)
     setSearchQuery('')
     setSearchResults([])
   }
@@ -480,68 +472,13 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
         onClick={(e) => {
           e.stopPropagation()
           e.preventDefault()
-          console.log('[DMInbox] Chat button clicked, current isOpen:', isOpen, 'initialUserId:', initialUserId, 'lastProcessed:', lastProcessedInitialUserId.current)
           
-          // If initialUserId is set and (inbox is closed OR we haven't processed this userId yet), open it with that user
-          const shouldOpenWithInitialUser = initialUserId && 
-            initialUserId !== currentUserId && 
-            (!isOpen || lastProcessedInitialUserId.current !== initialUserId)
-          
-          if (shouldOpenWithInitialUser) {
-            console.log('[DMInbox] Opening inbox with initialUserId:', initialUserId)
-            lastProcessedInitialUserId.current = initialUserId
-            setIsOpen(true)
-            // Fetch conversations and open the conversation for initialUserId
-            fetch('/api/messages/inbox')
-              .then(res => res.json())
-              .then(data => {
-                const allConversations = (data.conversations || []).map((c: any) => ({
-                  id: c.conversation_id || c.id,
-                  participant: {
-                    id: c.other_user?.id || c.participant?.id,
-                    name: c.other_user?.name || c.participant?.name || 'Unknown',
-                    avatar_url: c.other_user?.avatar || c.participant?.avatar_url || null
-                  },
-                  last_message: c.last_message || null,
-                  last_message_at: c.updated_at || c.last_message_at || null,
-                  unread_count: c.unread_count || 0
-                })).filter((c: Conversation) => c.participant && c.participant.id)
-                
-                const existingConv = allConversations.find((c: Conversation) => c.participant && c.participant.id === initialUserId)
-                if (existingConv) {
-                  setConversations(allConversations)
-                  setSelectedConversation(existingConv)
-                } else {
-                  fetch(`/api/affiliates/${initialUserId}`)
-                    .then(res => res.json())
-                    .then(userData => {
-                      if (userData.id) {
-                        setConversations(allConversations)
-                        const newConversation: Conversation = {
-                          id: 'new-' + userData.id,
-                          participant: {
-                            id: userData.id,
-                            name: userData.avatar_name || userData.name,
-                            avatar_url: userData.avatar_url
-                          },
-                          last_message: null,
-                          last_message_at: null,
-                          unread_count: 0
-                        }
-                        setSelectedConversation(newConversation)
-                      }
-                    })
-                    .catch(err => console.error('[DMInbox] Failed to fetch user:', err))
-                }
-              })
-              .catch(err => console.error('[DMInbox] Failed to fetch conversations:', err))
+          // If initialUserId is set and valid, open that conversation (idempotent)
+          if (initialUserId && initialUserId !== currentUserId) {
+            setOpenUserId(initialUserId)
           } else {
-            // Normal toggle behavior
-            setIsOpen(prev => {
-              const newValue = !prev
-              console.log('[DMInbox] Toggling isOpen from', prev, 'to', newValue)
-              return newValue
-            })
+            // Toggle: if open, close; if closed, open inbox list
+            setOpenUserId(prev => prev === null ? 'inbox' : null)
           }
         }}
         className="relative p-2 bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.16)] rounded-xl border border-[rgba(255,255,255,0.18)] transition-colors"
@@ -563,7 +500,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
             {selectedConversation ? (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setSelectedConversation(null)} className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded text-white" title="Back">
+                  <button onClick={() => setOpenUserId('inbox')} className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded text-white" title="Back">
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                   {selectedConversation.participant.avatar_url ? (
@@ -605,9 +542,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-white">Messages</span>
                   <button onClick={() => {
-                    setIsOpen(false)
-                    setSelectedConversation(null)
-                    lastProcessedInitialUserId.current = undefined
+                    setOpenUserId(null)
                     if (onClose) {
                       onClose()
                     }
@@ -760,14 +695,14 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 conversations.map(conv => (
                   <button
                     key={conv.id}
-                    onClick={() => setSelectedConversation(conv)}
+                    onClick={() => setOpenUserId(conv.participant.id)}
                     className="w-full p-3 flex items-center gap-3 hover:bg-[rgba(255,255,255,0.1)] border-b border-[rgba(255,255,255,0.1)] text-left transition-colors"
                   >
                     <ProfileHoverCard
                       userId={conv.participant.id}
                       userName={conv.participant.name}
                       userAvatar={conv.participant.avatar_url}
-                      onChatClick={() => setSelectedConversation(conv)}
+                      onChatClick={() => setOpenUserId(conv.participant.id)}
                     >
                       <Link href={`/profile/${conv.participant.id}`} onClick={(e) => e.stopPropagation()} className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium shadow-lg cursor-pointer" style={{ boxShadow: '0 0 20px rgba(6,182,212,0.5)' }}>
                         {conv.participant.avatar_url ? (
@@ -783,7 +718,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                           userId={conv.participant.id}
                           userName={conv.participant.name}
                           userAvatar={conv.participant.avatar_url}
-                          onChatClick={() => setSelectedConversation(conv)}
+                          onChatClick={() => setOpenUserId(conv.participant.id)}
                         >
                           <Link href={`/profile/${conv.participant.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-white hover:text-cyan-400 transition-colors cursor-pointer truncate">{conv.participant.name}</Link>
                         </ProfileHoverCard>
