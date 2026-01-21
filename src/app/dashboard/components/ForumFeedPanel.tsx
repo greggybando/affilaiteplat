@@ -60,8 +60,10 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  const fetchPosts = useCallback(async () => {
-    setLoading(true)
+  const fetchPosts = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true)
+    }
     try {
       const params = new URLSearchParams()
       if (category && category !== 'All' && category !== 'Home') {
@@ -75,18 +77,20 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
     } catch (error) {
       console.error('Error fetching posts:', error)
     } finally {
-      setLoading(false)
+      if (showLoading) {
+        setLoading(false)
+      }
     }
   }, [category])
 
   useEffect(() => {
-    fetchPosts()
+    fetchPosts(true) // Show loading on initial load
   }, [fetchPosts])
 
   // Listen for refresh events (when post is created from top composer)
   useEffect(() => {
     const handleRefresh = () => {
-      fetchPosts()
+      fetchPosts(false) // Don't show loading on refresh
     }
     window.addEventListener('refreshForumFeed', handleRefresh)
     return () => {
