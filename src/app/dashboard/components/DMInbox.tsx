@@ -53,6 +53,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   const [gifSearchQuery, setGifSearchQuery] = useState('')
   const [gifResults, setGifResults] = useState<any[]>([])
   const [gifLoading, setGifLoading] = useState(false)
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -716,11 +717,22 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                                                     key={idx}
                                                     src={srcMatch[1]}
                                                     alt={altMatch ? altMatch[1] : 'Attachment'}
+                                                    onClick={() => setEnlargedImage(srcMatch[1])}
                                                     style={{
                                                       maxWidth: '200px',
                                                       borderRadius: '8px',
                                                       margin: '4px 0',
-                                                      display: 'block'
+                                                      display: 'block',
+                                                      cursor: 'pointer',
+                                                      transition: 'transform 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                      e.currentTarget.style.transform = 'scale(1.05)'
+                                                      e.currentTarget.style.opacity = '0.9'
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                      e.currentTarget.style.transform = 'scale(1)'
+                                                      e.currentTarget.style.opacity = '1'
                                                     }}
                                                   />
                                                 )
