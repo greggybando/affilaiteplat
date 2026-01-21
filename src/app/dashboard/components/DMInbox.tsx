@@ -47,6 +47,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId }: { currentUs
   // Handle initial user ID to open conversation with
   useEffect(() => {
     if (initialUserId && initialUserId !== currentUserId) {
+      console.log('[DMInbox] Opening with initialUserId:', initialUserId)
       setIsOpen(true)
       // First fetch conversations to check if one exists
       fetch('/api/messages/inbox')
@@ -56,10 +57,12 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId }: { currentUs
           // Try to find existing conversation first
           const existingConv = allConversations.find((c: Conversation) => c.participant.id === initialUserId)
           if (existingConv) {
+            console.log('[DMInbox] Found existing conversation:', existingConv)
             setConversations(allConversations)
             setSelectedConversation(existingConv)
           } else {
             // Fetch user details and create new conversation
+            console.log('[DMInbox] Creating new conversation for user:', initialUserId)
             fetch(`/api/affiliates/${initialUserId}`)
               .then(res => res.json())
               .then(userData => {
@@ -76,13 +79,14 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId }: { currentUs
                     last_message_at: null,
                     unread_count: 0
                   }
+                  console.log('[DMInbox] Setting new conversation:', newConversation)
                   setSelectedConversation(newConversation)
                 }
               })
-              .catch(err => console.error('Failed to fetch user:', err))
+              .catch(err => console.error('[DMInbox] Failed to fetch user:', err))
           }
         })
-        .catch(err => console.error('Failed to fetch conversations:', err))
+        .catch(err => console.error('[DMInbox] Failed to fetch conversations:', err))
     }
   }, [initialUserId, currentUserId])
 

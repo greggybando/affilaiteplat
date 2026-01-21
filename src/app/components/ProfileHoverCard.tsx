@@ -315,16 +315,9 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
                         setShowCard(false)
                         if (onChatClick) {
                           onChatClick()
-                        } else {
-                          // Navigate to dashboard with openDM query param
-                          const currentPath = window.location.pathname
-                          if (currentPath === '/dashboard') {
-                            // Already on dashboard, just update URL
-                            router.push(`/dashboard?openDM=${profileData.id}`, { scroll: false })
-                          } else {
-                            // Navigate to dashboard
-                            window.location.href = `/dashboard?openDM=${profileData.id}`
-                          }
+                        } else if (profileData?.id) {
+                          // Always navigate to dashboard with openDM query param
+                          router.push(`/dashboard?openDM=${profileData.id}`)
                         }
                       }}
                       className="flex-1 px-5 py-3 rounded-lg text-white font-semibold text-sm transition-all transform hover:scale-[1.02] relative overflow-hidden group"

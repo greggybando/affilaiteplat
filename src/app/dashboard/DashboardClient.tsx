@@ -399,7 +399,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                 />
               </div>
               <NotificationBell currentUserId={affiliate.id} />
-              <DMInbox currentUserId={affiliate.id} initialUserId={openDMUserId || undefined} />
+              <DMInbox key={openDMUserId || 'default'} currentUserId={affiliate.id} initialUserId={openDMUserId || undefined} />
               
               {/* Profile Avatar Dropdown */}
               <div className="relative" ref={avatarDropdownRef} style={{ zIndex: 999999 }}>
