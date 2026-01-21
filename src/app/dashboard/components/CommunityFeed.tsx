@@ -1781,8 +1781,17 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                         window.location.href = `/dashboard?openDM=${nestedReply.user.id}`
                                       }}
                                     >
-                                      <Link href={`/profile/${nestedReply.user.id}`}>
+                                      <Link href={`/profile/${nestedReply.user.id}`} className="flex items-center gap-1.5">
                                         <span className="font-semibold text-white text-sm hover:text-cyan-400 transition-colors cursor-pointer">{nestedReply.user.name}</span>
+                                        {(nestedReply.user.role === 'admin' || nestedReply.user.role === 'moderator') && (
+                                          <Zap 
+                                            className="w-2.5 h-2.5 text-yellow-400 flex-shrink-0 animate-pulse" 
+                                            fill="currentColor"
+                                            style={{
+                                              filter: 'drop-shadow(0 0 2px rgba(250,204,21,0.8)) drop-shadow(0 0 4px rgba(250,204,21,0.6))'
+                                            }}
+                                          />
+                                        )}
                                       </Link>
                                     </ProfileHoverCard>
                                     <span className="text-xs text-[rgba(255,255,255,0.6)]">{formatTime(nestedReply.createdAt)}</span>
