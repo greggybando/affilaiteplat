@@ -255,7 +255,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       const res = await fetch(`/api/messages/${partnerId}`)
       if (res.ok) {
         const data = await res.json()
-        setMessages(data.messages || [])
+        // Ensure messages are sorted by created_at
+        const sortedMessages = (data.messages || []).sort((a: Message, b: Message) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        )
+        setMessages(sortedMessages)
       }
     } catch (e) {
       console.error('Failed to fetch messages:', e)
