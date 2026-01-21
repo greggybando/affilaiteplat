@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Heart, Star, MessageCircle, Image as ImageIcon, X, Send, MoreVertical, Copy, CheckCircle2, ChevronDown, Edit, Trash2, Pin, Lock, Flag, AlertTriangle } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import Link from 'next/link'
+import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
 
 interface User {
   id: string
@@ -1268,22 +1270,28 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                       {post.repliesCount}
                     </button>
                     {post.lastReply && (
-                      <div className="flex items-center gap-2 ml-auto text-xs text-slate-500">
-                        <div className="flex -space-x-2">
-                          {post.lastReply.user.avatar ? (
-                            <img
-                              src={post.lastReply.user.avatar}
-                              alt={post.lastReply.user.name}
-                              className="w-6 h-6 rounded-full border-2 border-white"
-                            />
-                          ) : (
-                            <div className="w-6 h-6 rounded-full bg-purple-600 border-2 border-white flex items-center justify-center text-white text-xs">
-                              {post.lastReply.user.name[0]?.toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                        <span>Last comment {formatTime(post.lastReply.date)}</span>
-                      </div>
+                      <ProfileHoverCard
+                        userId={post.lastReply.user.id || ''}
+                        userName={post.lastReply.user.name}
+                        userAvatar={post.lastReply.user.avatar}
+                      >
+                        <Link href={`/profile/${post.lastReply.user.id || ''}`} className="flex items-center gap-2 ml-auto text-xs text-slate-500">
+                          <div className="flex -space-x-2">
+                            {post.lastReply.user.avatar ? (
+                              <img
+                                src={post.lastReply.user.avatar}
+                                alt={post.lastReply.user.name}
+                                className="w-6 h-6 rounded-full border-2 border-white cursor-pointer"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-purple-600 border-2 border-white flex items-center justify-center text-white text-xs cursor-pointer">
+                                {post.lastReply.user.name[0]?.toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <span className="hover:text-cyan-400 transition-colors cursor-pointer">Last comment {formatTime(post.lastReply.date)}</span>
+                        </Link>
+                      </ProfileHoverCard>
                     )}
                   </div>
                 </div>
@@ -1320,32 +1328,43 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
             {/* Post Content */}
             <div className="flex-1 overflow-y-auto p-6">
               <div className="flex items-center gap-3 mb-4">
-                {selectedPost.user.avatar ? (
-                  <img
-                    src={selectedPost.user.avatar}
-                    alt={selectedPost.user.name}
-                    className="w-12 h-12 rounded-full border-2"
-                    style={{
-                      borderColor: 'rgba(34,211,238,0.5)',
-                      boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
-                    }}
-                  />
-                ) : (
-                  <div 
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold border-2"
-                    style={{
-                      background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                      borderColor: 'rgba(34,211,238,0.5)',
-                      boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
-                    }}
-                  >
-                    {selectedPost.user.name[0]?.toUpperCase()}
-                  </div>
-                )}
-                <div className="flex-1">
-                  <div className="font-semibold text-white">{selectedPost.user.name}</div>
-                  <div className="text-sm text-[rgba(255,255,255,0.6)]">{formatTime(selectedPost.createdAt)}</div>
-                </div>
+                <ProfileHoverCard
+                  userId={selectedPost.user.id}
+                  userName={selectedPost.user.name}
+                  userAvatar={selectedPost.user.avatar}
+                  onChatClick={() => {
+                    window.location.href = `/messages?user=${selectedPost.user.id}`
+                  }}
+                >
+                  <Link href={`/profile/${selectedPost.user.id}`} className="flex items-center gap-3">
+                    {selectedPost.user.avatar ? (
+                      <img
+                        src={selectedPost.user.avatar}
+                        alt={selectedPost.user.name}
+                        className="w-12 h-12 rounded-full border-2 cursor-pointer"
+                        style={{
+                          borderColor: 'rgba(34,211,238,0.5)',
+                          boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
+                        }}
+                      />
+                    ) : (
+                      <div 
+                        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold border-2 cursor-pointer"
+                        style={{
+                          background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                          borderColor: 'rgba(34,211,238,0.5)',
+                          boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
+                        }}
+                      >
+                        {selectedPost.user.name[0]?.toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{selectedPost.user.name}</div>
+                      <div className="text-sm text-[rgba(255,255,255,0.6)]">{formatTime(selectedPost.createdAt)}</div>
+                    </div>
+                  </Link>
+                </ProfileHoverCard>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   selectedPost.category === 'Wins' ? 'bg-green-500/20 text-green-400' :
                   selectedPost.category === 'dreamjob questions' ? 'bg-amber-500/20 text-amber-400' :
@@ -1424,33 +1443,46 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                     {replies.map(reply => (
                       <div key={reply.id} className="space-y-3">
                         <div className="flex items-start gap-3">
-                          {reply.user.avatar ? (
-                            <img
-                              src={reply.user.avatar}
-                              alt={reply.user.name}
-                              className="w-8 h-8 rounded-full shrink-0 border-2"
-                              style={{
-                                borderColor: 'rgba(34,211,238,0.5)',
-                                boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
-                              }}
-                            />
-                          ) : (
-                            <div 
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 border-2"
-                              style={{
-                                background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                                borderColor: 'rgba(34,211,238,0.5)',
-                                boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
-                              }}
-                            >
-                              {reply.user.name[0]?.toUpperCase()}
-                            </div>
-                          )}
+                          <ProfileHoverCard
+                            userId={reply.user.id}
+                            userName={reply.user.name}
+                            userAvatar={reply.user.avatar}
+                            onChatClick={() => {
+                              window.location.href = `/messages?user=${reply.user.id}`
+                            }}
+                          >
+                            <Link href={`/profile/${reply.user.id}`} className="flex items-start gap-3">
+                              {reply.user.avatar ? (
+                                <img
+                                  src={reply.user.avatar}
+                                  alt={reply.user.name}
+                                  className="w-8 h-8 rounded-full shrink-0 border-2 cursor-pointer"
+                                  style={{
+                                    borderColor: 'rgba(34,211,238,0.5)',
+                                    boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
+                                  }}
+                                />
+                              ) : (
+                                <div 
+                                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 border-2 cursor-pointer"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                                    borderColor: 'rgba(34,211,238,0.5)',
+                                    boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
+                                  }}
+                                >
+                                  {reply.user.name[0]?.toUpperCase()}
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{reply.user.name}</span>
+                                  <span className="text-sm text-[rgba(255,255,255,0.6)]">{formatTime(reply.createdAt)}</span>
+                                </div>
+                              </Link>
+                            </ProfileHoverCard>
+                          </div>
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-white">{reply.user.name}</span>
-                              <span className="text-sm text-[rgba(255,255,255,0.6)]">{formatTime(reply.createdAt)}</span>
-                            </div>
                             <p className="text-[rgba(255,255,255,0.8)] mb-2">{reply.content}</p>
                             {reply.imageUrl && (
                               <img
@@ -1480,33 +1512,46 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           <div className="ml-11 space-y-3 pl-4 border-l-2 border-[rgba(255,255,255,0.1)]">
                             {reply.replies.map(nestedReply => (
                               <div key={nestedReply.id} className="flex items-start gap-3">
-                                {nestedReply.user.avatar ? (
-                                  <img
-                                    src={nestedReply.user.avatar}
-                                    alt={nestedReply.user.name}
-                                    className="w-6 h-6 rounded-full shrink-0 border-2"
-                                    style={{
-                                      borderColor: 'rgba(34,211,238,0.5)',
-                                      boxShadow: glowShadow('0 0 10px rgba(34,211,238,0.7), 0 0 20px rgba(34,211,238,0.4)', glowIntensity)
-                                    }}
-                                  />
-                                ) : (
-                                  <div 
-                                    className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 border-2"
-                                    style={{
-                                      background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                                      borderColor: 'rgba(34,211,238,0.5)',
-                                      boxShadow: glowShadow('0 0 10px rgba(34,211,238,0.7), 0 0 20px rgba(34,211,238,0.4)', glowIntensity)
-                                    }}
-                                  >
-                                    {nestedReply.user.name[0]?.toUpperCase()}
-                                  </div>
-                                )}
+                                <ProfileHoverCard
+                                  userId={nestedReply.user.id}
+                                  userName={nestedReply.user.name}
+                                  userAvatar={nestedReply.user.avatar}
+                                  onChatClick={() => {
+                                    window.location.href = `/messages?user=${nestedReply.user.id}`
+                                  }}
+                                >
+                                  <Link href={`/profile/${nestedReply.user.id}`} className="flex items-start gap-3">
+                                    {nestedReply.user.avatar ? (
+                                      <img
+                                        src={nestedReply.user.avatar}
+                                        alt={nestedReply.user.name}
+                                        className="w-6 h-6 rounded-full shrink-0 border-2 cursor-pointer"
+                                        style={{
+                                          borderColor: 'rgba(34,211,238,0.5)',
+                                          boxShadow: glowShadow('0 0 10px rgba(34,211,238,0.7), 0 0 20px rgba(34,211,238,0.4)', glowIntensity)
+                                        }}
+                                      />
+                                    ) : (
+                                      <div 
+                                        className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 border-2 cursor-pointer"
+                                        style={{
+                                          background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                                          borderColor: 'rgba(34,211,238,0.5)',
+                                          boxShadow: glowShadow('0 0 10px rgba(34,211,238,0.7), 0 0 20px rgba(34,211,238,0.4)', glowIntensity)
+                                        }}
+                                      >
+                                        {nestedReply.user.name[0]?.toUpperCase()}
+                                      </div>
+                                    )}
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-semibold text-white text-sm hover:text-cyan-400 transition-colors cursor-pointer">{nestedReply.user.name}</span>
+                                        <span className="text-xs text-[rgba(255,255,255,0.6)]">{formatTime(nestedReply.createdAt)}</span>
+                                      </div>
+                                    </Link>
+                                  </ProfileHoverCard>
+                                </div>
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-semibold text-white text-sm">{nestedReply.user.name}</span>
-                                    <span className="text-xs text-[rgba(255,255,255,0.6)]">{formatTime(nestedReply.createdAt)}</span>
-                                  </div>
                                   <p className="text-[rgba(255,255,255,0.8)] text-sm mb-1">{nestedReply.content}</p>
                                   <button 
                                     onClick={() => handleReplyLike(nestedReply.id)}

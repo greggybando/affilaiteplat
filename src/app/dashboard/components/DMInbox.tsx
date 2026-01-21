@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, MessageCircle, Search, Send, X } from 'lucide-react'
+import Link from 'next/link'
+import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
 
 interface Conversation {
   id: string
@@ -400,16 +402,30 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId }: { currentUs
                     onClick={() => setSelectedConversation(conv)}
                     className="w-full p-3 flex items-center gap-3 hover:bg-[rgba(255,255,255,0.1)] border-b border-[rgba(255,255,255,0.1)] text-left transition-colors"
                   >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium shadow-lg" style={{ boxShadow: '0 0 20px rgba(6,182,212,0.5)' }}>
-                      {conv.participant.avatar_url ? (
-                        <img src={conv.participant.avatar_url} className="w-full h-full rounded-full object-cover" alt={conv.participant.name} />
-                      ) : (
-                        conv.participant.name.charAt(0).toUpperCase()
-                      )}
-                    </div>
+                    <ProfileHoverCard
+                      userId={conv.participant.id}
+                      userName={conv.participant.name}
+                      userAvatar={conv.participant.avatar_url}
+                      onChatClick={() => setSelectedConversation(conv)}
+                    >
+                      <Link href={`/profile/${conv.participant.id}`} onClick={(e) => e.stopPropagation()} className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium shadow-lg cursor-pointer" style={{ boxShadow: '0 0 20px rgba(6,182,212,0.5)' }}>
+                        {conv.participant.avatar_url ? (
+                          <img src={conv.participant.avatar_url} className="w-full h-full rounded-full object-cover" alt={conv.participant.name} />
+                        ) : (
+                          conv.participant.name.charAt(0).toUpperCase()
+                        )}
+                      </Link>
+                    </ProfileHoverCard>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-white truncate">{conv.participant.name}</span>
+                        <ProfileHoverCard
+                          userId={conv.participant.id}
+                          userName={conv.participant.name}
+                          userAvatar={conv.participant.avatar_url}
+                          onChatClick={() => setSelectedConversation(conv)}
+                        >
+                          <Link href={`/profile/${conv.participant.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-white hover:text-cyan-400 transition-colors cursor-pointer truncate">{conv.participant.name}</Link>
+                        </ProfileHoverCard>
                         {conv.last_message_at && (
                           <span className="text-xs text-[rgba(255,255,255,0.5)]">{formatTime(conv.last_message_at)}</span>
                         )}

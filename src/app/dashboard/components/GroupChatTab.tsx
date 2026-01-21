@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Send, Users, Plus, Bell, BellOff, Trash2, MoreVertical, Search, UserPlus, X, MessageCircle, LogOut, Settings, Zap, Wifi, WifiOff } from 'lucide-react'
 import { useSocket } from '@/hooks/useSocket'
+import Link from 'next/link'
+import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
 
 // Helper to get main chat ID
 const getMainChatId = (chats: GroupChat[]): string | null => {
@@ -10,7 +12,6 @@ const getMainChatId = (chats: GroupChat[]): string | null => {
   return mainChat?.id || (chats.length > 0 ? chats[0].id : null)
 }
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns'
-import Link from 'next/link'
 
 interface GroupChatMessage {
   id: string
@@ -1392,33 +1393,53 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                     
                     return (
                       <div key={msg.id} className="flex gap-2 justify-start group">
-                        <div className="flex-shrink-0" style={{ width: '32px' }}>
-                          {msg.user_avatar ? (
-                            <img
-                              src={msg.user_avatar}
-                              alt={msg.user_name}
-                              className="w-8 h-8 rounded-full object-cover border-2"
-                              style={{
-                                borderColor: 'rgba(34,211,238,0.3)',
-                                boxShadow: '0 0 8px rgba(34,211,238,0.2)'
-                              }}
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold border-2"
-                              style={{
-                                background: 'linear-gradient(135deg, rgba(34,211,238,0.8), rgba(6,182,212,0.8))',
-                                borderColor: 'rgba(34,211,238,0.3)',
-                                boxShadow: '0 0 8px rgba(34,211,238,0.2)'
-                              }}
-                            >
-                              {msg.user_name[0]}
-                            </div>
-                          )}
-                        </div>
+                        <ProfileHoverCard
+                          userId={msg.user_id}
+                          userName={msg.user_name}
+                          userAvatar={msg.user_avatar}
+                          onChatClick={() => {
+                            if (setIsDMModalOpen) setIsDMModalOpen(true)
+                          }}
+                        >
+                          <Link href={`/profile/${msg.user_id}`} className="flex-shrink-0" style={{ width: '32px' }}>
+                            {msg.user_avatar ? (
+                              <img
+                                src={msg.user_avatar}
+                                alt={msg.user_name}
+                                className="w-8 h-8 rounded-full object-cover border-2 cursor-pointer"
+                                style={{
+                                  borderColor: 'rgba(34,211,238,0.3)',
+                                  boxShadow: '0 0 8px rgba(34,211,238,0.2)'
+                                }}
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold border-2 cursor-pointer"
+                                style={{
+                                  background: 'linear-gradient(135deg, rgba(34,211,238,0.8), rgba(6,182,212,0.8))',
+                                  borderColor: 'rgba(34,211,238,0.3)',
+                                  boxShadow: '0 0 8px rgba(34,211,238,0.2)'
+                                }}
+                              >
+                                {msg.user_name[0]}
+                              </div>
+                            )}
+                          </Link>
+                        </ProfileHoverCard>
                         <div className="flex flex-col items-start max-w-[75%]">
                           {showName && (
-                            <div className="text-xs mb-1 px-2 flex items-center gap-2 relative" style={{ color: 'rgba(34,211,238,0.8)' }}>
-                              <span>{msg.user_name}</span>
+                            <div className="mb-1 px-2 flex items-center gap-2 relative">
+                              <ProfileHoverCard
+                                userId={msg.user_id}
+                                userName={msg.user_name}
+                                userAvatar={msg.user_avatar}
+                                onChatClick={() => {
+                                  if (setIsDMModalOpen) setIsDMModalOpen(true)
+                                }}
+                              >
+                                <Link href={`/profile/${msg.user_id}`} className="text-xs hover:text-cyan-400 transition-colors cursor-pointer" style={{ color: 'rgba(34,211,238,0.8)' }}>
+                                  <span>{msg.user_name}</span>
+                                </Link>
+                              </ProfileHoverCard>
                               {msg.user_id !== affiliate.id && (
                                 <div className="relative">
                                   <button
