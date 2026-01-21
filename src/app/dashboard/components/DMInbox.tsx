@@ -948,7 +948,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
               </div>
 
               {/* GIF Picker */}
-              {showGifPicker && typeof document !== 'undefined' && createPortal(
+              {showGifPicker && (
                 <>
                   {/* Backdrop - only closes GIF picker, not the messaging panel */}
                   <div
@@ -964,8 +964,9 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     data-gif-picker="true"
                     className="absolute bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 z-[9999] shadow-2xl"
                     style={{
-                      bottom: '60px',
+                      bottom: '100%',
                       right: '0',
+                      marginBottom: '8px',
                       width: '380px',
                       maxHeight: '400px',
                       display: 'flex',
