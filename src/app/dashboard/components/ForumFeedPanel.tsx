@@ -246,7 +246,23 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                         )}
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-white">{post.user.name}</span>
+                            {(post.user.role === 'admin' || post.user.role === 'moderator') ? (
+                              <span 
+                                className="font-semibold"
+                                style={{
+                                  background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
+                                  WebkitBackgroundClip: 'text',
+                                  WebkitTextFillColor: 'transparent',
+                                  backgroundClip: 'text',
+                                  textShadow: '0 0 8px rgba(250,204,21,0.5)',
+                                  filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.6))'
+                                }}
+                              >
+                                {post.user.name}
+                              </span>
+                            ) : (
+                              <span className="font-semibold text-white">{post.user.name}</span>
+                            )}
                             {(post.user.role === 'admin' || post.user.role === 'moderator') && (
                               <Zap 
                                 className="w-5 h-5 text-yellow-400 flex-shrink-0" 

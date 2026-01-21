@@ -1188,7 +1188,23 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           <div className="flex items-center gap-2">
                             <div>
                               <div className="flex items-center gap-1.5">
-                                <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{post.user.name}</span>
+                                {(post.user.role === 'admin' || post.user.role === 'moderator') ? (
+                                  <span 
+                                    className="font-semibold hover:opacity-80 transition-opacity cursor-pointer"
+                                    style={{
+                                      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
+                                      WebkitBackgroundClip: 'text',
+                                      WebkitTextFillColor: 'transparent',
+                                      backgroundClip: 'text',
+                                      textShadow: '0 0 8px rgba(250,204,21,0.5)',
+                                      filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.6))'
+                                    }}
+                                  >
+                                    {post.user.name}
+                                  </span>
+                                ) : (
+                                  <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{post.user.name}</span>
+                                )}
                                 {(post.user.role === 'admin' || post.user.role === 'moderator') && (
                                   <Zap 
                                     className="w-5 h-5 text-yellow-400 flex-shrink-0" 
@@ -1542,7 +1558,23 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                     )}
                     <div className="flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{selectedPost.user.name}</span>
+                        {(selectedPost.user.role === 'admin' || selectedPost.user.role === 'moderator') ? (
+                          <span 
+                            className="font-semibold hover:opacity-80 transition-opacity cursor-pointer"
+                            style={{
+                              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                              textShadow: '0 0 8px rgba(250,204,21,0.5)',
+                              filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.6))'
+                            }}
+                          >
+                            {selectedPost.user.name}
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{selectedPost.user.name}</span>
+                        )}
                         {(selectedPost.user.role === 'admin' || selectedPost.user.role === 'moderator') && (
                           <Zap 
                             className="w-5 h-5 text-yellow-400 flex-shrink-0" 
@@ -1687,7 +1719,23 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                 }}
                               >
                                 <Link href={`/profile/${reply.user.id}`} className="flex items-center gap-1.5">
-                                  <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{reply.user.name}</span>
+                                  {(reply.user.role === 'admin' || reply.user.role === 'moderator') ? (
+                                    <span 
+                                      className="font-semibold hover:opacity-80 transition-opacity cursor-pointer"
+                                      style={{
+                                        background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text',
+                                        textShadow: '0 0 6px rgba(250,204,21,0.5)',
+                                        filter: 'drop-shadow(0 0 2px rgba(250,204,21,0.6))'
+                                      }}
+                                    >
+                                      {reply.user.name}
+                                    </span>
+                                  ) : (
+                                    <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{reply.user.name}</span>
+                                  )}
                                   {(reply.user.role === 'admin' || reply.user.role === 'moderator') && (
                                     <Zap 
                                       className="w-4 h-4 text-yellow-400 flex-shrink-0" 
@@ -1782,7 +1830,23 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                       }}
                                     >
                                       <Link href={`/profile/${nestedReply.user.id}`} className="flex items-center gap-1.5">
-                                        <span className="font-semibold text-white text-sm hover:text-cyan-400 transition-colors cursor-pointer">{nestedReply.user.name}</span>
+                                        {(nestedReply.user.role === 'admin' || nestedReply.user.role === 'moderator') ? (
+                                          <span 
+                                            className="font-semibold text-sm hover:opacity-80 transition-opacity cursor-pointer"
+                                            style={{
+                                              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
+                                              WebkitBackgroundClip: 'text',
+                                              WebkitTextFillColor: 'transparent',
+                                              backgroundClip: 'text',
+                                              textShadow: '0 0 6px rgba(250,204,21,0.5)',
+                                              filter: 'drop-shadow(0 0 2px rgba(250,204,21,0.6))'
+                                            }}
+                                          >
+                                            {nestedReply.user.name}
+                                          </span>
+                                        ) : (
+                                          <span className="font-semibold text-white text-sm hover:text-cyan-400 transition-colors cursor-pointer">{nestedReply.user.name}</span>
+                                        )}
                                         {(nestedReply.user.role === 'admin' || nestedReply.user.role === 'moderator') && (
                                           <Zap 
                                             className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" 
