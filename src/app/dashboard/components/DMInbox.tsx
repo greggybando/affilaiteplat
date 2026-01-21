@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { ArrowLeft, MessageCircle, Search, Send, X } from 'lucide-react'
 import Link from 'next/link'
 import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
@@ -176,6 +176,28 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     }
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
   }
+  
+  // Memoize grouped messages to prevent recalculation on every render
+  const groupedMessages = useMemo(() => {
+    if (messages.length === 0) return []
+    
+    const groups: { session: string; messages: typeof messages }[] = []
+    let currentSession = ''
+    
+    messages.forEach((msg) => {
+      const messageDate = new Date(msg.created_at)
+      const session = getDateSession(messageDate)
+      
+      if (session !== currentSession) {
+        currentSession = session
+        groups.push({ session, messages: [] })
+      }
+      
+      groups[groups.length - 1].messages.push(msg)
+    })
+    
+    return groups
+  }, [messages])
 
   // Poll for unread count
   useEffect(() => {
@@ -444,27 +466,10 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
             // Message View - iPhone Style
             <div className="flex flex-col h-96">
               <div className="flex-1 overflow-y-auto px-2 py-4 space-y-1" style={{ background: '#000000' }}>
-                {messages.length === 0 ? (
+                {groupedMessages.length === 0 ? (
                   <div className="text-center py-8 text-[rgba(255,255,255,0.5)] text-sm">No messages yet</div>
                 ) : (
-                  (() => {
-                    // Group messages by date sessions
-                    const groupedMessages: { session: string; messages: typeof messages }[] = []
-                    let currentSession = ''
-                    
-                    messages.forEach((msg) => {
-                      const messageDate = new Date(msg.created_at)
-                      const session = getDateSession(messageDate)
-                      
-                      if (session !== currentSession) {
-                        currentSession = session
-                        groupedMessages.push({ session, messages: [] })
-                      }
-                      
-                      groupedMessages[groupedMessages.length - 1].messages.push(msg)
-                    })
-                    
-                    return groupedMessages.map((group, groupIndex) => (
+                  groupedMessages.map((group, groupIndex) => (
                       <div key={`${group.session}-${groupIndex}`}>
                         {/* Date Session Header */}
                         <div className="flex items-center justify-center my-4">
@@ -511,7 +516,6 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                         })}
                       </div>
                     ))
-                  })()
                 )}
                 <div ref={messagesEndRef} />
               </div>
