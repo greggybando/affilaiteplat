@@ -46,20 +46,14 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   const [isSearching, setIsSearching] = useState(false)
   const [participantLastActive, setParticipantLastActive] = useState<string | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
-  const [showGifPicker, setShowGifPicker] = useState(false)
   const [emojiPickerPosition, setEmojiPickerPosition] = useState({ top: 0, left: 0 })
-  const [gifPickerPosition, setGifPickerPosition] = useState({ top: 0, left: 0 })
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [attachedImageUrls, setAttachedImageUrls] = useState<string[]>([])
-  const [gifSearchQuery, setGifSearchQuery] = useState('')
-  const [gifResults, setGifResults] = useState<any[]>([])
-  const [gifLoading, setGifLoading] = useState(false)
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const emojiButtonRef = useRef<HTMLButtonElement>(null)
-  const gifButtonRef = useRef<HTMLButtonElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Derived state - no separate tracking needed
@@ -149,11 +143,6 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       if (emojiPicker) {
         return
       }
-      // Don't close if clicking on GIF picker
-      const gifPicker = target.closest('[data-gif-picker]')
-      if (gifPicker) {
-        return
-      }
       // Close - single state update
       setOpenUserId(null)
       if (onClose) {
@@ -168,7 +157,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       clearTimeout(timeout)
       document.removeEventListener('click', handleClickOutside, true)
     }
-  }, [isOpen, onClose, enlargedImage, showEmojiPicker, showGifPicker])
+  }, [isOpen, onClose, enlargedImage, showEmojiPicker])
 
   // Fetch conversations when inbox list is shown
   useEffect(() => {
@@ -469,44 +458,6 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     }
   }
 
-  const searchGifs = async (query: string) => {
-    setGifLoading(true)
-    setGifResults([]) // Clear previous results
-    try {
-      // Use Next.js API route to avoid CORS issues
-      const apiRoute = query === 'trending' 
-        ? `/api/gifs/trending`
-        : `/api/gifs/search?q=${encodeURIComponent(query)}`
-      
-      console.log('Fetching GIFs from:', apiRoute)
-      const res = await fetch(apiRoute)
-      console.log('GIF API response status:', res.status, res.statusText)
-      
-      if (!res.ok) {
-        const errorText = await res.text()
-        console.error('GIF API error response:', errorText)
-        throw new Error(`GIF API error: ${res.status} ${res.statusText}`)
-      }
-      
-      const data = await res.json()
-      console.log('GIF API response data:', data)
-      console.log('GIF data array:', data.data)
-      console.log('Number of GIFs:', data.data?.length || 0)
-      
-      if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-        console.log('Setting GIF results:', data.data.length, 'GIFs')
-        setGifResults(data.data)
-      } else {
-        console.warn('No GIFs in response or empty array:', data)
-        setGifResults([])
-      }
-    } catch (error) {
-      console.error('Error fetching GIFs:', error)
-      setGifResults([])
-    } finally {
-      setGifLoading(false)
-    }
-  }
 
   async function searchUsers(query: string) {
     if (!query.trim()) {
@@ -876,43 +827,6 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                   <Smile className="w-4 h-4" />
                 </button>
 
-                {/* GIF Button */}
-                <button
-                  ref={gifButtonRef}
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    console.log('GIF button clicked, current state:', showGifPicker)
-                    if (!showGifPicker && gifButtonRef.current) {
-                      const rect = gifButtonRef.current.getBoundingClientRect()
-                      // Position above the input area, centered relative to the chat panel
-                      const chatPanel = gifButtonRef.current.closest('[class*="fixed"]') || gifButtonRef.current.closest('[class*="w-96"]')
-                      if (chatPanel) {
-                        const panelRect = (chatPanel as HTMLElement).getBoundingClientRect()
-                        setGifPickerPosition({
-                          top: rect.top - 420, // Position above the input
-                          left: panelRect.left + (panelRect.width / 2) - 200 // Center relative to chat panel
-                        })
-                      } else {
-                        setGifPickerPosition({
-                          top: rect.top - 420,
-                          left: Math.max(10, rect.left - 200)
-                        })
-                      }
-                    }
-                    setShowGifPicker(!showGifPicker)
-                    if (!showGifPicker) {
-                      // Load trending GIFs
-                      searchGifs('trending')
-                    }
-                  }}
-                  className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70 text-xs font-medium cursor-pointer"
-                  style={{ color: showGifPicker ? 'rgba(34,211,238,1)' : 'rgba(255,255,255,0.6)' }}
-                  title="GIF"
-                >
-                  GIF
-                </button>
 
                 {/* Message Input */}
                 <div className="flex-1 rounded-full overflow-hidden" style={{ background: '#1C1C1E', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -947,96 +861,6 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 </button>
               </div>
 
-              {/* GIF Picker Backdrop */}
-              {showGifPicker && typeof document !== 'undefined' && createPortal(
-                <div
-                  data-gif-picker="true"
-                  className="fixed inset-0 z-[9998]"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowGifPicker(false)
-                  }}
-                />,
-                document.body
-              )}
-              
-              {/* GIF Picker */}
-              {showGifPicker && (
-                <div
-                  data-gif-picker="true"
-                  className="absolute bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 shadow-2xl"
-                  style={{
-                    bottom: '100%',
-                    right: '0',
-                    marginBottom: '8px',
-                    width: '380px',
-                    maxHeight: '400px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    zIndex: 1000000
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Search Input */}
-                    <input
-                      type="text"
-                      value={gifSearchQuery}
-                      onChange={(e) => {
-                        const query = e.target.value
-                        setGifSearchQuery(query)
-                        if (query.trim()) {
-                          searchGifs(query)
-                        } else {
-                          searchGifs('trending')
-                        }
-                      }}
-                      placeholder="Search GIFs..."
-                      className="w-full px-3 py-2 mb-3 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-[#22d3ee]"
-                    />
-                    
-                    {/* GIF Grid */}
-                    <div className="flex-1 overflow-y-auto grid grid-cols-3 gap-2" style={{ maxHeight: '350px' }}>
-                      {gifLoading ? (
-                        <div className="col-span-3 text-center text-[rgba(255,255,255,0.6)] py-8">Loading GIFs...</div>
-                      ) : gifResults.length === 0 ? (
-                        <div className="col-span-3 text-center text-[rgba(255,255,255,0.6)] py-8">No GIFs found. Try searching!</div>
-                      ) : (
-                        gifResults.map((gif: any) => {
-                          const gifUrl = gif.images?.fixed_height?.url || gif.images?.original?.url || gif.url || gif.images?.downsized?.url
-                          const previewUrl = gif.images?.fixed_height_small?.url || gif.images?.fixed_height?.url || gif.images?.downsized_small?.url || gifUrl
-                          if (!gifUrl) {
-                            console.log('No GIF URL found for:', gif)
-                            return null
-                          }
-                          return (
-                            <button
-                              key={gif.id || Math.random()}
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                console.log('GIF selected:', gifUrl)
-                                setAttachedImageUrls(prev => [...prev, gifUrl])
-                                setShowGifPicker(false)
-                                setGifSearchQuery('')
-                              }}
-                              className="relative w-full aspect-square rounded-lg overflow-hidden hover:opacity-80 transition-opacity bg-[rgba(255,255,255,0.1)] cursor-pointer"
-                            >
-                              <img
-                                src={previewUrl}
-                                alt={gif.title || 'GIF'}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  console.error('Failed to load GIF preview:', previewUrl)
-                                  e.currentTarget.style.display = 'none'
-                                }}
-                              />
-                            </button>
-                          )
-                        })
-                      )}
-                    </div>
-                  </div>
-              )}
 
               {/* Emoji Picker */}
               {showEmojiPicker && typeof document !== 'undefined' && createPortal(
