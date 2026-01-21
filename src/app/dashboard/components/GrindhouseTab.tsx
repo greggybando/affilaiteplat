@@ -117,9 +117,10 @@ export default function GrindhouseTab({ affiliate, glowIntensity }: GrindhouseTa
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold flex items-center justify-center gap-2 hover:from-purple-600 hover:to-pink-600 transition-all"
+            className="w-full px-4 py-2 text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition-all"
             style={{
-              boxShadow: glowShadow('0 0 20px rgba(168,85,247,0.5), 0 4px 12px rgba(168,85,247,0.3)', glowIntensity)
+              background: 'linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #22d3ee 100%)',
+              boxShadow: glowShadow('0 0 20px rgba(34,211,238,0.5), 0 4px 12px rgba(34,211,238,0.3), 0 0 30px rgba(14,165,233,0.25)', glowIntensity)
             }}
           >
             <Plus className="w-4 h-4" />

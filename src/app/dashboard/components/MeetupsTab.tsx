@@ -107,9 +107,10 @@ export default function MeetupsTab({ affiliate, glowIntensity }: MeetupsTabProps
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-semibold flex items-center justify-center gap-2 hover:from-blue-600 hover:to-cyan-600 transition-all"
+            className="w-full px-4 py-2 text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition-all"
             style={{
-              boxShadow: glowShadow('0 0 20px rgba(59,130,246,0.5), 0 4px 12px rgba(59,130,246,0.3)', glowIntensity)
+              background: 'linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #22d3ee 100%)',
+              boxShadow: glowShadow('0 0 20px rgba(34,211,238,0.5), 0 4px 12px rgba(34,211,238,0.3), 0 0 30px rgba(14,165,233,0.25)', glowIntensity)
             }}
           >
             <Plus className="w-4 h-4" />
