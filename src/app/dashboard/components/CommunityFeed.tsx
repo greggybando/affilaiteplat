@@ -739,16 +739,15 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
           {/* Post Composer */}
           <div
             ref={composerRef}
-            className={`rounded-2xl transition-all duration-0 w-full ${
-              composerExpanded ? 'shadow-2xl' : ''
+            className={`rounded-2xl transition-all duration-150 w-full ${
+              composerExpanded ? 'shadow-lg' : ''
             }`}
             style={{ 
               width: '100%', 
               maxWidth: '100%',
-              background: composerExpanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
+              background: 'rgba(255,255,255,0.05)',
               backdropFilter: 'blur(10px)',
-              border: composerExpanded ? '2px solid rgba(253,224,71,0.4)' : '1px solid rgba(255,255,255,0.1)',
-              boxShadow: composerExpanded ? glowShadow('0 0 40px rgba(253,224,71,0.6), 0 0 80px rgba(253,224,71,0.4), 0 20px 60px rgba(253,224,71,0.3)', glowIntensity) : 'none'
+              border: '1px solid rgba(255,255,255,0.1)'
             }}
           >
             <div className="p-4">
