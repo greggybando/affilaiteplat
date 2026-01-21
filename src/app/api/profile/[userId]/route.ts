@@ -17,8 +17,7 @@ export async function GET(
     const userId = params.userId
 
     // Fetch user profile
-    const { data: user, error: userError } = await supabaseAdmin
-      .from('affiliates')
+    const { data: user, error: userError } = await (supabaseAdmin.from('affiliates') as any)
       .select('id, name, avatar_name, avatar_url, bio, created_at, last_active_at, updated_at')
       .eq('id', userId)
       .single()
