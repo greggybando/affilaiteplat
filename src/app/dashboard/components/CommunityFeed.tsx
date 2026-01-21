@@ -733,21 +733,43 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
 
   return (
     <div className="flex flex-col h-full w-full community-full-width" data-dashboard-content style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', margin: 0, padding: 0 }}>
+      {/* Spotlight Backdrop - shown when composer is expanded */}
+      {composerExpanded && (
+        <div 
+          className="fixed inset-0 z-40 transition-opacity duration-300"
+          style={{ 
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)'
+          }}
+          onClick={() => {
+            setComposerExpanded(false)
+            setComposerContent('')
+            if (editableRef.current) {
+              editableRef.current.innerHTML = ''
+            }
+          }}
+        />
+      )}
+      
       {/* Main Feed */}
-      <div className="flex-1 overflow-y-auto w-full" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', margin: 0, padding: 0 }}>
+      <div className={`flex-1 overflow-y-auto w-full ${composerExpanded ? 'pointer-events-none' : ''}`} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', margin: 0, padding: 0 }}>
         <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4" style={{ boxSizing: 'border-box' }}>
           {/* Post Composer */}
           <div
             ref={composerRef}
-            className={`rounded-2xl transition-all duration-150 w-full ${
-              composerExpanded ? 'shadow-lg' : ''
+            className={`rounded-2xl transition-all duration-300 w-full ${
+              composerExpanded ? 'shadow-2xl scale-[1.02]' : ''
             }`}
             style={{ 
               width: '100%', 
               maxWidth: '100%',
-              background: 'rgba(255,255,255,0.05)',
+              background: composerExpanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
               backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255,255,255,0.1)'
+              border: composerExpanded ? '2px solid rgba(253,224,71,0.4)' : '1px solid rgba(255,255,255,0.1)',
+              position: composerExpanded ? 'relative' : 'static',
+              zIndex: composerExpanded ? 50 : 'auto',
+              transform: composerExpanded ? 'translateY(0)' : 'none',
+              boxShadow: composerExpanded ? glowShadow('0 0 40px rgba(253,224,71,0.6), 0 0 80px rgba(253,224,71,0.4), 0 20px 60px rgba(253,224,71,0.3)', glowIntensity) : 'none'
             }}
           >
             <div className="p-4">
