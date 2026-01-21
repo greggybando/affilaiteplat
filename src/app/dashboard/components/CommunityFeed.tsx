@@ -93,7 +93,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [composerExpanded, setComposerExpanded] = useState(false)
   const [composerContent, setComposerContent] = useState('')
-  const [composerCategory, setComposerCategory] = useState('Discussion')
+  const [composerCategory, setComposerCategory] = useState('dreamjob Q\'s')
   const [composerImages, setComposerImages] = useState<string[]>([])
   const [composerVideo, setComposerVideo] = useState<string | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
@@ -121,7 +121,34 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const editableRef = useRef<HTMLDivElement>(null)
   const emojiButtonRef = useRef<HTMLButtonElement>(null)
 
-  const categories = ['All', 'dreamjob questions', 'lifedesign questions', 'make money questions', 'Wins', 'Organize Trips', 'Organize Grindhouse']
+  // Category display names (shortened for UI) mapped to database values
+  const categoryMap: Record<string, string> = {
+    'All': 'All',
+    'dreamjob Q\'s': 'dreamjob questions',
+    'lifedesign Q\'s': 'lifedesign questions',
+    'make money Q\'s': 'make money questions',
+    'Wins': 'Wins',
+    'Organize Trips': 'Organize Trips',
+    'Organize Grindhouse': 'Organize Grindhouse'
+  }
+  
+  // Reverse mapping: database value -> display name
+  const categoryDisplayMap: Record<string, string> = {
+    'All': 'All',
+    'dreamjob questions': 'dreamjob Q\'s',
+    'lifedesign questions': 'lifedesign Q\'s',
+    'make money questions': 'make money Q\'s',
+    'Wins': 'Wins',
+    'Organize Trips': 'Organize Trips',
+    'Organize Grindhouse': 'Organize Grindhouse'
+  }
+  
+  const categories = ['All', 'dreamjob Q\'s', 'lifedesign Q\'s', 'make money Q\'s', 'Wins', 'Organize Trips', 'Organize Grindhouse']
+  
+  // Helper to get database category name from display name
+  const getCategoryValue = (displayName: string) => categoryMap[displayName] || displayName
+  // Helper to get display name from database category name
+  const getCategoryDisplay = (dbValue: string) => categoryDisplayMap[dbValue] || dbValue
 
   // Bold button is a toggle - stays on until clicked again
   // No need to check cursor position, just track toggle state
@@ -222,7 +249,8 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
     try {
       const params = new URLSearchParams()
       if (selectedCategory !== 'All') {
-        params.append('category', selectedCategory)
+        // Map display name to database category name
+        params.append('category', getCategoryValue(selectedCategory))
       }
       if (searchQuery && searchQuery.trim()) {
         params.append('search', searchQuery.trim())
@@ -261,7 +289,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
         body: JSON.stringify({
           title: '', // Empty title - will be auto-generated from content
           content: composerContent,
-          category: composerCategory,
+          category: getCategoryValue(composerCategory), // Map display name to database value
           imageUrls: composerImages,
           videoUrl: composerVideo || null // Ensure null instead of empty string
         })
@@ -1126,7 +1154,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           backdropFilter: 'blur(10px)'
                         }}
                       >
-                        {post.category}
+                        {getCategoryDisplay(post.category)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1442,7 +1470,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                   selectedPost.category === 'make money questions' ? 'bg-amber-500/20 text-amber-400' :
                   'bg-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.7)]'
                 }`}>
-                  {selectedPost.category}
+                  {getCategoryDisplay(selectedPost.category)}
                 </span>
               </div>
 
