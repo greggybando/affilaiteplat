@@ -12,16 +12,38 @@ export async function GET(request: NextRequest) {
     const apiKey = 'dc6zaTOxFJmzC' // Giphy public beta key
     const endpoint = `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=24&rating=g`
     
-    const res = await fetch(endpoint)
+    console.log('Searching GIFs for:', query)
+    console.log('Endpoint:', endpoint)
+    
+    const res = await fetch(endpoint, {
+      headers: {
+        'Accept': 'application/json',
+      }
+    })
+    
+    console.log('Giphy search response status:', res.status)
+    
     if (!res.ok) {
-      return NextResponse.json({ error: 'Failed to search GIFs' }, { status: res.status })
+      const errorText = await res.text()
+      console.error('Giphy API error:', errorText)
+      return NextResponse.json({ 
+        data: [],
+        error: 'Failed to search GIFs',
+        status: res.status 
+      }, { status: 200 })
     }
     
     const data = await res.json()
+    console.log('Giphy search response data keys:', Object.keys(data))
+    console.log('Number of GIFs found:', data.data?.length || 0)
+    
     return NextResponse.json(data)
   } catch (error) {
     console.error('Error searching GIFs:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      data: [],
+      error: 'Internal server error' 
+    }, { status: 200 })
   }
 }
 

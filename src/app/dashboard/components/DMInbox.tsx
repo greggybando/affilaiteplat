@@ -962,10 +962,10 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                   {/* GIF Picker */}
                   <div
                     data-gif-picker="true"
-                    className="fixed bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 z-[9999] shadow-2xl"
+                    className="absolute bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 z-[9999] shadow-2xl"
                     style={{
-                      bottom: '90px',
-                      right: '1rem',
+                      bottom: '60px',
+                      right: '0',
                       width: '380px',
                       maxHeight: '400px',
                       display: 'flex',
