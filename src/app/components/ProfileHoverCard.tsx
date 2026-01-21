@@ -331,12 +331,13 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
                             // Dispatch custom event to open DM inbox without URL change
                             window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: profileData.id } }))
                           } else {
-                            // Navigate to dashboard first, then open DM inbox after navigation
-                            router.push('/dashboard')
-                            // Use setTimeout to ensure navigation completes before opening DM
-                            setTimeout(() => {
+                            // Navigate to dashboard using replace (no history entry, no URL flash)
+                            router.replace('/dashboard')
+                            // Dispatch event immediately - DashboardClient's listener will catch it
+                            // Use requestAnimationFrame to ensure it fires after navigation starts
+                            requestAnimationFrame(() => {
                               window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: profileData.id } }))
-                            }, 100)
+                            })
                           }
                         }
                       }}

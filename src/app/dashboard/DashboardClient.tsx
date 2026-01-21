@@ -243,10 +243,14 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
     }
   }, [searchParams]) // Run when searchParams change
   
-  // Listen for custom openDM event (when already on dashboard)
+  // Listen for custom openDM event (works both when already on dashboard and after navigation)
   useEffect(() => {
     const handleOpenDM = (event: CustomEvent<{ userId: string }>) => {
       setOpenDMUserId(event.detail.userId)
+      // Immediately clean any query params from URL to prevent flash
+      if (window.location.search) {
+        window.history.replaceState({}, '', window.location.pathname)
+      }
     }
     window.addEventListener('openDM', handleOpenDM as EventListener)
     return () => window.removeEventListener('openDM', handleOpenDM as EventListener)
