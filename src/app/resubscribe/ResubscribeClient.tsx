@@ -189,9 +189,6 @@ export function ResubscribeClient({
                     $40
                   </p>
                   <p className="text-xs text-[rgba(255,255,255,0.4)] mt-1">per month</p>
-                  <p className="text-xs text-white mt-2 italic">
-                    explode your mind & income for less than the price of 1 steak dinner...
-                  </p>
                   {selectedPlan === 'monthly' && (
                     <p className="text-xs text-cyan-400 mt-2 font-semibold">✓ Selected</p>
                   )}
@@ -248,24 +245,21 @@ export function ResubscribeClient({
                       textShadow: 'none'
                     }}
                   >
-                    Save $120
+                    save $120 that you'd spend anyway!
                   </p>
-                  <p 
-                    className="text-xs font-semibold mt-1 px-2 py-0.5 rounded-full inline-block"
-                    style={{
-                      background: 'linear-gradient(135deg, #10b981, #06b6d4)',
-                      color: '#0f0f1a',
-                      boxShadow: '0 0 15px rgba(16,185,129,0.5)',
-                      textShadow: 'none'
-                    }}
-                  >
-                    Save 25%!
-                  </p>
+                  <p className="text-xs text-white mt-1">Save 25%</p>
                   {selectedPlan === 'yearly' && (
                     <p className="text-xs text-cyan-400 mt-2 font-semibold">✓ Selected</p>
                   )}
                 </div>
               </button>
+            </div>
+
+            {/* Motivational Text */}
+            <div className="mt-6 mb-6">
+              <p className="text-sm text-white leading-relaxed text-center max-w-xl mx-auto">
+                The craziest part is there's literally NOTHING better for you to spend $40 on that exists. We are achieving your dreams. You are built for too much more to ever settle. Let's run it.
+              </p>
             </div>
 
             {/* CTA */}
