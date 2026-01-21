@@ -58,6 +58,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   const buttonRef = useRef<HTMLButtonElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const emojiButtonRef = useRef<HTMLButtonElement>(null)
+  const gifButtonRef = useRef<HTMLButtonElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Derived state - no separate tracking needed
