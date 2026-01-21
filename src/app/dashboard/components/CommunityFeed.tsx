@@ -1305,24 +1305,33 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                               <>
                                 <div className="border-t border-slate-200 my-1" />
                                 <button
-                                  onClick={(e) => {
+                                  onClick={async (e) => {
                                     e.stopPropagation()
-                                    handleModeratePost(post.id, post.pinned ? 'unpin' : 'pin')
+                                    try {
+                                      const res = await fetch(`/api/community/posts/${post.id}/moderate`, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ action: post.pinned ? 'unpin' : 'pin' })
+                                      })
+
+                                      if (!res.ok) {
+                                        const errorData = await res.json()
+                                        throw new Error(errorData.error || 'Failed to pin post')
+                                      }
+
+                                      // Refresh posts to get correct ordering (pinned posts at top)
+                                      await fetchPosts()
+                                      
+                                      setShowMenu(null)
+                                    } catch (error: any) {
+                                      console.error('Error pinning post:', error)
+                                      alert(error.message || 'Failed to pin post. Please try again.')
+                                    }
                                   }}
                                   className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                                 >
                                   <Pin className="w-4 h-4" />
                                   {post.pinned ? 'Unpin' : 'Pin'}
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleModeratePost(post.id, post.locked ? 'unlock' : 'lock')
-                                  }}
-                                  className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                                >
-                                  <Lock className="w-4 h-4" />
-                                  {post.locked ? 'Unlock' : 'Lock'}
                                 </button>
                                 <button
                                   onClick={(e) => {
