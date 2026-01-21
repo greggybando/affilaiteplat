@@ -30,8 +30,10 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
   const [showCard, setShowCard] = useState(false)
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(false)
+  const [position, setPosition] = useState({ top: 0, left: 0 })
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     return () => {
@@ -80,6 +82,38 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
       clearTimeout(timeoutRef.current)
     }
     timeoutRef.current = setTimeout(() => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect()
+        const cardWidth = 320 // w-80 = 320px
+        const cardHeight = 300 // approximate height
+        const spacing = 8 // mt-2 = 8px
+        
+        let top = rect.bottom + spacing
+        let left = rect.left
+        
+        // Check if card would go off bottom of screen
+        if (top + cardHeight > window.innerHeight) {
+          // Position above instead
+          top = rect.top - cardHeight - spacing
+        }
+        
+        // Check if card would go off right edge
+        if (left + cardWidth > window.innerWidth) {
+          left = window.innerWidth - cardWidth - 16 // 16px padding from edge
+        }
+        
+        // Check if card would go off left edge
+        if (left < 16) {
+          left = 16
+        }
+        
+        // Ensure card doesn't go above viewport
+        if (top < 16) {
+          top = 16
+        }
+        
+        setPosition({ top, left })
+      }
       setShowCard(true)
     }, 500) // 500ms delay before showing
   }
@@ -89,10 +123,7 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
       clearTimeout(timeoutRef.current)
       timeoutRef.current = null
     }
-    // Delay hiding to allow moving to card
-    setTimeout(() => {
-      setShowCard(false)
-    }, 200)
+    // Don't hide immediately - let the card handle its own mouse leave
   }
 
   const handleCardMouseEnter = () => {
@@ -102,11 +133,15 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
   }
 
   const handleCardMouseLeave = () => {
-    setShowCard(false)
+    // Delay hiding to allow moving back to trigger
+    setTimeout(() => {
+      setShowCard(false)
+    }, 200)
   }
 
   return (
     <div 
+      ref={triggerRef}
       className="relative inline-block"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -118,9 +153,13 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
           ref={cardRef}
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
-          className="absolute z-50 mt-2 left-0 w-80"
+          className="fixed z-50 w-80"
           style={{
-            pointerEvents: 'auto'
+            pointerEvents: 'auto',
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+            maxHeight: 'calc(100vh - 32px)',
+            overflowY: 'auto'
           }}
         >
           <div 
