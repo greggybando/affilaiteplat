@@ -317,12 +317,22 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
           {/* Header */}
           <div className="p-3 border-b border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)]">
             {selectedConversation ? (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
                 <button onClick={() => setSelectedConversation(null)} className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded text-white" title="Back">
                   <ArrowLeft className="w-4 h-4" />
                 </button>
-                <span className="font-medium truncate text-white">{selectedConversation.participant.name}</span>
-                <div className="w-6" />
+                {selectedConversation.participant.avatar_url ? (
+                  <img 
+                    src={selectedConversation.participant.avatar_url} 
+                    alt={selectedConversation.participant.name}
+                    className="w-8 h-8 rounded-full object-cover border-2 border-cyan-500/50"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium border-2 border-cyan-500/50">
+                    {selectedConversation.participant.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="font-medium truncate text-white flex-1">{selectedConversation.participant.name}</span>
               </div>
             ) : (
               <>
