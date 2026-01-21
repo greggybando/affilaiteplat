@@ -68,7 +68,8 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      if (category && category !== 'All') {
+      if (category && category !== 'All' && category !== 'Home') {
+        // Category is already the database value (passed from tabs)
         params.append('category', category)
       }
       const url = `/api/community/posts${params.toString() ? `?${params.toString()}` : ''}`
