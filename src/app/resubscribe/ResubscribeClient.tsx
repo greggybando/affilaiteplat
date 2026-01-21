@@ -259,7 +259,7 @@ export function ResubscribeClient({
             {/* Motivational Text */}
             <div className="mt-6 mb-6">
               <p className="text-sm text-white leading-relaxed text-center max-w-xl mx-auto">
-                P.S: The craziest part is there's literally NOTHING better for you to spend $40 on that exists. You are built for too much more to ever settle, and I want you to live the life that makes you smile every f***ing day. And i've carefully hand-selected & curated every possible skill/mental model you possibly need to do that inside. Subscribe below and i'll see you there. Hope you're ready to LEVEL TF UP.
+                P.S: The craziest part is there's literally NOTHING better for you to spend $40 on that exists. You are built for too much more to ever settle, and I want you to live the life that makes you smile every f***ing day. i've carefully hand-selected & curated every possible skill/mental model you possibly need to do that inside. Subscribe below and i'll see you there. Hope you're ready to LEVEL TF UP.
               </p>
             </div>
 
