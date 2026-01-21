@@ -25,7 +25,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Trip not found' }, { status: 404 })
     }
 
-    if (trip.user_id !== affiliate.id) {
+    const tripData = trip as { user_id: string }
+    if (tripData.user_id !== affiliate.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
