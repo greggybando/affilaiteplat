@@ -99,7 +99,12 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Grindhouse creation error:', error)
-      return NextResponse.json({ error: 'Failed to create grindhouse' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to create grindhouse',
+        details: error.message,
+        code: error.code,
+        hint: error.hint
+      }, { status: 500 })
     }
 
     const grindhouseData = grindhouse as any
@@ -123,7 +128,10 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('API grindhouses POST error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error?.message || 'Unknown error'
+    }, { status: 500 })
   }
 }
 
