@@ -1059,6 +1059,42 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 </>,
                 document.body
               )}
+
+              {/* Image Enlargement Modal */}
+              {enlargedImage && typeof document !== 'undefined' && createPortal(
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-[10000] bg-black/90 backdrop-blur-sm flex items-center justify-center"
+                    onClick={() => setEnlargedImage(null)}
+                  >
+                    {/* Close button */}
+                    <button
+                      onClick={() => setEnlargedImage(null)}
+                      className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] flex items-center justify-center transition-all"
+                      style={{ zIndex: 10001 }}
+                    >
+                      <X className="w-5 h-5 text-white" />
+                    </button>
+                    
+                    {/* Enlarged Image */}
+                    <div
+                      className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <img
+                        src={enlargedImage}
+                        alt="Enlarged attachment"
+                        className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                        style={{
+                          boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </>,
+                document.body
+              )}
             </div>
           ) : (
             // Conversation List or Search Results
