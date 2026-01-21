@@ -143,37 +143,6 @@ export function ResubscribeClient({
             </p>
           </div>
 
-          {/* What You Get */}
-          <div className="relative z-10 p-8 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-            <h3 className="text-xl font-semibold text-white mb-4 text-center">What you get:</h3>
-            <div className="space-y-4 max-w-2xl mx-auto">
-              <div className="flex items-start gap-3">
-                <div className="text-cyan-400 text-lg font-bold mt-0.5">✓</div>
-                <p className="text-sm text-white leading-relaxed flex-1">
-                  World-class, hand-crafted courses specifically designed to fix your life (by helping you avoid the most common traps in today's modern world)
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="text-cyan-400 text-lg font-bold mt-0.5">✓</div>
-                <p className="text-sm text-white leading-relaxed flex-1">
-                  Access to done-for-you digital products (plus exactly how to market them) that can get your online income stream up & running ASAP (allowing you to travel the world and make money on your own terms while learning money-making skills that allow you to perpetually say "F U")
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="text-cyan-400 text-lg font-bold mt-0.5">✓</div>
-                <p className="text-sm text-white leading-relaxed flex-1">
-                  A 'life design' roadmap that shows you exactly how to actually get to your dreams, step-by-step
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="text-cyan-400 text-lg font-bold mt-0.5">✓</div>
-                <p className="text-sm text-white leading-relaxed flex-1">
-                  A cult of life-minded people dedicated to living amazing lives & doing fun sh*t 24/7
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Subscription Options */}
           <div className="relative z-10 p-8">
             <h2 className="text-3xl font-semibold text-white mb-2 text-center">Choose Your Plan</h2>
