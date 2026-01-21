@@ -983,11 +983,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     />
                     
                     {/* GIF Grid */}
-                    <div className="flex-1 overflow-y-auto grid grid-cols-2 gap-2">
+                    <div className="flex-1 overflow-y-auto grid grid-cols-3 gap-2" style={{ maxHeight: '350px' }}>
                       {gifLoading ? (
-                        <div className="col-span-2 text-center text-[rgba(255,255,255,0.6)] py-8">Loading GIFs...</div>
+                        <div className="col-span-3 text-center text-[rgba(255,255,255,0.6)] py-8">Loading GIFs...</div>
                       ) : gifResults.length === 0 ? (
-                        <div className="col-span-2 text-center text-[rgba(255,255,255,0.6)] py-8">No GIFs found</div>
+                        <div className="col-span-3 text-center text-[rgba(255,255,255,0.6)] py-8">No GIFs found. Try searching!</div>
                       ) : (
                         gifResults.map((gif: any) => {
                           const gifUrl = gif.images?.fixed_height?.url || gif.images?.original?.url || gif.url || gif.images?.downsized?.url
