@@ -61,7 +61,7 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
   const [loading, setLoading] = useState(true)
   const [showMenu, setShowMenu] = useState<string | null>(null)
   const router = useRouter()
-  const menuRef = useRef<HTMLDivElement>(null)
+  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({})
   
   const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator'
 
@@ -95,8 +95,11 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
   // Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(null)
+      if (showMenu) {
+        const menuElement = menuRefs.current[showMenu]
+        if (menuElement && !menuElement.contains(event.target as Node)) {
+          setShowMenu(null)
+        }
       }
     }
     if (showMenu) {
@@ -256,12 +259,16 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                   border: post.pinned ? '2px solid rgba(250,204,21,0.5)' : 'none'
                 }}
               >
-                <div className="flex items-center gap-2 absolute top-4 right-4 z-10">
+                <div className="flex items-center gap-2 absolute top-4 right-4 z-20">
                   {post.pinned && (
                     <Pin className="w-5 h-5 text-yellow-200 fill-yellow-200" />
                   )}
                   {isAdmin && (
-                    <div className="relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+                    <div 
+                      className="relative" 
+                      ref={(el) => { menuRefs.current[post.id] = el }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
@@ -272,7 +279,7 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                         <MoreVertical className="w-4 h-4 text-white" />
                       </button>
                       {showMenu === post.id && (
-                        <div className="absolute right-0 top-full mt-1 w-40 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden">
+                        <div className="absolute right-0 top-full mt-1 w-40 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden z-50">
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
