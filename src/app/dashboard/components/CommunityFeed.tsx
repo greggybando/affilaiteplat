@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
 import TripsTab from './TripsTab'
+import GrindhouseTab from './GrindhouseTab'
 
 interface User {
   id: string
@@ -120,7 +121,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const editableRef = useRef<HTMLDivElement>(null)
   const emojiButtonRef = useRef<HTMLButtonElement>(null)
 
-  const categories = ['All', 'Discussion', 'dreamjob questions', 'lifedesign questions', 'make money questions', 'Wins', 'Organize Trips']
+  const categories = ['All', 'dreamjob questions', 'lifedesign questions', 'make money questions', 'Wins', 'Organize Trips', 'Organize Grindhouse']
 
   // Bold button is a toggle - stays on until clicked again
   // No need to check cursor position, just track toggle state
@@ -150,8 +151,8 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   }
 
   useEffect(() => {
-    // Don't fetch posts when Organize Trips category is selected (shows TripsTab instead)
-    if (selectedCategory !== 'Organize Trips') {
+    // Don't fetch posts when Organize Trips or Organize Grindhouse category is selected (shows tabs instead)
+    if (selectedCategory !== 'Organize Trips' && selectedCategory !== 'Organize Grindhouse') {
       fetchPosts()
     }
   }, [selectedCategory, searchQuery])
@@ -986,6 +987,16 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
           {/* Show TripsTab when Organize Trips category is selected */}
           {selectedCategory === 'Organize Trips' ? (
             <TripsTab 
+              affiliate={{
+                id: currentUser.id,
+                name: currentUser.name,
+                avatar_name: currentUser.name,
+                avatar_url: currentUser.avatar
+              }}
+              glowIntensity={glowIntensity}
+            />
+          ) : selectedCategory === 'Organize Grindhouse' ? (
+            <GrindhouseTab 
               affiliate={{
                 id: currentUser.id,
                 name: currentUser.name,
