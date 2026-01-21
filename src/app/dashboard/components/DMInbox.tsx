@@ -142,6 +142,16 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
           return
         }
       }
+      // Don't close if clicking on emoji picker
+      const emojiPicker = target.closest('[data-emoji-picker]')
+      if (emojiPicker) {
+        return
+      }
+      // Don't close if clicking on GIF picker
+      const gifPicker = target.closest('[data-gif-picker]')
+      if (gifPicker) {
+        return
+      }
       // Close - single state update
       setOpenUserId(null)
       if (onClose) {
@@ -156,7 +166,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       clearTimeout(timeout)
       document.removeEventListener('click', handleClickOutside, true)
     }
-  }, [isOpen, onClose, enlargedImage])
+  }, [isOpen, onClose, enlargedImage, showEmojiPicker, showGifPicker])
 
   // Fetch conversations when inbox list is shown
   useEffect(() => {
@@ -857,11 +867,19 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
 
                 {/* GIF Button */}
                 <button
+                  ref={gifButtonRef}
                   type="button"
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
                     console.log('GIF button clicked, current state:', showGifPicker)
+                    if (!showGifPicker && gifButtonRef.current) {
+                      const rect = gifButtonRef.current.getBoundingClientRect()
+                      setGifPickerPosition({
+                        top: rect.top - 400,
+                        left: Math.max(10, Math.min(rect.left - 200, window.innerWidth - 420))
+                      })
+                    }
                     setShowGifPicker(!showGifPicker)
                     if (!showGifPicker) {
                       // Load trending GIFs
@@ -913,6 +931,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 <>
                   {/* Backdrop - only closes GIF picker, not the messaging panel */}
                   <div
+                    data-gif-picker="true"
                     className="fixed inset-0 z-[9998]"
                     onClick={(e) => {
                       e.stopPropagation()
@@ -921,13 +940,12 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                   />
                   {/* GIF Picker */}
                   <div
+                    data-gif-picker="true"
                     className="fixed bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 z-[9999] shadow-2xl"
                     style={{
-                      bottom: '80px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: '90%',
-                      maxWidth: '400px',
+                      top: `${gifPickerPosition.top}px`,
+                      left: `${gifPickerPosition.left}px`,
+                      width: '400px',
                       maxHeight: '400px',
                       display: 'flex',
                       flexDirection: 'column'
@@ -1002,6 +1020,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 <>
                   {/* Backdrop - only closes emoji picker, not the messaging panel */}
                   <div
+                    data-emoji-picker="true"
                     className="fixed inset-0 z-[9998]"
                     onClick={(e) => {
                       e.stopPropagation()
@@ -1010,6 +1029,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                   />
                   {/* Emoji Picker */}
                   <div
+                    data-emoji-picker="true"
                     className="emoji-picker-scroll fixed bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-1.5 z-[9999] shadow-2xl"
                     style={{
                       bottom: '80px',
