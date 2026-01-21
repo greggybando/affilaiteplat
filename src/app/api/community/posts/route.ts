@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       repliesByPost[reply.post_id].push(reply)
     })
 
-    const formattedPosts = (posts as any)?.map((post: any) => ({
+    const formattedPosts = filteredPosts?.map((post: any) => ({
       id: post.id,
       title: post.title,
       content: post.content,
