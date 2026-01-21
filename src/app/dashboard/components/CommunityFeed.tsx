@@ -91,14 +91,14 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const router = useRouter()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [selectedCategory, setSelectedCategory] = useState('Home')
   const [composerExpanded, setComposerExpanded] = useState(false)
   const [composerContent, setComposerContent] = useState('')
   
   // Auto-set composer category based on selected filter (only for valid post categories)
   const getComposerCategory = () => {
     // If selected category is a special tab (not a post category), default to first question category
-    if (selectedCategory === 'Global Sends' || selectedCategory === 'Grindhouses' || selectedCategory === 'Meetups' || selectedCategory === 'All') {
+    if (selectedCategory === 'Global Sends' || selectedCategory === 'Grindhouses' || selectedCategory === 'Meetups' || selectedCategory === 'Home') {
       return 'dreamjob Q\'s'
     }
     // Otherwise use the selected category
@@ -134,7 +134,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
 
   // Category display names (shortened for UI) mapped to database values
   const categoryMap: Record<string, string> = {
-    'All': 'All',
+    'Home': 'Home',
     'dreamjob Q\'s': 'dreamjob questions',
     'lifedesign Q\'s': 'lifedesign questions',
     'make money Q\'s': 'make money questions',
@@ -146,7 +146,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   
   // Reverse mapping: database value -> display name
   const categoryDisplayMap: Record<string, string> = {
-    'All': 'All',
+    'Home': 'Home',
     'dreamjob questions': 'dreamjob Q\'s',
     'lifedesign questions': 'lifedesign Q\'s',
     'make money questions': 'make money Q\'s',
@@ -156,7 +156,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
     'Meetups': 'Meetups'
   }
   
-  const categories = ['All', 'dreamjob Q\'s', 'lifedesign Q\'s', 'make money Q\'s', 'Wins', 'Global Sends', 'Grindhouses', 'Meetups']
+  const categories = ['Home', 'dreamjob Q\'s', 'lifedesign Q\'s', 'make money Q\'s', 'Wins', 'Global Sends', 'Grindhouses', 'Meetups']
   
   // Helper to get database category name from display name
   const getCategoryValue = (displayName: string) => categoryMap[displayName] || displayName
@@ -261,7 +261,11 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const fetchPosts = async () => {
     try {
       const params = new URLSearchParams()
-      if (selectedCategory !== 'All') {
+      if (selectedCategory === 'Home') {
+        // Home shows only: dreamjob Q's, lifedesign Q's, make money Q's, Wins
+        // Exclude Global Sends, Grindhouses, Meetups
+        params.append('excludeCategories', 'Global Sends,Organize Grindhouse,Meetups')
+      } else {
         // Map display name to database category name
         params.append('category', getCategoryValue(selectedCategory))
       }

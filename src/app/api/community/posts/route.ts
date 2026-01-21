@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams
     const category = searchParams.get('category')
+    const excludeCategories = searchParams.get('excludeCategories')
     const search = searchParams.get('search')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
@@ -48,8 +49,14 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
-    if (category && category !== 'All') {
+    if (category && category !== 'Home' && category !== 'All') {
       query = query.eq('category', category)
+    }
+
+    // Exclude specific categories (used for "Home" feed)
+    if (excludeCategories) {
+      const excludeList = excludeCategories.split(',').map(c => c.trim())
+      query = query.not('category', 'in', `(${excludeList.map((c: string) => `"${c}"`).join(',')})`)
     }
 
     if (search && search.trim()) {
