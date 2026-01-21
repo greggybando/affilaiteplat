@@ -138,8 +138,6 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
     }
   }, [showCard])
 
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
   const handleMouseLeave = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
