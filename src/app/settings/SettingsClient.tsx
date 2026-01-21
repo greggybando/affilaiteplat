@@ -169,7 +169,9 @@ export function SettingsClient({ affiliate }: SettingsClientProps) {
 
       setSuccess('Profile updated successfully!')
       setSelectedFile(null)
-      // Reload to get updated avatar URL
+      // Update local state with capitalized name
+      setAvatarName(trimmedName)
+      // Reload to get updated avatar URL and refresh sidebar
       setTimeout(() => window.location.reload(), 1000)
     } catch (err: any) {
       setError(err.message || 'Failed to update profile')
