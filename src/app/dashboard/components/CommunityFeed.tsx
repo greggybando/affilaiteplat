@@ -1288,26 +1288,16 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                   <Edit className="w-4 h-4" />
                                   Edit
                                 </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setShowDeleteConfirm(post.id)
-                                    setShowMenu(null)
-                                  }}
-                                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Delete
-                                </button>
                               </>
                             )}
                             {isAdmin && (
                               <>
-                                <div className="border-t border-slate-200 my-1" />
+                                {isOwner(post) && <div className="border-t border-slate-200 my-1" />}
                                 <button
                                   onClick={async (e) => {
                                     e.stopPropagation()
                                     try {
+                                      console.log('Pinning post:', post.id, 'Current pinned:', post.pinned)
                                       const res = await fetch(`/api/community/posts/${post.id}/moderate`, {
                                         method: 'PATCH',
                                         headers: { 'Content-Type': 'application/json' },
@@ -1316,8 +1306,12 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
 
                                       if (!res.ok) {
                                         const errorData = await res.json()
+                                        console.error('Pin API error:', errorData)
                                         throw new Error(errorData.error || 'Failed to pin post')
                                       }
+
+                                      const data = await res.json()
+                                      console.log('Pin API success:', data)
 
                                       // Refresh posts to get correct ordering (pinned posts at top)
                                       await fetchPosts()
@@ -1333,15 +1327,21 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                   <Pin className="w-4 h-4" />
                                   {post.pinned ? 'Unpin' : 'Pin'}
                                 </button>
+                              </>
+                            )}
+                            {(isOwner(post) || isAdmin) && (
+                              <>
+                                <div className="border-t border-slate-200 my-1" />
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    handleModeratePost(post.id, 'delete')
+                                    setShowDeleteConfirm(post.id)
+                                    setShowMenu(null)
                                   }}
                                   className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                 >
                                   <Trash2 className="w-4 h-4" />
-                                  Delete (Admin)
+                                  Delete
                                 </button>
                               </>
                             )}
