@@ -94,17 +94,20 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
       // Optimistic update - add post immediately if provided
       if (customEvent.detail?.newPost) {
         const newPost = customEvent.detail.newPost
-        // Only add if it matches the current category
-        const postCategory = newPost.category
-        const expectedCategory = category === 'Global Sends' ? 'Global Sends' : 
-                                 category === 'Organize Grindhouse' ? 'Organize Grindhouse' : 
-                                 category === 'Meetups' ? 'Meetups' : category
-        if (postCategory === expectedCategory) {
-          setPosts(prevPosts => [newPost, ...prevPosts])
+        // Check if post category matches current feed category
+        // category prop is already the database value (e.g., "Organize Grindhouse", "Global Sends", "Meetups")
+        if (newPost.category === category) {
+          setPosts(prevPosts => {
+            // Avoid duplicates - check if post already exists
+            if (prevPosts.some(p => p.id === newPost.id)) {
+              return prevPosts
+            }
+            return [newPost, ...prevPosts]
+          })
         }
       }
-      // Then refresh in background to ensure consistency
-      fetchPosts(false) // Don't show loading on refresh
+      // Then refresh in background to ensure consistency (silent - no loading screen)
+      fetchPosts(false)
     }
     window.addEventListener('refreshForumFeed', handleRefresh)
     return () => {
