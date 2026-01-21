@@ -401,6 +401,7 @@ export function ResubscribeClient({
                 </p>
               </div>
             </div>
+          </div>
 
         {/* Help */}
         <p className="text-center text-[rgba(255,255,255,0.6)] text-sm mt-6">
