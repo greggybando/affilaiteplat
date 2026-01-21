@@ -1050,7 +1050,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all flex-shrink-0 ${
                       selectedCategory === cat
                         ? 'text-white'
-                        : 'text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.1)]'
+                        : 'text-[rgba(255,255,255,0.6)] hover:text-white'
                     }`}
                     style={selectedCategory === cat ? {
                       background: 'linear-gradient(135deg, #fde047, #facc15)',
@@ -1060,6 +1060,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                       boxShadow: glowShadow('0 0 15px rgba(253,224,71,0.6), 0 0 25px rgba(253,224,71,0.4)', glowIntensity),
                       overflow: 'hidden'
                     } : {
+                      background: 'rgba(255,255,255,0.05)',
                       border: 'none',
                       outline: 'none',
                       boxShadow: glowShadow('0 0 8px rgba(255,255,255,0.15), 0 0 12px rgba(255,255,255,0.1)', glowIntensity)
