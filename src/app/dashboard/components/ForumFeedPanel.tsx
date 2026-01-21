@@ -269,7 +269,7 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                   {post.pinned && (
                     <Pin className="w-5 h-5 text-yellow-200 fill-yellow-200" />
                   )}
-                  {isAdmin && (
+                  {isAdmin ? (
                     <div 
                       className="relative" 
                       ref={(el) => { menuRefs.current[post.id] = el }}
@@ -278,6 +278,7 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
+                          console.log('Menu button clicked for post:', post.id, 'Current showMenu:', showMenu)
                           setShowMenu(showMenu === post.id ? null : post.id)
                         }}
                         className="p-1.5 hover:bg-[rgba(255,255,255,0.2)] rounded-lg transition-colors"
@@ -285,10 +286,14 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                         <MoreVertical className="w-4 h-4 text-white" />
                       </button>
                       {showMenu === post.id && (
-                        <div className="absolute right-0 top-full mt-1 w-40 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden z-50">
+                        <div 
+                          className="absolute right-0 top-full mt-1 w-40 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden z-[100]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
+                              console.log('Pin button clicked for post:', post.id)
                               handleModeratePost(post.id, post.pinned ? 'unpin' : 'pin')
                             }}
                             className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2 transition-colors"
@@ -299,7 +304,7 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                         </div>
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
