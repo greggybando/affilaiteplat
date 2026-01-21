@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await (supabaseAdmin as any)
       .from('cancellations')
       .insert({
         affiliate_id: affiliateId,
