@@ -947,33 +947,35 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 </button>
               </div>
 
+              {/* GIF Picker Backdrop */}
+              {showGifPicker && typeof document !== 'undefined' && createPortal(
+                <div
+                  data-gif-picker="true"
+                  className="fixed inset-0 z-[9998]"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowGifPicker(false)
+                  }}
+                />,
+                document.body
+              )}
+              
               {/* GIF Picker */}
               {showGifPicker && (
-                <>
-                  {/* Backdrop - only closes GIF picker, not the messaging panel */}
-                  <div
-                    data-gif-picker="true"
-                    className="fixed inset-0 z-[9998]"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowGifPicker(false)
-                    }}
-                  />
-                  {/* GIF Picker */}
-                  <div
-                    data-gif-picker="true"
-                    className="absolute bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 z-[9999] shadow-2xl"
-                    style={{
-                      bottom: '100%',
-                      right: '0',
-                      marginBottom: '8px',
-                      width: '380px',
-                      maxHeight: '400px',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                <div
+                  data-gif-picker="true"
+                  className="absolute bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 z-[9999] shadow-2xl"
+                  style={{
+                    bottom: '100%',
+                    right: '0',
+                    marginBottom: '8px',
+                    width: '380px',
+                    maxHeight: '400px',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
                     {/* Search Input */}
                     <input
                       type="text"
