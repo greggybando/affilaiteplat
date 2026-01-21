@@ -87,7 +87,7 @@ export async function POST(req: Request) {
             
             // Record cancellation for tracking
             if (affiliate) {
-              const { error: cancelError } = await supabaseAdmin
+              const { error: cancelError } = await (supabaseAdmin as any)
                 .from('cancellations')
                 .insert({
                   affiliate_id: affiliate.id,
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
                 .eq('email', customerEmail);
               
               if (affiliate) {
-                await supabaseAdmin
+                await (supabaseAdmin as any)
                   .from('cancellations')
                   .insert({
                     affiliate_id: affiliate.id,
