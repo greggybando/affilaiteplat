@@ -145,7 +145,7 @@ export function ResubscribeClient({
 
           {/* Subscription Options */}
           <div className="relative z-10 p-8">
-            <h2 className="text-xl font-semibold text-white mb-2 text-center">Choose Your Plan</h2>
+            <h2 className="text-3xl font-semibold text-white mb-2 text-center">Choose Your Plan</h2>
             <p className="text-sm text-[rgba(255,255,255,0.6)] mb-6 text-center">No Commitments. No Hidden Fees. Cancel Anytime.</p>
             
             <div className="grid grid-cols-2 gap-4 mb-6">
