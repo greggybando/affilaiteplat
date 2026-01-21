@@ -15,6 +15,7 @@ interface Meetup {
   description?: string
   maxParticipants?: number
   participants?: string[]
+  user_id: string
   created_at: string
 }
 
@@ -24,6 +25,8 @@ interface MeetupsTabProps {
     name: string
     avatar_name: string | null
     avatar_url: string | null
+    role?: string
+    is_admin?: boolean
   }
   glowIntensity: number
 }
@@ -159,15 +162,19 @@ export default function MeetupsTab({ affiliate, glowIntensity }: MeetupsTabProps
                         </div>
                       )}
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        deleteMeetup(meetup.id)
-                      }}
-                      className="p-1 hover:bg-red-500/20 rounded text-[rgba(255,255,255,0.6)] hover:text-red-400 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {/* Only show delete button if user is creator or admin */}
+                    {(meetup.user_id === affiliate.id || affiliate.role === 'admin' || affiliate.is_admin === true) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          deleteMeetup(meetup.id)
+                        }}
+                        className="p-1 hover:bg-red-500/20 rounded text-[rgba(255,255,255,0.6)] hover:text-red-400 transition-colors"
+                        title="Delete meetup"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                   {selectedMeetup?.id === meetup.id && (
                     <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.1)]">

@@ -1099,7 +1099,9 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                 id: currentUser.id,
                 name: currentUser.name,
                 avatar_name: currentUser.name,
-                avatar_url: currentUser.avatar
+                avatar_url: currentUser.avatar,
+                role: currentUser.role,
+                is_admin: currentUser.role === 'admin' || currentUser.role === 'moderator'
               }}
               glowIntensity={glowIntensity}
             />

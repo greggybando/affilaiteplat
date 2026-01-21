@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
       maxParticipants: meetup.max_attendees || meetup.max_participants || null,
       type: meetup.type || null,
       participants: meetup.participants || [],
+      user_id: meetup.user_id,
       created_at: meetup.created_at
     }))
 

@@ -14,7 +14,7 @@ export async function DELETE(
 
     const meetupId = params.meetupId
 
-    // Verify meetup belongs to user
+    // Verify meetup exists
     const { data: meetup, error: fetchError } = await supabaseAdmin
       .from('meetups')
       .select('user_id')
@@ -26,8 +26,13 @@ export async function DELETE(
     }
 
     const meetupData = meetup as { user_id: string }
-    if (meetupData.user_id !== affiliate.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    
+    // Check if user is creator OR admin
+    const isCreator = meetupData.user_id === affiliate.id
+    const isAdmin = affiliate.role === 'admin' || affiliate.is_admin === true
+    
+    if (!isCreator && !isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized - only the creator or admin can delete this meetup' }, { status: 403 })
     }
 
     const { error } = await supabaseAdmin
