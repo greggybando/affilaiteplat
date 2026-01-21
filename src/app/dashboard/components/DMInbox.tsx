@@ -475,8 +475,8 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       // Using Giphy API (free tier)
       const apiKey = 'dc6zaTOxFJmzC' // Giphy public beta key
       const endpoint = query === 'trending' 
-        ? `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=20&rating=g`
-        : `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=20&rating=g`
+        ? `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=24&rating=g`
+        : `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=24&rating=g`
       
       console.log('Fetching GIFs from:', endpoint)
       const res = await fetch(endpoint)
@@ -877,10 +877,20 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     console.log('GIF button clicked, current state:', showGifPicker)
                     if (!showGifPicker && gifButtonRef.current) {
                       const rect = gifButtonRef.current.getBoundingClientRect()
-                      setGifPickerPosition({
-                        top: rect.top - 400,
-                        left: Math.max(10, Math.min(rect.left - 200, window.innerWidth - 420))
-                      })
+                      // Position above the input area, centered relative to the chat panel
+                      const chatPanel = gifButtonRef.current.closest('[class*="fixed"]') || gifButtonRef.current.closest('[class*="w-96"]')
+                      if (chatPanel) {
+                        const panelRect = (chatPanel as HTMLElement).getBoundingClientRect()
+                        setGifPickerPosition({
+                          top: rect.top - 420, // Position above the input
+                          left: panelRect.left + (panelRect.width / 2) - 200 // Center relative to chat panel
+                        })
+                      } else {
+                        setGifPickerPosition({
+                          top: rect.top - 420,
+                          left: Math.max(10, rect.left - 200)
+                        })
+                      }
                     }
                     setShowGifPicker(!showGifPicker)
                     if (!showGifPicker) {
@@ -945,8 +955,9 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     data-gif-picker="true"
                     className="fixed bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 z-[9999] shadow-2xl"
                     style={{
-                      top: `${gifPickerPosition.top}px`,
-                      left: `${gifPickerPosition.left}px`,
+                      bottom: '100px',
+                      left: gifButtonRef.current ? `${gifButtonRef.current.getBoundingClientRect().left - 150}px` : '50%',
+                      transform: gifButtonRef.current ? 'none' : 'translateX(-50%)',
                       width: '400px',
                       maxHeight: '400px',
                       display: 'flex',
