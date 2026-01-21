@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
+import TripsTab from './TripsTab'
 
 interface User {
   id: string
@@ -119,7 +120,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const editableRef = useRef<HTMLDivElement>(null)
   const emojiButtonRef = useRef<HTMLButtonElement>(null)
 
-  const categories = ['All', 'Discussion', 'dreamjob questions', 'lifedesign questions', 'make money questions', 'Wins']
+  const categories = ['All', 'dreamjob questions', 'lifedesign questions', 'make money questions', 'Wins', 'Organize Trips']
 
   // Bold button is a toggle - stays on until clicked again
   // No need to check cursor position, just track toggle state
@@ -149,7 +150,10 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   }
 
   useEffect(() => {
-    fetchPosts()
+    // Don't fetch posts when Organize Trips category is selected (shows TripsTab instead)
+    if (selectedCategory !== 'Organize Trips') {
+      fetchPosts()
+    }
   }, [selectedCategory, searchQuery])
 
   // Sync contentEditable with state when composer is expanded
@@ -950,37 +954,50 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
           </div>
 
           {/* Filter Tabs */}
-          <div className="sticky top-0 rounded-2xl p-2 flex items-center justify-between z-10 w-full backdrop-blur-[20px]" style={{ 
+          <div className="sticky top-0 rounded-2xl p-2 flex items-center justify-start z-10 w-full backdrop-blur-[20px]" style={{ 
             width: '100%', 
             maxWidth: '100%',
             background: 'rgba(26,26,46,0.8)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255,255,255,0.1)'
           }}>
-            <div className="flex gap-2">
-              {categories.map(cat => (
+            <div className="flex gap-2 overflow-x-auto flex-nowrap" style={{ scrollbarWidth: 'thin', minWidth: 'max-content', flexWrap: 'nowrap', width: '100%' }}>
+              {categories.map((cat) => (
                 <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    selectedCategory === cat
-                      ? 'text-white'
-                      : 'text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.1)]'
-                  }`}
-                  style={selectedCategory === cat ? {
-                    background: 'linear-gradient(135deg, #fde047, #facc15)',
-                    color: '#0f0f1a',
-                    boxShadow: glowShadow('0 0 20px rgba(253,224,71,0.7), 0 0 40px rgba(253,224,71,0.5), 0 8px 30px rgba(253,224,71,0.4)', glowIntensity)
-                  } : {}}
-                >
-                  {cat}
-                </button>
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all flex-shrink-0 ${
+                      selectedCategory === cat
+                        ? 'text-white'
+                        : 'text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.1)]'
+                    }`}
+                    style={selectedCategory === cat ? {
+                      background: 'linear-gradient(135deg, #fde047, #facc15)',
+                      color: '#0f0f1a',
+                      boxShadow: glowShadow('0 0 20px rgba(253,224,71,0.7), 0 0 40px rgba(253,224,71,0.5), 0 8px 30px rgba(253,224,71,0.4)', glowIntensity)
+                    } : {}}
+                  >
+                    {cat}
+                  </button>
               ))}
             </div>
           </div>
 
-          {/* Posts Feed */}
-          {posts.length === 0 ? (
+          {/* Show TripsTab when Organize Trips category is selected */}
+          {selectedCategory === 'Organize Trips' ? (
+            <TripsTab 
+              affiliate={{
+                id: currentUser.id,
+                name: currentUser.name,
+                avatar_name: currentUser.name,
+                avatar_url: currentUser.avatar
+              }}
+              glowIntensity={glowIntensity}
+            />
+          ) : (
+            <>
+              {/* Posts Feed */}
+              {posts.length === 0 ? (
             <div className="rounded-2xl p-12 text-center w-full backdrop-blur-[10px]" style={{ 
               width: '100%', 
               maxWidth: '100%',
@@ -1329,6 +1346,8 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                 </div>
               ))}
             </div>
+          )}
+            </>
           )}
         </div>
       </div>

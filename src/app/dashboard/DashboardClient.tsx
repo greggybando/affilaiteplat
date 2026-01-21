@@ -246,7 +246,18 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   // Listen for custom openDM event (works both when already on dashboard and after navigation)
   useEffect(() => {
     const handleOpenDM = (event: CustomEvent<{ userId: string }>) => {
-      setOpenDMUserId(event.detail.userId)
+      const userId = event.detail.userId
+      // Use functional update to ensure state change even if userId is the same
+      // This allows reopening the inbox when clicking "chat" again after closing
+      setOpenDMUserId(prev => {
+        // If it's the same userId, clear first then return it to force a change
+        if (prev === userId) {
+          // Return a temporary value, then set to actual userId in next tick
+          setTimeout(() => setOpenDMUserId(userId), 0)
+          return null
+        }
+        return userId
+      })
       // Immediately clean any query params from URL to prevent flash
       if (window.location.search) {
         window.history.replaceState({}, '', window.location.pathname)
