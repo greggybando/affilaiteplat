@@ -95,10 +95,20 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const [composerExpanded, setComposerExpanded] = useState(false)
   const [composerContent, setComposerContent] = useState('')
   
-  // Auto-set composer category based on selected filter (only for valid post categories)
+  // Auto-set composer category based on selected filter
   const getComposerCategory = () => {
-    // If selected category is a special tab (not a post category), default to first question category
-    if (selectedCategory === 'Global Sends' || selectedCategory === 'Grindhouses' || selectedCategory === 'Meetups' || selectedCategory === 'Home') {
+    // For special tabs, use their category
+    if (selectedCategory === 'Global Sends') {
+      return 'Global Sends'
+    }
+    if (selectedCategory === 'Grindhouses') {
+      return 'Grindhouses'
+    }
+    if (selectedCategory === 'Meetups') {
+      return 'Meetups'
+    }
+    // For Home, default to first question category
+    if (selectedCategory === 'Home') {
       return 'dreamjob Q\'s'
     }
     // Otherwise use the selected category
@@ -1024,7 +1034,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
             </div>
           </div>
 
-          {/* Show GlobalSendsTab when Global Sends category is selected */}
+          {/* Show tabs when Global Sends/Grindhouses/Meetups category is selected */}
           {selectedCategory === 'Global Sends' ? (
             <GlobalSendsTab 
               affiliate={{
