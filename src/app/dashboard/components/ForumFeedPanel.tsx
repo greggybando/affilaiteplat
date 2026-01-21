@@ -256,14 +256,12 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                   border: post.pinned ? '2px solid rgba(250,204,21,0.5)' : 'none'
                 }}
               >
-                {post.pinned && (
-                  <div className="absolute top-4 right-4 z-10">
+                <div className="flex items-center gap-2 absolute top-4 right-4 z-10">
+                  {post.pinned && (
                     <Pin className="w-5 h-5 text-yellow-200 fill-yellow-200" />
-                  </div>
-                )}
-                {isAdmin && (
-                  <div className="absolute top-4 right-4 z-10" ref={menuRef} onClick={(e) => e.stopPropagation()}>
-                    {!post.pinned && (
+                  )}
+                  {isAdmin && (
+                    <div className="relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
@@ -273,23 +271,23 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                       >
                         <MoreVertical className="w-4 h-4 text-white" />
                       </button>
-                    )}
-                    {showMenu === post.id && (
-                      <div className="absolute right-0 top-full mt-1 w-40 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleModeratePost(post.id, post.pinned ? 'unpin' : 'pin')
-                          }}
-                          className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2 transition-colors"
-                        >
-                          <Pin className="w-4 h-4" />
-                          {post.pinned ? 'Unpin' : 'Pin'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      {showMenu === post.id && (
+                        <div className="absolute right-0 top-full mt-1 w-40 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleModeratePost(post.id, post.pinned ? 'unpin' : 'pin')
+                            }}
+                            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2 transition-colors"
+                          >
+                            <Pin className="w-4 h-4" />
+                            {post.pinned ? 'Unpin' : 'Pin'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <ProfileHoverCard
