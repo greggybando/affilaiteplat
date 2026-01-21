@@ -17,6 +17,11 @@ export default async function DreamJobLayout({
     redirect('/login')
   }
 
+  // Redirect expired or cancelled users to resubscribe page
+  if (affiliate.status === 'expired' || affiliate.status === 'cancelled') {
+    redirect('/resubscribe')
+  }
+
   if (!(affiliate as any).onboarding_completed) {
     redirect('/onboarding')
   }

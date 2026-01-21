@@ -15,6 +15,11 @@ export default async function MindsetLayout({
     redirect('/login')
   }
 
+  // Redirect expired or cancelled users to resubscribe page
+  if (affiliate.status === 'expired' || affiliate.status === 'cancelled') {
+    redirect('/resubscribe')
+  }
+
   if (!affiliate.onboarding_completed) {
     redirect('/onboarding')
   }
