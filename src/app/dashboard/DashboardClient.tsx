@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X, Play, FileCheck, Paperclip, Save, Loader2, Check, Trash2 } from 'lucide-react'
+import { LogOut, Settings, Search, ChevronRight, MessageSquare, Flame, Lock, Pin, MessageCircle, Copy, ArrowUp, CheckCircle2, Zap, Plus, X, Play, FileCheck, Paperclip, Save, Loader2, Check, Trash2, BarChart3 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns'
 import { NotificationsDropdown } from './components/NotificationsDropdown'
@@ -443,6 +443,19 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                         <Settings className="w-4 h-4 text-cyan-400" />
                         Settings
                       </Link>
+                      {(affiliate.role === 'admin' || affiliate.role === 'moderator') && (
+                        <>
+                          <div className="border-t border-[rgba(255,255,255,0.1)] my-1" />
+                          <Link
+                            href="/admin/dashboard"
+                            onClick={() => setIsAvatarDropdownOpen(false)}
+                            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-3 transition-colors"
+                          >
+                            <BarChart3 className="w-4 h-4 text-purple-400" />
+                            Admin Dashboard
+                          </Link>
+                        </>
+                      )}
                       <div className="border-t border-[rgba(255,255,255,0.1)] my-1" />
                       <button
                         onClick={() => {
