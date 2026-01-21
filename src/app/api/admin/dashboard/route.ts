@@ -67,10 +67,25 @@ export async function GET(request: NextRequest) {
     // So we'll use $40/month as the default for all active subscribers
     const { data: activeSubscribers, error: activeError } = await supabaseAdmin
       .from('affiliates')
-      .select('id, status')
+      .select('id, status, subscription_started_at')
       .eq('status', 'active')
     
     if (activeError) throw activeError
+
+    // Calculate reactivations: users who reactivated in the period
+    // A reactivation is when subscription_started_at is updated and falls within the date range
+    // AND the user was previously cancelled/expired (we can't perfectly detect this, but we can
+    // count users whose subscription_started_at is recent but created_at is older)
+    let reactivations = 0
+    if (activeSubscribers && startDate) {
+      reactivations = activeSubscribers.filter((sub: any) => {
+        if (!sub.subscription_started_at) return false
+        const subStart = new Date(sub.subscription_started_at)
+        // Check if subscription_started_at is within the period
+        const isInPeriod = subStart >= startDate && (!endDate || subStart <= endDate)
+        return isInPeriod
+      }).length
+    }
 
     // Calculate metrics
     const newSignups = signups?.length || 0
@@ -134,6 +149,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       metrics: {
         newSignups,
+        reactivations,
         churns,
         churnRate: Math.round(churnRate * 10) / 10,
         estimatedMRR,

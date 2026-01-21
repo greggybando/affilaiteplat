@@ -23,6 +23,7 @@ interface AdminDashboardClientProps {
 interface DashboardData {
   metrics: {
     newSignups: number
+    reactivations: number
     churns: number
     churnRate: number
     estimatedMRR: number
@@ -174,7 +175,7 @@ export default function AdminDashboardClient({ affiliate }: AdminDashboardClient
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           {/* New Signups */}
           <div 
             className="rounded-xl p-6 relative overflow-hidden"
@@ -194,6 +195,28 @@ export default function AdminDashboardClient({ affiliate }: AdminDashboardClient
               </div>
               <div className="text-3xl font-bold text-white mb-1">{data.metrics.newSignups}</div>
               <div className="text-sm text-[rgba(255,255,255,0.6)]">New Signups</div>
+            </div>
+          </div>
+
+          {/* Reactivations */}
+          <div 
+            className="rounded-xl p-6 relative overflow-hidden"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(16,185,129,0.2)',
+              boxShadow: '0 0 20px rgba(16,185,129,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-green-500/5 pointer-events-none"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-lg" style={{ background: 'rgba(16,185,129,0.2)', boxShadow: '0 0 15px rgba(16,185,129,0.3)' }}>
+                  <Users className="w-6 h-6 text-green-400" style={{ filter: 'drop-shadow(0 0 4px rgba(16,185,129,0.8))' }} />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-white mb-1">{data.metrics.reactivations}</div>
+              <div className="text-sm text-[rgba(255,255,255,0.6)]">Reactivations</div>
             </div>
           </div>
 
