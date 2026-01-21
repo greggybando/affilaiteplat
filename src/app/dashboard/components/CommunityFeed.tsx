@@ -1294,81 +1294,89 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                               <>
                                 {isOwner(post) && <div className="border-t border-slate-200 my-1" />}
                                 <button
-                                  onClick={async (e) => {
+                                  onClick={(e) => {
                                     e.stopPropagation()
                                     e.preventDefault()
                                     
                                     const action = post.pinned ? 'unpin' : 'pin'
+                                    const postId = post.id
+                                    const currentPinned = post.pinned
+                                    
                                     console.log('=== PIN ACTION START ===')
-                                    console.log('Post ID:', post.id)
-                                    console.log('Current pinned state:', post.pinned)
+                                    console.log('Post ID:', postId)
+                                    console.log('Current pinned state:', currentPinned)
                                     console.log('Action:', action)
                                     console.log('Current posts count:', posts.length)
                                     
-                                    setShowMenu(null) // Close menu immediately
+                                    // Close menu after a tiny delay to ensure click handler completes
+                                    setTimeout(() => setShowMenu(null), 50)
                                     
-                                    try {
-                                      console.log('Making API call to:', `/api/community/posts/${post.id}/moderate`)
-                                      
-                                      const res = await fetch(`/api/community/posts/${post.id}/moderate`, {
-                                        method: 'PATCH',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ action })
-                                      })
+                                    // Execute pin action
+                                    ;(async () => {
+                                      try {
+                                        console.log('Making API call to:', `/api/community/posts/${postId}/moderate`)
+                                        
+                                        const res = await fetch(`/api/community/posts/${postId}/moderate`, {
+                                          method: 'PATCH',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ action })
+                                        })
 
-                                      console.log('API response status:', res.status, res.statusText)
-                                      
-                                      const responseData = await res.json()
-                                      console.log('API response data:', responseData)
-                                      
-                                      if (!res.ok) {
-                                        console.error('Pin API error:', responseData)
-                                        alert(responseData.error || 'Failed to pin post')
-                                        return
+                                        console.log('API response status:', res.status, res.statusText)
+                                        
+                                        if (!res.ok) {
+                                          const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
+                                          console.error('Pin API error:', errorData)
+                                          alert(errorData.error || 'Failed to pin post')
+                                          return
+                                        }
+                                        
+                                        const responseData = await res.json()
+                                        console.log('API response data:', responseData)
+
+                                        console.log('Pin API success! Updating UI...')
+                                        console.log('Updated post from API:', responseData.post)
+
+                                        // Update local state immediately
+                                        setPosts(prevPosts => {
+                                          console.log('Previous posts:', prevPosts.length)
+                                          const updated = prevPosts.map(p => {
+                                            if (p.id === postId) {
+                                              const newPinned = action === 'pin'
+                                              console.log(`Updating post ${p.id}: pinned=${p.pinned} -> ${newPinned}`)
+                                              return { ...p, pinned: newPinned }
+                                            }
+                                            return p
+                                          })
+                                          
+                                          // Sort: pinned posts first, then by created_at
+                                          const sorted = updated.sort((a, b) => {
+                                            if (a.pinned && !b.pinned) return -1
+                                            if (!a.pinned && b.pinned) return 1
+                                            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                                          })
+                                          
+                                          console.log('Sorted posts - first 3:', sorted.slice(0, 3).map(p => ({ id: p.id, pinned: p.pinned, title: p.title })))
+                                          return sorted
+                                        })
+
+                                        // Refresh from server after a short delay
+                                        console.log('Scheduling server refresh...')
+                                        setTimeout(async () => {
+                                          console.log('Refreshing posts from server...')
+                                          await fetchPosts()
+                                          console.log('Posts refreshed from server')
+                                        }, 500)
+                                        
+                                        console.log('=== PIN ACTION COMPLETE ===')
+                                      } catch (error: any) {
+                                        console.error('=== PIN ACTION ERROR ===')
+                                        console.error('Error:', error)
+                                        console.error('Error message:', error.message)
+                                        console.error('Error stack:', error.stack)
+                                        alert(error.message || 'Failed to pin post. Please try again.')
                                       }
-
-                                      console.log('Pin API success! Updating UI...')
-                                      console.log('Updated post from API:', responseData.post)
-
-                                      // Update local state immediately
-                                      setPosts(prevPosts => {
-                                        console.log('Previous posts:', prevPosts.length)
-                                        const updated = prevPosts.map(p => {
-                                          if (p.id === post.id) {
-                                            const newPinned = action === 'pin'
-                                            console.log(`Updating post ${p.id}: pinned=${p.pinned} -> ${newPinned}`)
-                                            return { ...p, pinned: newPinned }
-                                          }
-                                          return p
-                                        })
-                                        
-                                        // Sort: pinned posts first, then by created_at
-                                        const sorted = updated.sort((a, b) => {
-                                          if (a.pinned && !b.pinned) return -1
-                                          if (!a.pinned && b.pinned) return 1
-                                          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                                        })
-                                        
-                                        console.log('Sorted posts - first 3:', sorted.slice(0, 3).map(p => ({ id: p.id, pinned: p.pinned, title: p.title })))
-                                        return sorted
-                                      })
-
-                                      // Refresh from server after a short delay
-                                      console.log('Scheduling server refresh...')
-                                      setTimeout(async () => {
-                                        console.log('Refreshing posts from server...')
-                                        await fetchPosts()
-                                        console.log('Posts refreshed from server')
-                                      }, 500)
-                                      
-                                      console.log('=== PIN ACTION COMPLETE ===')
-                                    } catch (error: any) {
-                                      console.error('=== PIN ACTION ERROR ===')
-                                      console.error('Error:', error)
-                                      console.error('Error message:', error.message)
-                                      console.error('Error stack:', error.stack)
-                                      alert(error.message || 'Failed to pin post. Please try again.')
-                                    }
+                                    })()
                                   }}
                                   className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                                 >
