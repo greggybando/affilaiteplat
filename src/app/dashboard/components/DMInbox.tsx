@@ -964,7 +964,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
               {showGifPicker && (
                 <div
                   data-gif-picker="true"
-                  className="absolute bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 z-[9999] shadow-2xl"
+                  className="absolute bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 shadow-2xl"
                   style={{
                     bottom: '100%',
                     right: '0',
@@ -972,7 +972,8 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     width: '380px',
                     maxHeight: '400px',
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    zIndex: 1000000
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
