@@ -795,7 +795,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 )}
                 <div ref={messagesEndRef} />
               </div>
-              <div className="px-3 py-2 border-t border-[rgba(255,255,255,0.1)] flex gap-2 items-center" style={{ background: '#000000' }}>
+              <div className="px-3 py-2 border-t border-[rgba(255,255,255,0.1)] flex gap-2 items-center relative" style={{ background: '#000000' }}>
                 {/* Attachment Button */}
                 <input
                   ref={fileInputRef}
