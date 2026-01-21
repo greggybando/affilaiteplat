@@ -137,7 +137,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       // Don't close if clicking on the image enlargement modal (backdrop or image)
       if (enlargedImage) {
         // Check if click is on the modal backdrop or its children
-        const modalBackdrop = target.closest('[style*="z-index: 99999"]') || target.closest('[style*="zIndex: 99999"]')
+        const modalBackdrop = target.closest('[data-image-modal]')
         if (modalBackdrop) {
           return
         }
@@ -1079,6 +1079,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 <>
                   {/* Backdrop */}
                   <div
+                    data-image-modal="true"
                     className="fixed inset-0 bg-black/85 flex items-center justify-center p-4"
                     onClick={(e) => {
                       e.preventDefault()
