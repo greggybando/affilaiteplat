@@ -453,16 +453,14 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                         Settings
                       </Link>
                       <div className="border-t border-[rgba(255,255,255,0.1)] my-1" />
-                      {(isAdmin || (affiliate as any).role === 'admin' || (affiliate as any).role === 'moderator' || (affiliate as any).is_admin) && (
-                        <Link
-                          href="/admin/dashboard"
-                          onClick={() => setIsAvatarDropdownOpen(false)}
-                          className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-3 transition-colors"
-                        >
-                          <BarChart3 className="w-4 h-4 text-purple-400" />
-                          Admin Dashboard
-                        </Link>
-                      )}
+                      <Link
+                        href="/admin/dashboard"
+                        onClick={() => setIsAvatarDropdownOpen(false)}
+                        className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-3 transition-colors"
+                      >
+                        <BarChart3 className="w-4 h-4 text-purple-400" />
+                        Admin Dashboard
+                      </Link>
                       <div className="border-t border-[rgba(255,255,255,0.1)] my-1" />
                       <button
                         onClick={() => {
