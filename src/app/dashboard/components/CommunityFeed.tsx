@@ -1296,10 +1296,19 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                 <button
                                   onClick={async (e) => {
                                     e.stopPropagation()
+                                    e.preventDefault()
+                                    
+                                    const action = post.pinned ? 'unpin' : 'pin'
+                                    console.log('=== PIN ACTION START ===')
+                                    console.log('Post ID:', post.id)
+                                    console.log('Current pinned state:', post.pinned)
+                                    console.log('Action:', action)
+                                    console.log('Current posts count:', posts.length)
+                                    
                                     setShowMenu(null) // Close menu immediately
+                                    
                                     try {
-                                      const action = post.pinned ? 'unpin' : 'pin'
-                                      console.log('Pinning post:', post.id, 'Action:', action)
+                                      console.log('Making API call to:', `/api/community/posts/${post.id}/moderate`)
                                       
                                       const res = await fetch(`/api/community/posts/${post.id}/moderate`, {
                                         method: 'PATCH',
@@ -1307,7 +1316,10 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                         body: JSON.stringify({ action })
                                       })
 
+                                      console.log('API response status:', res.status, res.statusText)
+                                      
                                       const responseData = await res.json()
+                                      console.log('API response data:', responseData)
                                       
                                       if (!res.ok) {
                                         console.error('Pin API error:', responseData)
@@ -1315,29 +1327,46 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                         return
                                       }
 
-                                      console.log('Pin API success:', responseData)
+                                      console.log('Pin API success! Updating UI...')
+                                      console.log('Updated post from API:', responseData.post)
 
-                                      // Update local state immediately for better UX
+                                      // Update local state immediately
                                       setPosts(prevPosts => {
-                                        const updated = prevPosts.map(p => 
-                                          p.id === post.id 
-                                            ? { ...p, pinned: action === 'pin' }
-                                            : p
-                                        )
+                                        console.log('Previous posts:', prevPosts.length)
+                                        const updated = prevPosts.map(p => {
+                                          if (p.id === post.id) {
+                                            const newPinned = action === 'pin'
+                                            console.log(`Updating post ${p.id}: pinned=${p.pinned} -> ${newPinned}`)
+                                            return { ...p, pinned: newPinned }
+                                          }
+                                          return p
+                                        })
+                                        
                                         // Sort: pinned posts first, then by created_at
-                                        return updated.sort((a, b) => {
+                                        const sorted = updated.sort((a, b) => {
                                           if (a.pinned && !b.pinned) return -1
                                           if (!a.pinned && b.pinned) return 1
                                           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                                         })
+                                        
+                                        console.log('Sorted posts - first 3:', sorted.slice(0, 3).map(p => ({ id: p.id, pinned: p.pinned, title: p.title })))
+                                        return sorted
                                       })
 
-                                      // Also refresh from server to ensure consistency
-                                      setTimeout(() => {
-                                        fetchPosts()
-                                      }, 100)
+                                      // Refresh from server after a short delay
+                                      console.log('Scheduling server refresh...')
+                                      setTimeout(async () => {
+                                        console.log('Refreshing posts from server...')
+                                        await fetchPosts()
+                                        console.log('Posts refreshed from server')
+                                      }, 500)
+                                      
+                                      console.log('=== PIN ACTION COMPLETE ===')
                                     } catch (error: any) {
-                                      console.error('Error pinning post:', error)
+                                      console.error('=== PIN ACTION ERROR ===')
+                                      console.error('Error:', error)
+                                      console.error('Error message:', error.message)
+                                      console.error('Error stack:', error.stack)
                                       alert(error.message || 'Failed to pin post. Please try again.')
                                     }
                                   }}
