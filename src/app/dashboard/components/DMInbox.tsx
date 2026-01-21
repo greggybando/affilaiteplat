@@ -245,11 +245,12 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     if (!newMessage.trim() || !selectedConversation) return
 
     const content = newMessage.trim()
+    const tempId = 'temp-' + Date.now()
     setNewMessage('')
 
     // Optimistic update
     const tempMessage: Message = {
-      id: 'temp-' + Date.now(),
+      id: tempId,
       sender_id: currentUserId,
       content,
       created_at: new Date().toISOString()
@@ -263,11 +264,30 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
         body: JSON.stringify({ content })
       })
       if (res.ok) {
-        // Refresh messages to get real ID
-        fetchMessages(selectedConversation.participant.id)
+        const data = await res.json()
+        // Replace temp message with real message instead of refetching all
+        if (data.message) {
+          setMessages(prev => prev.map(msg => 
+            msg.id === tempId 
+              ? {
+                  id: data.message.id,
+                  sender_id: data.message.sender_id,
+                  content: data.message.content,
+                  created_at: data.message.created_at
+                }
+              : msg
+          ))
+        } else {
+          // Fallback: refetch after a short delay if response doesn't include message
+          setTimeout(() => {
+            fetchMessages(selectedConversation.participant.id)
+          }, 500)
+        }
       }
     } catch (e) {
       console.error('Failed to send message:', e)
+      // Remove temp message on error
+      setMessages(prev => prev.filter(msg => msg.id !== tempId))
     }
   }
 
