@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, MessageCircle, Search, Send, X } from 'lucide-react'
 import Link from 'next/link'
 import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
+import { formatDistanceToNow } from 'date-fns'
 
 interface Conversation {
   id: string
@@ -11,6 +12,7 @@ interface Conversation {
     id: string
     name: string
     avatar_url: string | null
+    last_active_at?: string | null
   }
   last_message: string | null
   last_message_at: string | null
@@ -317,22 +319,44 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
           {/* Header */}
           <div className="p-3 border-b border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)]">
             {selectedConversation ? (
-              <div className="flex items-center gap-3">
-                <button onClick={() => setSelectedConversation(null)} className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded text-white" title="Back">
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
-                {selectedConversation.participant.avatar_url ? (
-                  <img 
-                    src={selectedConversation.participant.avatar_url} 
-                    alt={selectedConversation.participant.name}
-                    className="w-8 h-8 rounded-full object-cover border-2 border-cyan-500/50"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium border-2 border-cyan-500/50">
-                    {selectedConversation.participant.name.charAt(0).toUpperCase()}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setSelectedConversation(null)} className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded text-white" title="Back">
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  {selectedConversation.participant.avatar_url ? (
+                    <img 
+                      src={selectedConversation.participant.avatar_url} 
+                      alt={selectedConversation.participant.name}
+                      className="w-8 h-8 rounded-full object-cover border-2 border-cyan-500/50"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium border-2 border-cyan-500/50">
+                      {selectedConversation.participant.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate text-white">{selectedConversation.participant.name}</div>
+                    {participantLastActive && (
+                      <div className="text-xs text-[rgba(255,255,255,0.5)] truncate">
+                        {(() => {
+                          const lastActive = new Date(participantLastActive)
+                          const now = new Date()
+                          const diffMs = now.getTime() - lastActive.getTime()
+                          const diffMins = Math.floor(diffMs / 60000)
+                          
+                          if (diffMins < 5) {
+                            return 'Active now'
+                          } else if (diffMins < 60) {
+                            return `Active ${diffMins}m ago`
+                          } else {
+                            return `Active ${formatDistanceToNow(lastActive, { addSuffix: true })}`
+                          }
+                        })()}
+                      </div>
+                    )}
                   </div>
-                )}
-                <span className="font-medium truncate text-white flex-1">{selectedConversation.participant.name}</span>
+                </div>
               </div>
             ) : (
               <>
