@@ -62,10 +62,15 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || !formData.location || !formData.startDate || !formData.preferredPeople) return
+    
+    // Validate all required fields
+    if (!formData.name || !formData.location || !formData.startDate || !formData.preferredPeople || !formData.vibeFocus) {
+      alert('Please fill in all required fields')
+      return
+    }
 
     // Validate preferredPeople is a valid number
-    const preferredPeopleNum = parseInt(formData.preferredPeople)
+    const preferredPeopleNum = parseInt(formData.preferredPeople.trim())
     if (isNaN(preferredPeopleNum) || preferredPeopleNum < 1) {
       alert('Please enter a valid number of people (at least 1)')
       return
@@ -91,11 +96,17 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
 
       if (!postRes.ok) {
         const errorData = await postRes.json().catch(() => ({}))
-        throw new Error(errorData.error || errorData.message || 'Failed to create forum post')
+        console.error('Forum post creation error:', errorData)
+        throw new Error(errorData.error || errorData.message || `Failed to create forum post: ${postRes.status} ${postRes.statusText}`)
       }
 
       const postData = await postRes.json()
-      const forumPostId = postData.post.id
+      console.log('Forum post created:', postData)
+      const forumPostId = postData.post?.id
+      
+      if (!forumPostId) {
+        throw new Error('Forum post was created but no ID was returned')
+      }
 
       // Calculate end date based on duration
       const startDate = new Date(formData.startDate)
@@ -127,8 +138,13 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
 
       if (!grindhouseRes.ok) {
         const errorData = await grindhouseRes.json().catch(() => ({}))
-        throw new Error(errorData.error || errorData.message || 'Failed to create grindhouse')
+        console.error('Grindhouse creation error:', errorData)
+        const errorMessage = errorData.error || errorData.message || `Failed to create grindhouse: ${grindhouseRes.status} ${grindhouseRes.statusText}`
+        throw new Error(errorMessage)
       }
+      
+      const grindhouseData = await grindhouseRes.json()
+      console.log('Grindhouse created successfully:', grindhouseData)
 
       // Reset form and close
       setFormData({
@@ -142,9 +158,10 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
       })
       onSuccess()
       onClose()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create grindhouse:', error)
-      alert('Failed to create grindhouse. Please try again.')
+      const errorMessage = error?.message || 'Failed to create grindhouse. Please try again.'
+      alert(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -292,7 +309,7 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
             </button>
             <button
               type="submit"
-              disabled={loading || !formData.name || !formData.location || !formData.startDate || !formData.preferredPeople}
+              disabled={loading || !formData.name || !formData.location || !formData.startDate || !formData.preferredPeople || !formData.vibeFocus}
               className="flex-1 px-4 py-2.5 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               style={{
                 background: 'linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #22d3ee 100%)',
