@@ -481,8 +481,19 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                   >
                     {/* User Info Header */}
                     <div className="p-4 border-b border-[rgba(255,255,255,0.1)] bg-gradient-to-r from-[rgba(24,24,27,0.92)] to-[rgba(12,74,110,0.85)]">
-                      <div className="text-white font-semibold truncate">{affiliate.avatar_name || affiliate.name}</div>
-                      <div className="text-xs text-[rgba(255,255,255,0.6)] truncate">{affiliate.name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-white font-semibold truncate">{affiliate.avatar_name || affiliate.name}</div>
+                        {(isAdmin || (affiliate as any).role === 'admin' || (affiliate as any).role === 'moderator' || (affiliate as any).is_admin) && (
+                          <Zap 
+                            className="w-4 h-4 text-yellow-400 flex-shrink-0" 
+                            fill="currentColor"
+                            style={{
+                              filter: 'drop-shadow(0 0 4px rgba(250,204,21,0.8)) drop-shadow(0 0 8px rgba(250,204,21,0.6))',
+                              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                            }}
+                          />
+                        )}
+                      </div>
                     </div>
 
                     {/* Menu Items */}
