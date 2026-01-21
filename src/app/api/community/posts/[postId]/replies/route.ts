@@ -99,11 +99,12 @@ export async function GET(
       content: reply.content,
       imageUrl: reply.image_url,
       createdAt: reply.created_at,
-      user: {
-        id: reply.user.id,
-        name: reply.user.avatar_name || reply.user.name,
-        avatar: reply.user.avatar_url
-      },
+        user: {
+          id: reply.user.id,
+          name: reply.user.avatar_name || reply.user.name,
+          avatar: reply.user.avatar_url,
+          role: reply.user.role || null
+        },
       likesCount: likesByReply[reply.id] || 0,
       isLiked: likedReplyIds.has(reply.id),
       replies: nestedMap[reply.id] || []
@@ -286,11 +287,12 @@ export async function POST(
       content: reply.content,
       imageUrl: reply.image_url,
       createdAt: reply.created_at,
-      user: {
-        id: reply.user.id,
-        name: reply.user.avatar_name || reply.user.name,
-        avatar: reply.user.avatar_url
-      },
+        user: {
+          id: reply.user.id,
+          name: reply.user.avatar_name || reply.user.name,
+          avatar: reply.user.avatar_url,
+          role: reply.user.role || null
+        },
       likesCount: 0,
       isLiked: false,
       replies: []

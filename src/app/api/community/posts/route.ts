@@ -120,7 +120,8 @@ export async function GET(request: NextRequest) {
       user: {
         id: post.user.id,
         name: post.user.avatar_name || post.user.name,
-        avatar: post.user.avatar_url
+        avatar: post.user.avatar_url,
+        role: post.user.role || null
       },
       likesCount: likesByPost[post.id] || 0,
       repliesCount: replyCountsByPost[post.id] || 0,
