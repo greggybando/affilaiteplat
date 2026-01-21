@@ -272,6 +272,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
 
     const content = newMessage.trim()
     const tempId = 'temp-' + Date.now()
+    const optimisticTimestamp = new Date().toISOString()
     setNewMessage('')
 
     // Optimistic update
@@ -279,7 +280,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       id: tempId,
       sender_id: currentUserId,
       content,
-      created_at: new Date().toISOString()
+      created_at: optimisticTimestamp
     }
     setMessages(prev => [...prev, tempMessage])
 
@@ -291,24 +292,34 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       })
       if (res.ok) {
         const data = await res.json()
-        // Replace temp message with real message instead of refetching all
+        // Replace temp message with real message - preserve optimistic timestamp to maintain session grouping
         if (data.message) {
-          setMessages(prev => prev.map(msg => 
-            msg.id === tempId 
-              ? {
-                  id: data.message.id,
-                  sender_id: data.message.sender_id,
-                  content: data.message.content,
-                  created_at: data.message.created_at
-                }
-              : msg
-          ))
+          setMessages(prev => {
+            const updated = prev.map(msg => 
+              msg.id === tempId 
+                ? {
+                    id: data.message.id,
+                    sender_id: data.message.sender_id,
+                    content: data.message.content,
+                    // Keep optimistic timestamp to preserve session grouping
+                    created_at: optimisticTimestamp
+                  }
+                : msg
+            )
+            // Messages should already be in order, but ensure they stay sorted
+            return updated.sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            )
+          })
         } else {
-          // Fallback: refetch after a short delay if response doesn't include message
+          // Fallback: refetch after a delay if response doesn't include message
           setTimeout(() => {
             fetchMessages(selectedConversation.participant.id)
-          }, 500)
+          }, 1000)
         }
+      } else {
+        // Remove temp message on error
+        setMessages(prev => prev.filter(msg => msg.id !== tempId))
       }
     } catch (e) {
       console.error('Failed to send message:', e)
