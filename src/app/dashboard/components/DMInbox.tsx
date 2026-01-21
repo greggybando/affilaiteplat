@@ -464,8 +464,8 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                       groupedMessages[groupedMessages.length - 1].messages.push(msg)
                     })
                     
-                    return groupedMessages.map((group) => (
-                      <div key={group.session}>
+                    return groupedMessages.map((group, groupIndex) => (
+                      <div key={`${group.session}-${groupIndex}`}>
                         {/* Date Session Header */}
                         <div className="flex items-center justify-center my-4">
                           <div className="text-[11px] text-[rgba(255,255,255,0.5)] px-3 py-1 rounded-full bg-[rgba(255,255,255,0.1)]">
