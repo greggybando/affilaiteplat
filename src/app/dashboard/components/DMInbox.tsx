@@ -48,21 +48,23 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId }: { currentUs
   useEffect(() => {
     if (initialUserId && initialUserId !== currentUserId) {
       setIsOpen(true)
-      // Fetch user info and start conversation
-      fetch(`/api/messages/search-users?q=`)
+      // First fetch conversations to check if one exists
+      fetch('/api/messages/inbox')
         .then(res => res.json())
         .then(data => {
-          const users = data.users || []
+          const allConversations = data.conversations || []
           // Try to find existing conversation first
-          const existingConv = conversations.find(c => c.participant.id === initialUserId)
+          const existingConv = allConversations.find((c: Conversation) => c.participant.id === initialUserId)
           if (existingConv) {
+            setConversations(allConversations)
             setSelectedConversation(existingConv)
           } else {
-            // Fetch user details
+            // Fetch user details and create new conversation
             fetch(`/api/affiliates/${initialUserId}`)
               .then(res => res.json())
               .then(userData => {
                 if (userData.id) {
+                  setConversations(allConversations)
                   const newConversation: Conversation = {
                     id: 'new-' + userData.id,
                     participant: {
@@ -80,9 +82,9 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId }: { currentUs
               .catch(err => console.error('Failed to fetch user:', err))
           }
         })
-        .catch(err => console.error('Failed to fetch user:', err))
+        .catch(err => console.error('Failed to fetch conversations:', err))
     }
-  }, [initialUserId])
+  }, [initialUserId, currentUserId])
 
   // Close dropdown when clicking outside
   useEffect(() => {

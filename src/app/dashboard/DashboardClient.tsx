@@ -229,6 +229,16 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   const tabParam = searchParams.get('tab') as 'community' | 'classroom' | 'groupchat' | null
   const [activeTab, setActiveTab] = useState<'community' | 'classroom' | 'groupchat'>(tabParam || 'community')
   
+  // Clear openDM query param after it's been used
+  useEffect(() => {
+    if (openDMUserId) {
+      // Remove the query param from URL without reloading
+      const url = new URL(window.location.href)
+      url.searchParams.delete('openDM')
+      router.replace(url.pathname + url.search, { scroll: false })
+    }
+  }, [openDMUserId, router])
+  
   // Update activeTab when tab query param changes
   useEffect(() => {
     if (tabParam && ['community', 'classroom', 'groupchat'].includes(tabParam)) {
