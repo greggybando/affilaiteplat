@@ -416,13 +416,8 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     return (
                       <div key={msg.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} ${showTimestamp ? 'mt-3' : 'mt-1'}`}>
                         <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[75%]`}>
-                          {showTimestamp && (
-                            <div className="text-[10px] text-[rgba(255,255,255,0.4)] px-2 mb-1">
-                              {timeStr}
-                            </div>
-                          )}
                           <div
-                            className={`px-3 py-2 rounded-2xl text-sm leading-relaxed ${
+                            className={`px-3 py-2 rounded-2xl text-sm leading-relaxed relative ${
                               isOwnMessage
                                 ? 'rounded-br-sm bg-[#007AFF] text-white'
                                 : 'rounded-bl-sm bg-[#E5E5EA] text-black'
@@ -433,6 +428,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                             }}
                           >
                             {msg.content}
+                            {showTimestamp && (
+                              <div className={`text-[10px] mt-1 ${isOwnMessage ? 'text-white/70' : 'text-black/50'}`}>
+                                {timeStr}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
