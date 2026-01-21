@@ -134,6 +134,14 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       if (dropdownRef.current && dropdownRef.current.contains(target)) {
         return
       }
+      // Don't close if clicking on the image enlargement modal (backdrop or image)
+      if (enlargedImage) {
+        // Check if click is on the modal backdrop or its children
+        const modalBackdrop = target.closest('[style*="z-index: 99999"]') || target.closest('[style*="zIndex: 99999"]')
+        if (modalBackdrop) {
+          return
+        }
+      }
       // Close - single state update
       setOpenUserId(null)
       if (onClose) {
@@ -148,7 +156,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       clearTimeout(timeout)
       document.removeEventListener('click', handleClickOutside, true)
     }
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, enlargedImage])
 
   // Fetch conversations when inbox list is shown
   useEffect(() => {
