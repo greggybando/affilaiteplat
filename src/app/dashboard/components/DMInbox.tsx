@@ -427,41 +427,71 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 {messages.length === 0 ? (
                   <div className="text-center py-8 text-[rgba(255,255,255,0.5)] text-sm">No messages yet</div>
                 ) : (
-                  messages.map((msg, index) => {
-                    const isOwnMessage = msg.sender_id === currentUserId
-                    const prevMessage = index > 0 ? messages[index - 1] : null
-                    const showTimestamp = !prevMessage || 
-                      prevMessage.sender_id !== msg.sender_id ||
-                      new Date(msg.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000 // 5 minutes
+                  (() => {
+                    // Group messages by date sessions
+                    const groupedMessages: { session: string; messages: typeof messages }[] = []
+                    let currentSession = ''
                     
-                    const messageTime = new Date(msg.created_at)
-                    const timeStr = messageTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                    messages.forEach((msg) => {
+                      const messageDate = new Date(msg.created_at)
+                      const session = getDateSession(messageDate)
+                      
+                      if (session !== currentSession) {
+                        currentSession = session
+                        groupedMessages.push({ session, messages: [] })
+                      }
+                      
+                      groupedMessages[groupedMessages.length - 1].messages.push(msg)
+                    })
                     
-                    return (
-                      <div key={msg.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} ${showTimestamp ? 'mt-3' : 'mt-1'}`}>
-                        <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[75%]`}>
-                          {showTimestamp && (
-                            <div className="text-[10px] text-[rgba(255,255,255,0.4)] px-2 mb-1">
-                              {timeStr}
-                            </div>
-                          )}
-                          <div
-                            className={`px-3 py-2 rounded-2xl text-sm leading-relaxed ${
-                              isOwnMessage
-                                ? 'rounded-br-sm bg-[#007AFF] text-white'
-                                : 'rounded-bl-sm bg-[#E5E5EA] text-black'
-                            }`}
-                            style={{
-                              wordBreak: 'break-word',
-                              overflowWrap: 'break-word'
-                            }}
-                          >
-                            {msg.content}
+                    return groupedMessages.map((group) => (
+                      <div key={group.session}>
+                        {/* Date Session Header */}
+                        <div className="flex items-center justify-center my-4">
+                          <div className="text-[11px] text-[rgba(255,255,255,0.5)] px-3 py-1 rounded-full bg-[rgba(255,255,255,0.1)]">
+                            {group.session}
                           </div>
                         </div>
+                        
+                        {/* Messages in this session */}
+                        {group.messages.map((msg, index) => {
+                          const isOwnMessage = msg.sender_id === currentUserId
+                          const prevMessage = index > 0 ? group.messages[index - 1] : null
+                          const showTimestamp = !prevMessage || 
+                            prevMessage.sender_id !== msg.sender_id ||
+                            new Date(msg.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000 // 5 minutes
+                          
+                          const messageTime = new Date(msg.created_at)
+                          const timeStr = messageTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                          
+                          return (
+                            <div key={msg.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} ${showTimestamp ? 'mt-3' : 'mt-1'}`}>
+                              <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[75%]`}>
+                                {showTimestamp && (
+                                  <div className="text-[10px] text-[rgba(255,255,255,0.4)] px-2 mb-1">
+                                    {timeStr}
+                                  </div>
+                                )}
+                                <div
+                                  className={`px-3 py-2 rounded-2xl text-sm leading-relaxed ${
+                                    isOwnMessage
+                                      ? 'rounded-br-sm bg-[#007AFF] text-white'
+                                      : 'rounded-bl-sm bg-[#E5E5EA] text-black'
+                                  }`}
+                                  style={{
+                                    wordBreak: 'break-word',
+                                    overflowWrap: 'break-word'
+                                  }}
+                                >
+                                  {msg.content}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
-                    )
-                  })
+                    ))
+                  })()
                 )}
                 <div ref={messagesEndRef} />
               </div>
