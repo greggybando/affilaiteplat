@@ -1020,7 +1020,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                         userName={post.user.name}
                         userAvatar={post.user.avatar}
                         onChatClick={() => {
-                          window.location.href = `/messages?user=${post.user.id}`
+                          window.location.href = `/dashboard?openDM=${post.user.id}`
                         }}
                       >
                         <Link href={`/profile/${post.user.id}`} className="flex items-center gap-3">
@@ -1343,7 +1343,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                   userName={selectedPost.user.name}
                   userAvatar={selectedPost.user.avatar}
                   onChatClick={() => {
-                    window.location.href = `/messages?user=${selectedPost.user.id}`
+                    window.location.href = `/dashboard?openDM=${selectedPost.user.id}`
                   }}
                 >
                   <Link href={`/profile/${selectedPost.user.id}`} className="flex items-center gap-3">
@@ -1458,7 +1458,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                             userName={reply.user.name}
                             userAvatar={reply.user.avatar}
                             onChatClick={() => {
-                              window.location.href = `/messages?user=${reply.user.id}`
+                              window.location.href = `/dashboard?openDM=${reply.user.id}`
                             }}
                           >
                             <Link href={`/profile/${reply.user.id}`}>
@@ -1493,7 +1493,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                 userName={reply.user.name}
                                 userAvatar={reply.user.avatar}
                                 onChatClick={() => {
-                                  window.location.href = `/messages?user=${reply.user.id}`
+                                  window.location.href = `/dashboard?openDM=${reply.user.id}`
                                 }}
                               >
                                 <Link href={`/profile/${reply.user.id}`}>
@@ -1536,7 +1536,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                   userName={nestedReply.user.name}
                                   userAvatar={nestedReply.user.avatar}
                                   onChatClick={() => {
-                                    window.location.href = `/messages?user=${nestedReply.user.id}`
+                                    window.location.href = `/dashboard?openDM=${nestedReply.user.id}`
                                   }}
                                 >
                                   <Link href={`/profile/${nestedReply.user.id}`}>
@@ -1571,7 +1571,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                       userName={nestedReply.user.name}
                                       userAvatar={nestedReply.user.avatar}
                                       onChatClick={() => {
-                                        window.location.href = `/messages?user=${nestedReply.user.id}`
+                                        window.location.href = `/dashboard?openDM=${nestedReply.user.id}`
                                       }}
                                     >
                                       <Link href={`/profile/${nestedReply.user.id}`}>
