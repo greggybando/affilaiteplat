@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Zap } from 'lucide-react'
 import type { Affiliate, AffiliateStats } from '@/lib/supabase'
 
 export function ResubscribeClient({
@@ -41,73 +42,173 @@ export function ResubscribeClient({
   const totalConversions = stats?.total_conversions || 0
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12">
-      <div className="max-w-2xl w-full">
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#0f0f1a' }}>
+      {/* Animated background gradient */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="max-w-2xl w-full relative z-10">
+        {/* Logo Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="relative" style={{
+              animation: 'lightning 4s ease-in-out infinite',
+              filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.9)) drop-shadow(0 0 16px rgba(6, 182, 212, 0.7))'
+            }}>
+              <Zap className="w-12 h-12 text-cyan-400" fill="currentColor" style={{
+                filter: 'drop-shadow(0 0 4px rgba(34, 211, 238, 1))'
+              }} />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-cyan-300" style={{
+                textShadow: '0 0 20px rgba(34, 211, 238, 0.9), 0 0 40px rgba(6, 182, 212, 0.8)',
+                letterSpacing: '0.05em',
+                fontWeight: 700
+              }}>
+                LIFE DESIGN
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <style jsx>{`
+          @keyframes lightning {
+            0%, 90%, 100% { opacity: 1; transform: scale(1); }
+            5%, 10% { opacity: 0.3; transform: scale(0.95); }
+            7.5% { opacity: 1; transform: scale(1.1); }
+          }
+        `}</style>
+
+        <div 
+          className="rounded-2xl border overflow-hidden relative"
+          style={{
+            background: 'rgba(26,26,46,0.8)',
+            backdropFilter: 'blur(20px)',
+            borderColor: 'rgba(255,255,255,0.1)',
+            boxShadow: '0 0 40px rgba(6,182,212,0.2), 0 8px 32px rgba(0,0,0,0.8)'
+          }}
+        >
+          {/* Glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+
           {/* Header */}
-          <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 border-b border-gray-800 p-8 text-center">
+          <div className="relative z-10 p-8 text-center border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
             <h1 className="text-3xl font-bold text-white mb-3">
               Your Subscription Has Ended
             </h1>
-            <p className="text-gray-400 text-lg">
+            <p className="text-[rgba(255,255,255,0.6)] text-lg">
               Resubscribe to restore access to LifeDesign Platform
             </p>
           </div>
 
           {/* Frozen Stats */}
-          <div className="p-8 border-b border-gray-800 bg-gray-800/30">
+          <div className="relative z-10 p-8 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
             <h2 className="text-xl font-semibold text-white mb-4">Your Frozen Stats</h2>
             <div className="grid grid-cols-2 gap-6">
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <p className="text-sm text-gray-400 mb-1">Total Earnings</p>
+              <div 
+                className="rounded-lg p-4"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(6,182,212,0.2)',
+                  boxShadow: '0 0 20px rgba(6,182,212,0.1)'
+                }}
+              >
+                <p className="text-sm text-[rgba(255,255,255,0.6)] mb-1">Total Earnings</p>
                 <p className="text-3xl font-bold text-white">${totalEarnings.toFixed(2)}</p>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <p className="text-sm text-gray-400 mb-1">Total Conversions</p>
+              <div 
+                className="rounded-lg p-4"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(6,182,212,0.2)',
+                  boxShadow: '0 0 20px rgba(6,182,212,0.1)'
+                }}
+              >
+                <p className="text-sm text-[rgba(255,255,255,0.6)] mb-1">Total Conversions</p>
                 <p className="text-3xl font-bold text-white">{totalConversions}</p>
               </div>
             </div>
-            <p className="text-sm text-gray-400 mt-4">
+            <p className="text-sm text-[rgba(255,255,255,0.6)] mt-4">
               Your stats are frozen until you resubscribe. Once you resubscribe, you'll regain full access to your portal and can continue earning commissions.
             </p>
           </div>
 
           {/* Subscription Options */}
-          <div className="p-8">
+          <div className="relative z-10 p-8">
             <h2 className="text-xl font-semibold text-white mb-6">Choose Your Plan</h2>
             
             <div className="grid grid-cols-2 gap-4 mb-6">
               <button
                 onClick={() => setSelectedPlan('monthly')}
-                className={`p-6 rounded-lg border-2 transition-all ${
-                  selectedPlan === 'monthly'
-                    ? 'border-green-500 bg-green-500/10'
-                    : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                className={`p-6 rounded-lg border-2 transition-all relative overflow-hidden ${
+                  selectedPlan === 'monthly' ? '' : ''
                 }`}
+                style={selectedPlan === 'monthly' ? {
+                  background: 'rgba(6,182,212,0.1)',
+                  borderColor: 'rgba(6,182,212,0.5)',
+                  boxShadow: '0 0 20px rgba(6,182,212,0.3), inset 0 0 20px rgba(6,182,212,0.1)'
+                } : {
+                  background: 'rgba(255,255,255,0.05)',
+                  borderColor: 'rgba(255,255,255,0.1)',
+                  boxShadow: '0 0 10px rgba(6,182,212,0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedPlan !== 'monthly') {
+                    e.currentTarget.style.borderColor = 'rgba(6,182,212,0.3)'
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(6,182,212,0.2)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedPlan !== 'monthly') {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+                    e.currentTarget.style.boxShadow = '0 0 10px rgba(6,182,212,0.1)'
+                  }
+                }}
               >
-                <div className="text-center">
+                <div className="text-center relative z-10">
                   <p className="text-2xl font-bold text-white mb-1">$40</p>
-                  <p className="text-sm text-gray-400">per month</p>
+                  <p className="text-sm text-[rgba(255,255,255,0.6)]">per month</p>
                   {selectedPlan === 'monthly' && (
-                    <p className="text-xs text-green-400 mt-2 font-semibold">✓ Selected</p>
+                    <p className="text-xs text-cyan-400 mt-2 font-semibold">✓ Selected</p>
                   )}
                 </div>
               </button>
               
               <button
                 onClick={() => setSelectedPlan('yearly')}
-                className={`p-6 rounded-lg border-2 transition-all ${
-                  selectedPlan === 'yearly'
-                    ? 'border-green-500 bg-green-500/10'
-                    : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                className={`p-6 rounded-lg border-2 transition-all relative overflow-hidden ${
+                  selectedPlan === 'yearly' ? '' : ''
                 }`}
+                style={selectedPlan === 'yearly' ? {
+                  background: 'rgba(6,182,212,0.1)',
+                  borderColor: 'rgba(6,182,212,0.5)',
+                  boxShadow: '0 0 20px rgba(6,182,212,0.3), inset 0 0 20px rgba(6,182,212,0.1)'
+                } : {
+                  background: 'rgba(255,255,255,0.05)',
+                  borderColor: 'rgba(255,255,255,0.1)',
+                  boxShadow: '0 0 10px rgba(6,182,212,0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedPlan !== 'yearly') {
+                    e.currentTarget.style.borderColor = 'rgba(6,182,212,0.3)'
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(6,182,212,0.2)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedPlan !== 'yearly') {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+                    e.currentTarget.style.boxShadow = '0 0 10px rgba(6,182,212,0.1)'
+                  }
+                }}
               >
-                <div className="text-center">
+                <div className="text-center relative z-10">
                   <p className="text-2xl font-bold text-white mb-1">$360</p>
-                  <p className="text-sm text-gray-400">per year</p>
-                  <p className="text-xs text-green-400 mt-1">Save $120</p>
+                  <p className="text-sm text-[rgba(255,255,255,0.6)]">per year</p>
+                  <p className="text-xs text-cyan-400 mt-1">Save $120</p>
                   {selectedPlan === 'yearly' && (
-                    <p className="text-xs text-green-400 mt-2 font-semibold">✓ Selected</p>
+                    <p className="text-xs text-cyan-400 mt-2 font-semibold">✓ Selected</p>
                   )}
                 </div>
               </button>
@@ -117,25 +218,35 @@ export function ResubscribeClient({
             <button
               onClick={handleSubscribe}
               disabled={isLoading}
-              className="w-full py-4 px-6 bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 text-white font-semibold rounded-lg transition-colors text-lg"
+              className="w-full py-4 px-6 font-semibold rounded-xl transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 relative overflow-hidden group"
+              style={{
+                background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                boxShadow: isLoading 
+                  ? '0 0 10px rgba(34,211,238,0.3)' 
+                  : '0 0 20px rgba(34,211,238,0.5), 0 4px 20px rgba(0,0,0,0.3)',
+                color: '#0f0f1a'
+              }}
             >
-              {isLoading
-                ? 'Processing...'
-                : selectedPlan === 'monthly'
-                ? 'Resubscribe for $40/month'
-                : 'Resubscribe for $360/year'}
+              <span className="relative z-10 font-bold">
+                {isLoading
+                  ? 'Processing...'
+                  : selectedPlan === 'monthly'
+                  ? 'Resubscribe for $40/month'
+                  : 'Resubscribe for $360/year'}
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
             </button>
             
-            <p className="text-xs text-gray-500 text-center mt-4">
+            <p className="text-xs text-[rgba(255,255,255,0.5)] text-center mt-4">
               Cancel anytime. Your links stay active as long as you're subscribed.
             </p>
           </div>
         </div>
 
         {/* Help */}
-        <p className="text-center text-gray-500 text-sm mt-6">
+        <p className="text-center text-[rgba(255,255,255,0.6)] text-sm mt-6">
           Questions?{' '}
-          <a href="mailto:support@yourdomain.com" className="text-green-400 hover:text-green-300">
+          <a href="mailto:support@yourdomain.com" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
             Contact support
           </a>
         </p>

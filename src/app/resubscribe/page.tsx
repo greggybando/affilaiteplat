@@ -26,9 +26,7 @@ export default async function ResubscribePage() {
   const stats = await getAffiliateStats(affiliate.id)
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      <ResubscribeClient affiliate={affiliate} stats={stats} />
-    </div>
+    <ResubscribeClient affiliate={affiliate} stats={stats} />
   )
 }
 
