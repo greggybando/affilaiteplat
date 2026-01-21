@@ -19,7 +19,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Avatar name is required' }, { status: 400 })
     }
 
-    const trimmedName = avatarName.trim()
+    let trimmedName = avatarName.trim()
+    
+    // Auto-capitalize first letter
+    if (trimmedName.length > 0) {
+      trimmedName = trimmedName.charAt(0).toUpperCase() + trimmedName.slice(1)
+    }
 
     // Validate avatar name
     if (trimmedName.length < 3 || trimmedName.length > 20) {

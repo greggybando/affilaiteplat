@@ -130,7 +130,12 @@ export function SettingsClient({ affiliate }: SettingsClientProps) {
     setSuccess('')
     setLoading(true)
 
-    const trimmedName = avatarName.trim()
+    let trimmedName = avatarName.trim()
+    // Ensure first letter is capitalized
+    if (trimmedName.length > 0) {
+      trimmedName = trimmedName.charAt(0).toUpperCase() + trimmedName.slice(1)
+    }
+    
     if (trimmedName.length < 3 || trimmedName.length > 20) {
       setError('Avatar name must be between 3 and 20 characters')
       setLoading(false)
@@ -249,7 +254,12 @@ export function SettingsClient({ affiliate }: SettingsClientProps) {
                   type="text"
                   value={avatarName}
                   onChange={(e) => {
-                    setAvatarName(e.target.value)
+                    let value = e.target.value
+                    // Auto-capitalize first letter
+                    if (value.length > 0) {
+                      value = value.charAt(0).toUpperCase() + value.slice(1)
+                    }
+                    setAvatarName(value)
                     setError('')
                   }}
                   className="w-full px-4 py-3 bg-[rgba(255,255,255,0.05)] border border-[rgba(6,182,212,0.3)] rounded-lg text-white placeholder-[rgba(255,255,255,0.4)] focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
