@@ -1294,7 +1294,14 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                               <>
                                 {isOwner(post) && <div className="border-t border-slate-200 my-1" />}
                                 <button
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation()
+                                    e.preventDefault()
+                                    console.log('PIN BUTTON MOUSEDOWN FIRED!')
+                                  }}
                                   onClick={(e) => {
+                                    console.log('PIN BUTTON CLICK FIRED!')
                                     e.stopPropagation()
                                     e.preventDefault()
                                     
@@ -1308,11 +1315,10 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                     console.log('Action:', action)
                                     console.log('Current posts count:', posts.length)
                                     
-                                    // Close menu after a tiny delay to ensure click handler completes
-                                    setTimeout(() => setShowMenu(null), 50)
+                                    // Don't close menu immediately - let the action complete first
                                     
                                     // Execute pin action
-                                    ;(async () => {
+                                    const pinAction = async () => {
                                       try {
                                         console.log('Making API call to:', `/api/community/posts/${postId}/moderate`)
                                         
@@ -1328,6 +1334,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                           const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
                                           console.error('Pin API error:', errorData)
                                           alert(errorData.error || 'Failed to pin post')
+                                          setShowMenu(null)
                                           return
                                         }
                                         
@@ -1360,6 +1367,9 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                           return sorted
                                         })
 
+                                        // Close menu after update
+                                        setShowMenu(null)
+
                                         // Refresh from server after a short delay
                                         console.log('Scheduling server refresh...')
                                         setTimeout(async () => {
@@ -1375,10 +1385,14 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                         console.error('Error message:', error.message)
                                         console.error('Error stack:', error.stack)
                                         alert(error.message || 'Failed to pin post. Please try again.')
+                                        setShowMenu(null)
                                       }
-                                    })()
+                                    }
+                                    
+                                    pinAction()
                                   }}
                                   className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                  style={{ pointerEvents: 'auto', zIndex: 1000 }}
                                 >
                                   <Pin className="w-4 h-4" />
                                   {post.pinned ? 'Unpin' : 'Pin'}
