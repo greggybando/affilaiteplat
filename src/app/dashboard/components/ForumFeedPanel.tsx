@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Heart, MessageCircle, Image as ImageIcon, Send, Zap } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Heart, MessageCircle, Image as ImageIcon, Send, Zap, Pin, MoreVertical } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -34,6 +34,7 @@ interface ForumFeedPanelProps {
     id: string
     name: string
     avatar: string | null
+    role?: string
   }
   glowIntensity: number
   onPostClick?: (post: Post) => void
@@ -58,7 +59,11 @@ const glowShadow = (shadows: string, intensity: number) => {
 export default function ForumFeedPanel({ category, currentUser, glowIntensity, onPostClick }: ForumFeedPanelProps) {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
+  const [showMenu, setShowMenu] = useState<string | null>(null)
   const router = useRouter()
+  const menuRef = useRef<HTMLDivElement>(null)
+  
+  const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator'
 
   const fetchPosts = useCallback(async (showLoading = true) => {
     if (showLoading) {
@@ -86,6 +91,49 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
   useEffect(() => {
     fetchPosts(true) // Show loading on initial load
   }, [fetchPosts])
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(null)
+      }
+    }
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showMenu])
+
+  const handleModeratePost = async (postId: string, action: string) => {
+    try {
+      const res = await fetch(`/api/community/posts/${postId}/moderate`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      })
+
+      if (!res.ok) throw new Error('Failed to moderate post')
+
+      const data = await res.json()
+      
+      setPosts(posts.map(p =>
+        p.id === postId
+          ? {
+              ...p,
+              pinned: data.post.pinned
+            }
+          : p
+      ))
+
+      setShowMenu(null)
+      // Refresh posts to ensure proper ordering
+      fetchPosts(false)
+    } catch (error) {
+      console.error('Error moderating post:', error)
+      alert('Failed to moderate post. Please try again.')
+    }
+  }
 
   // Listen for refresh events (when post is created from top composer)
   useEffect(() => {
@@ -197,12 +245,51 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
               <div
                 key={post.id}
                 onClick={() => onPostClick?.(post)}
-                className="rounded-2xl p-6 cursor-pointer hover:-translate-y-0.5 transition-all duration-150"
+                className="rounded-2xl p-6 cursor-pointer hover:-translate-y-0.5 transition-all duration-150 relative"
                 style={{ 
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #22d3ee 100%)',
-                  boxShadow: glowShadow('0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.3), 0 20px 40px rgba(14,165,233,0.25)', glowIntensity)
+                  background: post.pinned 
+                    ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)'
+                    : 'linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #22d3ee 100%)',
+                  boxShadow: post.pinned
+                    ? glowShadow('0 0 40px rgba(250,204,21,0.6), 0 0 80px rgba(250,204,21,0.4), 0 20px 40px rgba(217,119,6,0.3)', glowIntensity)
+                    : glowShadow('0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.3), 0 20px 40px rgba(14,165,233,0.25)', glowIntensity),
+                  border: post.pinned ? '2px solid rgba(250,204,21,0.5)' : 'none'
                 }}
               >
+                {post.pinned && (
+                  <div className="absolute top-4 right-4 z-10">
+                    <Pin className="w-5 h-5 text-yellow-200 fill-yellow-200" />
+                  </div>
+                )}
+                {isAdmin && (
+                  <div className="absolute top-4 right-4 z-10" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+                    {!post.pinned && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowMenu(showMenu === post.id ? null : post.id)
+                        }}
+                        className="p-1.5 hover:bg-[rgba(255,255,255,0.2)] rounded-lg transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4 text-white" />
+                      </button>
+                    )}
+                    {showMenu === post.id && (
+                      <div className="absolute right-0 top-full mt-1 w-40 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleModeratePost(post.id, post.pinned ? 'unpin' : 'pin')
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2 transition-colors"
+                        >
+                          <Pin className="w-4 h-4" />
+                          {post.pinned ? 'Unpin' : 'Pin'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <ProfileHoverCard
