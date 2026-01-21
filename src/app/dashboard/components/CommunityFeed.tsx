@@ -178,13 +178,27 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
 
   // Render HTML content (for posts with HTML formatting)
   const renderContent = (content: string) => {
-    // Check if content contains HTML tags
-    if (content && (content.includes('<strong>') || content.includes('<b>') || content.includes('<strong'))) {
-      return <div dangerouslySetInnerHTML={{ __html: content }} />
+    if (!content) return <span></span>
+    
+    // Strip empty HTML tags and normalize whitespace
+    let cleanedContent = content
+      .replace(/<div><br><\/div>/gi, '')
+      .replace(/<div><\/div>/gi, '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/&nbsp;/gi, ' ')
+      .trim()
+    
+    // If no content after cleaning, return empty
+    if (!cleanedContent) return <span></span>
+    
+    // Check if content contains HTML formatting tags
+    if (cleanedContent.includes('<strong>') || cleanedContent.includes('<b>') || cleanedContent.includes('<strong') || cleanedContent.includes('<em>') || cleanedContent.includes('<i>')) {
+      return <div dangerouslySetInnerHTML={{ __html: cleanedContent }} />
     }
+    
     // Fallback: check for markdown bold (**text**)
-    if (content && content.includes('**')) {
-      const parts = content.split(/(\*\*.*?\*\*)/g)
+    if (cleanedContent.includes('**')) {
+      const parts = cleanedContent.split(/(\*\*.*?\*\*)/g)
       return (
         <>
           {parts.map((part, idx) => {
@@ -196,8 +210,9 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
         </>
       )
     }
-    // Plain text
-    return <span>{content}</span>
+    
+    // Plain text with preserved line breaks
+    return <span className="whitespace-pre-wrap">{cleanedContent}</span>
   }
 
   useEffect(() => {

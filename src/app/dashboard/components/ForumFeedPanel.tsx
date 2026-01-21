@@ -130,11 +130,27 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
   }
 
   const renderContent = (content: string) => {
-    if (content && (content.includes('<strong>') || content.includes('<b>'))) {
-      return <div dangerouslySetInnerHTML={{ __html: content }} />
+    if (!content) return <span></span>
+    
+    // Strip empty HTML tags and normalize whitespace
+    let cleanedContent = content
+      .replace(/<div><br><\/div>/gi, '')
+      .replace(/<div><\/div>/gi, '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/&nbsp;/gi, ' ')
+      .trim()
+    
+    // If no content after cleaning, return empty
+    if (!cleanedContent) return <span></span>
+    
+    // Check if content contains HTML formatting tags
+    if (cleanedContent.includes('<strong>') || cleanedContent.includes('<b>') || cleanedContent.includes('<em>') || cleanedContent.includes('<i>')) {
+      return <div dangerouslySetInnerHTML={{ __html: cleanedContent }} />
     }
-    if (content && content.includes('**')) {
-      const parts = content.split(/(\*\*.*?\*\*)/g)
+    
+    // Check for markdown bold (**text**)
+    if (cleanedContent.includes('**')) {
+      const parts = cleanedContent.split(/(\*\*.*?\*\*)/g)
       return (
         <>
           {parts.map((part, idx) => {
@@ -146,7 +162,9 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
         </>
       )
     }
-    return <span>{content}</span>
+    
+    // Plain text with preserved line breaks
+    return <span className="whitespace-pre-wrap">{cleanedContent}</span>
   }
 
   const formatTime = (dateString: string) => {
