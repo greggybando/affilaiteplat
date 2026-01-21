@@ -741,7 +741,11 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
             backdropFilter: 'blur(4px)'
           }}
-          onClick={() => {
+          onClick={(e) => {
+            // Don't close if clicking inside composer
+            if (composerRef.current && composerRef.current.contains(e.target as Node)) {
+              return
+            }
             setComposerExpanded(false)
             setComposerContent('')
             if (editableRef.current) {
@@ -758,18 +762,19 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
           <div
             ref={composerRef}
             className={`rounded-2xl transition-all duration-300 w-full ${
-              composerExpanded ? 'shadow-2xl scale-[1.02]' : ''
+              composerExpanded ? 'shadow-2xl scale-[1.02] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50' : ''
             }`}
             style={{ 
-              width: '100%', 
-              maxWidth: '100%',
+              width: composerExpanded ? '90%' : '100%', 
+              maxWidth: composerExpanded ? '600px' : '100%',
               background: composerExpanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
               backdropFilter: 'blur(10px)',
               border: composerExpanded ? '2px solid rgba(253,224,71,0.4)' : '1px solid rgba(255,255,255,0.1)',
-              position: composerExpanded ? 'relative' : 'static',
-              zIndex: composerExpanded ? 50 : 'auto',
-              transform: composerExpanded ? 'translateY(0)' : 'none',
               boxShadow: composerExpanded ? glowShadow('0 0 40px rgba(253,224,71,0.6), 0 0 80px rgba(253,224,71,0.4), 0 20px 60px rgba(253,224,71,0.3)', glowIntensity) : 'none'
+            }}
+            onClick={(e) => {
+              // Prevent backdrop click when clicking inside composer
+              e.stopPropagation()
             }}
           >
             <div className="p-4">
