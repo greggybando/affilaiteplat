@@ -48,6 +48,9 @@ export async function GET(request: NextRequest) {
       endDate: grindhouse.end_date,
       description: grindhouse.description || null,
       maxParticipants: grindhouse.max_participants || null,
+      preferredPeople: grindhouse.preferred_people || null,
+      duration: grindhouse.duration || null,
+      vibeFocus: grindhouse.vibe_focus || null,
       participants: grindhouse.participants || [],
       goals: grindhouse.goals || [],
       created_at: grindhouse.created_at
@@ -68,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, location, start_date, end_date, description, max_participants } = body
+    const { name, location, start_date, end_date, description, max_participants, preferred_people, duration, vibe_focus, forum_post_id } = body
 
     if (!name || !location || !start_date || !end_date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -84,6 +87,10 @@ export async function POST(request: NextRequest) {
         end_date,
         description: description || null,
         max_participants: max_participants || null,
+        preferred_people: preferred_people || null,
+        duration: duration || null,
+        vibe_focus: vibe_focus || null,
+        forum_post_id: forum_post_id || null,
         participants: [],
         goals: []
       } as any)
@@ -106,6 +113,9 @@ export async function POST(request: NextRequest) {
         endDate: grindhouseData.end_date,
         description: grindhouseData.description || null,
         maxParticipants: grindhouseData.max_participants || null,
+        preferredPeople: grindhouseData.preferred_people || null,
+        duration: grindhouseData.duration || null,
+        vibeFocus: grindhouseData.vibe_focus || null,
         participants: grindhouseData.participants || [],
         goals: grindhouseData.goals || [],
         created_at: grindhouseData.created_at
