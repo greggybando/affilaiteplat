@@ -53,14 +53,6 @@ export async function GET(request: NextRequest) {
       query = query.eq('category', category)
     }
 
-    // Exclude specific categories (used for "Home" feed)
-    if (excludeCategories) {
-      const excludeList = excludeCategories.split(',').map(c => c.trim())
-      // Build filter to exclude categories: category != 'cat1' AND category != 'cat2' AND ...
-      const excludeFilter = excludeList.map(cat => `category.neq.${cat}`).join(',')
-      query = query.or(excludeFilter)
-    }
-
     if (search && search.trim()) {
       query = query.or(`title.ilike.%${search.trim()}%,content.ilike.%${search.trim()}%`)
     }
@@ -68,6 +60,13 @@ export async function GET(request: NextRequest) {
     const { data: posts, error } = await query
 
     if (error) throw error
+
+    // Filter out excluded categories after fetching (used for "Home" feed)
+    let filteredPosts = posts as any[]
+    if (excludeCategories) {
+      const excludeList = excludeCategories.split(',').map(c => c.trim())
+      filteredPosts = (posts as any[]).filter((post: any) => !excludeList.includes(post.category))
+    }
 
     // Get like status and counts for current user
     const postIds = filteredPosts?.map((p: any) => p.id) || []
