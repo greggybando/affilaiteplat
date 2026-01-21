@@ -320,44 +320,78 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId }: { currentUs
 
           {/* Content */}
           {selectedConversation ? (
-            // Message View
+            // Message View - iPhone Style
             <div className="flex flex-col h-96">
-              <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-[rgba(15,15,26,0.6)]">
-                {messages.map(msg => (
-                  <div
-                    key={msg.id}
-                    className={`max-w-[80%] p-2 rounded-lg text-sm ${
-                      msg.sender_id === currentUserId
-                        ? 'ml-auto bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-lg'
-                        : 'bg-[rgba(255,255,255,0.1)] text-white border border-[rgba(255,255,255,0.1)]'
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
-                ))}
+              <div className="flex-1 overflow-y-auto px-2 py-4 space-y-1" style={{ background: '#000000' }}>
+                {messages.length === 0 ? (
+                  <div className="text-center py-8 text-[rgba(255,255,255,0.5)] text-sm">No messages yet</div>
+                ) : (
+                  messages.map((msg, index) => {
+                    const isOwnMessage = msg.sender_id === currentUserId
+                    const prevMessage = index > 0 ? messages[index - 1] : null
+                    const showTimestamp = !prevMessage || 
+                      prevMessage.sender_id !== msg.sender_id ||
+                      new Date(msg.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000 // 5 minutes
+                    
+                    const messageTime = new Date(msg.created_at)
+                    const timeStr = messageTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                    
+                    return (
+                      <div key={msg.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} ${showTimestamp ? 'mt-3' : 'mt-1'}`}>
+                        <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[75%]`}>
+                          {showTimestamp && (
+                            <div className="text-[10px] text-[rgba(255,255,255,0.4)] px-2 mb-1">
+                              {timeStr}
+                            </div>
+                          )}
+                          <div
+                            className={`px-3 py-2 rounded-2xl text-sm leading-relaxed ${
+                              isOwnMessage
+                                ? 'rounded-br-sm bg-[#007AFF] text-white'
+                                : 'rounded-bl-sm bg-[#E5E5EA] text-black'
+                            }`}
+                            style={{
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word'
+                            }}
+                          >
+                            {msg.content}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
                 <div ref={messagesEndRef} />
               </div>
-              <div className="p-2 border-t border-[rgba(255,255,255,0.1)] flex gap-2 bg-[rgba(255,255,255,0.05)]">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      sendMessage()
-                    }
-                  }}
-                  placeholder="Type a message..."
-                  className="flex-1 px-3 py-2 text-sm bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50"
-                />
+              <div className="px-3 py-2 border-t border-[rgba(255,255,255,0.1)] flex gap-2" style={{ background: '#000000' }}>
+                <div className="flex-1 rounded-full overflow-hidden" style={{ background: '#1C1C1E', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        sendMessage()
+                      }
+                    }}
+                    placeholder="iMessage"
+                    className="w-full px-4 py-2.5 text-sm text-white placeholder-[rgba(255,255,255,0.4)] focus:outline-none"
+                    style={{ background: 'transparent' }}
+                  />
+                </div>
                 <button
                   onClick={sendMessage}
                   disabled={!newMessage.trim()}
-                  className="p-2 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg hover:from-cyan-600 hover:to-cyan-700 disabled:opacity-50 shadow-lg"
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-40"
+                  style={{
+                    background: newMessage.trim() ? '#007AFF' : 'rgba(255,255,255,0.1)',
+                    color: '#FFFFFF'
+                  }}
                   title="Send"
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-5 h-5" />
                 </button>
               </div>
             </div>

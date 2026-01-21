@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { MessageCircle, User } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 
 interface ProfileHoverCardProps {
@@ -28,6 +29,7 @@ interface ProfileData {
 }
 
 export function ProfileHoverCard({ userId, userName, userAvatar, children, onChatClick }: ProfileHoverCardProps) {
+  const router = useRouter()
   const [showCard, setShowCard] = useState(false)
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(false)
@@ -313,7 +315,7 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
                         if (onChatClick) {
                           onChatClick()
                         } else {
-                          window.location.href = `/messages?user=${profileData.id}`
+                          router.push(`/dashboard?openDM=${profileData.id}`)
                         }
                         setShowCard(false)
                       }}
