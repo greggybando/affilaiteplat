@@ -162,7 +162,7 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.15)] rounded-xl text-white placeholder-[rgba(255,255,255,0.4)] focus:outline-none focus:border-[#22d3ee] focus:ring-2 focus:ring-[#22d3ee]/20 transition-all backdrop-blur-sm"
               placeholder="Meetup Title"
               required
             />
@@ -176,7 +176,7 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
               type="text"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.15)] rounded-xl text-white placeholder-[rgba(255,255,255,0.4)] focus:outline-none focus:border-[#22d3ee] focus:ring-2 focus:ring-[#22d3ee]/20 transition-all backdrop-blur-sm"
               placeholder="Location"
               required
             />
