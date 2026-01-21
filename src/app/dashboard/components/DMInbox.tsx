@@ -471,24 +471,34 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
 
   const searchGifs = async (query: string) => {
     setGifLoading(true)
+    setGifResults([]) // Clear previous results
     try {
-      // Using Giphy API (free tier)
-      const apiKey = 'dc6zaTOxFJmzC' // Giphy public beta key
+      // Using Giphy API (free tier) - public beta key
+      const apiKey = 'dc6zaTOxFJmzC'
       const endpoint = query === 'trending' 
         ? `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=24&rating=g`
         : `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=24&rating=g`
       
       console.log('Fetching GIFs from:', endpoint)
       const res = await fetch(endpoint)
+      console.log('GIF API response status:', res.status, res.statusText)
+      
       if (!res.ok) {
+        const errorText = await res.text()
+        console.error('Giphy API error response:', errorText)
         throw new Error(`Giphy API error: ${res.status} ${res.statusText}`)
       }
+      
       const data = await res.json()
-      console.log('GIF API response:', data)
-      if (data.data && Array.isArray(data.data)) {
+      console.log('GIF API response data:', data)
+      console.log('GIF data array:', data.data)
+      console.log('Number of GIFs:', data.data?.length || 0)
+      
+      if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+        console.log('Setting GIF results:', data.data.length, 'GIFs')
         setGifResults(data.data)
       } else {
-        console.error('Unexpected GIF API response format:', data)
+        console.warn('No GIFs in response or empty array:', data)
         setGifResults([])
       }
     } catch (error) {
@@ -955,10 +965,9 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     data-gif-picker="true"
                     className="fixed bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 z-[9999] shadow-2xl"
                     style={{
-                      bottom: '100px',
-                      left: gifButtonRef.current ? `${gifButtonRef.current.getBoundingClientRect().left - 150}px` : '50%',
-                      transform: gifButtonRef.current ? 'none' : 'translateX(-50%)',
-                      width: '400px',
+                      bottom: '90px',
+                      right: '1rem',
+                      width: '380px',
                       maxHeight: '400px',
                       display: 'flex',
                       flexDirection: 'column'
