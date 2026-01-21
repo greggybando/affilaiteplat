@@ -666,25 +666,20 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
         body: JSON.stringify({ action })
       })
 
-      if (!res.ok) throw new Error('Failed to moderate post')
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to moderate post')
+      }
 
       const data = await res.json()
       
-      setPosts(posts.map(p =>
-        p.id === postId
-          ? {
-              ...p,
-              pinned: data.post.pinned,
-              locked: data.post.locked,
-              hidden: data.post.hidden
-            }
-          : p
-      ))
-
+      // Refresh posts to get correct ordering (pinned posts at top)
+      await fetchPosts()
+      
       setShowMenu(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error moderating post:', error)
-      alert('Failed to moderate post. Please try again.')
+      alert(error.message || 'Failed to moderate post. Please try again.')
     }
   }
 
@@ -1267,7 +1262,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                     </div>
                     <div className="flex items-center gap-2">
                       {post.pinned && (
-                        <span className="text-xs text-slate-500">📌</span>
+                        <Pin className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                       )}
                       <div className="relative" ref={menuRef}>
                         <button
