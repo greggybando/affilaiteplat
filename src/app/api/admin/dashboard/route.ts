@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     if (signupsError) throw signupsError
 
     // Fetch cancellations
-    const { data: cancellations, error: cancellationsError } = await cancellationsQuery.order('canceled_at', { ascending: false })
+    const { data: cancellations, error: cancellationsError } = await cancellationsQuery.order('canceled_at', { ascending: false }) as any
     if (cancellationsError) throw cancellationsError
 
     // Fetch active subscribers (status = 'active')
@@ -84,9 +84,9 @@ export async function GET(request: NextRequest) {
     let avgSubscriptionLengthDays = 0
     let avgSubscriptionLengthMonths = 0
     if (cancellations && cancellations.length > 0) {
-      const lengths = cancellations
-        .filter(c => c.subscription_start_date)
-        .map(c => {
+      const lengths = (cancellations as any[])
+        .filter((c: any) => c.subscription_start_date)
+        .map((c: any) => {
           const start = new Date(c.subscription_start_date)
           const end = new Date(c.canceled_at)
           return Math.max(0, Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)))
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Format cancellations with subscription length
-    const formattedCancellations = (cancellations || []).map(c => {
+    const formattedCancellations = ((cancellations || []) as any[]).map((c: any) => {
       let subscriptionLengthDays = 0
       let subscriptionLengthMonths = 0
       if (c.subscription_start_date) {
