@@ -51,10 +51,11 @@ export function ProfilePageClient({ profileData, currentUserId }: ProfilePageCli
   const fetchPosts = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/profile/${profileData.id}/posts?limit=20`)
+      const res = await fetch(`/api/profile/${profileData.id}/posts?limit=4`)
       if (res.ok) {
         const data = await res.json()
-        setPosts(data.posts || [])
+        // Limit to latest 4 posts
+        setPosts((data.posts || []).slice(0, 4))
       }
     } catch (error) {
       console.error('Error fetching posts:', error)
