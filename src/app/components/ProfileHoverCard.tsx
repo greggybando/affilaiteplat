@@ -187,11 +187,12 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
           ref={cardRef}
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
-          className="absolute z-50 mt-2 left-0 w-80"
+          className="absolute mt-2 left-0 w-80"
           style={{
             pointerEvents: 'auto',
             maxHeight: 'calc(100vh - 32px)',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            zIndex: 9999
           }}
         >
           <div 
