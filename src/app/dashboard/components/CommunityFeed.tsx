@@ -1135,14 +1135,24 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                 <div
                   key={post.id}
                   onClick={() => setSelectedPost(post)}
-                  className="rounded-2xl p-6 cursor-pointer hover:-translate-y-0.5 transition-all duration-150 w-full"
+                  className="rounded-2xl p-6 cursor-pointer hover:-translate-y-0.5 transition-all duration-150 w-full relative"
                   style={{ 
                     width: '100%', 
                     maxWidth: '100%',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #22d3ee 100%)',
-                    boxShadow: glowShadow('0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.3), 0 20px 40px rgba(14,165,233,0.25)', glowIntensity)
+                    background: post.pinned 
+                      ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)'
+                      : 'linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #22d3ee 100%)',
+                    boxShadow: post.pinned
+                      ? glowShadow('0 0 40px rgba(250,204,21,0.6), 0 0 80px rgba(250,204,21,0.4), 0 20px 40px rgba(217,119,6,0.3)', glowIntensity)
+                      : glowShadow('0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.3), 0 20px 40px rgba(14,165,233,0.25)', glowIntensity),
+                    border: post.pinned ? '2px solid rgba(250,204,21,0.5)' : 'none'
                   }}
                 >
+                  {post.pinned && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <Pin className="w-5 h-5 text-yellow-200 fill-yellow-200" />
+                    </div>
+                  )}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div onClick={(e) => e.stopPropagation()}>
