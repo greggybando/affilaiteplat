@@ -473,20 +473,19 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     setGifLoading(true)
     setGifResults([]) // Clear previous results
     try {
-      // Using Giphy API (free tier) - public beta key
-      const apiKey = 'dc6zaTOxFJmzC'
-      const endpoint = query === 'trending' 
-        ? `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=24&rating=g`
-        : `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=24&rating=g`
+      // Use Next.js API route to avoid CORS issues
+      const apiRoute = query === 'trending' 
+        ? `/api/gifs/trending`
+        : `/api/gifs/search?q=${encodeURIComponent(query)}`
       
-      console.log('Fetching GIFs from:', endpoint)
-      const res = await fetch(endpoint)
+      console.log('Fetching GIFs from:', apiRoute)
+      const res = await fetch(apiRoute)
       console.log('GIF API response status:', res.status, res.statusText)
       
       if (!res.ok) {
         const errorText = await res.text()
-        console.error('Giphy API error response:', errorText)
-        throw new Error(`Giphy API error: ${res.status} ${res.statusText}`)
+        console.error('GIF API error response:', errorText)
+        throw new Error(`GIF API error: ${res.status} ${res.statusText}`)
       }
       
       const data = await res.json()
