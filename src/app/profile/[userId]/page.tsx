@@ -6,8 +6,7 @@ import { ProfilePageClient } from './ProfilePageClient'
 export const dynamic = 'force-dynamic'
 
 async function getProfileData(userId: string) {
-  const { data: user, error } = await supabaseAdmin
-    .from('affiliates')
+  const { data: user, error } = await (supabaseAdmin.from('affiliates') as any)
     .select('id, name, avatar_name, avatar_url, bio, created_at, last_active_at, updated_at, role')
     .eq('id', userId)
     .single()
