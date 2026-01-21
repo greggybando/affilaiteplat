@@ -1262,7 +1262,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                     </div>
                     <div className="flex items-center gap-2">
                       {post.pinned && (
-                        <Pin className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                        <Pin className="w-4 h-4 text-yellow-400 fill-yellow-400 flex-shrink-0" />
                       )}
                       <div className="relative" ref={menuRef}>
                         <button
