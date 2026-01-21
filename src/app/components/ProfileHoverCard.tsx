@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { MessageCircle, User } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
@@ -86,6 +87,26 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
       clearTimeout(timeoutRef.current)
     }
     timeoutRef.current = setTimeout(() => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect()
+        const cardWidth = 320 // w-80 = 320px
+        const spacing = 8 // mt-2 = 8px
+        
+        let top = rect.bottom + spacing
+        let left = rect.left
+        
+        // Check if card would go off right edge
+        if (left + cardWidth > window.innerWidth - 16) {
+          left = window.innerWidth - cardWidth - 16
+        }
+        
+        // Check if card would go off left edge
+        if (left < 16) {
+          left = 16
+        }
+        
+        setPosition({ top, left })
+      }
       setShowCard(true)
     }, 500) // 500ms delay before showing
   }
@@ -127,7 +148,10 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
         setPosition({ top, left })
       }
       
+      // Initial position update
       updatePosition()
+      
+      // Update on scroll/resize
       window.addEventListener('scroll', updatePosition, true)
       window.addEventListener('resize', updatePosition)
       
@@ -136,7 +160,7 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
         window.removeEventListener('resize', updatePosition)
       }
     }
-  }, [showCard])
+  }, [showCard, profileData])
 
   const handleMouseLeave = () => {
     if (timeoutRef.current) {
@@ -309,9 +333,10 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   )
 }
 
