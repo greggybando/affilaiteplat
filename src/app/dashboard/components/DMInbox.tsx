@@ -763,13 +763,13 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                       const rect = emojiButtonRef.current.getBoundingClientRect()
                       setEmojiPickerPosition({
                         top: rect.top - 200,
-                        left: rect.left
+                        left: Math.max(10, Math.min(rect.left, window.innerWidth - 300))
                       })
                     }
                     setShowEmojiPicker(!showEmojiPicker)
                   }}
                   className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70"
-                  style={{ color: 'rgba(255,255,255,0.6)' }}
+                  style={{ color: showEmojiPicker ? 'rgba(34,211,238,1)' : 'rgba(255,255,255,0.6)' }}
                   title="Emoji"
                 >
                   <Smile className="w-4 h-4" />
@@ -872,24 +872,32 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                       ) : gifResults.length === 0 ? (
                         <div className="col-span-2 text-center text-[rgba(255,255,255,0.6)] py-8">No GIFs found</div>
                       ) : (
-                        gifResults.map((gif) => (
-                          <button
-                            key={gif.id}
-                            onClick={() => {
-                              const gifUrl = gif.images?.fixed_height?.url || gif.images?.original?.url || gif.url
-                              setAttachedImageUrls(prev => [...prev, gifUrl])
-                              setShowGifPicker(false)
-                              setGifSearchQuery('')
-                            }}
-                            className="relative w-full aspect-square rounded-lg overflow-hidden hover:opacity-80 transition-opacity"
-                          >
-                            <img
-                              src={gif.images?.fixed_height_small?.url || gif.images?.fixed_height?.url || gif.url}
-                              alt={gif.title || 'GIF'}
-                              className="w-full h-full object-cover"
-                            />
-                          </button>
-                        ))
+                        gifResults.map((gif: any) => {
+                          const gifUrl = gif.images?.fixed_height?.url || gif.images?.original?.url || gif.url || gif.images?.downsized?.url
+                          const previewUrl = gif.images?.fixed_height_small?.url || gif.images?.fixed_height?.url || gif.images?.downsized_small?.url || gifUrl
+                          if (!gifUrl) return null
+                          return (
+                            <button
+                              key={gif.id || Math.random()}
+                              onClick={() => {
+                                setAttachedImageUrls(prev => [...prev, gifUrl])
+                                setShowGifPicker(false)
+                                setGifSearchQuery('')
+                              }}
+                              className="relative w-full aspect-square rounded-lg overflow-hidden hover:opacity-80 transition-opacity bg-[rgba(255,255,255,0.1)]"
+                            >
+                              <img
+                                src={previewUrl}
+                                alt={gif.title || 'GIF'}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  console.error('Failed to load GIF preview:', previewUrl)
+                                  e.currentTarget.style.display = 'none'
+                                }}
+                              />
+                            </button>
+                          )
+                        })
                       )}
                     </div>
                   </div>
@@ -910,12 +918,12 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     className="emoji-picker-scroll fixed bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-1.5 z-[9999] shadow-2xl"
                     style={{
                       bottom: '80px',
-                      left: emojiButtonRef.current ? `${emojiButtonRef.current.getBoundingClientRect().left}px` : '50%',
-                      transform: emojiButtonRef.current ? 'none' : 'translateX(-50%)',
+                      left: `${emojiPickerPosition.left}px`,
                       maxWidth: '280px',
                       maxHeight: '300px',
                       overflowY: 'auto'
                     }}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <div className="grid grid-cols-8 gap-1">
                       {[
