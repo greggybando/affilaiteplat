@@ -80,11 +80,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Extract date from date_time if date is not provided
+    let meetupDate = date
+    if (!meetupDate && meetupDateTime) {
+      // Extract date part from date_time (format: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss)
+      meetupDate = meetupDateTime.split('T')[0]
+    }
+
     const insertData = {
       user_id: affiliate.id,
       name,
       location,
-      date: date || null, // Keep for backward compatibility
+      date: meetupDate || null, // Extract from date_time if not provided
       time: time || null, // Keep for backward compatibility
       date_time: meetupDateTime || null,
       description: description || null,
