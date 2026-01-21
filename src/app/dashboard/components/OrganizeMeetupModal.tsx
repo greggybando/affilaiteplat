@@ -62,7 +62,12 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.title || !formData.location || !formData.dateTime) return
+    
+    // Validate all required fields
+    if (!formData.title || !formData.location || !formData.dateTime || !formData.type) {
+      alert('Please fill in all required fields')
+      return
+    }
 
     setLoading(true)
     try {
@@ -83,11 +88,25 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
       })
 
       if (!postRes.ok) {
-        throw new Error('Failed to create forum post')
+        const errorData = await postRes.json().catch(() => ({}))
+        console.error('Forum post creation error:', errorData)
+        console.error('Response status:', postRes.status, postRes.statusText)
+        
+        let errorMessage = errorData.error || errorData.message || `Failed to create forum post: ${postRes.status} ${postRes.statusText}`
+        if (errorData.details) {
+          errorMessage += `\n\nDetails: ${errorData.details}`
+        }
+        
+        throw new Error(errorMessage)
       }
 
       const postData = await postRes.json()
-      const forumPostId = postData.post.id
+      console.log('Forum post created:', postData)
+      const forumPostId = postData.post?.id
+      
+      if (!forumPostId) {
+        throw new Error('Forum post was created but no ID was returned')
+      }
 
       // Create meetup entry
       const meetupRes = await fetch('/api/meetups', {
@@ -97,7 +116,7 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
           name: formData.title,
           location: formData.location,
           date_time: formData.dateTime,
-          max_attendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : null,
+          max_attendees: formData.maxAttendees ? parseInt(formData.maxAttendees.trim()) : null,
           type: formData.type,
           description: formData.description || null,
           forum_post_id: forumPostId
@@ -105,8 +124,27 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
       })
 
       if (!meetupRes.ok) {
-        throw new Error('Failed to create meetup')
+        const errorData = await meetupRes.json().catch(() => ({}))
+        console.error('Meetup creation error:', errorData)
+        console.error('Response status:', meetupRes.status, meetupRes.statusText)
+        
+        // Build detailed error message
+        let errorMessage = errorData.error || errorData.message || `Failed to create meetup: ${meetupRes.status} ${meetupRes.statusText}`
+        if (errorData.details) {
+          errorMessage += `\n\nDetails: ${errorData.details}`
+        }
+        if (errorData.code) {
+          errorMessage += `\n\nCode: ${errorData.code}`
+        }
+        if (errorData.hint) {
+          errorMessage += `\n\nHint: ${errorData.hint}`
+        }
+        
+        throw new Error(errorMessage)
       }
+      
+      const meetupData = await meetupRes.json()
+      console.log('Meetup created successfully:', meetupData)
 
       // Reset form and close
       setFormData({
@@ -119,9 +157,15 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
       })
       onSuccess()
       onClose()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create meetup:', error)
-      alert('Failed to create meetup. Please try again.')
+      console.error('Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name
+      })
+      const errorMessage = error?.message || 'Failed to create meetup. Please check the console for details.'
+      alert(`Error: ${errorMessage}\n\nCheck the browser console (F12) for more details.`)
     } finally {
       setLoading(false)
     }
@@ -250,7 +294,7 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
             </button>
             <button
               type="submit"
-              disabled={loading || !formData.title || !formData.location || !formData.dateTime}
+              disabled={loading || !formData.title || !formData.location || !formData.dateTime || !formData.type}
               className="flex-1 px-4 py-2.5 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               style={{
                 background: 'linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #22d3ee 100%)',

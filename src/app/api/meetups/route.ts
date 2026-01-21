@@ -64,42 +64,62 @@ export async function POST(request: NextRequest) {
   try {
     const affiliate = await getCurrentAffiliate()
     if (!affiliate) {
+      console.error('[Meetups API POST] No affiliate found - auth failed')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
+    console.log('[Meetups API POST] Received body:', JSON.stringify(body, null, 2))
     const { name, location, date, time, date_time, description, max_participants, max_attendees, type, forum_post_id } = body
 
     // Support both old format (date + time) and new format (date_time)
     const meetupDateTime = date_time || (date && time ? `${date}T${time}` : date)
 
     if (!name || !location || !meetupDateTime) {
+      console.error('[Meetups API POST] Missing required fields:', { name, location, date_time, date, time })
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    const insertData = {
+      user_id: affiliate.id,
+      name,
+      location,
+      date: date || null, // Keep for backward compatibility
+      time: time || null, // Keep for backward compatibility
+      date_time: meetupDateTime || null,
+      description: description || null,
+      max_participants: max_participants || max_attendees || null,
+      max_attendees: max_attendees || max_participants || null,
+      type: type || null,
+      forum_post_id: forum_post_id || null,
+      participants: []
+    }
+    
+    console.log('[Meetups API POST] Inserting data:', JSON.stringify(insertData, null, 2))
+
     const { data: meetup, error } = await supabaseAdmin
       .from('meetups')
-      .insert({
-        user_id: affiliate.id,
-        name,
-        location,
-        date: date || null, // Keep for backward compatibility
-        time: time || null, // Keep for backward compatibility
-        date_time: meetupDateTime || null,
-        description: description || null,
-        max_participants: max_participants || max_attendees || null,
-        max_attendees: max_attendees || max_participants || null,
-        type: type || null,
-        forum_post_id: forum_post_id || null,
-        participants: []
-      } as any)
+      .insert(insertData as any)
       .select()
       .single()
 
     if (error) {
-      console.error('Meetup creation error:', error)
-      return NextResponse.json({ error: 'Failed to create meetup' }, { status: 500 })
+      console.error('[Meetups API POST] Supabase error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        fullError: JSON.stringify(error, null, 2)
+      })
+      return NextResponse.json({ 
+        error: 'Failed to create meetup',
+        details: error.message,
+        code: error.code,
+        hint: error.hint
+      }, { status: 500 })
     }
+    
+    console.log('[Meetups API POST] Successfully created meetup:', meetup)
 
     const meetupData = meetup as any
 
@@ -119,7 +139,10 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('API meetups POST error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error?.message || 'Unknown error'
+    }, { status: 500 })
   }
 }
 
