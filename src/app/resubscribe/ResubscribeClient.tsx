@@ -79,6 +79,14 @@ export function ResubscribeClient({
             5%, 10% { opacity: 0.3; transform: scale(0.95); }
             7.5% { opacity: 1; transform: scale(1.1); }
           }
+          @keyframes pulse-glow {
+            0%, 100% { 
+              box-shadow: 0 0 30px rgba(6,182,212,0.4), inset 0 0 20px rgba(6,182,212,0.1);
+            }
+            50% { 
+              box-shadow: 0 0 40px rgba(6,182,212,0.6), inset 0 0 25px rgba(6,182,212,0.15);
+            }
+          }
         `}</style>
 
         <div 
@@ -148,7 +156,8 @@ export function ResubscribeClient({
                 style={selectedPlan === 'monthly' ? {
                   background: 'rgba(6,182,212,0.1)',
                   borderColor: 'rgba(6,182,212,0.5)',
-                  boxShadow: '0 0 20px rgba(6,182,212,0.3), inset 0 0 20px rgba(6,182,212,0.1)'
+                  boxShadow: '0 0 30px rgba(6,182,212,0.4), inset 0 0 20px rgba(6,182,212,0.1)',
+                  animation: 'pulse-glow 2s ease-in-out infinite'
                 } : {
                   background: 'rgba(255,255,255,0.05)',
                   borderColor: 'rgba(255,255,255,0.1)',
@@ -168,8 +177,20 @@ export function ResubscribeClient({
                 }}
               >
                 <div className="text-center relative z-10">
-                  <p className="text-2xl font-bold text-white mb-1">$40</p>
-                  <p className="text-sm text-[rgba(255,255,255,0.6)]">per month</p>
+                  <p 
+                    className="text-5xl font-bold mb-1"
+                    style={{
+                      background: 'linear-gradient(135deg, #22d3ee, #06b6d4, #3b82f6)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      textShadow: '0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(6,182,212,0.3)',
+                      filter: 'drop-shadow(0 0 8px rgba(34,211,238,0.6))'
+                    }}
+                  >
+                    $40
+                  </p>
+                  <p className="text-xs text-[rgba(255,255,255,0.4)] mt-1">per month</p>
                   {selectedPlan === 'monthly' && (
                     <p className="text-xs text-cyan-400 mt-2 font-semibold">✓ Selected</p>
                   )}
@@ -184,7 +205,8 @@ export function ResubscribeClient({
                 style={selectedPlan === 'yearly' ? {
                   background: 'rgba(6,182,212,0.1)',
                   borderColor: 'rgba(6,182,212,0.5)',
-                  boxShadow: '0 0 20px rgba(6,182,212,0.3), inset 0 0 20px rgba(6,182,212,0.1)'
+                  boxShadow: '0 0 30px rgba(6,182,212,0.4), inset 0 0 20px rgba(6,182,212,0.1)',
+                  animation: 'pulse-glow 2s ease-in-out infinite'
                 } : {
                   background: 'rgba(255,255,255,0.05)',
                   borderColor: 'rgba(255,255,255,0.1)',
@@ -204,9 +226,31 @@ export function ResubscribeClient({
                 }}
               >
                 <div className="text-center relative z-10">
-                  <p className="text-2xl font-bold text-white mb-1">$360</p>
-                  <p className="text-sm text-[rgba(255,255,255,0.6)]">per year</p>
-                  <p className="text-xs text-cyan-400 mt-1">Save $120</p>
+                  <p 
+                    className="text-5xl font-bold mb-1"
+                    style={{
+                      background: 'linear-gradient(135deg, #22d3ee, #06b6d4, #3b82f6)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      textShadow: '0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(6,182,212,0.3)',
+                      filter: 'drop-shadow(0 0 8px rgba(34,211,238,0.6))'
+                    }}
+                  >
+                    $360
+                  </p>
+                  <p className="text-xs text-[rgba(255,255,255,0.4)] mt-1">per year</p>
+                  <p 
+                    className="text-xs font-semibold mt-1 px-2 py-0.5 rounded-full inline-block"
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+                      color: '#0f0f1a',
+                      boxShadow: '0 0 15px rgba(16,185,129,0.5)',
+                      textShadow: 'none'
+                    }}
+                  >
+                    Save $120
+                  </p>
                   {selectedPlan === 'yearly' && (
                     <p className="text-xs text-cyan-400 mt-2 font-semibold">✓ Selected</p>
                   )}
