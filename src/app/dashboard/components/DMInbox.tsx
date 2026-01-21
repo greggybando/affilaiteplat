@@ -48,6 +48,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showGifPicker, setShowGifPicker] = useState(false)
   const [emojiPickerPosition, setEmojiPickerPosition] = useState({ top: 0, left: 0 })
+  const [gifPickerPosition, setGifPickerPosition] = useState({ top: 0, left: 0 })
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [attachedImageUrls, setAttachedImageUrls] = useState<string[]>([])
   const [gifSearchQuery, setGifSearchQuery] = useState('')
