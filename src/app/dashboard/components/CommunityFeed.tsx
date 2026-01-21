@@ -355,10 +355,12 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
       setComposerContent('')
       if (editableRef.current) {
         editableRef.current.innerHTML = ''
+        editableRef.current.style.height = 'auto'
       }
       setComposerImages([])
       setComposerVideo(null)
-      setComposerExpanded(false)
+      // Keep composer expanded to prevent layout shift - user can manually collapse if needed
+      // setComposerExpanded(false)
     } catch (error: any) {
       console.error('Error creating post:', error)
       alert(error?.message || 'Failed to create post. Please try again.')
