@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     if (error) throw error
 
     // Get like status and counts for current user
-    const postIds = (posts as any)?.map((p: any) => p.id) || []
+    const postIds = filteredPosts?.map((p: any) => p.id) || []
     const { data: userLikes } = await supabaseAdmin
       .from('community_likes')
       .select('post_id')
