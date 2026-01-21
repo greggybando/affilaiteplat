@@ -329,8 +329,14 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
 
       const data = await res.json()
       
-      // Optimistic update
-      setPosts([data.post, ...posts])
+      // If we're on a special tab (Global Sends/Grindhouses/Meetups), trigger refresh event
+      if (selectedCategory === 'Global Sends' || selectedCategory === 'Grindhouses' || selectedCategory === 'Meetups') {
+        window.dispatchEvent(new CustomEvent('refreshForumFeed'))
+      } else {
+        // Optimistic update for regular feed
+        setPosts([data.post, ...posts])
+      }
+      
       setComposerContent('')
       if (editableRef.current) {
         editableRef.current.innerHTML = ''

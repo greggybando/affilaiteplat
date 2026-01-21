@@ -64,6 +64,17 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
     fetchPosts()
   }, [category])
 
+  // Listen for refresh events (when post is created from top composer)
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchPosts()
+    }
+    window.addEventListener('refreshForumFeed', handleRefresh)
+    return () => {
+      window.removeEventListener('refreshForumFeed', handleRefresh)
+    }
+  }, [category])
+
   const fetchPosts = async () => {
     setLoading(true)
     try {
