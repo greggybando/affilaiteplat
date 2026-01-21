@@ -58,9 +58,6 @@ const glowShadow = (shadows: string, intensity: number) => {
 export default function ForumFeedPanel({ category, currentUser, glowIntensity, onPostClick }: ForumFeedPanelProps) {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
-  const [composerExpanded, setComposerExpanded] = useState(false)
-  const [composerContent, setComposerContent] = useState('')
-  const [posting, setPosting] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -85,38 +82,6 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
     }
   }
 
-  const handlePost = async () => {
-    const textContent = composerContent.replace(/<[^>]*>/g, '').trim()
-    if (!textContent) return
-
-    setPosting(true)
-    try {
-      const res = await fetch('/api/community/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: '',
-          content: composerContent,
-          category: category,
-          imageUrls: [],
-          videoUrl: null
-        })
-      })
-
-      if (!res.ok) {
-        throw new Error('Failed to create post')
-      }
-
-      setComposerContent('')
-      setComposerExpanded(false)
-      await fetchPosts()
-    } catch (error) {
-      console.error('Error creating post:', error)
-      alert('Failed to create post. Please try again.')
-    } finally {
-      setPosting(false)
-    }
-  }
 
   const handleLike = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -170,58 +135,6 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
 
   return (
     <div className="flex flex-col h-full overflow-hidden" style={{ backgroundColor: '#0f0f1a' }}>
-      {/* Post Composer */}
-      <div className="p-4 border-b border-[rgba(255,255,255,0.1)]">
-        {!composerExpanded ? (
-          <button
-            onClick={() => setComposerExpanded(true)}
-            className="w-full px-4 py-3 rounded-xl text-left text-[rgba(255,255,255,0.6)] hover:text-white transition-colors"
-            style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)'
-            }}
-          >
-            Write something...
-          </button>
-        ) : (
-          <div className="space-y-3">
-            <div
-              contentEditable
-              onInput={(e) => setComposerContent(e.currentTarget.innerHTML)}
-              className="w-full px-4 py-2 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 text-white resize-none overflow-y-auto min-h-[100px]"
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.2)'
-              }}
-              suppressContentEditableWarning
-            />
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => {
-                  setComposerExpanded(false)
-                  setComposerContent('')
-                }}
-                className="px-4 py-2 text-[rgba(255,255,255,0.6)] hover:text-white transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePost}
-                disabled={posting || !composerContent.trim()}
-                className="px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all"
-                style={{
-                  background: 'linear-gradient(135deg, #fde047, #facc15)',
-                  color: '#0f0f1a',
-                  boxShadow: glowShadow('0 0 20px rgba(253,224,71,0.7), 0 0 40px rgba(253,224,71,0.5), 0 8px 30px rgba(253,224,71,0.4)', glowIntensity)
-                }}
-              >
-                {posting ? 'Posting...' : 'Post'}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Posts Feed */}
       <div className="flex-1 overflow-y-auto p-4">
         {posts.length === 0 ? (
