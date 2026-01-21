@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
 import TripsTab from './TripsTab'
 import GrindhouseTab from './GrindhouseTab'
+import MeetupsTab from './MeetupsTab'
 
 interface User {
   id: string
@@ -128,8 +129,9 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
     'lifedesign Q\'s': 'lifedesign questions',
     'make money Q\'s': 'make money questions',
     'Wins': 'Wins',
-    'Organize Trips': 'Organize Trips',
-    'Organize Grindhouse': 'Organize Grindhouse'
+    'Global Sends': 'Organize Trips',
+    'Grindhouses': 'Organize Grindhouse',
+    'Meetups': 'Meetups'
   }
   
   // Reverse mapping: database value -> display name
@@ -139,11 +141,12 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
     'lifedesign questions': 'lifedesign Q\'s',
     'make money questions': 'make money Q\'s',
     'Wins': 'Wins',
-    'Organize Trips': 'Organize Trips',
-    'Organize Grindhouse': 'Organize Grindhouse'
+    'Organize Trips': 'Global Sends',
+    'Organize Grindhouse': 'Grindhouses',
+    'Meetups': 'Meetups'
   }
   
-  const categories = ['All', 'dreamjob Q\'s', 'lifedesign Q\'s', 'make money Q\'s', 'Wins', 'Organize Trips', 'Organize Grindhouse']
+  const categories = ['All', 'dreamjob Q\'s', 'lifedesign Q\'s', 'make money Q\'s', 'Wins', 'Global Sends', 'Grindhouses', 'Meetups']
   
   // Helper to get database category name from display name
   const getCategoryValue = (displayName: string) => categoryMap[displayName] || displayName
@@ -178,8 +181,8 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   }
 
   useEffect(() => {
-    // Don't fetch posts when Organize Trips or Organize Grindhouse category is selected (shows tabs instead)
-    if (selectedCategory !== 'Organize Trips' && selectedCategory !== 'Organize Grindhouse') {
+    // Don't fetch posts when Global Sends, Grindhouses, or Meetups category is selected (shows tabs instead)
+    if (selectedCategory !== 'Global Sends' && selectedCategory !== 'Grindhouses' && selectedCategory !== 'Meetups') {
       fetchPosts()
     }
   }, [selectedCategory, searchQuery])
@@ -1012,8 +1015,8 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
             </div>
           </div>
 
-          {/* Show TripsTab when Organize Trips category is selected */}
-          {selectedCategory === 'Organize Trips' ? (
+          {/* Show TripsTab when Global Sends category is selected */}
+          {selectedCategory === 'Global Sends' ? (
             <TripsTab 
               affiliate={{
                 id: currentUser.id,
@@ -1023,8 +1026,18 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
               }}
               glowIntensity={glowIntensity}
             />
-          ) : selectedCategory === 'Organize Grindhouse' ? (
+          ) : selectedCategory === 'Grindhouses' ? (
             <GrindhouseTab 
+              affiliate={{
+                id: currentUser.id,
+                name: currentUser.name,
+                avatar_name: currentUser.name,
+                avatar_url: currentUser.avatar
+              }}
+              glowIntensity={glowIntensity}
+            />
+          ) : selectedCategory === 'Meetups' ? (
+            <MeetupsTab 
               affiliate={{
                 id: currentUser.id,
                 name: currentUser.name,
