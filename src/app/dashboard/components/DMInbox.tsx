@@ -46,8 +46,13 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   const [isSearching, setIsSearching] = useState(false)
   const [participantLastActive, setParticipantLastActive] = useState<string | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [showGifPicker, setShowGifPicker] = useState(false)
   const [emojiPickerPosition, setEmojiPickerPosition] = useState({ top: 0, left: 0 })
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
+  const [attachedImageUrls, setAttachedImageUrls] = useState<string[]>([])
+  const [gifSearchQuery, setGifSearchQuery] = useState('')
+  const [gifResults, setGifResults] = useState<any[]>([])
+  const [gifLoading, setGifLoading] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -309,12 +314,59 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     setLoading(false)
   }
 
-  async function sendMessage() {
-    if (!newMessage.trim() || !openUserId || openUserId === 'inbox') return
+  const handleFileUpload = async (files: File[]) => {
+    const uploadedUrls: string[] = []
+    
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`${file.name} is too large. Maximum 10MB per file.`)
+        continue
+      }
 
-    const content = newMessage.trim()
+      const formData = new FormData()
+      formData.append('file', file)
+
+      try {
+        const res = await fetch('/api/community/upload', {
+          method: 'POST',
+          body: formData
+        })
+        const data = await res.json()
+        if (data.url) {
+          uploadedUrls.push(data.url)
+        }
+      } catch (error) {
+        console.error('Error uploading file:', error)
+        alert(`Failed to upload ${file.name}`)
+      }
+    }
+    
+    return uploadedUrls
+  }
+
+  async function sendMessage() {
+    if ((!newMessage.trim() && attachedFiles.length === 0 && attachedImageUrls.length === 0) || !openUserId || openUserId === 'inbox') return
+
+    // Upload files first if any
+    let uploadedUrls: string[] = [...attachedImageUrls]
+    if (attachedFiles.length > 0) {
+      uploadedUrls = await handleFileUpload(attachedFiles)
+      setAttachedFiles([])
+      setAttachedImageUrls([])
+    }
+
+    // Build content with attachments
+    let content = newMessage.trim()
+    if (uploadedUrls.length > 0) {
+      const imageTags = uploadedUrls.map(url => `<img src="${url}" alt="Attachment" style="max-width: 300px; border-radius: 8px; margin: 4px 0;" />`).join('')
+      content = content ? `${content}\n${imageTags}` : imageTags
+    }
+
+    if (!content) return
+
     const tempId = 'temp-' + Date.now()
     setNewMessage('')
+    setAttachedImageUrls([])
 
     // Ensure optimistic timestamp is always newer than existing messages
     // This guarantees the message appears at the bottom after sorting
@@ -398,6 +450,26 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       console.error('Failed to send message:', e)
       // Remove temp message on error
       setMessages(prev => prev.filter(msg => msg.id !== tempId))
+    }
+  }
+
+  const searchGifs = async (query: string) => {
+    setGifLoading(true)
+    try {
+      // Using Giphy API (free tier)
+      const apiKey = 'dc6zaTOxFJmzC' // Giphy public beta key
+      const endpoint = query === 'trending' 
+        ? `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=20`
+        : `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=20`
+      
+      const res = await fetch(endpoint)
+      const data = await res.json()
+      setGifResults(data.data || [])
+    } catch (error) {
+      console.error('Error fetching GIFs:', error)
+      setGifResults([])
+    } finally {
+      setGifLoading(false)
     }
   }
 
@@ -638,12 +710,19 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*,video/*"
+                    accept="image/*"
                     multiple
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const files = e.target.files
-                      if (files) {
-                        setAttachedFiles(Array.from(files))
+                      if (files && files.length > 0) {
+                        const fileArray = Array.from(files)
+                        // Upload files immediately
+                        const urls = await handleFileUpload(fileArray)
+                        setAttachedImageUrls(prev => [...prev, ...urls])
+                        // Reset input
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = ''
+                        }
                       }
                     }}
                     className="hidden"
@@ -657,6 +736,23 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     <Paperclip className="w-4 h-4" />
                   </button>
                 </label>
+
+                {/* Show attached images preview */}
+                {attachedImageUrls.length > 0 && (
+                  <div className="flex gap-2 items-center">
+                    {attachedImageUrls.map((url, idx) => (
+                      <div key={idx} className="relative">
+                        <img src={url} alt="Attachment" className="w-10 h-10 rounded-lg object-cover" />
+                        <button
+                          onClick={() => setAttachedImageUrls(prev => prev.filter((_, i) => i !== idx))}
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Emoji Button */}
                 <button
@@ -683,11 +779,14 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 <button
                   type="button"
                   onClick={() => {
-                    // TODO: Implement GIF picker
-                    alert('GIF picker coming soon!')
+                    setShowGifPicker(!showGifPicker)
+                    if (!showGifPicker) {
+                      // Load trending GIFs
+                      searchGifs('trending')
+                    }
                   }}
                   className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70 text-xs font-medium"
-                  style={{ color: 'rgba(255,255,255,0.6)' }}
+                  style={{ color: showGifPicker ? 'rgba(34,211,238,1)' : 'rgba(255,255,255,0.6)' }}
                   title="GIF"
                 >
                   GIF
@@ -714,10 +813,10 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 {/* Send Button */}
                 <button
                   onClick={sendMessage}
-                  disabled={!newMessage.trim() && attachedFiles.length === 0}
+                  disabled={!newMessage.trim() && attachedImageUrls.length === 0}
                   className="w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-40"
                   style={{
-                    background: (newMessage.trim() || attachedFiles.length > 0) ? '#007AFF' : 'rgba(255,255,255,0.1)',
+                    background: (newMessage.trim() || attachedImageUrls.length > 0) ? '#007AFF' : 'rgba(255,255,255,0.1)',
                     color: '#FFFFFF'
                   }}
                   title="Send"
@@ -725,6 +824,78 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                   <Send className="w-5 h-5" />
                 </button>
               </div>
+
+              {/* GIF Picker */}
+              {showGifPicker && typeof document !== 'undefined' && createPortal(
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-[9998]"
+                    onClick={() => setShowGifPicker(false)}
+                  />
+                  {/* GIF Picker */}
+                  <div
+                    className="fixed bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 z-[9999] shadow-2xl"
+                    style={{
+                      bottom: '80px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '90%',
+                      maxWidth: '400px',
+                      maxHeight: '400px',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Search Input */}
+                    <input
+                      type="text"
+                      value={gifSearchQuery}
+                      onChange={(e) => {
+                        const query = e.target.value
+                        setGifSearchQuery(query)
+                        if (query.trim()) {
+                          searchGifs(query)
+                        } else {
+                          searchGifs('trending')
+                        }
+                      }}
+                      placeholder="Search GIFs..."
+                      className="w-full px-3 py-2 mb-3 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-[#22d3ee]"
+                    />
+                    
+                    {/* GIF Grid */}
+                    <div className="flex-1 overflow-y-auto grid grid-cols-2 gap-2">
+                      {gifLoading ? (
+                        <div className="col-span-2 text-center text-[rgba(255,255,255,0.6)] py-8">Loading GIFs...</div>
+                      ) : gifResults.length === 0 ? (
+                        <div className="col-span-2 text-center text-[rgba(255,255,255,0.6)] py-8">No GIFs found</div>
+                      ) : (
+                        gifResults.map((gif) => (
+                          <button
+                            key={gif.id}
+                            onClick={() => {
+                              const gifUrl = gif.images?.fixed_height?.url || gif.images?.original?.url || gif.url
+                              setAttachedImageUrls(prev => [...prev, gifUrl])
+                              setShowGifPicker(false)
+                              setGifSearchQuery('')
+                            }}
+                            className="relative w-full aspect-square rounded-lg overflow-hidden hover:opacity-80 transition-opacity"
+                          >
+                            <img
+                              src={gif.images?.fixed_height_small?.url || gif.images?.fixed_height?.url || gif.url}
+                              alt={gif.title || 'GIF'}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>,
+                document.body
+              )}
 
               {/* Emoji Picker */}
               {showEmojiPicker && typeof document !== 'undefined' && createPortal(
