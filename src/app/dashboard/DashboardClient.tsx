@@ -225,19 +225,32 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   
   const router = useRouter()
   const searchParams = useSearchParams()
-  const openDMUserId = searchParams.get('openDM')
   const tabParam = searchParams.get('tab') as 'community' | 'classroom' | 'groupchat' | null
   const [activeTab, setActiveTab] = useState<'community' | 'classroom' | 'groupchat'>(tabParam || 'community')
+  const [openDMUserId, setOpenDMUserId] = useState<string | null>(null)
   
-  // Clear openDM query param after it's been used
+  // Handle openDM query param on initial load only (for external links)
   useEffect(() => {
-    if (openDMUserId) {
-      // Remove the query param from URL without reloading
-      const url = new URL(window.location.href)
-      url.searchParams.delete('openDM')
-      router.replace(url.pathname + url.search, { scroll: false })
+    const urlParam = searchParams.get('openDM')
+    if (urlParam) {
+      setOpenDMUserId(urlParam)
+      // Clear the query param from URL immediately without navigation
+      if (window.history.replaceState) {
+        const url = new URL(window.location.href)
+        url.searchParams.delete('openDM')
+        window.history.replaceState({}, '', url.pathname + url.search)
+      }
     }
-  }, [openDMUserId, router])
+  }, []) // Only run once on mount
+  
+  // Listen for custom openDM event (when already on dashboard)
+  useEffect(() => {
+    const handleOpenDM = (event: CustomEvent<{ userId: string }>) => {
+      setOpenDMUserId(event.detail.userId)
+    }
+    window.addEventListener('openDM', handleOpenDM as EventListener)
+    return () => window.removeEventListener('openDM', handleOpenDM as EventListener)
+  }, [])
   
   // Update activeTab when tab query param changes
   useEffect(() => {

@@ -325,8 +325,15 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
                         if (onChatClick) {
                           onChatClick()
                         } else if (profileData?.id) {
-                          // Always navigate to dashboard with openDM query param
-                          router.push(`/dashboard?openDM=${profileData.id}`)
+                          // Check if we're already on dashboard
+                          const currentPath = window.location.pathname
+                          if (currentPath === '/dashboard') {
+                            // Dispatch custom event to open DM inbox without URL change
+                            window.dispatchEvent(new CustomEvent('openDM', { detail: { userId: profileData.id } }))
+                          } else {
+                            // Navigate to dashboard with openDM query param
+                            router.replace(`/dashboard?openDM=${profileData.id}`)
+                          }
                         }
                       }}
                       className="flex-1 px-5 py-3 rounded-lg text-white font-semibold text-sm transition-all transform hover:scale-[1.02] relative overflow-hidden group"

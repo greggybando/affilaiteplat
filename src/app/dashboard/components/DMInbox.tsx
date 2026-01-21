@@ -30,7 +30,7 @@ interface UserSearchResult {
   avatar_url: string | null
 }
 
-export function DMInbox({ currentUserId, forceOpen, initialUserId }: { currentUserId: string; forceOpen?: boolean; initialUserId?: string }) {
+export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplete }: { currentUserId: string; forceOpen?: boolean; initialUserId?: string; onOpenComplete?: () => void }) {
   const [isOpen, setIsOpen] = useState(false)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
