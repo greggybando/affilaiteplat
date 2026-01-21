@@ -175,7 +175,10 @@ export default function OrganizeGlobalSendModal({ isOpen, onClose, onSuccess, gl
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-[#22d3ee]"
+                style={{
+                  colorScheme: 'dark'
+                }}
                 required
               />
             </div>
@@ -188,7 +191,10 @@ export default function OrganizeGlobalSendModal({ isOpen, onClose, onSuccess, gl
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-[#22d3ee]"
+                style={{
+                  colorScheme: 'dark'
+                }}
                 required
               />
             </div>
@@ -200,11 +206,10 @@ export default function OrganizeGlobalSendModal({ isOpen, onClose, onSuccess, gl
                 Preferred # of People *
               </label>
               <input
-                type="number"
-                min="1"
+                type="text"
                 value={formData.preferredPeople}
                 onChange={(e) => setFormData({ ...formData, preferredPeople: e.target.value })}
-                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-yellow-500"
+                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-[#22d3ee]"
                 placeholder="Number of people"
                 required
               />

@@ -39,7 +39,7 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
     duration: '3 months',
     startDate: '',
     preferredPeople: '',
-    vibeFocus: 'Mixed',
+    vibeFocus: '',
     description: ''
   })
   const [loading, setLoading] = useState(false)
@@ -128,7 +128,7 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
         duration: '3 months',
         startDate: '',
         preferredPeople: '',
-        vibeFocus: 'Mixed',
+        vibeFocus: '',
         description: ''
       })
       onSuccess()
@@ -216,7 +216,10 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-purple-500"
+                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-[#22d3ee]"
+                style={{
+                  colorScheme: 'dark'
+                }}
                 required
               />
             </div>
@@ -228,11 +231,10 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
                 Preferred # of People *
               </label>
               <input
-                type="number"
-                min="1"
+                type="text"
                 value={formData.preferredPeople}
                 onChange={(e) => setFormData({ ...formData, preferredPeople: e.target.value })}
-                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-purple-500"
+                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-[#22d3ee]"
                 placeholder="Number of people"
                 required
               />
@@ -242,17 +244,14 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
               <label className="block text-sm font-medium text-[rgba(255,255,255,0.8)] mb-2">
                 Vibe/Focus *
               </label>
-              <select
+              <input
+                type="text"
                 value={formData.vibeFocus}
                 onChange={(e) => setFormData({ ...formData, vibeFocus: e.target.value })}
-                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-purple-500"
+                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-[#22d3ee]"
+                placeholder="e.g., Deep Work, Networking, Accountability"
                 required
-              >
-                <option value="Deep Work">Deep Work</option>
-                <option value="Networking">Networking</option>
-                <option value="Accountability">Accountability</option>
-                <option value="Mixed">Mixed</option>
-              </select>
+              />
             </div>
           </div>
 

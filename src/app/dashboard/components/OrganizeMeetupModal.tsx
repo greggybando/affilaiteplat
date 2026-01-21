@@ -22,11 +22,11 @@ interface MeetupFormData {
 
 function formatMeetupPost(data: MeetupFormData): string {
   const maxAttendees = data.maxAttendees ? `${data.maxAttendees} spots` : 'Open'
-  const dateTime = new Date(data.dateTime)
+  const date = new Date(data.dateTime)
   return `🤝 ${data.title}
 
 📍 ${data.location}
-📅 ${format(dateTime, 'MMM d, yyyy')} at ${format(dateTime, 'h:mm a')}
+📅 ${format(date, 'MMM d, yyyy')}
 👥 ${maxAttendees}
 🎯 ${data.type}
 
@@ -39,7 +39,7 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
     location: '',
     dateTime: '',
     maxAttendees: '',
-    type: 'Casual Hangout',
+    type: '',
     description: ''
   })
   const [loading, setLoading] = useState(false)
@@ -114,7 +114,7 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
         location: '',
         dateTime: '',
         maxAttendees: '',
-        type: 'Casual Hangout',
+        type: '',
         description: ''
       })
       onSuccess()
@@ -179,13 +179,16 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
 
           <div>
             <label className="block text-sm font-medium text-[rgba(255,255,255,0.8)] mb-2">
-              Date & Time *
+              Date *
             </label>
             <input
-              type="datetime-local"
+              type="date"
               value={formData.dateTime}
               onChange={(e) => setFormData({ ...formData, dateTime: e.target.value })}
-              className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-[#22d3ee]"
+              style={{
+                colorScheme: 'dark'
+              }}
               required
             />
           </div>
@@ -196,11 +199,10 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
                 Max Attendees (optional)
               </label>
               <input
-                type="number"
-                min="1"
+                type="text"
                 value={formData.maxAttendees}
                 onChange={(e) => setFormData({ ...formData, maxAttendees: e.target.value })}
-                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-[#22d3ee]"
                 placeholder="Number of spots"
               />
             </div>
@@ -209,17 +211,14 @@ export default function OrganizeMeetupModal({ isOpen, onClose, onSuccess, glowIn
               <label className="block text-sm font-medium text-[rgba(255,255,255,0.8)] mb-2">
                 Type *
               </label>
-              <select
+              <input
+                type="text"
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-[#22d3ee]"
+                placeholder="e.g., Casual Hangout, Networking, Workshop"
                 required
-              >
-                <option value="Casual Hangout">Casual Hangout</option>
-                <option value="Networking">Networking</option>
-                <option value="Workshop">Workshop</option>
-                <option value="Activity">Activity</option>
-              </select>
+              />
             </div>
           </div>
 
