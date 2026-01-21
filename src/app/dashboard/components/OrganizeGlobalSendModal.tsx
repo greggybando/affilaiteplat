@@ -133,11 +133,16 @@ export default function OrganizeGlobalSendModal({ isOpen, onClose, onSuccess, gl
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
-      <div className="relative w-full max-w-2xl rounded-2xl p-6" style={{ 
-        backgroundColor: '#1a1a2e',
-        border: '1px solid rgba(255,255,255,0.1)'
-      }}>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div 
+        className="relative w-full max-w-2xl rounded-2xl p-6 overflow-hidden" 
+        style={{ 
+          backgroundColor: '#0f0f1a',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: glowShadow('0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.3), 0 20px 40px rgba(14,165,233,0.25)', glowIntensity)
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Plane className="w-6 h-6" />
@@ -160,7 +165,7 @@ export default function OrganizeGlobalSendModal({ isOpen, onClose, onSuccess, gl
               type="text"
               value={formData.destination}
               onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-              className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-yellow-500"
+              className="w-full px-4 py-2.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.15)] rounded-xl text-white placeholder-[rgba(255,255,255,0.4)] focus:outline-none focus:border-[#22d3ee] focus:ring-2 focus:ring-[#22d3ee]/20 transition-all backdrop-blur-sm"
               placeholder="Destination"
               required
             />
@@ -209,7 +214,7 @@ export default function OrganizeGlobalSendModal({ isOpen, onClose, onSuccess, gl
                 type="text"
                 value={formData.preferredPeople}
                 onChange={(e) => setFormData({ ...formData, preferredPeople: e.target.value })}
-                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-[#22d3ee]"
+                className="w-full px-4 py-2.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.15)] rounded-xl text-white placeholder-[rgba(255,255,255,0.4)] focus:outline-none focus:border-[#22d3ee] focus:ring-2 focus:ring-[#22d3ee]/20 transition-all backdrop-blur-sm"
                 placeholder="Number of people"
                 required
               />
@@ -251,7 +256,7 @@ export default function OrganizeGlobalSendModal({ isOpen, onClose, onSuccess, gl
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-yellow-500 resize-none"
+              className="w-full px-4 py-2.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.15)] rounded-xl text-white placeholder-[rgba(255,255,255,0.4)] focus:outline-none focus:border-[#22d3ee] focus:ring-2 focus:ring-[#22d3ee]/20 transition-all backdrop-blur-sm resize-none"
               rows={4}
               placeholder="Tell us about your trip..."
             />
@@ -261,16 +266,17 @@ export default function OrganizeGlobalSendModal({ isOpen, onClose, onSuccess, gl
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] text-white rounded-lg font-medium transition-all"
+              className="flex-1 px-4 py-2.5 bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] text-white rounded-xl font-medium transition-all backdrop-blur-sm border border-[rgba(255,255,255,0.1)]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !formData.destination || !formData.startDate || !formData.endDate || !formData.preferredPeople || !formData.budgetRange}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-[#0f0f1a] rounded-lg font-semibold hover:from-yellow-500 hover:to-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex-1 px-4 py-2.5 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               style={{
-                boxShadow: glowShadow('0 0 20px rgba(253,224,71,0.5), 0 4px 12px rgba(253,224,71,0.3)', glowIntensity)
+                background: 'linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #22d3ee 100%)',
+                boxShadow: glowShadow('0 0 20px rgba(34,211,238,0.5), 0 4px 12px rgba(34,211,238,0.3), 0 0 30px rgba(14,165,233,0.25)', glowIntensity)
               }}
             >
               {loading ? 'Creating...' : 'Create & Post'}

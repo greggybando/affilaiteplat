@@ -64,6 +64,13 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
     e.preventDefault()
     if (!formData.name || !formData.location || !formData.startDate || !formData.preferredPeople) return
 
+    // Validate preferredPeople is a valid number
+    const preferredPeopleNum = parseInt(formData.preferredPeople)
+    if (isNaN(preferredPeopleNum) || preferredPeopleNum < 1) {
+      alert('Please enter a valid number of people (at least 1)')
+      return
+    }
+
     setLoading(true)
     try {
       // Format the post content
@@ -83,7 +90,8 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
       })
 
       if (!postRes.ok) {
-        throw new Error('Failed to create forum post')
+        const errorData = await postRes.json().catch(() => ({}))
+        throw new Error(errorData.error || errorData.message || 'Failed to create forum post')
       }
 
       const postData = await postRes.json()
@@ -110,7 +118,7 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
           start_date: formData.startDate,
           end_date: format(endDate, 'yyyy-MM-dd'),
           duration: formData.duration,
-          preferred_people: parseInt(formData.preferredPeople),
+          preferred_people: preferredPeopleNum,
           vibe_focus: formData.vibeFocus,
           description: formData.description || null,
           forum_post_id: forumPostId
@@ -118,7 +126,8 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
       })
 
       if (!grindhouseRes.ok) {
-        throw new Error('Failed to create grindhouse')
+        const errorData = await grindhouseRes.json().catch(() => ({}))
+        throw new Error(errorData.error || errorData.message || 'Failed to create grindhouse')
       }
 
       // Reset form and close
@@ -144,11 +153,16 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
-      <div className="relative w-full max-w-2xl rounded-2xl p-6" style={{ 
-        backgroundColor: '#1a1a2e',
-        border: '1px solid rgba(255,255,255,0.1)'
-      }}>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div 
+        className="relative w-full max-w-2xl rounded-2xl p-6 overflow-hidden" 
+        style={{ 
+          backgroundColor: '#0f0f1a',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: glowShadow('0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.3), 0 20px 40px rgba(14,165,233,0.25)', glowIntensity)
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Home className="w-6 h-6" />
@@ -199,7 +213,7 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
               <select
                 value={formData.duration}
                 onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white focus:outline-none focus:border-purple-500"
+                className="w-full px-4 py-2.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.15)] rounded-xl text-white focus:outline-none focus:border-[#22d3ee] focus:ring-2 focus:ring-[#22d3ee]/20 transition-all backdrop-blur-sm"
                 required
               >
                 <option value="3 months">3 months</option>
@@ -262,7 +276,7 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:border-purple-500 resize-none"
+              className="w-full px-4 py-2.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.15)] rounded-xl text-white placeholder-[rgba(255,255,255,0.4)] focus:outline-none focus:border-[#22d3ee] focus:ring-2 focus:ring-[#22d3ee]/20 transition-all backdrop-blur-sm resize-none"
               rows={4}
               placeholder="Tell us about your grindhouse..."
             />
@@ -272,16 +286,17 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] text-white rounded-lg font-medium transition-all"
+              className="flex-1 px-4 py-2.5 bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] text-white rounded-xl font-medium transition-all backdrop-blur-sm border border-[rgba(255,255,255,0.1)]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !formData.name || !formData.location || !formData.startDate || !formData.preferredPeople}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex-1 px-4 py-2.5 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               style={{
-                boxShadow: glowShadow('0 0 20px rgba(168,85,247,0.5), 0 4px 12px rgba(168,85,247,0.3)', glowIntensity)
+                background: 'linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #22d3ee 100%)',
+                boxShadow: glowShadow('0 0 20px rgba(34,211,238,0.5), 0 4px 12px rgba(34,211,238,0.3), 0 0 30px rgba(14,165,233,0.25)', glowIntensity)
               }}
             >
               {loading ? 'Creating...' : 'Create & Post'}
