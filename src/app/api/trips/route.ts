@@ -93,17 +93,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create trip' }, { status: 500 })
     }
 
+    const tripData = trip as any
+
     return NextResponse.json({
       trip: {
-        id: trip.id,
-        destination: trip.destination,
-        startDate: trip.start_date,
-        endDate: trip.end_date,
-        description: trip.description || null,
-        budget: trip.budget || null,
-        participants: trip.participants || [],
-        itinerary: trip.itinerary || [],
-        created_at: trip.created_at
+        id: tripData.id,
+        destination: tripData.destination,
+        startDate: tripData.start_date,
+        endDate: tripData.end_date,
+        description: tripData.description || null,
+        budget: tripData.budget || null,
+        participants: tripData.participants || [],
+        itinerary: tripData.itinerary || [],
+        created_at: tripData.created_at
       }
     })
   } catch (error: any) {
