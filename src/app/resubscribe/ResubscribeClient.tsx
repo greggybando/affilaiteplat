@@ -322,13 +322,14 @@ export function ResubscribeClient({
             </div>
           </div>
 
-        {/* Help */}
-        <p className="text-center text-[rgba(255,255,255,0.6)] text-sm mt-6">
-          Questions?{' '}
-          <a href="mailto:support@yourdomain.com" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
-            Contact support
-          </a>
-        </p>
+          {/* Help */}
+          <p className="text-center text-[rgba(255,255,255,0.6)] text-sm mt-6 pb-6">
+            Questions?{' '}
+            <a href="mailto:support@yourdomain.com" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
+              Contact support
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   )
