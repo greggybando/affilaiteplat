@@ -263,6 +263,46 @@ export function ResubscribeClient({
               </p>
             </div>
 
+            {/* What You Get */}
+            <div className="mt-6 mb-6">
+              <h3 className="text-lg font-semibold text-white mb-4 text-center">What you get:</h3>
+              <div className="space-y-4 max-w-2xl mx-auto">
+                <p className="text-sm text-white leading-relaxed">
+                  World-class, hand-crafted courses specifically designed to fix your life (by helping you avoid the most common traps in today's modern world)
+                </p>
+                <p className="text-sm text-white leading-relaxed">
+                  Access to done-for-you digital products (plus exactly how to market them) that can get your online income stream up & running ASAP (allowing you to travel the world and make money on your own terms while learning money-making skills that allow you to perpetually say "F U")
+                </p>
+                <p className="text-sm text-white leading-relaxed">
+                  A 'life design' roadmap that shows you exactly how to actually get to your dreams, step-by-step
+                </p>
+                <p className="text-sm text-white leading-relaxed">
+                  A cult of life-minded people dedicated to living amazing lives & doing fun sh*t 24/7
+                </p>
+                <p className="text-sm text-white leading-relaxed text-center mt-4">
+                  jump in :)
+                </p>
+                <p className="text-sm text-white leading-relaxed mt-6">
+                  Every year you don't know how to make an extra $10,000 = $10,000
+                </p>
+                <p className="text-sm text-white leading-relaxed">
+                  Now - this $10,000 could be either by getting a remote job that pays you more (exactly what we show you how to do inside....)
+                </p>
+                <p className="text-sm text-white leading-relaxed">
+                  or by learning highly-leveraged digital money-making skills like shortform ai content + digital product creation.
+                </p>
+                <p className="text-sm text-white leading-relaxed">
+                  I have the products for you to sell.... I have the software so you can make the content... I show you how to market it... (after going viral whenever I want)
+                </p>
+                <p className="text-sm text-white leading-relaxed mt-4">
+                  it's impossible to fail if you apply yourself.
+                </p>
+                <p className="text-sm text-white leading-relaxed font-semibold text-center mt-4">
+                  it's time.
+                </p>
+              </div>
+            </div>
+
             {/* CTA */}
             <button
               onClick={handleSubscribe}
