@@ -145,7 +145,8 @@ export function ResubscribeClient({
 
           {/* Subscription Options */}
           <div className="relative z-10 p-8">
-            <h2 className="text-xl font-semibold text-white mb-6">Choose Your Plan. No Commitments. No Hidden Fees. Cancel Anytime.</h2>
+            <h2 className="text-xl font-semibold text-white mb-2 text-center">Choose Your Plan</h2>
+            <p className="text-sm text-[rgba(255,255,255,0.6)] mb-6 text-center">No Commitments. No Hidden Fees. Cancel Anytime.</p>
             
             <div className="grid grid-cols-2 gap-4 mb-6">
               <button
@@ -258,7 +259,7 @@ export function ResubscribeClient({
             {/* Motivational Text */}
             <div className="mt-6 mb-6">
               <p className="text-sm text-white leading-relaxed text-center max-w-xl mx-auto">
-                The craziest part is there's literally NOTHING better for you to spend $40 on that exists. You are built for too much more to ever settle, and I want you to live the life that makes you smile every f***ing day. Subscribe below and i'll see you inside. Hope you're ready to LEVEL TF UP.
+                P.S: The craziest part is there's literally NOTHING better for you to spend $40 on that exists. You are built for too much more to ever settle, and I want you to live the life that makes you smile every f***ing day. Subscribe below and i'll see you inside. Hope you're ready to LEVEL TF UP.
               </p>
             </div>
 
