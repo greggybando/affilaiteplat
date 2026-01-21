@@ -27,17 +27,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate avatar name
-    if (trimmedName.length < 3 || trimmedName.length > 20) {
+    if (trimmedName.length < 3 || trimmedName.length > 22) {
       return NextResponse.json(
-        { error: 'Avatar name must be between 3 and 20 characters' },
+        { error: 'Avatar name must be between 3 and 22 characters' },
         { status: 400 }
       )
     }
 
-    // Check if name contains only alphanumeric and underscores
-    if (!/^[a-zA-Z0-9_]+$/.test(trimmedName)) {
+    // Check if name contains only alphanumeric, spaces, and underscores
+    if (!/^[a-zA-Z0-9_\s]+$/.test(trimmedName)) {
       return NextResponse.json(
-        { error: 'Avatar name can only contain letters, numbers, and underscores' },
+        { error: 'Avatar name can only contain letters, numbers, spaces, and underscores' },
         { status: 400 }
       )
     }

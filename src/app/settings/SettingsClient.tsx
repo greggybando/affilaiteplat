@@ -136,14 +136,14 @@ export function SettingsClient({ affiliate }: SettingsClientProps) {
       trimmedName = trimmedName.charAt(0).toUpperCase() + trimmedName.slice(1)
     }
     
-    if (trimmedName.length < 3 || trimmedName.length > 20) {
-      setError('Avatar name must be between 3 and 20 characters')
+    if (trimmedName.length < 3 || trimmedName.length > 22) {
+      setError('Avatar name must be between 3 and 22 characters')
       setLoading(false)
       return
     }
 
-    if (!/^[a-zA-Z0-9_]+$/.test(trimmedName)) {
-      setError('Avatar name can only contain letters, numbers, and underscores')
+    if (!/^[a-zA-Z0-9_\s]+$/.test(trimmedName)) {
+      setError('Avatar name can only contain letters, numbers, spaces, and underscores')
       setLoading(false)
       return
     }
@@ -265,12 +265,12 @@ export function SettingsClient({ affiliate }: SettingsClientProps) {
                     setError('')
                   }}
                   className="w-full px-4 py-3 bg-[rgba(255,255,255,0.05)] border border-[rgba(6,182,212,0.3)] rounded-lg text-white placeholder-[rgba(255,255,255,0.4)] focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                  placeholder="Choose a unique name (3-20 characters)"
-                  maxLength={20}
+                  placeholder="Choose a unique name (3-22 characters)"
+                  maxLength={22}
                   required
                 />
                 <p className="text-xs text-[rgba(255,255,255,0.5)] mt-1">
-                  Letters, numbers, and underscores only.
+                  Letters, numbers, spaces, and underscores only.
                 </p>
               </div>
 

@@ -68,14 +68,19 @@ export function OnboardingClient({ currentAvatarName, currentAvatarUrl }: Onboar
   async function handleStep2Submit() {
     setError('')
     
-    const trimmedName = avatarName.trim()
-    if (trimmedName.length < 3 || trimmedName.length > 20) {
-      setError('Avatar name must be between 3 and 20 characters')
+    let trimmedName = avatarName.trim()
+    // Auto-capitalize first letter
+    if (trimmedName.length > 0) {
+      trimmedName = trimmedName.charAt(0).toUpperCase() + trimmedName.slice(1)
+    }
+    
+    if (trimmedName.length < 3 || trimmedName.length > 22) {
+      setError('Avatar name must be between 3 and 22 characters')
       return
     }
 
-    if (!/^[a-zA-Z0-9_]+$/.test(trimmedName)) {
-      setError('Avatar name can only contain letters, numbers, and underscores')
+    if (!/^[a-zA-Z0-9_\s]+$/.test(trimmedName)) {
+      setError('Avatar name can only contain letters, numbers, spaces, and underscores')
       return
     }
 
@@ -221,15 +226,20 @@ export function OnboardingClient({ currentAvatarName, currentAvatarUrl }: Onboar
                     type="text"
                     value={avatarName}
                     onChange={(e) => {
-                      setAvatarName(e.target.value)
+                      let value = e.target.value
+                      // Auto-capitalize first letter
+                      if (value.length > 0) {
+                        value = value.charAt(0).toUpperCase() + value.slice(1)
+                      }
+                      setAvatarName(value)
                       setError('')
                     }}
                     className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder="Choose a unique name (3-20 characters)"
-                    maxLength={20}
+                    placeholder="Choose a unique name (3-22 characters)"
+                    maxLength={22}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Letters, numbers, and underscores only. This will be your display name.
+                    Letters, numbers, spaces, and underscores only. This will be your display name.
                   </p>
                 </div>
 
