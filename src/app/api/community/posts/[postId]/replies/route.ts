@@ -20,7 +20,8 @@ export async function GET(
           id,
           avatar_name,
           avatar_url,
-          name
+          name,
+          role
         )
       `)
       .eq('post_id', params.postId)
@@ -38,7 +39,8 @@ export async function GET(
           id,
           avatar_name,
           avatar_url,
-          name
+          name,
+          role
         )
       `)
       .in('parent_reply_id', topLevelIds)
@@ -84,7 +86,8 @@ export async function GET(
         user: {
           id: reply.user.id,
           name: reply.user.avatar_name || reply.user.name,
-          avatar: reply.user.avatar_url
+          avatar: reply.user.avatar_url,
+          role: reply.user.role
         },
         likesCount: likesByReply[reply.id] || 0,
         isLiked: likedReplyIds.has(reply.id)
@@ -147,7 +150,8 @@ export async function POST(
           id,
           avatar_name,
           avatar_url,
-          name
+          name,
+          role
         )
       `)
       .single()

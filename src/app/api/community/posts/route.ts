@@ -207,7 +207,8 @@ export async function POST(request: NextRequest) {
           id,
           avatar_name,
           avatar_url,
-          name
+          name,
+          role
         )
       `)
       .single()

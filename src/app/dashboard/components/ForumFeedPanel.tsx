@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Heart, MessageCircle, Image as ImageIcon, Send } from 'lucide-react'
+import { Heart, MessageCircle, Image as ImageIcon, Send, Zap } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -245,7 +245,18 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                           </div>
                         )}
                         <div>
-                          <div className="font-semibold text-white">{post.user.name}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-white">{post.user.name}</span>
+                            {(post.user.role === 'admin' || post.user.role === 'moderator') && (
+                              <Zap 
+                                className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0 animate-pulse" 
+                                fill="currentColor"
+                                style={{
+                                  filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.8)) drop-shadow(0 0 6px rgba(250,204,21,0.6))'
+                                }}
+                              />
+                            )}
+                          </div>
                           <div className="text-sm text-[rgba(255,255,255,0.6)]">{formatTime(post.createdAt)}</div>
                         </div>
                       </Link>

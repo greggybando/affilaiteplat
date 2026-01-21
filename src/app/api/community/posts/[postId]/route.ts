@@ -32,7 +32,8 @@ export async function GET(
           id,
           avatar_name,
           avatar_url,
-          name
+          name,
+          role
         )
       `)
       .eq('id', params.postId)
@@ -70,7 +71,8 @@ export async function GET(
       user: {
         id: post.user.id,
         name: post.user.avatar_name || post.user.name,
-        avatar: post.user.avatar_url
+        avatar: post.user.avatar_url,
+        role: post.user.role
       },
       likesCount: likesCount || 0,
       isLiked: !!like

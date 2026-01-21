@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Heart, Star, MessageCircle, Image as ImageIcon, X, Send, MoreVertical, Copy, CheckCircle2, ChevronDown, Edit, Trash2, Pin, Lock, Flag, AlertTriangle } from 'lucide-react'
+import { Heart, Star, MessageCircle, Image as ImageIcon, X, Send, MoreVertical, Copy, CheckCircle2, ChevronDown, Edit, Trash2, Pin, Lock, Flag, AlertTriangle, Zap } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -47,7 +47,7 @@ interface Reply {
   content: string
   imageUrl: string | null
   createdAt: string
-  user: User
+  user: User & { role?: string }
   likesCount: number
   isLiked: boolean
   replies: Reply[]
@@ -1187,7 +1187,18 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           )}
                           <div className="flex items-center gap-2">
                             <div>
-                              <div className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{post.user.name}</div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{post.user.name}</span>
+                                {(post.user.role === 'admin' || post.user.role === 'moderator') && (
+                                  <Zap 
+                                    className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0 animate-pulse" 
+                                    fill="currentColor"
+                                    style={{
+                                      filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.8)) drop-shadow(0 0 6px rgba(250,204,21,0.6))'
+                                    }}
+                                  />
+                                )}
+                              </div>
                               <div className="text-sm text-[rgba(255,255,255,0.6)]">{formatTime(post.createdAt)}</div>
                             </div>
                             {post.user.id !== currentUser.id && (
@@ -1530,7 +1541,18 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                       </div>
                     )}
                     <div className="flex-1">
-                      <div className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{selectedPost.user.name}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{selectedPost.user.name}</span>
+                        {(selectedPost.user.role === 'admin' || selectedPost.user.role === 'moderator') && (
+                          <Zap 
+                            className="w-4 h-4 text-yellow-400 flex-shrink-0 animate-pulse" 
+                            fill="currentColor"
+                            style={{
+                              filter: 'drop-shadow(0 0 4px rgba(250,204,21,0.8)) drop-shadow(0 0 8px rgba(250,204,21,0.6))'
+                            }}
+                          />
+                        )}
+                      </div>
                       <div className="text-sm text-[rgba(255,255,255,0.6)]">{formatTime(selectedPost.createdAt)}</div>
                     </div>
                   </Link>
@@ -1664,8 +1686,17 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                   window.location.href = `/dashboard?openDM=${reply.user.id}`
                                 }}
                               >
-                                <Link href={`/profile/${reply.user.id}`}>
+                                <Link href={`/profile/${reply.user.id}`} className="flex items-center gap-1.5">
                                   <span className="font-semibold text-white hover:text-cyan-400 transition-colors cursor-pointer">{reply.user.name}</span>
+                                  {(reply.user.role === 'admin' || reply.user.role === 'moderator') && (
+                                    <Zap 
+                                      className="w-3 h-3 text-yellow-400 flex-shrink-0 animate-pulse" 
+                                      fill="currentColor"
+                                      style={{
+                                        filter: 'drop-shadow(0 0 2px rgba(250,204,21,0.8)) drop-shadow(0 0 4px rgba(250,204,21,0.6))'
+                                      }}
+                                    />
+                                  )}
                                 </Link>
                               </ProfileHoverCard>
                               <span className="text-sm text-[rgba(255,255,255,0.6)]">{formatTime(reply.createdAt)}</span>
