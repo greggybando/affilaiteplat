@@ -1196,8 +1196,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                       WebkitBackgroundClip: 'text',
                                       WebkitTextFillColor: 'transparent',
                                       backgroundClip: 'text',
-                                      textShadow: '0 0 8px rgba(250,204,21,0.5)',
-                                      filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.6))'
+                                      filter: 'drop-shadow(0 0 1px rgba(250,204,21,0.4))'
                                     }}
                                   >
                                     {post.user.name}
@@ -1566,8 +1565,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                               WebkitBackgroundClip: 'text',
                               WebkitTextFillColor: 'transparent',
                               backgroundClip: 'text',
-                              textShadow: '0 0 8px rgba(250,204,21,0.5)',
-                              filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.6))'
+                              filter: 'drop-shadow(0 0 1px rgba(250,204,21,0.4))'
                             }}
                           >
                             {selectedPost.user.name}
@@ -1727,8 +1725,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                         WebkitBackgroundClip: 'text',
                                         WebkitTextFillColor: 'transparent',
                                         backgroundClip: 'text',
-                                        textShadow: '0 0 6px rgba(250,204,21,0.5)',
-                                        filter: 'drop-shadow(0 0 2px rgba(250,204,21,0.6))'
+                                        filter: 'drop-shadow(0 0 1px rgba(250,204,21,0.4))'
                                       }}
                                     >
                                       {reply.user.name}
@@ -1838,8 +1835,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                               WebkitBackgroundClip: 'text',
                                               WebkitTextFillColor: 'transparent',
                                               backgroundClip: 'text',
-                                              textShadow: '0 0 6px rgba(250,204,21,0.5)',
-                                              filter: 'drop-shadow(0 0 2px rgba(250,204,21,0.6))'
+                                              filter: 'drop-shadow(0 0 1px rgba(250,204,21,0.4))'
                                             }}
                                           >
                                             {nestedReply.user.name}

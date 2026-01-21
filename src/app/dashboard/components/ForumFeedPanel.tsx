@@ -254,8 +254,7 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                                   WebkitBackgroundClip: 'text',
                                   WebkitTextFillColor: 'transparent',
                                   backgroundClip: 'text',
-                                  textShadow: '0 0 8px rgba(250,204,21,0.5)',
-                                  filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.6))'
+                                  filter: 'drop-shadow(0 0 1px rgba(250,204,21,0.4))'
                                 }}
                               >
                                 {post.user.name}
