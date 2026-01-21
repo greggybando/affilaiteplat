@@ -264,40 +264,112 @@ export function ResubscribeClient({
             </div>
 
             {/* What You Get */}
-            <div className="mt-6 mb-6">
-              <h3 className="text-lg font-semibold text-white mb-4 text-center">What you get:</h3>
-              <div className="space-y-4 max-w-2xl mx-auto">
-                <p className="text-sm text-white leading-relaxed">
-                  World-class, hand-crafted courses specifically designed to fix your life (by helping you avoid the most common traps in today's modern world)
-                </p>
-                <p className="text-sm text-white leading-relaxed">
-                  Access to done-for-you digital products (plus exactly how to market them) that can get your online income stream up & running ASAP (allowing you to travel the world and make money on your own terms while learning money-making skills that allow you to perpetually say "F U")
-                </p>
-                <p className="text-sm text-white leading-relaxed">
-                  A 'life design' roadmap that shows you exactly how to actually get to your dreams, step-by-step
-                </p>
-                <p className="text-sm text-white leading-relaxed">
-                  A cult of life-minded people dedicated to living amazing lives & doing fun sh*t 24/7
-                </p>
-                <p className="text-sm text-white leading-relaxed text-center mt-4">
-                  jump in :)
-                </p>
-                <p className="text-sm text-white leading-relaxed mt-6">
+            <div className="mt-8 mb-6">
+              <h3 className="text-2xl font-semibold text-white mb-6 text-center">What you get:</h3>
+              
+              {/* Benefits Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 max-w-4xl mx-auto">
+                <div 
+                  className="p-5 rounded-lg"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(6,182,212,0.2)',
+                    boxShadow: '0 0 15px rgba(6,182,212,0.1)'
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-cyan-400 text-xl font-bold mt-0.5">✓</div>
+                    <p className="text-sm text-white leading-relaxed flex-1">
+                      World-class, hand-crafted courses specifically designed to fix your life (by helping you avoid the most common traps in today's modern world)
+                    </p>
+                  </div>
+                </div>
+
+                <div 
+                  className="p-5 rounded-lg"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(6,182,212,0.2)',
+                    boxShadow: '0 0 15px rgba(6,182,212,0.1)'
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-cyan-400 text-xl font-bold mt-0.5">✓</div>
+                    <p className="text-sm text-white leading-relaxed flex-1">
+                      Access to done-for-you digital products (plus exactly how to market them) that can get your online income stream up & running ASAP (allowing you to travel the world and make money on your own terms while learning money-making skills that allow you to perpetually say "F U")
+                    </p>
+                  </div>
+                </div>
+
+                <div 
+                  className="p-5 rounded-lg"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(6,182,212,0.2)',
+                    boxShadow: '0 0 15px rgba(6,182,212,0.1)'
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-cyan-400 text-xl font-bold mt-0.5">✓</div>
+                    <p className="text-sm text-white leading-relaxed flex-1">
+                      A 'life design' roadmap that shows you exactly how to actually get to your dreams, step-by-step
+                    </p>
+                  </div>
+                </div>
+
+                <div 
+                  className="p-5 rounded-lg"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(6,182,212,0.2)',
+                    boxShadow: '0 0 15px rgba(6,182,212,0.1)'
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-cyan-400 text-xl font-bold mt-0.5">✓</div>
+                    <p className="text-sm text-white leading-relaxed flex-1">
+                      A cult of life-minded people dedicated to living amazing lives & doing fun sh*t 24/7
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Call to Action */}
+              <div className="text-center mb-8">
+                <p className="text-lg text-cyan-400 font-semibold">jump in :)</p>
+              </div>
+
+              {/* Value Proposition */}
+              <div 
+                className="p-6 rounded-lg mb-6 max-w-3xl mx-auto"
+                style={{
+                  background: 'rgba(6,182,212,0.1)',
+                  border: '1px solid rgba(6,182,212,0.3)',
+                  boxShadow: '0 0 20px rgba(6,182,212,0.2)'
+                }}
+              >
+                <p className="text-base text-white font-semibold mb-4 text-center">
                   Every year you don't know how to make an extra $10,000 = $10,000
                 </p>
-                <p className="text-sm text-white leading-relaxed">
-                  Now - this $10,000 could be either by getting a remote job that pays you more (exactly what we show you how to do inside....)
-                </p>
-                <p className="text-sm text-white leading-relaxed">
-                  or by learning highly-leveraged digital money-making skills like shortform ai content + digital product creation.
-                </p>
-                <p className="text-sm text-white leading-relaxed">
-                  I have the products for you to sell.... I have the software so you can make the content... I show you how to market it... (after going viral whenever I want)
-                </p>
-                <p className="text-sm text-white leading-relaxed mt-4">
+                <div className="space-y-3 text-sm text-white leading-relaxed">
+                  <p>
+                    Now - this $10,000 could be either by getting a remote job that pays you more (exactly what we show you how to do inside....)
+                  </p>
+                  <p>
+                    or by learning highly-leveraged digital money-making skills like shortform ai content + digital product creation.
+                  </p>
+                  <p>
+                    I have the products for you to sell.... I have the software so you can make the content... I show you how to market it... (after going viral whenever I want)
+                  </p>
+                </div>
+              </div>
+
+              {/* Closing Statement */}
+              <div className="text-center space-y-2">
+                <p className="text-base text-white italic">
                   it's impossible to fail if you apply yourself.
                 </p>
-                <p className="text-sm text-white leading-relaxed font-semibold text-center mt-4">
+                <p className="text-xl text-cyan-400 font-bold">
                   it's time.
                 </p>
               </div>
