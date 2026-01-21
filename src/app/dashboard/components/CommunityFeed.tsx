@@ -1275,7 +1275,12 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           <MoreVertical className="w-4 h-4 text-slate-500" />
                         </button>
                         {showMenu === post.id && (
-                          <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-10">
+                          <div 
+                            className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50"
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            style={{ pointerEvents: 'auto' }}
+                          >
                             {isOwner(post) && (
                               <>
                                 <button
