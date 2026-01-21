@@ -214,6 +214,15 @@ const glowShadow = (shadows: string, glowIntensity: number) => {
 }
 
 export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientProps) {
+  // Debug admin status
+  useEffect(() => {
+    console.log('[DashboardClient] Admin check:', {
+      isAdmin,
+      role: affiliate.role,
+      affiliateId: affiliate.id
+    })
+  }, [isAdmin, affiliate.role, affiliate.id])
+  
   const router = useRouter()
   const searchParams = useSearchParams()
   const openDMUserId = searchParams.get('openDM')
@@ -444,7 +453,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                         Settings
                       </Link>
                       <div className="border-t border-[rgba(255,255,255,0.1)] my-1" />
-                      {(isAdmin || affiliate.role === 'admin' || affiliate.role === 'moderator') && (
+                      {(isAdmin || (affiliate as any).role === 'admin' || (affiliate as any).role === 'moderator' || (affiliate as any).is_admin) && (
                         <Link
                           href="/admin/dashboard"
                           onClick={() => setIsAvatarDropdownOpen(false)}
