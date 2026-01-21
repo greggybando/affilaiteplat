@@ -32,6 +32,7 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
   const [loading, setLoading] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLDivElement>(null)
 
@@ -39,6 +40,9 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
+      }
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current)
       }
     }
   }, [])
@@ -134,15 +138,28 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
     }
   }, [showCard])
 
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   const handleMouseLeave = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
       timeoutRef.current = null
     }
-    // Don't hide immediately - let the card handle its own mouse leave
+    // Delay hiding to allow moving to card
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current)
+    }
+    hideTimeoutRef.current = setTimeout(() => {
+      setShowCard(false)
+    }, 300)
   }
 
   const handleCardMouseEnter = () => {
+    // Cancel any pending hide
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current)
+      hideTimeoutRef.current = null
+    }
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
     }
@@ -150,9 +167,12 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
 
   const handleCardMouseLeave = () => {
     // Delay hiding to allow moving back to trigger
-    setTimeout(() => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current)
+    }
+    hideTimeoutRef.current = setTimeout(() => {
       setShowCard(false)
-    }, 200)
+    }, 300)
   }
 
   return (
@@ -177,7 +197,7 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
           }}
         >
           <div 
-            className="rounded-xl p-5 relative overflow-hidden"
+            className="rounded-xl p-6 relative overflow-hidden"
             style={{
               background: 'rgba(26,26,46,0.95)',
               backdropFilter: 'blur(20px)',
@@ -193,7 +213,7 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
               ) : profileData ? (
                 <>
                   {/* Profile Header */}
-                  <div className="flex items-start gap-4 mb-4">
+                  <div className="flex items-start gap-4 mb-5">
                     {profileData.avatar ? (
                       <img
                         src={profileData.avatar}
@@ -230,7 +250,7 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
                   </div>
 
                   {/* Stats */}
-                  <div className="grid grid-cols-3 gap-3 mb-4 pb-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <div className="grid grid-cols-3 gap-4 mb-5 pb-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
                     <div className="text-center">
                       <div className="text-xl font-bold text-white">{profileData.stats.postsCount}</div>
                       <div className="text-xs text-[rgba(255,255,255,0.6)]">Posts</div>
@@ -246,10 +266,10 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <Link
                       href={`/profile/${profileData.id}`}
-                      className="flex-1 px-4 py-2 rounded-lg text-white font-semibold text-sm transition-all transform hover:scale-[1.02] relative overflow-hidden group"
+                      className="flex-1 px-5 py-3 rounded-lg text-white font-semibold text-sm transition-all transform hover:scale-[1.02] relative overflow-hidden group"
                       style={{
                         background: 'rgba(255,255,255,0.1)',
                         border: '1px solid rgba(6,182,212,0.3)',
@@ -270,7 +290,7 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
                         }
                         setShowCard(false)
                       }}
-                      className="flex-1 px-4 py-2 rounded-lg text-white font-semibold text-sm transition-all transform hover:scale-[1.02] relative overflow-hidden group"
+                      className="flex-1 px-5 py-3 rounded-lg text-white font-semibold text-sm transition-all transform hover:scale-[1.02] relative overflow-hidden group"
                       style={{
                         background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
                         boxShadow: '0 0 20px rgba(34,211,238,0.5), 0 4px 20px rgba(0,0,0,0.3)',
