@@ -97,7 +97,14 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
       if (!postRes.ok) {
         const errorData = await postRes.json().catch(() => ({}))
         console.error('Forum post creation error:', errorData)
-        throw new Error(errorData.error || errorData.message || `Failed to create forum post: ${postRes.status} ${postRes.statusText}`)
+        console.error('Response status:', postRes.status, postRes.statusText)
+        
+        let errorMessage = errorData.error || errorData.message || `Failed to create forum post: ${postRes.status} ${postRes.statusText}`
+        if (errorData.details) {
+          errorMessage += `\n\nDetails: ${errorData.details}`
+        }
+        
+        throw new Error(errorMessage)
       }
 
       const postData = await postRes.json()
@@ -139,7 +146,20 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
       if (!grindhouseRes.ok) {
         const errorData = await grindhouseRes.json().catch(() => ({}))
         console.error('Grindhouse creation error:', errorData)
-        const errorMessage = errorData.error || errorData.message || `Failed to create grindhouse: ${grindhouseRes.status} ${grindhouseRes.statusText}`
+        console.error('Response status:', grindhouseRes.status, grindhouseRes.statusText)
+        
+        // Build detailed error message
+        let errorMessage = errorData.error || errorData.message || `Failed to create grindhouse: ${grindhouseRes.status} ${grindhouseRes.statusText}`
+        if (errorData.details) {
+          errorMessage += `\n\nDetails: ${errorData.details}`
+        }
+        if (errorData.code) {
+          errorMessage += `\n\nCode: ${errorData.code}`
+        }
+        if (errorData.hint) {
+          errorMessage += `\n\nHint: ${errorData.hint}`
+        }
+        
         throw new Error(errorMessage)
       }
       
@@ -160,8 +180,13 @@ export default function OrganizeGrindhouseModal({ isOpen, onClose, onSuccess, gl
       onClose()
     } catch (error: any) {
       console.error('Failed to create grindhouse:', error)
-      const errorMessage = error?.message || 'Failed to create grindhouse. Please try again.'
-      alert(errorMessage)
+      console.error('Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name
+      })
+      const errorMessage = error?.message || 'Failed to create grindhouse. Please check the console for details.'
+      alert(`Error: ${errorMessage}\n\nCheck the browser console (F12) for more details.`)
     } finally {
       setLoading(false)
     }
