@@ -94,7 +94,17 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [composerExpanded, setComposerExpanded] = useState(false)
   const [composerContent, setComposerContent] = useState('')
-  const [composerCategory, setComposerCategory] = useState('dreamjob Q\'s')
+  
+  // Auto-set composer category based on selected filter (only for valid post categories)
+  const getComposerCategory = () => {
+    // If selected category is a special tab (not a post category), default to first question category
+    if (selectedCategory === 'Global Sends' || selectedCategory === 'Grindhouses' || selectedCategory === 'Meetups' || selectedCategory === 'All') {
+      return 'dreamjob Q\'s'
+    }
+    // Otherwise use the selected category
+    return selectedCategory
+  }
+  const composerCategory = getComposerCategory()
   const [composerImages, setComposerImages] = useState<string[]>([])
   const [composerVideo, setComposerVideo] = useState<string | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
@@ -948,19 +958,14 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                               <ImageIcon className="w-5 h-5 text-[rgba(255,255,255,0.8)]" />
                             </div>
                           </label>
-                          <select
-                            value={composerCategory}
-                            onChange={(e) => setComposerCategory(e.target.value)}
-                            className="px-3 py-1.5 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 text-white text-sm"
-                            style={{
-                              background: 'rgba(255,255,255,0.1)',
-                              backdropFilter: 'blur(10px)'
-                            }}
-                          >
-                            {categories.filter(c => c !== 'All').map(cat => (
-                              <option key={cat} value={cat} style={{ background: '#1a1a2e', color: '#fff' }}>{cat}</option>
-                            ))}
-                          </select>
+                          {/* Category is auto-set based on selected filter */}
+                          <div className="px-3 py-1.5 rounded-xl text-white text-sm flex items-center gap-2" style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            backdropFilter: 'blur(10px)'
+                          }}>
+                            <span className="text-[rgba(255,255,255,0.7)] text-xs">Posting to:</span>
+                            <span className="font-medium">{composerCategory}</span>
+                          </div>
                         </div>
                         <button
                           onClick={handlePost}
