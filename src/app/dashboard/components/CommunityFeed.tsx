@@ -1061,7 +1061,8 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                       overflow: 'hidden'
                     } : {
                       border: 'none',
-                      outline: 'none'
+                      outline: 'none',
+                      boxShadow: glowShadow('0 0 8px rgba(255,255,255,0.15), 0 0 12px rgba(255,255,255,0.1)', glowIntensity)
                     }}
                   >
                     {cat}
