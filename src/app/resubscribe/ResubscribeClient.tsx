@@ -189,7 +189,7 @@ export function ResubscribeClient({
                     $40
                   </p>
                   <p className="text-xs text-[rgba(255,255,255,0.4)] mt-1">per month</p>
-                  <p className="text-xs text-[rgba(255,255,255,0.5)] mt-2 italic">
+                  <p className="text-xs text-white mt-2 italic">
                     explode your mind & income for less than the price of 1 steak dinner...
                   </p>
                   {selectedPlan === 'monthly' && (
@@ -249,6 +249,17 @@ export function ResubscribeClient({
                     }}
                   >
                     Save $120
+                  </p>
+                  <p 
+                    className="text-xs font-semibold mt-1 px-2 py-0.5 rounded-full inline-block"
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+                      color: '#0f0f1a',
+                      boxShadow: '0 0 15px rgba(16,185,129,0.5)',
+                      textShadow: 'none'
+                    }}
+                  >
+                    Save 25%!
                   </p>
                   {selectedPlan === 'yearly' && (
                     <p className="text-xs text-cyan-400 mt-2 font-semibold">✓ Selected</p>
