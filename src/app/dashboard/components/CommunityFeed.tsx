@@ -1035,7 +1035,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
           </div>
 
           {/* Filter Tabs */}
-          <div className="sticky top-0 rounded-2xl p-2 flex items-center justify-start z-10 w-full backdrop-blur-[20px]" style={{ 
+          <div ref={filterBarRef} className="sticky top-0 rounded-2xl p-2 flex items-center justify-start z-10 w-full backdrop-blur-[20px]" style={{ 
             width: '100%', 
             maxWidth: '100%',
             background: 'rgba(26,26,46,0.8)',
