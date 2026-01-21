@@ -262,9 +262,6 @@ export function ResubscribeClient({
                 P.S: The craziest part is there's literally NOTHING better for you to spend $40 on that exists. You are built for too much more to ever settle, and I want you to live the life that makes you smile every f***ing day. i've carefully hand-selected & curated every possible skill/mental model you possibly need to do that inside. Subscribe below and i'll see you there. Hope you're ready to LEVEL TF UP.
               </p>
             </div>
-
-            {/* What You Get */}
-            <div className="mt-8 mb-6">
               <h3 className="text-2xl font-semibold text-white mb-6 text-center">What you get:</h3>
               
               {/* Benefits Grid */}
@@ -401,8 +398,9 @@ export function ResubscribeClient({
             <p className="text-xs text-[rgba(255,255,255,0.5)] text-center mt-4">
               Cancel anytime. Your links stay active as long as you're subscribed.
             </p>
-          </div>
-        </div>
+
+            {/* What You Get */}
+            <div className="mt-8 mb-6">
 
         {/* Help */}
         <p className="text-center text-[rgba(255,255,255,0.6)] text-sm mt-6">
