@@ -56,7 +56,10 @@ export async function GET(request: NextRequest) {
     // Exclude specific categories (used for "Home" feed)
     if (excludeCategories) {
       const excludeList = excludeCategories.split(',').map(c => c.trim())
-      query = query.not('category', 'in', `(${excludeList.map((c: string) => `"${c}"`).join(',')})`)
+      // Use notIn to exclude multiple categories
+      for (const cat of excludeList) {
+        query = query.neq('category', cat)
+      }
     }
 
     if (search && search.trim()) {
