@@ -452,7 +452,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                         <Settings className="w-4 h-4 text-cyan-400" />
                         Settings
                       </Link>
-                      {userIsAdmin && (
+                      {(isAdmin || (affiliate as any).role === 'admin' || (affiliate as any).role === 'moderator' || (affiliate as any).is_admin) && (
                         <>
                           <div className="border-t border-[rgba(255,255,255,0.1)] my-1" />
                           <Link
