@@ -53,9 +53,20 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       fetch('/api/messages/inbox')
         .then(res => res.json())
         .then(data => {
-          const allConversations = data.conversations || []
+          const allConversations = (data.conversations || []).map((c: any) => ({
+            id: c.conversation_id || c.id,
+            participant: {
+              id: c.other_user?.id || c.participant?.id,
+              name: c.other_user?.name || c.participant?.name || 'Unknown',
+              avatar_url: c.other_user?.avatar || c.participant?.avatar_url || null
+            },
+            last_message: c.last_message || null,
+            last_message_at: c.updated_at || c.last_message_at || null,
+            unread_count: c.unread_count || 0
+          })).filter((c: Conversation) => c.participant && c.participant.id)
+          
           // Try to find existing conversation first
-          const existingConv = allConversations.find((c: Conversation) => c.participant.id === initialUserId)
+          const existingConv = allConversations.find((c: Conversation) => c.participant && c.participant.id === initialUserId)
           if (existingConv) {
             console.log('[DMInbox] Found existing conversation:', existingConv)
             setConversations(allConversations)
