@@ -345,15 +345,10 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   }
 
   async function sendMessage() {
-    if ((!newMessage.trim() && attachedFiles.length === 0 && attachedImageUrls.length === 0) || !openUserId || openUserId === 'inbox') return
+    if ((!newMessage.trim() && attachedImageUrls.length === 0) || !openUserId || openUserId === 'inbox') return
 
-    // Upload files first if any
-    let uploadedUrls: string[] = [...attachedImageUrls]
-    if (attachedFiles.length > 0) {
-      uploadedUrls = await handleFileUpload(attachedFiles)
-      setAttachedFiles([])
-      setAttachedImageUrls([])
-    }
+    // Use already uploaded image URLs
+    const uploadedUrls: string[] = [...attachedImageUrls]
 
     // Build content with attachments
     let content = newMessage.trim()
@@ -714,9 +709,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                   onChange={async (e) => {
                     const files = e.target.files
                     if (files && files.length > 0) {
+                      console.log('Files selected:', files.length)
                       const fileArray = Array.from(files)
                       // Upload files immediately
                       const urls = await handleFileUpload(fileArray)
+                      console.log('Uploaded URLs:', urls)
                       setAttachedImageUrls(prev => [...prev, ...urls])
                       // Reset input
                       if (fileInputRef.current) {
@@ -729,8 +726,13 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 />
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    console.log('Attachment button clicked')
+                    fileInputRef.current?.click()
+                  }}
+                  className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70 cursor-pointer"
                   style={{ color: 'rgba(255,255,255,0.6)' }}
                   title="Attach file"
                 >
@@ -758,7 +760,10 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 <button
                   ref={emojiButtonRef}
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    console.log('Emoji button clicked, current state:', showEmojiPicker)
                     if (!showEmojiPicker && emojiButtonRef.current) {
                       const rect = emojiButtonRef.current.getBoundingClientRect()
                       setEmojiPickerPosition({
@@ -768,7 +773,7 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                     }
                     setShowEmojiPicker(!showEmojiPicker)
                   }}
-                  className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70"
+                  className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70 cursor-pointer"
                   style={{ color: showEmojiPicker ? 'rgba(34,211,238,1)' : 'rgba(255,255,255,0.6)' }}
                   title="Emoji"
                 >
@@ -778,14 +783,17 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                 {/* GIF Button */}
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    console.log('GIF button clicked, current state:', showGifPicker)
                     setShowGifPicker(!showGifPicker)
                     if (!showGifPicker) {
                       // Load trending GIFs
                       searchGifs('trending')
                     }
                   }}
-                  className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70 text-xs font-medium"
+                  className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70 text-xs font-medium cursor-pointer"
                   style={{ color: showGifPicker ? 'rgba(34,211,238,1)' : 'rgba(255,255,255,0.6)' }}
                   title="GIF"
                 >
