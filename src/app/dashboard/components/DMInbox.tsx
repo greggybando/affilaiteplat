@@ -706,36 +706,36 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
               </div>
               <div className="px-3 py-2 border-t border-[rgba(255,255,255,0.1)] flex gap-2 items-center" style={{ background: '#000000' }}>
                 {/* Attachment Button */}
-                <label className="cursor-pointer">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={async (e) => {
-                      const files = e.target.files
-                      if (files && files.length > 0) {
-                        const fileArray = Array.from(files)
-                        // Upload files immediately
-                        const urls = await handleFileUpload(fileArray)
-                        setAttachedImageUrls(prev => [...prev, ...urls])
-                        // Reset input
-                        if (fileInputRef.current) {
-                          fileInputRef.current.value = ''
-                        }
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={async (e) => {
+                    const files = e.target.files
+                    if (files && files.length > 0) {
+                      const fileArray = Array.from(files)
+                      // Upload files immediately
+                      const urls = await handleFileUpload(fileArray)
+                      setAttachedImageUrls(prev => [...prev, ...urls])
+                      // Reset input
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = ''
                       }
-                    }}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70"
-                    style={{ color: 'rgba(255,255,255,0.6)' }}
-                    title="Attach file"
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </button>
-                </label>
+                    }
+                  }}
+                  className="hidden"
+                  id="dm-file-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70"
+                  style={{ color: 'rgba(255,255,255,0.6)' }}
+                  title="Attach file"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </button>
 
                 {/* Show attached images preview */}
                 {attachedImageUrls.length > 0 && (
@@ -909,10 +909,11 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
                   <div
                     className="emoji-picker-scroll fixed bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.1)] rounded-xl p-1.5 z-[9999] shadow-2xl"
                     style={{
-                      top: `${emojiPickerPosition.top}px`,
-                      left: `${emojiPickerPosition.left}px`,
+                      bottom: '80px',
+                      left: emojiButtonRef.current ? `${emojiButtonRef.current.getBoundingClientRect().left}px` : '50%',
+                      transform: emojiButtonRef.current ? 'none' : 'translateX(-50%)',
                       maxWidth: '280px',
-                      maxHeight: '200px',
+                      maxHeight: '300px',
                       overflowY: 'auto'
                     }}
                   >
