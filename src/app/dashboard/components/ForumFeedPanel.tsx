@@ -77,8 +77,22 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
     } finally {
       setLoading(false)
     }
-  }
+  }, [category])
 
+  useEffect(() => {
+    fetchPosts()
+  }, [fetchPosts])
+
+  // Listen for refresh events (when post is created from top composer)
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchPosts()
+    }
+    window.addEventListener('refreshForumFeed', handleRefresh)
+    return () => {
+      window.removeEventListener('refreshForumFeed', handleRefresh)
+    }
+  }, [fetchPosts])
 
   const handleLike = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation()
