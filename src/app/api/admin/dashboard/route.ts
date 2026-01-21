@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
 
     // Group signups by day for chart
     const signupsByDay: Record<string, number> = {}
-    signups?.forEach(signup => {
+    ;(signups || [] as any[]).forEach((signup: any) => {
       const date = new Date(signup.created_at).toISOString().split('T')[0]
       signupsByDay[date] = (signupsByDay[date] || 0) + 1
     })
