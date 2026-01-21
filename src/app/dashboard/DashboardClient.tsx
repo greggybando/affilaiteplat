@@ -485,11 +485,10 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
                         <div className="text-white font-semibold truncate">{affiliate.avatar_name || affiliate.name}</div>
                         {(isAdmin || (affiliate as any).role === 'admin' || (affiliate as any).role === 'moderator' || (affiliate as any).is_admin) && (
                           <Zap 
-                            className="w-4 h-4 text-yellow-400 flex-shrink-0" 
+                            className="w-4 h-4 text-yellow-400 flex-shrink-0 animate-pulse" 
                             fill="currentColor"
                             style={{
-                              filter: 'drop-shadow(0 0 4px rgba(250,204,21,0.8)) drop-shadow(0 0 8px rgba(250,204,21,0.6))',
-                              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                              filter: 'drop-shadow(0 0 4px rgba(250,204,21,0.8)) drop-shadow(0 0 8px rgba(250,204,21,0.6))'
                             }}
                           />
                         )}
