@@ -183,14 +183,15 @@ export function ResubscribeClient({
                       background: 'linear-gradient(135deg, #22d3ee, #06b6d4, #3b82f6)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      textShadow: '0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(6,182,212,0.3)',
-                      filter: 'drop-shadow(0 0 8px rgba(34,211,238,0.6))'
+                      backgroundClip: 'text'
                     }}
                   >
                     $40
                   </p>
                   <p className="text-xs text-[rgba(255,255,255,0.4)] mt-1">per month</p>
+                  <p className="text-xs text-[rgba(255,255,255,0.5)] mt-2 italic">
+                    explode your mind & income for less than the price of 1 steak dinner...
+                  </p>
                   {selectedPlan === 'monthly' && (
                     <p className="text-xs text-cyan-400 mt-2 font-semibold">✓ Selected</p>
                   )}
@@ -232,9 +233,7 @@ export function ResubscribeClient({
                       background: 'linear-gradient(135deg, #22d3ee, #06b6d4, #3b82f6)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      textShadow: '0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(6,182,212,0.3)',
-                      filter: 'drop-shadow(0 0 8px rgba(34,211,238,0.6))'
+                      backgroundClip: 'text'
                     }}
                   >
                     $360
