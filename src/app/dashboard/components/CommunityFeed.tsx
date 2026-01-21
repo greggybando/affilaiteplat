@@ -1055,8 +1055,14 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                     style={selectedCategory === cat ? {
                       background: 'linear-gradient(135deg, #fde047, #facc15)',
                       color: '#0f0f1a',
-                      boxShadow: glowShadow('0 0 20px rgba(253,224,71,0.7), 0 0 40px rgba(253,224,71,0.5), 0 8px 30px rgba(253,224,71,0.4)', glowIntensity)
-                    } : {}}
+                      border: 'none',
+                      outline: 'none',
+                      boxShadow: glowShadow('0 0 15px rgba(253,224,71,0.6), 0 0 25px rgba(253,224,71,0.4)', glowIntensity),
+                      overflow: 'hidden'
+                    } : {
+                      border: 'none',
+                      outline: 'none'
+                    }}
                   >
                     {cat}
                   </button>
