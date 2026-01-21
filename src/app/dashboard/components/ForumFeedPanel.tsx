@@ -249,10 +249,10 @@ export default function ForumFeedPanel({ category, currentUser, glowIntensity, o
                             <span className="font-semibold text-white">{post.user.name}</span>
                             {(post.user.role === 'admin' || post.user.role === 'moderator') && (
                               <Zap 
-                                className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0 animate-pulse" 
+                                className="w-5 h-5 text-yellow-400 flex-shrink-0 animate-pulse" 
                                 fill="currentColor"
                                 style={{
-                                  filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.8)) drop-shadow(0 0 6px rgba(250,204,21,0.6))'
+                                  filter: 'drop-shadow(0 0 4px rgba(250,204,21,0.8)) drop-shadow(0 0 8px rgba(250,204,21,0.6))'
                                 }}
                               />
                             )}
