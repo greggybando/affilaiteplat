@@ -82,24 +82,32 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
       clearTimeout(timeoutRef.current)
     }
     timeoutRef.current = setTimeout(() => {
-      if (triggerRef.current) {
+      setShowCard(true)
+    }, 500) // 500ms delay before showing
+  }
+  
+  useEffect(() => {
+    if (showCard && triggerRef.current && cardRef.current) {
+      const updatePosition = () => {
+        if (!triggerRef.current || !cardRef.current) return
+        
         const rect = triggerRef.current.getBoundingClientRect()
         const cardWidth = 320 // w-80 = 320px
-        const cardHeight = 300 // approximate height
+        const cardHeight = cardRef.current.offsetHeight || 300
         const spacing = 8 // mt-2 = 8px
         
         let top = rect.bottom + spacing
         let left = rect.left
         
         // Check if card would go off bottom of screen
-        if (top + cardHeight > window.innerHeight) {
+        if (top + cardHeight > window.innerHeight - 16) {
           // Position above instead
           top = rect.top - cardHeight - spacing
         }
         
         // Check if card would go off right edge
-        if (left + cardWidth > window.innerWidth) {
-          left = window.innerWidth - cardWidth - 16 // 16px padding from edge
+        if (left + cardWidth > window.innerWidth - 16) {
+          left = window.innerWidth - cardWidth - 16
         }
         
         // Check if card would go off left edge
@@ -114,9 +122,17 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
         
         setPosition({ top, left })
       }
-      setShowCard(true)
-    }, 500) // 500ms delay before showing
-  }
+      
+      updatePosition()
+      window.addEventListener('scroll', updatePosition, true)
+      window.addEventListener('resize', updatePosition)
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true)
+        window.removeEventListener('resize', updatePosition)
+      }
+    }
+  }, [showCard])
 
   const handleMouseLeave = () => {
     if (timeoutRef.current) {
@@ -153,11 +169,9 @@ export function ProfileHoverCard({ userId, userName, userAvatar, children, onCha
           ref={cardRef}
           onMouseEnter={handleCardMouseEnter}
           onMouseLeave={handleCardMouseLeave}
-          className="fixed z-50 w-80"
+          className="absolute z-50 mt-2 left-0 w-80"
           style={{
             pointerEvents: 'auto',
-            top: `${position.top}px`,
-            left: `${position.left}px`,
             maxHeight: 'calc(100vh - 32px)',
             overflowY: 'auto'
           }}
