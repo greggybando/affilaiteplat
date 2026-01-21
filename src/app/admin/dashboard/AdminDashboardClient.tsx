@@ -111,11 +111,9 @@ export default function AdminDashboardClient({ affiliate }: AdminDashboardClient
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0f0f1a] text-white p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center py-20">
-            <div className="text-slate-400">Loading dashboard...</div>
-          </div>
+      <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#0f0f1a' }}>
+        <div className="text-center">
+          <div className="text-[rgba(255,255,255,0.6)]">Loading dashboard...</div>
         </div>
       </div>
     )
@@ -123,24 +121,28 @@ export default function AdminDashboardClient({ affiliate }: AdminDashboardClient
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-[#0f0f1a] text-white p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center py-20">
-            <div className="text-red-400">Failed to load dashboard data</div>
-          </div>
+      <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#0f0f1a' }}>
+        <div className="text-center">
+          <div className="text-red-400">Failed to load dashboard data</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white">
-      <div className="max-w-7xl mx-auto p-6 lg:p-8">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ backgroundColor: '#0f0f1a' }}>
+      {/* Animated background gradient */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
+      <div className="max-w-7xl w-full relative z-10 p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-4"
+            className="inline-flex items-center gap-2 text-[rgba(255,255,255,0.6)] hover:text-cyan-400 transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
@@ -148,13 +150,19 @@ export default function AdminDashboardClient({ affiliate }: AdminDashboardClient
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
-              <p className="text-slate-400">Subscription metrics and cancellation tracking</p>
+              <p className="text-[rgba(255,255,255,0.6)]">Subscription metrics and cancellation tracking</p>
             </div>
             <div className="flex items-center gap-3">
               <select
                 value={period}
                 onChange={(e) => setPeriod(e.target.value as any)}
-                className="px-4 py-2 bg-[rgba(26,26,46,0.8)] border border-[rgba(255,255,255,0.1)] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="px-4 py-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all"
+                style={{
+                  background: 'rgba(26,26,46,0.8)',
+                  border: '1px solid rgba(6,182,212,0.3)',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 0 10px rgba(6,182,212,0.1)'
+                }}
               >
                 <option value="this_month">This Month</option>
                 <option value="last_month">Last Month</option>
@@ -168,79 +176,166 @@ export default function AdminDashboardClient({ affiliate }: AdminDashboardClient
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* New Signups */}
-          <div className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.1)] rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-cyan-500/20 rounded-lg">
-                <Users className="w-6 h-6 text-cyan-400" />
+          <div 
+            className="rounded-xl p-6 relative overflow-hidden"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(6,182,212,0.2)',
+              boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-lg" style={{ background: 'rgba(6,182,212,0.2)', boxShadow: '0 0 15px rgba(6,182,212,0.3)' }}>
+                  <Users className="w-6 h-6 text-cyan-400" style={{ filter: 'drop-shadow(0 0 4px rgba(6,182,212,0.8))' }} />
+                </div>
               </div>
+              <div className="text-3xl font-bold text-white mb-1">{data.metrics.newSignups}</div>
+              <div className="text-sm text-[rgba(255,255,255,0.6)]">New Signups</div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">{data.metrics.newSignups}</div>
-            <div className="text-sm text-slate-400">New Signups</div>
           </div>
 
           {/* Churns */}
-          <div className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.1)] rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-red-500/20 rounded-lg">
-                <TrendingDown className="w-6 h-6 text-red-400" />
+          <div 
+            className="rounded-xl p-6 relative overflow-hidden"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(239,68,68,0.2)',
+              boxShadow: '0 0 20px rgba(239,68,68,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-red-500/5 pointer-events-none"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-lg" style={{ background: 'rgba(239,68,68,0.2)', boxShadow: '0 0 15px rgba(239,68,68,0.3)' }}>
+                  <TrendingDown className="w-6 h-6 text-red-400" style={{ filter: 'drop-shadow(0 0 4px rgba(239,68,68,0.8))' }} />
+                </div>
               </div>
-            </div>
-            <div className="text-3xl font-bold text-white mb-1">{data.metrics.churns}</div>
-            <div className="text-sm text-slate-400">
-              Churns ({data.metrics.churnRate}% rate)
+              <div className="text-3xl font-bold text-white mb-1">{data.metrics.churns}</div>
+              <div className="text-sm text-[rgba(255,255,255,0.6)]">
+                Churns ({data.metrics.churnRate}% rate)
+              </div>
             </div>
           </div>
 
           {/* Estimated MRR */}
-          <div className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.1)] rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-500/20 rounded-lg">
-                <DollarSign className="w-6 h-6 text-green-400" />
+          <div 
+            className="rounded-xl p-6 relative overflow-hidden"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(6,182,212,0.3)',
+              boxShadow: '0 0 30px rgba(6,182,212,0.2), 0 8px 32px rgba(0,0,0,0.8)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-blue-500/10 pointer-events-none"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-lg" style={{ background: 'rgba(6,182,212,0.3)', boxShadow: '0 0 20px rgba(6,182,212,0.4)' }}>
+                  <DollarSign className="w-6 h-6 text-cyan-400" style={{ filter: 'drop-shadow(0 0 6px rgba(6,182,212,1))' }} />
+                </div>
               </div>
+              <div className="text-3xl font-bold text-white mb-1">{formatCurrency(data.metrics.estimatedMRR)}</div>
+              <div className="text-sm text-[rgba(255,255,255,0.6)]">Estimated MRR</div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">{formatCurrency(data.metrics.estimatedMRR)}</div>
-            <div className="text-sm text-slate-400">Estimated MRR</div>
           </div>
 
           {/* LTV */}
-          <div className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.1)] rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-purple-500/20 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-purple-400" />
+          <div 
+            className="rounded-xl p-6 relative overflow-hidden"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(6,182,212,0.2)',
+              boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-lg" style={{ background: 'rgba(6,182,212,0.2)', boxShadow: '0 0 15px rgba(6,182,212,0.3)' }}>
+                  <BarChart3 className="w-6 h-6 text-cyan-400" style={{ filter: 'drop-shadow(0 0 4px rgba(6,182,212,0.8))' }} />
+                </div>
               </div>
+              <div className="text-3xl font-bold text-white mb-1">{formatCurrency(data.metrics.ltv)}</div>
+              <div className="text-sm text-[rgba(255,255,255,0.6)]">Avg LTV</div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">{formatCurrency(data.metrics.ltv)}</div>
-            <div className="text-sm text-slate-400">Avg LTV</div>
           </div>
         </div>
 
         {/* Secondary Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.1)] rounded-xl p-6">
-            <div className="text-2xl font-bold text-white mb-1">{data.metrics.activeSubscribersCount}</div>
-            <div className="text-sm text-slate-400">Active Subscribers</div>
-          </div>
-          <div className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.1)] rounded-xl p-6">
-            <div className="text-2xl font-bold text-white mb-1">
-              {data.metrics.avgSubscriptionLengthDays} days
+          <div 
+            className="rounded-xl p-6 relative overflow-hidden"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(6,182,212,0.2)',
+              boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+            <div className="relative z-10">
+              <div className="text-2xl font-bold text-white mb-1">{data.metrics.activeSubscribersCount}</div>
+              <div className="text-sm text-[rgba(255,255,255,0.6)]">Active Subscribers</div>
             </div>
-            <div className="text-sm text-slate-400">Avg Subscription Length</div>
-            <div className="text-xs text-slate-500 mt-1">
-              ({data.metrics.avgSubscriptionLengthMonths} months)
+          </div>
+          <div 
+            className="rounded-xl p-6 relative overflow-hidden"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(6,182,212,0.2)',
+              boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+            <div className="relative z-10">
+              <div className="text-2xl font-bold text-white mb-1">
+                {data.metrics.avgSubscriptionLengthDays} days
+              </div>
+              <div className="text-sm text-[rgba(255,255,255,0.6)]">Avg Subscription Length</div>
+              <div className="text-xs text-[rgba(255,255,255,0.4)] mt-1">
+                ({data.metrics.avgSubscriptionLengthMonths} months)
+              </div>
             </div>
           </div>
-          <div className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.1)] rounded-xl p-6">
-            <div className="text-2xl font-bold text-white mb-1">{formatCurrency(data.metrics.ltv)}</div>
-            <div className="text-sm text-slate-400">LTV Calculation</div>
-            <div className="text-xs text-slate-500 mt-1">
-              {data.metrics.avgSubscriptionLengthMonths} months × $47/month
+          <div 
+            className="rounded-xl p-6 relative overflow-hidden"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(6,182,212,0.2)',
+              boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+            <div className="relative z-10">
+              <div className="text-2xl font-bold text-white mb-1">{formatCurrency(data.metrics.ltv)}</div>
+              <div className="text-sm text-[rgba(255,255,255,0.6)]">LTV Calculation</div>
+              <div className="text-xs text-[rgba(255,255,255,0.4)] mt-1">
+                {data.metrics.avgSubscriptionLengthMonths} months × $40/month
+              </div>
             </div>
           </div>
         </div>
 
         {/* Signups Chart */}
         {Object.keys(data.signupsByDay).length > 0 && (
-          <div className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.1)] rounded-xl p-6 mb-8">
+          <div 
+            className="rounded-xl p-6 mb-8 relative overflow-hidden"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(6,182,212,0.2)',
+              boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+            <div className="relative z-10">
             <h2 className="text-xl font-semibold text-white mb-4">Signups by Day</h2>
             <div className="flex items-end gap-2 h-48">
               {Object.entries(data.signupsByDay)
@@ -262,20 +357,39 @@ export default function AdminDashboardClient({ affiliate }: AdminDashboardClient
                   )
                 })}
             </div>
+            </div>
           </div>
         )}
 
         {/* Recent Cancellations */}
-        <div className="bg-[rgba(26,26,46,0.8)] backdrop-blur-[10px] border border-[rgba(255,255,255,0.1)] rounded-xl p-6">
+        <div 
+          className="rounded-xl p-6 relative overflow-hidden"
+          style={{
+            background: 'rgba(26,26,46,0.8)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(6,182,212,0.2)',
+            boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+          <div className="relative z-10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white">Recent Cancellations</h2>
             {data.cancellations.length > 0 && (
               <button
                 onClick={exportCancellations}
-                className="flex items-center gap-2 px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded-lg text-cyan-400 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-semibold transition-all transform hover:scale-[1.02] relative overflow-hidden group"
+                style={{
+                  background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                  boxShadow: '0 0 20px rgba(34,211,238,0.5), 0 4px 20px rgba(0,0,0,0.3)',
+                  color: '#0f0f1a'
+                }}
               >
+                <span className="relative z-10">
                 <Download className="w-4 h-4" />
                 Export CSV
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
               </button>
             )}
           </div>
@@ -329,6 +443,7 @@ export default function AdminDashboardClient({ affiliate }: AdminDashboardClient
               </table>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

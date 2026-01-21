@@ -4,7 +4,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
-const MONTHLY_PRICE = 47 // $47/month
+const MONTHLY_PRICE = 40 // $40/month
+const YEARLY_PRICE_PER_MONTH = 30 // $360/year = $30/month
 
 export async function GET(request: NextRequest) {
   try {
@@ -62,6 +63,8 @@ export async function GET(request: NextRequest) {
     if (cancellationsError) throw cancellationsError
 
     // Fetch active subscribers (status = 'active')
+    // Note: We don't currently track plan type (monthly vs yearly) in the affiliates table
+    // So we'll use $40/month as the default for all active subscribers
     const { data: activeSubscribers, error: activeError } = await supabaseAdmin
       .from('affiliates')
       .select('id, status')
@@ -73,6 +76,7 @@ export async function GET(request: NextRequest) {
     const newSignups = signups?.length || 0
     const churns = cancellations?.length || 0
     const activeSubscribersCount = activeSubscribers?.length || 0
+    // Use $40/month for all active subscribers (since we can't determine plan type)
     const estimatedMRR = activeSubscribersCount * MONTHLY_PRICE
 
     // Calculate churn rate (churns / (active + churns))
@@ -100,6 +104,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate LTV (average subscription length × monthly price)
+    // Using $40/month as the default since we can't determine plan type for churned users
     const ltv = avgSubscriptionLengthMonths * MONTHLY_PRICE
 
     // Group signups by day for chart
