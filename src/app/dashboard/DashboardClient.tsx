@@ -1346,7 +1346,8 @@ function CommunityTab({
               currentUser={{
                 id: affiliate.id,
                 name: affiliate.avatar_name || affiliate.name,
-                avatar: affiliate.avatar_url
+                avatar: affiliate.avatar_url,
+                role: (affiliate as any).role
               }}
               glowIntensity={glowIntensity}
               searchQuery={searchQuery}
