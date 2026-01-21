@@ -132,12 +132,25 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     }
   }, [forceOpen])
 
-  // Fetch messages when conversation selected
+  // Fetch messages and last active time when conversation selected
   useEffect(() => {
     if (selectedConversation) {
       fetchMessages(selectedConversation.participant.id)
+      fetchParticipantLastActive(selectedConversation.participant.id)
     }
   }, [selectedConversation])
+  
+  async function fetchParticipantLastActive(userId: string) {
+    try {
+      const res = await fetch(`/api/profile/${userId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setParticipantLastActive(data.lastActiveAt || null)
+      }
+    } catch (e) {
+      console.error('Failed to fetch participant last active:', e)
+    }
+  }
 
   // Poll for unread count
   useEffect(() => {
