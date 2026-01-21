@@ -120,7 +120,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const editableRef = useRef<HTMLDivElement>(null)
   const emojiButtonRef = useRef<HTMLButtonElement>(null)
 
-  const categories = ['All', 'dreamjob questions', 'lifedesign questions', 'make money questions', 'Wins', 'Organize Trips']
+  const categories = ['All', 'Discussion', 'dreamjob questions', 'lifedesign questions', 'make money questions', 'Wins', 'Organize Trips']
 
   // Bold button is a toggle - stays on until clicked again
   // No need to check cursor position, just track toggle state
