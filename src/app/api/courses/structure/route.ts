@@ -144,29 +144,100 @@ async function fetchFromNewTables(courseType: 'mindset' | 'lifedesign' | 'dreamj
       })
     }
 
-    // For Mindset: modules become categories, each module has sections (empty sections array for now)
+    // For Mindset: modules are sections, need to group them back into categories
+    // Module slugs contain category_id: "category_id-section_id-title"
     if (courseType === 'mindset' || courseType === 'lifedesign') {
-      const categories = modules.map((module: any, index: number) => {
+      // Group modules by category (extract from slug)
+      const categoriesMap = new Map<string, any>()
+      
+      // First, fetch original categories to get their metadata
+      const { data: originalCategories } = await (supabaseAdmin as any)
+        .from('course_categories')
+        .select('category_id, title, is_start_here, display_order')
+        .eq('course_type', 'mindset')
+        .order('display_order', { ascending: true })
+      
+      // Initialize categories from original structure
+      if (originalCategories) {
+        for (const cat of originalCategories) {
+          categoriesMap.set(cat.category_id, {
+            id: cat.category_id,
+            title: cat.title,
+            isStartHere: cat.is_start_here || false,
+            displayOrder: cat.display_order,
+            sections: []
+          })
+        }
+      }
+      
+      // Group modules (sections) into their categories
+      for (const module of modules) {
+        // Extract category_id from slug: "category_id-section_id-title"
+        const slugParts = module.slug.split('-')
+        let categoryId = ''
+        
+        // Find category_id in slug (it's the first part before the section_id)
+        // Known category_ids: starthere, mindset, lifedesign, thinkingtools
+        const knownCategoryIds = ['starthere', 'mindset', 'lifedesign', 'thinkingtools']
+        for (const knownId of knownCategoryIds) {
+          if (module.slug.startsWith(knownId + '-')) {
+            categoryId = knownId
+            break
+          }
+        }
+        
+        // Fallback: try to extract from slug parts
+        if (!categoryId && slugParts.length > 0) {
+          categoryId = slugParts[0]
+        }
+        
+        // Get or create category
+        if (!categoriesMap.has(categoryId)) {
+          categoriesMap.set(categoryId, {
+            id: categoryId,
+            title: categoryId.charAt(0).toUpperCase() + categoryId.slice(1),
+            isStartHere: categoryId === 'starthere',
+            displayOrder: 999,
+            sections: []
+          })
+        }
+        
+        const category = categoriesMap.get(categoryId)!
         const moduleLessons = lessonsByModule.get(module.id) || []
         
-        // For Mindset, each module (category) has sections
-        // Since we migrated categories directly to modules, we create a single section per module
-        const sections = [{
-          id: module.slug, // Use slug as ID
+        // Extract section_id from slug (second part after category_id)
+        let sectionId = module.slug.split('-')[1] || '0'
+        // Try to find numeric section_id
+        const sectionIdMatch = module.slug.match(/-(\d+)-/)
+        if (sectionIdMatch) {
+          sectionId = sectionIdMatch[1]
+        }
+        
+        category.sections.push({
+          id: sectionId,
           uuid: module.id,
-          number: index + 1,
+          number: parseInt(sectionId) || category.sections.length + 1,
           title: module.title,
           description: module.description || undefined,
           videos: moduleLessons,
-        }]
-
-        return {
-          id: module.slug,
-          title: module.title,
-          isStartHere: false, // Can be enhanced later
-          sections: sections,
-        }
-      })
+        })
+      }
+      
+      // Sort categories by display_order, then sort sections within each category
+      const categories = Array.from(categoriesMap.values())
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+        .map(cat => ({
+          id: cat.id,
+          title: cat.title,
+          isStartHere: cat.isStartHere,
+          sections: cat.sections.sort((a: any, b: any) => {
+            // Sort by section number if available, otherwise by title
+            if (a.number && b.number) {
+              return a.number - b.number
+            }
+            return a.title.localeCompare(b.title)
+          })
+        }))
 
       return { courseType, categories }
     }
