@@ -1862,10 +1862,13 @@ export function SkillBankCourseView({
                         checkpointTitle={checkpoints[selectedSectionId].title}
                         requirements={checkpoints[selectedSectionId].requirements}
                         sectionId={selectedSectionId}
-                        onSuccess={(status) => {
+                        onSuccess={async (status) => {
+                          // Refresh unlock status after submission
+                          await loadUnlockStatus()
+                          
                           if (status === 'approved' || status === 'needs_review') {
                             setCheckpointModalOpen(false)
-                            alert(status === 'approved' ? '✅ Checkpoint approved! Next section unlocked.' : '⏳ Checkpoint submitted! Under review.')
+                            alert(status === 'approved' ? '✅ Checkpoint approved! Next module unlocked.' : '⏳ Checkpoint submitted! Under review.')
                           }
                         }}
                       />

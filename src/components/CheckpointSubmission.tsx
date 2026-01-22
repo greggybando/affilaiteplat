@@ -30,16 +30,21 @@ export function CheckpointSubmission({
   const [submissionData, setSubmissionData] = useState<any>(null)
   const [loadingStatus, setLoadingStatus] = useState(true)
 
-  // Load existing submission status
+  // Load existing submission status from user_checkpoints
   useEffect(() => {
     const loadStatus = async () => {
       try {
-        const res = await fetch(`/api/user/unlocks?courseType=mindset`)
-        const data = await res.json()
-        if (data.sections && sectionId) {
-          const section = data.sections.find((s: any) => s.id === sectionId)
-          if (section && section.checkpointId === checkpointId) {
-            setSubmissionStatus(section.checkpointStatus || 'not_started')
+        // Fetch user's checkpoint submission status directly
+        const res = await fetch(`/api/checkpoints/user-submission?checkpointId=${checkpointId}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.submission) {
+            setSubmissionStatus(data.submission.status || 'not_started')
+            setSubmissionData({
+              reason: data.submission.ai_review_notes || data.submission.admin_feedback,
+              missing: [],
+              confidence: data.submission.ai_confidence
+            })
           }
         }
       } catch (error) {
@@ -49,7 +54,7 @@ export function CheckpointSubmission({
       }
     }
     loadStatus()
-  }, [checkpointId, sectionId])
+  }, [checkpointId])
 
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -114,8 +119,8 @@ export function CheckpointSubmission({
       e.stopPropagation()
     }
     
-    if (submissionText.trim().length < 20) {
-      setError('Submission text must be at least 20 characters')
+    if (submissionText.trim().length < 50) {
+      setError('Submission text must be at least 50 characters')
       return
     }
 
@@ -139,20 +144,19 @@ export function CheckpointSubmission({
         }
       }
 
-      // Submit checkpoint
+      // Submit checkpoint using unified API
       console.log('[Checkpoint Submit] Submitting checkpoint:', {
         checkpointId,
         hasScreenshot: !!screenshotUrl,
         textLength: submissionText.trim().length
       })
 
-      const res = await fetch('/api/checkpoints/submit', {
+      const res = await fetch(`/api/checkpoints/${checkpointId}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          checkpointId,
-          submissionText: submissionText.trim(),
-          screenshotUrl: screenshotUrl || null
+          submission_text: submissionText.trim(),
+          screenshot_url: screenshotUrl || null
         })
       })
 
@@ -175,7 +179,7 @@ export function CheckpointSubmission({
       // Update status IMMEDIATELY
       setSubmissionStatus(data.status)
       setSubmissionData({
-        reason: data.aiReason,
+        reason: data.reason,
         missing: data.missing || [],
         confidence: data.confidence
       })
@@ -296,7 +300,7 @@ export function CheckpointSubmission({
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Submission Text * (min 20 characters)
+              Submission Text * (min 50 characters)
             </label>
           <textarea
             value={submissionText}
@@ -306,8 +310,8 @@ export function CheckpointSubmission({
             placeholder="Describe what you completed, share your work, or explain how you met the requirements..."
             disabled={submitting}
           />
-          <div className={`text-xs mt-1 ${submissionText.length >= 20 ? 'text-green-400' : 'text-slate-500'}`}>
-            {submissionText.length}/20 characters minimum
+          <div className={`text-xs mt-1 ${submissionText.length >= 50 ? 'text-green-400' : 'text-slate-500'}`}>
+            {submissionText.length}/50 characters minimum
           </div>
         </div>
 
@@ -355,7 +359,7 @@ export function CheckpointSubmission({
             e.stopPropagation()
             handleSubmit(e)
           }}
-          disabled={submitting || submissionText.trim().length < 20}
+          disabled={submitting || submissionText.trim().length < 50}
           className="w-full px-4 py-3 bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
         >
           {submitting ? (
