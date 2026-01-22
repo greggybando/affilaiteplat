@@ -137,27 +137,29 @@ export async function GET(
         : null
 
       // Determine if module is locked
+      // Default: unlocked (modules unlock by default unless explicitly locked)
       let isLocked = false
       let lockReason: string | null = null
 
       // Debug logging for "The Game of Capitalism"
       const isDebugModule = module.title.toLowerCase().includes('game of capitalism')
       if (isDebugModule) {
-        console.log('[Unlock Status] Debugging module:', {
-          title: module.title,
-          id: module.id,
-          sort_order: module.sort_order,
-          index,
-          hasCheckpoint: !!checkpoint,
-          checkpointStatus
-        })
+        console.log('[Unlock Status] ===== DEBUGGING MODULE =====')
+        console.log('[Unlock Status] Title:', module.title)
+        console.log('[Unlock Status] ID:', module.id)
+        console.log('[Unlock Status] sort_order:', module.sort_order)
+        console.log('[Unlock Status] index:', index)
+        console.log('[Unlock Status] Has checkpoint:', !!checkpoint)
+        console.log('[Unlock Status] Checkpoint status:', checkpointStatus)
+        console.log('[Unlock Status] All modules:', modules.map(m => ({ title: m.title, sort_order: m.sort_order })))
+        console.log('[Unlock Status] Unlock rules:', Array.from(unlockRuleMap.entries()))
       }
 
       // a. First module (index 0 or sort_order 0) is always unlocked
       if (index === 0 || module.sort_order === 0) {
         isLocked = false
         if (isDebugModule) {
-          console.log('[Unlock Status] Module is first, unlocked')
+          console.log('[Unlock Status] ✓ Module is first, unlocked')
         }
       } else {
         // b. Check unlock_rules for this module FIRST (explicit rules take precedence)
@@ -169,7 +171,8 @@ export async function GET(
           if (isDebugModule) {
             console.log('[Unlock Status] Has unlock rule:', {
               requiredCheckpointId,
-              requiredStatus
+              requiredStatus,
+              allUserCheckpoints: Array.from(userCheckpointStatusMap.entries())
             })
           }
           if (requiredStatus !== 'approved') {
@@ -178,11 +181,14 @@ export async function GET(
             lockReason = requiredCheckpoint
               ? `Complete "${requiredCheckpoint.title}" to unlock this module`
               : 'Complete the required checkpoint to unlock this module'
+            if (isDebugModule) {
+              console.log('[Unlock Status] ✗ LOCKED: Required checkpoint not approved')
+            }
           } else {
             // Required checkpoint is approved, module is unlocked
             isLocked = false
             if (isDebugModule) {
-              console.log('[Unlock Status] Required checkpoint approved, module unlocked')
+              console.log('[Unlock Status] ✓ UNLOCKED: Required checkpoint approved')
             }
           }
         } else {
@@ -195,42 +201,53 @@ export async function GET(
               console.log('[Unlock Status] Checking previous module:', {
                 previousTitle: previousModule.title,
                 previousId: previousModule.id,
+                previousSortOrder: previousModule.sort_order,
                 hasPreviousCheckpoint: !!previousCheckpoint,
                 previousCheckpointId: previousCheckpoint?.id,
-                previousCheckpointStatus: previousCheckpoint ? userCheckpointStatusMap.get(previousCheckpoint.id) : null
+                previousCheckpointTitle: previousCheckpoint?.title,
+                previousCheckpointStatus: previousCheckpoint ? userCheckpointStatusMap.get(previousCheckpoint.id) : null,
+                allCheckpoints: Array.from(checkpointMap.entries()).map(([id, cp]) => ({ moduleId: id, checkpointTitle: cp.title }))
               })
             }
             if (previousCheckpoint) {
               // Previous module has a checkpoint - must be approved to unlock this module
-              const previousStatus = userCheckpointStatusMap.get(previousCheckpoint.id)
+              const previousStatus = userCheckpointStatusMap.get(previousCheckpoint.id) || 'not_started'
+              if (isDebugModule) {
+                console.log('[Unlock Status] Previous checkpoint status:', previousStatus)
+              }
               if (previousStatus !== 'approved') {
                 isLocked = true
                 lockReason = `Complete "${previousCheckpoint.title}" to unlock this module`
                 if (isDebugModule) {
-                  console.log('[Unlock Status] Module locked because previous checkpoint not approved:', previousStatus)
+                  console.log('[Unlock Status] ✗ LOCKED: Previous checkpoint not approved. Status:', previousStatus)
                 }
               } else {
                 // Previous checkpoint is approved, module is unlocked
                 isLocked = false
                 if (isDebugModule) {
-                  console.log('[Unlock Status] Previous checkpoint approved, module unlocked')
+                  console.log('[Unlock Status] ✓ UNLOCKED: Previous checkpoint approved')
                 }
               }
             } else {
               // If previous module has no checkpoint, this module is unlocked (sequential progression)
               isLocked = false
               if (isDebugModule) {
-                console.log('[Unlock Status] Previous module has no checkpoint, module unlocked')
+                console.log('[Unlock Status] ✓ UNLOCKED: Previous module has no checkpoint')
               }
             }
           } else {
             // No previous module (shouldn't happen if index > 0, but be safe)
             isLocked = false
             if (isDebugModule) {
-              console.log('[Unlock Status] No previous module found, unlocking')
+              console.log('[Unlock Status] ✓ UNLOCKED: No previous module found')
             }
           }
         }
+      }
+
+      if (isDebugModule) {
+        console.log('[Unlock Status] FINAL RESULT:', { isLocked, lockReason })
+        console.log('[Unlock Status] ===== END DEBUG =====')
       }
 
       // Map checkpoint status to response format
