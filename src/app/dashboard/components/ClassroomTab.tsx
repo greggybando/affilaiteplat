@@ -1044,25 +1044,6 @@ export default function ClassroomTab({
                 />
                 </div>
               )
-            ) : selectedCourse ? (
-              // Use SkillBankCourseView for ALL courses (including foundational)
-              // Foundational courses (mindset, dream-job) can now be edited using the same editor
-              // The isAdmin prop controls editing permissions within the component
-              <SkillBankCourseView
-                course={selectedCourse}
-                isAdmin={isAdmin}
-                onBack={() => setSelectedCourse(null)}
-                onPublish={async () => {
-                  // Refetch courses after publishing
-                  const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
-                  const res = await fetch(url)
-                  const data = await res.json()
-                  if (data.courses) {
-                    setCourses(data.courses)
-                  }
-                }}
-                glowIntensity={glowIntensity}
-              />
             ) : selectedWorld ? (
               // Fallback: Old foundational course UI (for backward compatibility)
               // This is triggered by clicking the old Mindset/DreamJob buttons
