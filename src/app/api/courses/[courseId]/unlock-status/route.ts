@@ -210,22 +210,31 @@ export async function GET(
               })
             }
             if (previousCheckpoint) {
-              // Previous module has a checkpoint - must be approved to unlock this module
+              // Previous module has a checkpoint - check status
               const previousStatus = userCheckpointStatusMap.get(previousCheckpoint.id) || 'not_started'
               if (isDebugModule) {
-                console.log('[Unlock Status] Previous checkpoint status:', previousStatus)
+                console.log('[Unlock Status] Previous checkpoint status:', previousStatus, '(raw:', userCheckpointStatusMap.get(previousCheckpoint.id), ')')
               }
-              if (previousStatus !== 'approved') {
+              // Only lock if status is explicitly NOT approved (denied, pending, needs_review)
+              // If status is 'not_started' or null/undefined, unlock (allow progression)
+              if (previousStatus === 'approved') {
+                // Previous checkpoint is approved, module is unlocked
+                isLocked = false
+                if (isDebugModule) {
+                  console.log('[Unlock Status] ✓ UNLOCKED: Previous checkpoint approved')
+                }
+              } else if (previousStatus === 'denied' || previousStatus === 'pending' || previousStatus === 'needs_review') {
+                // Checkpoint exists but not approved - lock the module
                 isLocked = true
                 lockReason = `Complete "${previousCheckpoint.title}" to unlock this module`
                 if (isDebugModule) {
                   console.log('[Unlock Status] ✗ LOCKED: Previous checkpoint not approved. Status:', previousStatus)
                 }
               } else {
-                // Previous checkpoint is approved, module is unlocked
+                // Status is 'not_started' or null/undefined - unlock to allow progression
                 isLocked = false
                 if (isDebugModule) {
-                  console.log('[Unlock Status] ✓ UNLOCKED: Previous checkpoint approved')
+                  console.log('[Unlock Status] ✓ UNLOCKED: Previous checkpoint not started (allowing progression)')
                 }
               }
             } else {
