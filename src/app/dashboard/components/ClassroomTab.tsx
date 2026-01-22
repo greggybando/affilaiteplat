@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
 import { Course, Module, Lesson, Checkpoint } from '@/lib/types/courses'
