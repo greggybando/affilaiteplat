@@ -109,6 +109,12 @@ export default function GrindhouseTab({ affiliate, glowIntensity }: GrindhouseTa
       {/* Left Panel - My Grindhouses (30%) */}
       <div className="w-[30%] border-r border-[rgba(255,255,255,0.1)] flex flex-col" style={{ backgroundColor: '#1a1a2e' }}>
         <div className="p-4 border-b border-[rgba(255,255,255,0.1)]">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-white mb-2">How it works:</h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              You have to live somewhere. Might as well surround yourself with people who push you to be better. A "grindhouse" is a house where multiple people live, share rent, save money, and build up their income skills as they do it. A conscious shared design to level up This section is purely for organizing grindhouses, finding roommates, making connections.
+            </p>
+          </div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <Home className="w-5 h-5" />

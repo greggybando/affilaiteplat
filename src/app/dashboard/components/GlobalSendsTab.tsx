@@ -104,7 +104,7 @@ export default function GlobalSendsTab({ affiliate, glowIntensity }: GlobalSends
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-white mb-2">How it works:</h3>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Traveling the world is more fun (and cheaper) with friends. Organize a trip, split prices, have a blast. This section is purely for organizing trips & sending it globally.
+              Traveling the world is more fun (and cheaper) with friends. Organize a trip, split prices, have a blast. This section is purely for organizing trips & sending it globally. Feel free to take anything into DMs.
             </p>
           </div>
           <div className="flex items-center justify-between mb-4">
