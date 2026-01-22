@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, Upload, Paperclip, Check, FileCheck, Loader2, Save, X, Download, FileUp, Lock } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, Upload, Paperclip, Check, FileCheck, Loader2, Save, X, Download, FileUp, Lock, Pencil } from 'lucide-react'
 import { Course, Module, Lesson } from '@/lib/types/courses'
 import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 import { CourseImporter } from './CourseImporter'
@@ -87,6 +87,18 @@ export function SkillBankCourseView({
   const [editingLessonTitle, setEditingLessonTitle] = useState<string>('')
   const [editingCourseTitle, setEditingCourseTitle] = useState(false)
   const [courseTitle, setCourseTitle] = useState(course.title)
+  
+  // Checkpoint editing states
+  const [editingCheckpointId, setEditingCheckpointId] = useState<string | null>(null)
+  const [creatingCheckpointModuleId, setCreatingCheckpointModuleId] = useState<string | null>(null)
+  const [checkpointFormData, setCheckpointFormData] = useState({
+    title: '',
+    description: '',
+    requirements: '',
+    ai_grading_prompt: '',
+    ai_review_enabled: true,
+    requires_manual_review: false
+  })
   
   const [lessonNotes, setLessonNotes] = useState('')
   const [lessonVideoUrl, setLessonVideoUrl] = useState('')
@@ -268,16 +280,21 @@ export function SkillBankCourseView({
   
   const loadAllCheckpoints = async () => {
     try {
+      // Fetch checkpoints by course_id - get all modules for this course
+      const moduleIds = sections.map(s => s.id)
+      if (moduleIds.length === 0) return
+      
+      // Use the by-course-v2 endpoint but map by module_id
       const res = await fetch(`/api/checkpoints/by-course-v2?courseId=${course.id}`)
       if (res.ok) {
         const data = await res.json()
         const checkpointMap: Record<string, any> = {}
         
-        // Map checkpoints by section ID
-        if (data.byUUID) {
-          sections.forEach(section => {
-            if (data.byUUID[section.id]) {
-              checkpointMap[section.id] = data.byUUID[section.id]
+        // Map checkpoints by module_id (sections are modules in new system)
+        if (data.checkpoints) {
+          data.checkpoints.forEach((cp: any) => {
+            if (cp.module_id && moduleIds.includes(cp.module_id)) {
+              checkpointMap[cp.module_id] = cp
             }
           })
         }
@@ -286,6 +303,89 @@ export function SkillBankCourseView({
       }
     } catch (error) {
       console.error('Error loading checkpoints:', error)
+    }
+  }
+  
+  const handleCreateCheckpoint = async (moduleId: string) => {
+    if (!checkpointFormData.title || !checkpointFormData.requirements) {
+      alert('Title and requirements are required')
+      return
+    }
+    
+    try {
+      const res = await fetch('/api/checkpoints', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          module_id: moduleId,
+          ...checkpointFormData
+        })
+      })
+      
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to create checkpoint')
+      }
+      
+      const data = await res.json()
+      setCheckpoints(prev => ({ ...prev, [moduleId]: data.checkpoint }))
+      setCreatingCheckpointModuleId(null)
+      setCheckpointFormData({
+        title: '',
+        description: '',
+        requirements: '',
+        ai_grading_prompt: '',
+        ai_review_enabled: true,
+        requires_manual_review: false
+      })
+    } catch (error: any) {
+      alert(error.message || 'Failed to create checkpoint')
+    }
+  }
+  
+  const handleUpdateCheckpoint = async (checkpointId: string, updates: any) => {
+    try {
+      const res = await fetch(`/api/checkpoints/${checkpointId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
+      
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to update checkpoint')
+      }
+      
+      const data = await res.json()
+      // Update checkpoint in state
+      const moduleId = Object.keys(checkpoints).find(id => checkpoints[id].id === checkpointId)
+      if (moduleId) {
+        setCheckpoints(prev => ({ ...prev, [moduleId]: data.checkpoint }))
+      }
+      setEditingCheckpointId(null)
+    } catch (error: any) {
+      alert(error.message || 'Failed to update checkpoint')
+    }
+  }
+  
+  const handleDeleteCheckpoint = async (checkpointId: string, moduleId: string) => {
+    if (!confirm('Are you sure you want to delete this checkpoint?')) return
+    
+    try {
+      const res = await fetch(`/api/checkpoints/${checkpointId}`, {
+        method: 'DELETE'
+      })
+      
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to delete checkpoint')
+      }
+      
+      const updated = { ...checkpoints }
+      delete updated[moduleId]
+      setCheckpoints(updated)
+    } catch (error: any) {
+      alert(error.message || 'Failed to delete checkpoint')
     }
   }
   
@@ -1484,6 +1584,249 @@ export function SkillBankCourseView({
                               <Plus size={16} />
                               Add Lesson
                             </button>
+                          )}
+                          
+                          {/* Checkpoint Editor */}
+                          {isAdmin && (
+                            <div className="border-t border-[rgba(255,255,255,0.05)] mt-2">
+                              {!checkpoints[section.id] && creatingCheckpointModuleId !== section.id ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setCreatingCheckpointModuleId(section.id)
+                                    setCheckpointFormData({
+                                      title: '',
+                                      description: '',
+                                      requirements: '',
+                                      ai_grading_prompt: '',
+                                      ai_review_enabled: true,
+                                      requires_manual_review: false
+                                    })
+                                  }}
+                                  className="w-full px-4 py-2.5 pl-14 text-left text-sm text-[rgba(255,255,255,0.4)] hover:text-cyan-400 hover:bg-[rgba(255,255,255,0.02)] transition-colors flex items-center gap-2"
+                                >
+                                  <Plus size={16} />
+                                  Add Checkpoint
+                                </button>
+                              ) : creatingCheckpointModuleId === section.id ? (
+                                <div className="p-4 space-y-3 bg-slate-800/30">
+                                  <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Title *</label>
+                                    <input
+                                      type="text"
+                                      value={checkpointFormData.title}
+                                      onChange={(e) => setCheckpointFormData(prev => ({ ...prev, title: e.target.value }))}
+                                      className="w-full px-2 py-1.5 bg-slate-900 border border-slate-700 rounded text-sm text-white"
+                                      placeholder="Checkpoint title"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Description</label>
+                                    <textarea
+                                      value={checkpointFormData.description}
+                                      onChange={(e) => setCheckpointFormData(prev => ({ ...prev, description: e.target.value }))}
+                                      className="w-full px-2 py-1.5 bg-slate-900 border border-slate-700 rounded text-sm text-white"
+                                      rows={2}
+                                      placeholder="Description shown to users"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Requirements *</label>
+                                    <textarea
+                                      value={checkpointFormData.requirements}
+                                      onChange={(e) => setCheckpointFormData(prev => ({ ...prev, requirements: e.target.value }))}
+                                      className="w-full px-2 py-1.5 bg-slate-900 border border-slate-700 rounded text-sm text-white"
+                                      rows={3}
+                                      placeholder="What user must submit"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-slate-400 mb-1">AI Grading Prompt</label>
+                                    <textarea
+                                      value={checkpointFormData.ai_grading_prompt}
+                                      onChange={(e) => setCheckpointFormData(prev => ({ ...prev, ai_grading_prompt: e.target.value }))}
+                                      className="w-full px-2 py-1.5 bg-slate-900 border border-slate-700 rounded text-sm text-white"
+                                      rows={2}
+                                      placeholder="Instructions for AI grader"
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    <label className="flex items-center gap-2 text-xs text-slate-300">
+                                      <input
+                                        type="checkbox"
+                                        checked={checkpointFormData.ai_review_enabled}
+                                        onChange={(e) => setCheckpointFormData(prev => ({ ...prev, ai_review_enabled: e.target.checked }))}
+                                        className="rounded"
+                                      />
+                                      AI Review Enabled
+                                    </label>
+                                    <label className="flex items-center gap-2 text-xs text-slate-300">
+                                      <input
+                                        type="checkbox"
+                                        checked={checkpointFormData.requires_manual_review}
+                                        onChange={(e) => setCheckpointFormData(prev => ({ ...prev, requires_manual_review: e.target.checked }))}
+                                        className="rounded"
+                                      />
+                                      Requires Manual Review
+                                    </label>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleCreateCheckpoint(section.id)
+                                      }}
+                                      className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 rounded text-sm text-white"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setCreatingCheckpointModuleId(null)
+                                      }}
+                                      className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm text-white"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : checkpoints[section.id] ? (
+                                <div className="p-4 bg-slate-800/30">
+                                  <div className="flex items-start justify-between mb-3">
+                                    <h4 className="text-sm font-semibold text-white">Checkpoint</h4>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setEditingCheckpointId(checkpoints[section.id].id)
+                                        }}
+                                        className="p-1 hover:bg-slate-700 rounded"
+                                        title="Edit checkpoint"
+                                      >
+                                        <Pencil size={14} className="text-slate-400" />
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleDeleteCheckpoint(checkpoints[section.id].id, section.id)
+                                        }}
+                                        className="p-1 hover:bg-red-900/50 rounded"
+                                        title="Delete checkpoint"
+                                      >
+                                        <Trash2 size={14} className="text-red-400" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  
+                                  {editingCheckpointId === checkpoints[section.id].id ? (
+                                    <div className="space-y-3">
+                                      <div>
+                                        <label className="block text-xs text-slate-400 mb-1">Title *</label>
+                                        <input
+                                          type="text"
+                                          defaultValue={checkpoints[section.id].title}
+                                          onBlur={(e) => {
+                                            if (e.target.value !== checkpoints[section.id].title) {
+                                              handleUpdateCheckpoint(checkpoints[section.id].id, { title: e.target.value })
+                                            }
+                                          }}
+                                          className="w-full px-2 py-1.5 bg-slate-900 border border-slate-700 rounded text-sm text-white"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs text-slate-400 mb-1">Description</label>
+                                        <textarea
+                                          defaultValue={checkpoints[section.id].description || ''}
+                                          onBlur={(e) => {
+                                            if (e.target.value !== (checkpoints[section.id].description || '')) {
+                                              handleUpdateCheckpoint(checkpoints[section.id].id, { description: e.target.value })
+                                            }
+                                          }}
+                                          className="w-full px-2 py-1.5 bg-slate-900 border border-slate-700 rounded text-sm text-white"
+                                          rows={2}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs text-slate-400 mb-1">Requirements *</label>
+                                        <textarea
+                                          defaultValue={checkpoints[section.id].requirements}
+                                          onBlur={(e) => {
+                                            if (e.target.value !== checkpoints[section.id].requirements) {
+                                              handleUpdateCheckpoint(checkpoints[section.id].id, { requirements: e.target.value })
+                                            }
+                                          }}
+                                          className="w-full px-2 py-1.5 bg-slate-900 border border-slate-700 rounded text-sm text-white"
+                                          rows={3}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs text-slate-400 mb-1">AI Grading Prompt</label>
+                                        <textarea
+                                          defaultValue={checkpoints[section.id].ai_grading_prompt || ''}
+                                          onBlur={(e) => {
+                                            if (e.target.value !== (checkpoints[section.id].ai_grading_prompt || '')) {
+                                              handleUpdateCheckpoint(checkpoints[section.id].id, { ai_grading_prompt: e.target.value })
+                                            }
+                                          }}
+                                          className="w-full px-2 py-1.5 bg-slate-900 border border-slate-700 rounded text-sm text-white"
+                                          rows={2}
+                                        />
+                                      </div>
+                                      <div className="flex items-center gap-4">
+                                        <label className="flex items-center gap-2 text-xs text-slate-300">
+                                          <input
+                                            type="checkbox"
+                                            defaultChecked={checkpoints[section.id].ai_review_enabled}
+                                            onChange={(e) => {
+                                              handleUpdateCheckpoint(checkpoints[section.id].id, { ai_review_enabled: e.target.checked })
+                                            }}
+                                            className="rounded"
+                                          />
+                                          AI Review Enabled
+                                        </label>
+                                        <label className="flex items-center gap-2 text-xs text-slate-300">
+                                          <input
+                                            type="checkbox"
+                                            defaultChecked={checkpoints[section.id].requires_manual_review}
+                                            onChange={(e) => {
+                                              handleUpdateCheckpoint(checkpoints[section.id].id, { requires_manual_review: e.target.checked })
+                                            }}
+                                            className="rounded"
+                                          />
+                                          Requires Manual Review
+                                        </label>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-2 text-sm">
+                                      <div>
+                                        <span className="text-slate-400">Title:</span>
+                                        <span className="text-white ml-2">{checkpoints[section.id].title}</span>
+                                      </div>
+                                      {checkpoints[section.id].description && (
+                                        <div>
+                                          <span className="text-slate-400">Description:</span>
+                                          <span className="text-white ml-2">{checkpoints[section.id].description}</span>
+                                        </div>
+                                      )}
+                                      <div>
+                                        <span className="text-slate-400">Requirements:</span>
+                                        <span className="text-white ml-2">{checkpoints[section.id].requirements}</span>
+                                      </div>
+                                      <div className="flex items-center gap-4 text-xs">
+                                        <span className={checkpoints[section.id].ai_review_enabled ? 'text-green-400' : 'text-slate-500'}>
+                                          AI Review: {checkpoints[section.id].ai_review_enabled ? 'Enabled' : 'Disabled'}
+                                        </span>
+                                        <span className={checkpoints[section.id].requires_manual_review ? 'text-yellow-400' : 'text-slate-500'}>
+                                          Manual Review: {checkpoints[section.id].requires_manual_review ? 'Required' : 'Not Required'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : null}
+                            </div>
                           )}
                         </div>
                       )}

@@ -32,11 +32,11 @@ export async function GET(request: NextRequest) {
     const moduleIds = (modules || []).map((m: any) => m.id)
 
     // Fetch checkpoints for these modules
-    // Note: checkpoints table uses section_id, which we'll map to module_id
+    // Note: checkpoints table uses module_id in unified system
     const { data: checkpoints, error: checkpointsError } = await (supabaseAdmin as any)
       .from('checkpoints')
-      .select('id, section_id, video_id, title, description, requirements, ai_review_enabled')
-      .in('section_id', moduleIds.length ? moduleIds : ['00000000-0000-0000-0000-000000000000'])
+      .select('id, module_id, title, description, requirements, ai_grading_prompt, ai_review_enabled, requires_manual_review')
+      .in('module_id', moduleIds.length ? moduleIds : ['00000000-0000-0000-0000-000000000000'])
 
     if (checkpointsError) {
       console.error('[Checkpoints by Course V2] Error fetching checkpoints:', checkpointsError)
