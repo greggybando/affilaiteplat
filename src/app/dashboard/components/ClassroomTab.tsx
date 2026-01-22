@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
 import { Course, Module, Lesson, Checkpoint } from '@/lib/types/courses'
@@ -717,15 +718,6 @@ export default function ClassroomTab({
           </div>
 
           <div className="flex-1 overflow-y-auto min-h-0 w-full relative z-10" style={{ width: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0, padding: 0 }}>
-            {(() => {
-              console.log('[ClassroomTab] 🎨 RENDER CHECK:', {
-                loading,
-                selectedWorld,
-                selectedCourse: selectedCourse ? { id: selectedCourse.id, slug: selectedCourse.slug } : null,
-                willRender: loading ? 'LOADING' : (!selectedWorld && !selectedCourse) ? 'SELECTOR' : selectedCourse ? 'SKILLBANK_VIEW' : selectedWorld === 'mindset' ? 'MINDSET_OLD' : selectedWorld === 'dreamjob' ? 'DREAMJOB_OLD' : 'UNKNOWN'
-              })
-              return null
-            })()}
             {loading ? (
               <div className="text-center py-12 text-white">Loading...</div>
             ) : !selectedWorld && !selectedCourse ? (
