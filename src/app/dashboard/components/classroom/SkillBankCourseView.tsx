@@ -439,6 +439,49 @@ export function SkillBankCourseView({
   
   // Handle module drag end
   const handleModuleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    
+    if (!over || active.id === over.id) return
+    
+    const activeId = active.id.toString().replace('module-', '')
+    const overId = over.id.toString().replace('module-', '')
+    
+    if (activeId === overId) return
+    
+    // Find current indices
+    const activeIndex = sections.findIndex(s => s.id === activeId)
+    const overIndex = sections.findIndex(s => s.id === overId)
+    
+    if (activeIndex === -1 || overIndex === -1) return
+    
+    // Reorder sections array
+    const newSections = [...sections]
+    const [movedSection] = newSections.splice(activeIndex, 1)
+    newSections.splice(overIndex, 0, movedSection)
+    
+    // Optimistically update UI
+    setSections(newSections)
+    
+    // Update backend
+    try {
+      const res = await fetch(`/api/courses-v2/${course.id}/sections/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ moduleIds: newSections.map(s => s.id) })
+      })
+      
+      if (!res.ok) {
+        // Revert on error
+        setSections(sections)
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to reorder modules')
+      }
+    } catch (error: any) {
+      // Revert on error
+      setSections(sections)
+      alert(error.message || 'Failed to reorder modules')
+    }
+  }
   
   const loadCheckpoint = async () => {
     if (!selectedSectionId) return
