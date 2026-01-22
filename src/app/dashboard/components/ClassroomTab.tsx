@@ -1163,7 +1163,6 @@ export default function ClassroomTab({
                   )}
                 </div>
               </div>
-              )
             ) : null}
           </div>
         </div>
