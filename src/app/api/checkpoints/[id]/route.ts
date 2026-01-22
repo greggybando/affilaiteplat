@@ -37,7 +37,7 @@ export async function PATCH(
     const { data: checkpoint, error } = await (supabaseAdmin as any)
       .from('checkpoints')
       .update(updates)
-      .eq('id', params.checkpointId)
+      .eq('id', params.id)
       .select()
       .single()
 
@@ -74,7 +74,7 @@ export async function DELETE(
     const { error } = await (supabaseAdmin as any)
       .from('checkpoints')
       .delete()
-      .eq('id', params.checkpointId)
+      .eq('id', params.id)
 
     if (error) {
       console.error('[Delete Checkpoint] Error:', error)
