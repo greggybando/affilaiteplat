@@ -50,7 +50,7 @@ export async function POST(
     const checkpointData = checkpoint as any
 
     // Step 2: Create user_checkpoint entry with status 'pending'
-    const { data: existingSubmission } = await supabaseAdmin
+    const { data: existingSubmission } = await (supabaseAdmin as any)
       .from('user_checkpoints')
       .select('id, status')
       .eq('user_id', affiliate.id)
@@ -68,6 +68,7 @@ export async function POST(
     }
 
     if (existingSubmission) {
+      const existingSubmissionData = existingSubmission as any
       // Update existing submission (resubmission)
       const { data: updated, error: updateError } = await (supabaseAdmin as any)
         .from('user_checkpoints')
@@ -83,7 +84,7 @@ export async function POST(
           reviewed_at: null,
           updated_at: new Date().toISOString()
         })
-        .eq('id', existingSubmission.id)
+        .eq('id', existingSubmissionData.id)
         .select('id')
         .single()
 
