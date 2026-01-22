@@ -365,7 +365,7 @@ export default function ClassroomTab({
   }, [])
 
   return (
-    <>
+    <React.Fragment>
       <div 
         className="flex h-full w-full" 
         style={{ 
@@ -1169,6 +1169,6 @@ export default function ClassroomTab({
         </div>
       </div>
     </div>
-    </>
+    </React.Fragment>
   )
 }
