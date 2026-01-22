@@ -1445,174 +1445,62 @@ export function SkillBankCourseView({
         {/* Right Content Area */}
         <div className="flex-1 bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden ml-6 mr-6 mb-6">
           {selectedLesson ? (
-            <div className="h-full flex flex-col overflow-hidden">
-              {/* Google Docs Content Area */}
-              <div className="flex-1 overflow-hidden flex flex-col bg-slate-900/50">
-                {/* Browser-like Frame */}
-                <div className="flex-1 flex flex-col overflow-hidden" style={{
-                  background: 'linear-gradient(135deg, rgba(30,30,35,0.98) 0%, rgba(25,25,30,0.95) 100%)',
-                  border: '1px solid rgba(70,70,75,0.6)',
-                  borderRadius: '8px',
-                  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05), inset 0 -1px 1px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.6)'
-                }}>
-                  {/* Browser Top Bar */}
-                  <div className="h-8 bg-slate-800/80 border-b border-slate-700/50 flex items-center px-3 shrink-0" style={{
-                    background: 'linear-gradient(135deg, rgba(40,40,45,0.9) 0%, rgba(35,35,40,0.95) 100%)'
-                  }}>
-                    <div className="flex items-center gap-2 flex-1">
-                      <div className="flex gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                        <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                        <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
-                      </div>
-                      <div className="flex-1 mx-4 h-5 bg-slate-900/50 rounded text-xs text-slate-400 px-2 flex items-center border border-slate-700/50">
-                        {selectedLesson.content && selectedLesson.content.includes('docs.google.com') ? (
-                          <span className="truncate">{selectedLesson.content.match(/docs\.google\.com\/[^\s"']+/)?.[0] || 'docs.google.com'}</span>
-                        ) : (
-                          <span className="text-slate-500">No document</span>
-                        )}
-                      </div>
-                    </div>
+            <div className="space-y-0 h-full overflow-y-auto">
+              {/* Video Player */}
+              <div className="aspect-video bg-slate-900 border-b border-slate-700/50 relative">
+                {selectedLesson.video_url && (selectedLesson.video_url.includes('youtube') || selectedLesson.video_url.includes('youtu.be')) && extractYouTubeId(selectedLesson.video_url) && (
+                  <iframe
+                    key={`youtube-${selectedLesson.id}-${videoKey}`}
+                    src={`https://www.youtube.com/embed/${extractYouTubeId(selectedLesson.video_url)}?rel=0`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full absolute inset-0"
+                    title={selectedLesson.title}
+                    loading="eager"
+                    onLoad={() => console.log('[SkillBankCourseView] YouTube iframe loaded:', selectedLesson.id)}
+                    onError={(e) => console.error('[SkillBankCourseView] YouTube iframe error:', e)}
+                  />
+                )}
+                {selectedLesson.video_url && selectedLesson.video_url.includes('loom') && extractLoomId(selectedLesson.video_url) && (
+                  <iframe
+                    key={`loom-${selectedLesson.id}-${videoKey}`}
+                    src={`https://www.loom.com/embed/${extractLoomId(selectedLesson.video_url)}`}
+                    frameBorder="0"
+                    allowFullScreen
+                    className="w-full h-full absolute inset-0"
+                    title={selectedLesson.title}
+                    loading="eager"
+                    onLoad={() => console.log('[SkillBankCourseView] Loom iframe loaded:', selectedLesson.id)}
+                    onError={(e) => console.error('[SkillBankCourseView] Loom iframe error:', e)}
+                  />
+                )}
+                {!selectedLesson.video_url && isAdmin && (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-slate-400">No video URL set. Add one below.</p>
                   </div>
-                  
-                  {/* Google Docs Embed */}
-                  <div className="flex-1 overflow-hidden relative">
-                    {selectedLesson.content && selectedLesson.content.includes('docs.google.com') ? (
-                      (() => {
-                        // Extract Google Docs URL from content
-                        const docsMatch = selectedLesson.content.match(/https?:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/);
-                        const docId = docsMatch ? docsMatch[1] : null;
-                        
-                        // Convert to embeddable preview URL
-                        const docsUrl = docId ? `https://docs.google.com/document/d/${docId}/preview` : null;
-                        
-                        return docsUrl ? (
-                          <iframe
-                            src={docsUrl}
-                            className="w-full h-full border-0"
-                            allowFullScreen
-                            title={selectedLesson.title}
-                            style={{ minHeight: '600px' }}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center p-8">
-                            <div className="text-center">
-                              <p className="text-slate-400 mb-2">Invalid Google Docs URL</p>
-                              {isAdmin && (
-                                <p className="text-xs text-slate-500">Paste full Google Docs URL in lesson content field</p>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()
-                    ) : selectedLesson.video_url ? (
-                      // If no Google Docs but has video, show video full screen
-                      <div className="w-full h-full flex items-center justify-center bg-slate-900">
-                        <div className="w-full aspect-video max-w-4xl">
-                          {selectedLesson.video_url && (selectedLesson.video_url.includes('youtube') || selectedLesson.video_url.includes('youtu.be')) && extractYouTubeId(selectedLesson.video_url) && (
-                            <iframe
-                              key={`youtube-full-${selectedLesson.id}-${videoKey}`}
-                              src={`https://www.youtube.com/embed/${extractYouTubeId(selectedLesson.video_url)}?rel=0`}
-                              frameBorder="0"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                              className="w-full h-full"
-                              title={selectedLesson.title}
-                            />
-                          )}
-                          {selectedLesson.video_url && selectedLesson.video_url.includes('loom') && extractLoomId(selectedLesson.video_url) && (
-                            <iframe
-                              key={`loom-full-${selectedLesson.id}-${videoKey}`}
-                              src={`https://www.loom.com/embed/${extractLoomId(selectedLesson.video_url)}`}
-                              frameBorder="0"
-                              allowFullScreen
-                              className="w-full h-full"
-                              title={selectedLesson.title}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center p-8">
-                        <div className="text-center">
-                          <p className="text-slate-400 mb-2">No content available</p>
-                          {isAdmin && (
-                            <p className="text-xs text-slate-500">Add Google Docs URL or video URL</p>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                )}
+                {!selectedLesson.video_url && !isAdmin && (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-slate-400">Video coming soon</p>
                   </div>
-                  
-                  {/* YouTube Video Player at Bottom */}
-                  {selectedLesson.video_url && (
-                    <div className="shrink-0 border-t border-slate-700/50">
-                      <div className="aspect-video bg-slate-900 relative">
-                        {selectedLesson.video_url && (selectedLesson.video_url.includes('youtube') || selectedLesson.video_url.includes('youtu.be')) && extractYouTubeId(selectedLesson.video_url) && (
-                          <iframe
-                            key={`youtube-${selectedLesson.id}-${videoKey}`}
-                            src={`https://www.youtube.com/embed/${extractYouTubeId(selectedLesson.video_url)}?rel=0`}
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="w-full h-full absolute inset-0"
-                            title={selectedLesson.title}
-                            loading="eager"
-                            onLoad={() => console.log('[SkillBankCourseView] YouTube iframe loaded:', selectedLesson.id)}
-                            onError={(e) => console.error('[SkillBankCourseView] YouTube iframe error:', e)}
-                          />
-                        )}
-                        {selectedLesson.video_url && selectedLesson.video_url.includes('loom') && extractLoomId(selectedLesson.video_url) && (
-                          <iframe
-                            key={`loom-${selectedLesson.id}-${videoKey}`}
-                            src={`https://www.loom.com/embed/${extractLoomId(selectedLesson.video_url)}`}
-                            frameBorder="0"
-                            allowFullScreen
-                            className="w-full h-full absolute inset-0"
-                            title={selectedLesson.title}
-                            loading="eager"
-                            onLoad={() => console.log('[SkillBankCourseView] Loom iframe loaded:', selectedLesson.id)}
-                            onError={(e) => console.error('[SkillBankCourseView] Loom iframe error:', e)}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
 
-              {/* Admin Controls - Only show if no Google Docs */}
-              {isAdmin && (!selectedLesson.content || !selectedLesson.content.includes('docs.google.com')) && (
-                <div className="p-6 space-y-4 border-t border-slate-700/50">
-                  <div>
-                    <label className="block text-xs text-slate-400 mb-1">Google Docs URL (paste full URL)</label>
-                    <input
-                      type="text"
-                      value={selectedLesson.content || ''}
-                      onChange={(e) => {
-                        // Update local state
-                        const updatedLesson = { ...selectedLesson, content: e.target.value }
-                        setSelectedLesson(updatedLesson)
-                      }}
-                      onBlur={async () => {
-                        // Save to database
-                        if (selectedLesson.content) {
-                          try {
-                            const response = await fetch(`/api/courses-v2/${course.id}/sections/${selectedSectionId}/lessons/${selectedLesson.id}`, {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ content: selectedLesson.content })
-                            })
-                            if (!response.ok) throw new Error('Failed to save')
-                          } catch (error) {
-                            console.error('Error saving content:', error)
-                          }
-                        }
-                      }}
-                      placeholder="https://docs.google.com/document/d/..."
-                      className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600 text-sm"
-                    />
-                  </div>
+              {/* Video Info & Description */}
+              <div className="p-6 space-y-6 relative z-0">
+                {/* Title */}
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-1">{selectedLesson.title}</h2>
+                  {selectedSectionId && (
+                    <p className="text-sm text-slate-400">
+                      {sections.find(s => s.id === selectedSectionId)?.title || 'Section'}
+                    </p>
+                  )}
+                </div>
+                
+                {/* Admin Video URL Input */}
+                {isAdmin && (
                   <div>
                     <label className="block text-xs text-slate-400 mb-1">YouTube ID/URL</label>
                     <input
@@ -1621,17 +1509,14 @@ export function SkillBankCourseView({
                       onChange={(e) => setLessonVideoUrl(e.target.value)}
                       onBlur={handleVideoUrlBlur}
                       placeholder="YouTube ID or URL"
-                      className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600 text-sm"
+                      className="w-full px-3 py-2 bg-slate-700 text-white rounded border border-slate-600"
                     />
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Checkpoint Button & Notes - Below Content */}
-              <div className="p-6 space-y-4 border-t border-slate-700/50">
-                {/* Checkpoint Button */}
+                {/* Checkpoint Button - Centered above Notes */}
                 {selectedLesson && selectedSectionId && (
-                  <div className="flex justify-center">
+                  <div className="mt-4 flex justify-center relative z-10">
                     {(() => {
                       const checkpoint = checkpoints[selectedSectionId]
                       const isLoading = loadingCheckpoints[selectedSectionId]
