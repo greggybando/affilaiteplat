@@ -431,6 +431,15 @@ export function SkillBankCourseView({
     }
   }
   
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor)
+  )
+  
+  // Handle module drag end
+  const handleModuleDragEnd = async (event: DragEndEvent) => {
+  
   const loadCheckpoint = async () => {
     if (!selectedSectionId) return
     
