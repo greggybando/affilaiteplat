@@ -140,8 +140,8 @@ export async function GET(
       let isLocked = false
       let lockReason: string | null = null
 
-      // a. Module with sort_order = 1 (first) is always unlocked
-      if (module.sort_order === 1 || index === 0) {
+      // a. First module (index 0 or sort_order 0) is always unlocked
+      if (index === 0 || module.sort_order === 0) {
         isLocked = false
       } else {
         // b. Check unlock_rules for this module
@@ -163,12 +163,14 @@ export async function GET(
           if (previousModule) {
             const previousCheckpoint = checkpointMap.get(previousModule.id)
             if (previousCheckpoint) {
+              // Previous module has a checkpoint - must be approved to unlock this module
               const previousStatus = userCheckpointStatusMap.get(previousCheckpoint.id)
               if (previousStatus !== 'approved') {
                 isLocked = true
                 lockReason = `Complete "${previousCheckpoint.title}" to unlock this module`
               }
             }
+            // If previous module has no checkpoint, this module is unlocked (sequential progression)
           }
         }
       }
