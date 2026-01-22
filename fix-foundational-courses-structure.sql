@@ -69,8 +69,8 @@ BEGIN
   -- ============================================
   
   UPDATE courses 
-  SET color = '#8B5CF6' 
-  WHERE slug = 'mindset' AND (color IS NULL OR color != '#8B5CF6');
+  SET color = '#06B6D4' 
+  WHERE slug = 'mindset' AND (color IS NULL OR color != '#06B6D4');
 
   UPDATE courses 
   SET color = '#06B6D4' 
