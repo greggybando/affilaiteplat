@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, Upload, Paperclip, Check, FileCheck, Loader2, Save, X, Download, FileUp } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, Upload, Paperclip, Check, FileCheck, Loader2, Save, X, Download, FileUp, Lock } from 'lucide-react'
 import { Course, Module, Lesson } from '@/lib/types/courses'
 import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 import { CourseImporter } from './CourseImporter'
@@ -79,6 +79,7 @@ export function SkillBankCourseView({
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+  const [unlockStatus, setUnlockStatus] = useState<Record<string, { isLocked: boolean; lockReason: string | null; checkpoint: any }>>({})
   
   // Editing states
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
@@ -195,6 +196,33 @@ export function SkillBankCourseView({
   useEffect(() => {
     loadSections()
   }, [course.id])
+
+  // Fetch unlock status
+  useEffect(() => {
+    if (course.id && sections.length > 0) {
+      loadUnlockStatus()
+    }
+  }, [course.id, sections.length])
+
+  const loadUnlockStatus = async () => {
+    try {
+      const res = await fetch(`/api/courses/${course.id}/unlock-status`)
+      if (res.ok) {
+        const data = await res.json()
+        const statusMap: Record<string, { isLocked: boolean; lockReason: string | null; checkpoint: any }> = {}
+        data.modules?.forEach((module: any) => {
+          statusMap[module.id] = {
+            isLocked: module.isLocked,
+            lockReason: module.lockReason,
+            checkpoint: module.checkpoint
+          }
+        })
+        setUnlockStatus(statusMap)
+      }
+    } catch (error) {
+      console.error('[SkillBankCourseView] Error loading unlock status:', error)
+    }
+  }
 
   // Update when lesson changes
   useEffect(() => {
@@ -836,6 +864,14 @@ export function SkillBankCourseView({
   }
 
   const toggleSection = (sectionId: string) => {
+    // Don't allow expanding locked modules (unless admin)
+    const moduleStatus = unlockStatus[sectionId]
+    if (moduleStatus?.isLocked && !isAdmin) {
+      if (moduleStatus.lockReason) {
+        alert(moduleStatus.lockReason)
+      }
+      return
+    }
     const newExpanded = new Set(expandedSections)
     if (newExpanded.has(sectionId)) {
       newExpanded.delete(sectionId)
@@ -1128,18 +1164,48 @@ export function SkillBankCourseView({
                 {sections.map((section, index) => {
                   const isExpanded = expandedSections.has(section.id)
                   const sectionLessons = section.lessons || []
+                  const moduleStatus = unlockStatus[section.id]
+                  const isLocked = moduleStatus?.isLocked ?? false
+                  const lockReason = moduleStatus?.lockReason
+                  const checkpoint = moduleStatus?.checkpoint
+                  
+                  // Get checkpoint status badge
+                  const getCheckpointBadge = () => {
+                    if (!checkpoint) return null
+                    const status = checkpoint.status
+                    if (status === 'approved') return '✅'
+                    if (status === 'pending' || status === 'needs_review') return '⏳'
+                    if (status === 'denied') return '❌'
+                    if (status === 'not_started') return '○'
+                    return null
+                  }
                   
                   return (
                     <div key={section.id} className="group">
                       {/* Section Header */}
                       <div
-                        className="px-4 py-3 border-b border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-pointer"
+                        className={`px-4 py-3 border-b border-[rgba(255,255,255,0.05)] transition-colors ${
+                          isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-[rgba(255,255,255,0.02)]'
+                        }`}
                         style={{
                           background: 'rgba(30,30,35,0.6)'
                         }}
-                        onClick={() => toggleSection(section.id)}
+                        onClick={() => {
+                          if (!isLocked) {
+                            toggleSection(section.id)
+                          } else if (lockReason) {
+                            // Show toast/alert with lock reason
+                            alert(lockReason)
+                          }
+                        }}
+                        title={isLocked ? lockReason || 'Complete the required checkpoint to unlock this module' : ''}
                       >
                         <div className="flex items-center gap-2.5">
+                          {/* Lock Icon - Show before drag handle if locked */}
+                          {isLocked && !isAdmin && (
+                            <Lock size={14} className="text-slate-500 flex-shrink-0" />
+                          )}
+                          
                           {/* Draggable Icon - Always visible for admins */}
                           {isAdmin && (
                             <div className="opacity-80 flex-shrink-0 cursor-grab active:cursor-grabbing" title="Drag to reorder (admin)">
@@ -1150,9 +1216,9 @@ export function SkillBankCourseView({
                           {/* Expand/Collapse Chevron */}
                           <div className="flex-shrink-0">
                             {isExpanded ? (
-                              <ChevronDown size={16} className="text-[rgba(255,255,255,0.5)]" />
+                              <ChevronDown size={16} className={`${isLocked ? 'text-slate-600' : 'text-[rgba(255,255,255,0.5)]'}`} />
                             ) : (
-                              <ChevronRight size={16} className="text-[rgba(255,255,255,0.5)]" />
+                              <ChevronRight size={16} className={`${isLocked ? 'text-slate-600' : 'text-[rgba(255,255,255,0.5)]'}`} />
                             )}
                           </div>
                           
@@ -1191,20 +1257,28 @@ export function SkillBankCourseView({
                                 autoFocus
                               />
                             ) : (
-                              <h4
-                                className="text-sm font-semibold uppercase tracking-wide"
-                                style={{ 
-                                  color: 'rgba(34,211,238,0.9)',
-                                  textShadow: '0 0 8px rgba(34,211,238,0.3), 0 0 16px rgba(34,211,238,0.2)',
-                                  letterSpacing: '0.08em'
-                                }}
-                                onDoubleClick={(e) => {
-                                  e.stopPropagation()
-                                  if (isAdmin) setEditingSectionId(section.id)
-                                }}
-                              >
-                                {section.title}
-                              </h4>
+                              <div className="flex items-center gap-2">
+                                <h4
+                                  className="text-sm font-semibold uppercase tracking-wide"
+                                  style={{ 
+                                    color: isLocked ? 'rgba(120,120,125,0.7)' : 'rgba(34,211,238,0.9)',
+                                    textShadow: isLocked ? 'none' : '0 0 8px rgba(34,211,238,0.3), 0 0 16px rgba(34,211,238,0.2)',
+                                    letterSpacing: '0.08em'
+                                  }}
+                                  onDoubleClick={(e) => {
+                                    e.stopPropagation()
+                                    if (isAdmin) setEditingSectionId(section.id)
+                                  }}
+                                >
+                                  {section.title}
+                                </h4>
+                                {/* Checkpoint Status Badge */}
+                                {!isLocked && checkpoint && (
+                                  <span className="text-xs" title={`Checkpoint: ${checkpoint.status}`}>
+                                    {getCheckpointBadge()}
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
                           
@@ -1227,7 +1301,7 @@ export function SkillBankCourseView({
                       </div>
 
                       {/* Lessons */}
-                      {isExpanded && (
+                      {isExpanded && !isLocked && (
                         <div className="bg-[rgba(0,0,0,0.2)]">
                           {sectionLessons.map((lesson: any, lessonIndex: number) => (
                             <div
