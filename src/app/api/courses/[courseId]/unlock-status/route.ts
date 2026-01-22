@@ -160,7 +160,7 @@ export async function GET(
           console.log('[Unlock Status] Module is first, unlocked')
         }
       } else {
-        // b. Check unlock_rules for this module
+        // b. Check unlock_rules for this module FIRST (explicit rules take precedence)
         const requiredCheckpointId = unlockRuleMap.get(module.id)
 
         if (requiredCheckpointId) {
@@ -178,9 +178,16 @@ export async function GET(
             lockReason = requiredCheckpoint
               ? `Complete "${requiredCheckpoint.title}" to unlock this module`
               : 'Complete the required checkpoint to unlock this module'
+          } else {
+            // Required checkpoint is approved, module is unlocked
+            isLocked = false
+            if (isDebugModule) {
+              console.log('[Unlock Status] Required checkpoint approved, module unlocked')
+            }
           }
         } else {
-          // No custom rule - check if previous module's checkpoint (if any) is approved
+          // No custom rule - check sequential progression
+          // Only lock if previous module has a checkpoint AND it's not approved
           const previousModule = modules[index - 1]
           if (previousModule) {
             const previousCheckpoint = checkpointMap.get(previousModule.id)
@@ -203,15 +210,24 @@ export async function GET(
                   console.log('[Unlock Status] Module locked because previous checkpoint not approved:', previousStatus)
                 }
               } else {
+                // Previous checkpoint is approved, module is unlocked
+                isLocked = false
                 if (isDebugModule) {
                   console.log('[Unlock Status] Previous checkpoint approved, module unlocked')
                 }
               }
             } else {
               // If previous module has no checkpoint, this module is unlocked (sequential progression)
+              isLocked = false
               if (isDebugModule) {
                 console.log('[Unlock Status] Previous module has no checkpoint, module unlocked')
               }
+            }
+          } else {
+            // No previous module (shouldn't happen if index > 0, but be safe)
+            isLocked = false
+            if (isDebugModule) {
+              console.log('[Unlock Status] No previous module found, unlocking')
             }
           }
         }
