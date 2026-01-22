@@ -1588,7 +1588,12 @@ export function SkillBankCourseView({
                           
                           {/* Checkpoint Editor */}
                           {isAdmin && (
-                            <div className="border-t border-[rgba(255,255,255,0.05)] mt-2" onClick={(e) => e.stopPropagation()}>
+                            <div 
+                              className="border-t border-[rgba(255,255,255,0.05)] mt-2 cursor-default" 
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              style={{ pointerEvents: 'auto' }}
+                            >
                               {!checkpoints[section.id] && creatingCheckpointModuleId !== section.id ? (
                                 <button
                                   onClick={(e) => {
@@ -1609,7 +1614,11 @@ export function SkillBankCourseView({
                                   Add Checkpoint
                                 </button>
                               ) : creatingCheckpointModuleId === section.id ? (
-                                <div className="p-4 space-y-3 bg-slate-800/30 cursor-default">
+                                <div 
+                                  className="p-4 space-y-3 bg-slate-800/30 cursor-default"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                >
                                   <div>
                                     <label className="block text-xs text-slate-400 mb-1">Title *</label>
                                     <input
@@ -1692,7 +1701,11 @@ export function SkillBankCourseView({
                                   </div>
                                 </div>
                               ) : checkpoints[section.id] ? (
-                                <div className="p-4 bg-slate-800/30 cursor-default">
+                                <div 
+                                  className="p-4 bg-slate-800/30 cursor-default"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                >
                                   <div className="flex items-start justify-between mb-3">
                                     <h4 className="text-sm font-semibold text-white">Checkpoint</h4>
                                     <div className="flex items-center gap-2">
