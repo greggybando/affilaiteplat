@@ -122,7 +122,7 @@ export async function GET(
           const requiredStatus = userCheckpointStatusMap.get(requiredCheckpointId)
           if (requiredStatus !== 'approved') {
             isLocked = true
-            const requiredCheckpoint = checkpoints?.find((cp: any) => cp.id === requiredCheckpointId)
+            const requiredCheckpoint = checkpoints?.find((cp: any) => cp.id === requiredCheckpointId) as any
             lockReason = requiredCheckpoint
               ? `Complete "${requiredCheckpoint.title}" to unlock this module`
               : 'Complete the required checkpoint to unlock this module'
