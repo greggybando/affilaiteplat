@@ -1169,5 +1169,6 @@ export default function ClassroomTab({
         </div>
       </div>
     </div>
+    </>
   )
 }
