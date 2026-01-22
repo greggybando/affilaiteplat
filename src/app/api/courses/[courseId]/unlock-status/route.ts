@@ -4,6 +4,28 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
+interface Module {
+  id: string
+  title: string
+  sort_order: number
+}
+
+interface Checkpoint {
+  id: string
+  module_id: string
+  title: string
+}
+
+interface UserCheckpoint {
+  checkpoint_id: string
+  status: string
+}
+
+interface UnlockRule {
+  target_id_uuid: string
+  required_checkpoint_id: string
+}
+
 // GET - Fetch unlock status for all modules in a course
 export async function GET(
   request: NextRequest,
@@ -18,7 +40,7 @@ export async function GET(
     const userId = affiliate.id
 
     // Step 1: Get all modules for courseId, ordered by sort_order
-    const { data: modules, error: modulesError } = await supabaseAdmin
+    const { data: modulesData, error: modulesError } = await (supabaseAdmin as any)
       .from('course_modules')
       .select('id, title, sort_order')
       .eq('course_id', params.courseId)
@@ -29,17 +51,19 @@ export async function GET(
       return NextResponse.json({ error: modulesError.message }, { status: 500 })
     }
 
-    if (!modules || modules.length === 0) {
+    const modules = (modulesData || []) as Module[]
+
+    if (modules.length === 0) {
       return NextResponse.json({
         courseId: params.courseId,
         modules: []
       })
     }
 
-    const moduleIds = modules.map((m: any) => m.id)
+    const moduleIds = modules.map((m) => m.id)
 
     // Step 2: Get all checkpoints for these modules
-    const { data: checkpoints, error: checkpointsError } = await supabaseAdmin
+    const { data: checkpointsData, error: checkpointsError } = await (supabaseAdmin as any)
       .from('checkpoints')
       .select('id, module_id, title')
       .in('module_id', moduleIds)
@@ -49,19 +73,21 @@ export async function GET(
       return NextResponse.json({ error: checkpointsError.message }, { status: 500 })
     }
 
+    const checkpoints = (checkpointsData || []) as Checkpoint[]
+
     // Create checkpoint map by module_id
-    const checkpointMap = new Map<string, any>()
-    checkpoints?.forEach((cp: any) => {
+    const checkpointMap = new Map<string, Checkpoint>()
+    checkpoints.forEach((cp) => {
       if (cp.module_id) {
         checkpointMap.set(cp.module_id, cp)
       }
     })
 
-    const checkpointIds = checkpoints?.map((cp: any) => cp.id) || []
+    const checkpointIds = checkpoints.map((cp) => cp.id)
 
     // Step 3: Get user_checkpoints for current user
-    const { data: userCheckpoints, error: userCheckpointsError } = checkpointIds.length > 0
-      ? await supabaseAdmin
+    const { data: userCheckpointsData, error: userCheckpointsError } = checkpointIds.length > 0
+      ? await (supabaseAdmin as any)
           .from('user_checkpoints')
           .select('checkpoint_id, status')
           .eq('user_id', userId)
@@ -73,14 +99,16 @@ export async function GET(
       return NextResponse.json({ error: userCheckpointsError.message }, { status: 500 })
     }
 
+    const userCheckpoints = (userCheckpointsData || []) as UserCheckpoint[]
+
     // Create user checkpoint status map
     const userCheckpointStatusMap = new Map<string, string>()
-    userCheckpoints?.forEach((ucp: any) => {
+    userCheckpoints.forEach((ucp) => {
       userCheckpointStatusMap.set(ucp.checkpoint_id, ucp.status)
     })
 
     // Step 4: Get unlock_rules for these modules
-    const { data: unlockRules, error: unlockRulesError } = await supabaseAdmin
+    const { data: unlockRulesData, error: unlockRulesError } = await (supabaseAdmin as any)
       .from('unlock_rules')
       .select('target_id_uuid, required_checkpoint_id')
       .eq('target_type', 'module')
@@ -91,16 +119,18 @@ export async function GET(
       return NextResponse.json({ error: unlockRulesError.message }, { status: 500 })
     }
 
+    const unlockRules = (unlockRulesData || []) as UnlockRule[]
+
     // Create unlock rule map by module_id
     const unlockRuleMap = new Map<string, string>()
-    unlockRules?.forEach((rule: any) => {
+    unlockRules.forEach((rule) => {
       if (rule.target_id_uuid) {
         unlockRuleMap.set(rule.target_id_uuid, rule.required_checkpoint_id)
       }
     })
 
     // Step 5: Build response for each module
-    const modulesWithStatus = modules.map((module: any, index: number) => {
+    const modulesWithStatus = modules.map((module, index: number) => {
       const checkpoint = checkpointMap.get(module.id)
       const checkpointStatus = checkpoint
         ? (userCheckpointStatusMap.get(checkpoint.id) || 'not_started')
@@ -122,7 +152,7 @@ export async function GET(
           const requiredStatus = userCheckpointStatusMap.get(requiredCheckpointId)
           if (requiredStatus !== 'approved') {
             isLocked = true
-            const requiredCheckpoint = checkpoints?.find((cp: any) => cp.id === requiredCheckpointId) as any
+            const requiredCheckpoint = checkpoints.find((cp) => cp.id === requiredCheckpointId)
             lockReason = requiredCheckpoint
               ? `Complete "${requiredCheckpoint.title}" to unlock this module`
               : 'Complete the required checkpoint to unlock this module'
