@@ -236,8 +236,10 @@ export function CourseSelector({
                   slug: mindsetCourse.slug,
                   title: mindsetCourse.title
                 })
-                onSelectCourse(mindsetCourse)
-                console.log('[CourseSelector] ✅ STEP 5: onSelectCourse called - should set selectedCourse state')
+                if (onSelectCourse) {
+                  onSelectCourse(mindsetCourse)
+                  console.log('[CourseSelector] ✅ STEP 5: onSelectCourse called - should set selectedCourse state')
+                }
               } else {
                 console.log('[CourseSelector] ⚠️ STEP 4: Mindset course NOT in loaded courses, calling onSelectMindset handler')
                 onSelectMindset()
@@ -292,8 +294,10 @@ export function CourseSelector({
                   slug: dreamJobCourse.slug,
                   title: dreamJobCourse.title
                 })
-                onSelectCourse(dreamJobCourse)
-                console.log('[CourseSelector] ✅ STEP 5: onSelectCourse called - should set selectedCourse state')
+                if (onSelectCourse) {
+                  onSelectCourse(dreamJobCourse)
+                  console.log('[CourseSelector] ✅ STEP 5: onSelectCourse called - should set selectedCourse state')
+                }
               } else {
                 console.log('[CourseSelector] ⚠️ STEP 4: DreamJob course NOT in loaded courses, calling onSelectDreamJob handler')
                 onSelectDreamJob()
