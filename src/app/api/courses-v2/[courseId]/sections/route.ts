@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
-// GET - Fetch all sections for a course
+// GET - Fetch all sections for a course (with lessons if includeLessons=true)
 export async function GET(
   request: NextRequest,
   { params }: { params: { courseId: string } }
@@ -15,18 +15,65 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: sections, error } = await supabaseAdmin
-      .from('course_modules')
-      .select('*')
-      .eq('course_id', params.courseId)
-      .order('sort_order', { ascending: true })
+    const searchParams = request.nextUrl.searchParams
+    const includeLessons = searchParams.get('includeLessons') === 'true'
 
-    if (error) {
-      console.error('Error fetching sections:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (includeLessons) {
+      // Optimized: Fetch sections with lessons in a single query using a join
+      const { data: sections, error: sectionsError } = await supabaseAdmin
+        .from('course_modules')
+        .select(`
+          *,
+          course_lessons (
+            id,
+            module_id,
+            title,
+            slug,
+            description,
+            video_url,
+            video_type,
+            content,
+            duration_minutes,
+            sort_order,
+            is_published,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('course_id', params.courseId)
+        .order('sort_order', { ascending: true })
+
+      if (sectionsError) {
+        console.error('Error fetching sections with lessons:', sectionsError)
+        return NextResponse.json({ error: sectionsError.message }, { status: 500 })
+      }
+
+      // Sort lessons within each section and remove course_lessons key
+      const sectionsWithLessons = (sections || []).map((section: any) => {
+        const { course_lessons, ...sectionData } = section
+        return {
+          ...sectionData,
+          lessons: (course_lessons || [])
+            .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))
+        }
+      })
+
+      return NextResponse.json({ sections: sectionsWithLessons })
+    } else {
+      // Original: Just fetch sections
+      const { data: sections, error } = await supabaseAdmin
+        .from('course_modules')
+        .select('*')
+        .eq('course_id', params.courseId)
+        .order('sort_order', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching sections:', error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ sections: sections || [] })
     }
-
-    return NextResponse.json({ sections: sections || [] })
   } catch (error: any) {
     console.error('Error in sections API:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })

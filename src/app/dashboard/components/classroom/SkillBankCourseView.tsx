@@ -394,24 +394,11 @@ export function SkillBankCourseView({
   const loadSections = async () => {
     try {
       setLoading(true)
-      const res = await fetch(`/api/courses-v2/${course.id}/sections`)
+      // Optimized: Fetch sections with lessons in a single API call
+      const res = await fetch(`/api/courses-v2/${course.id}/sections?includeLessons=true`)
       const data = await res.json()
       
-      // Fetch lessons for each section
-      const sectionsWithLessons = await Promise.all(
-        (data.sections || []).map(async (section: any) => {
-          try {
-            const lessonsRes = await fetch(`/api/courses-v2/${course.id}/sections/${section.id}/lessons`)
-            const lessonsData = await lessonsRes.json()
-            return {
-              ...section,
-              lessons: lessonsData.lessons || []
-            }
-          } catch (error) {
-            return { ...section, lessons: [] }
-          }
-        })
-      )
+      const sectionsWithLessons = data.sections || []
       
       setSections(sectionsWithLessons)
       
