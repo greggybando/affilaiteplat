@@ -1170,7 +1170,7 @@ export function SkillBankCourseView({
                                 }}
                                 className="w-full bg-transparent border-b border-cyan-500 outline-none text-sm font-semibold uppercase tracking-wide"
                                 style={{ 
-                                  color: 'rgba(220,220,225,0.95)',
+                                  color: 'rgba(34,211,238,0.9)',
                                   textShadow: '0 0 8px rgba(34,211,238,0.3), 0 0 16px rgba(34,211,238,0.2)'
                                 }}
                                 autoFocus
@@ -1179,7 +1179,7 @@ export function SkillBankCourseView({
                               <h4
                                 className="text-sm font-semibold uppercase tracking-wide"
                                 style={{ 
-                                  color: 'rgba(220,220,225,0.95)',
+                                  color: 'rgba(34,211,238,0.9)',
                                   textShadow: '0 0 8px rgba(34,211,238,0.3), 0 0 16px rgba(34,211,238,0.2)',
                                   letterSpacing: '0.08em'
                                 }}
