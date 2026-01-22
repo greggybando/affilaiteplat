@@ -5,6 +5,9 @@ import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, 
 import { Course, Module, Lesson } from '@/lib/types/courses'
 import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 import { CourseImporter } from './CourseImporter'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface SkillBankCourseViewProps {
   course: Course
@@ -12,6 +15,45 @@ interface SkillBankCourseViewProps {
   onBack: () => void
   onPublish?: () => void
   glowIntensity: number
+}
+
+// Sortable Module Wrapper Component
+function SortableModuleWrapper({ id, children, isAdmin }: { id: string; children: (props: { attributes: any; listeners: any }) => React.ReactNode; isAdmin: boolean }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `module-${id}`, disabled: !isAdmin })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({ attributes, listeners })}
+    </div>
+  )
+}
+
+// Sortable Drag Handle Component
+function SortableDragHandle({ attributes, listeners }: { attributes: any; listeners: any }) {
+  return (
+    <div 
+      {...attributes} 
+      {...listeners}
+      className="opacity-80 flex-shrink-0 cursor-grab active:cursor-grabbing" 
+      title="Drag to reorder (admin)"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <GripVertical size={16} className="text-[rgba(255,255,255,0.5)]" />
+    </div>
+  )
 }
 
 // Helper to generate slug from title
@@ -1260,8 +1302,17 @@ export function SkillBankCourseView({
                 {isAdmin ? 'Click "+ Add Section" below to create your first section' : 'No content yet'}
               </div>
             ) : (
-              <div>
-                {sections.map((section, index) => {
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleModuleDragEnd}
+              >
+                <SortableContext
+                  items={sections.map(s => `module-${s.id}`)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div>
+                    {sections.map((section, index) => {
                   const isExpanded = expandedSections.has(section.id)
                   const sectionLessons = section.lessons || []
                   const moduleStatus = unlockStatus[section.id]
@@ -1281,37 +1332,37 @@ export function SkillBankCourseView({
                   }
                   
                   return (
-                    <div key={section.id} className="group">
-                      {/* Section Header */}
-                      <div
-                        className={`px-4 py-3 border-b border-[rgba(255,255,255,0.05)] transition-colors ${
-                          isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-[rgba(255,255,255,0.02)]'
-                        }`}
-                        style={{
-                          background: 'rgba(30,30,35,0.6)'
-                        }}
-                        onClick={() => {
-                          if (!isLocked) {
-                            toggleSection(section.id)
-                          } else if (lockReason) {
-                            // Show toast/alert with lock reason
-                            alert(lockReason)
-                          }
-                        }}
-                        title={isLocked ? lockReason || 'Complete the required checkpoint to unlock this module' : ''}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          {/* Lock Icon - Show before drag handle if locked */}
-                          {isLocked && !isAdmin && (
-                            <Lock size={14} className="text-slate-500 flex-shrink-0" />
-                          )}
-                          
-                          {/* Draggable Icon - Always visible for admins */}
-                          {isAdmin && (
-                            <div className="opacity-80 flex-shrink-0 cursor-grab active:cursor-grabbing" title="Drag to reorder (admin)">
-                              <GripVertical size={16} className="text-[rgba(255,255,255,0.5)]" />
-                            </div>
-                          )}
+                    <SortableModuleWrapper key={section.id} id={section.id} isAdmin={isAdmin}>
+                      {({ attributes, listeners }) => (
+                        <div className="group">
+                          {/* Section Header */}
+                          <div
+                          className={`px-4 py-3 border-b border-[rgba(255,255,255,0.05)] transition-colors ${
+                            isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-[rgba(255,255,255,0.02)]'
+                          }`}
+                          style={{
+                            background: 'rgba(30,30,35,0.6)'
+                          }}
+                          onClick={() => {
+                            if (!isLocked) {
+                              toggleSection(section.id)
+                            } else if (lockReason) {
+                              // Show toast/alert with lock reason
+                              alert(lockReason)
+                            }
+                          }}
+                          title={isLocked ? lockReason || 'Complete the required checkpoint to unlock this module' : ''}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            {/* Lock Icon - Show before drag handle if locked */}
+                            {isLocked && !isAdmin && (
+                              <Lock size={14} className="text-slate-500 flex-shrink-0" />
+                            )}
+                            
+                            {/* Draggable Icon - Always visible for admins */}
+                            {isAdmin && (
+                              <SortableDragHandle attributes={attributes} listeners={listeners} />
+                            )}
                           
                           {/* Expand/Collapse Chevron */}
                           <div className="flex-shrink-0">
@@ -1843,10 +1894,14 @@ export function SkillBankCourseView({
                           )}
                         </div>
                       )}
-                    </div>
+                        </div>
+                      )}
+                    </SortableModuleWrapper>
                   )
                 })}
-              </div>
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
           </div>
 
