@@ -101,6 +101,12 @@ export default function GlobalSendsTab({ affiliate, glowIntensity }: GlobalSends
       {/* Left Panel - My Global Sends (30%) */}
       <div className="w-[30%] border-r border-[rgba(255,255,255,0.1)] flex flex-col" style={{ backgroundColor: '#1a1a2e' }}>
         <div className="p-4 border-b border-[rgba(255,255,255,0.1)]">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-white mb-2">How it works:</h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Traveling the world is more fun (and cheaper) with friends. Organize a trip, split prices, have a blast. This section is purely for organizing trips & sending it globally.
+            </p>
+          </div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <Plane className="w-5 h-5" />
