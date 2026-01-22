@@ -64,7 +64,7 @@ export function CourseSelector({
     c.slug !== 'side-income' && !foundationalSlugs.includes(c.slug)
   ) // Only SkillBank courses (exclude side-income and foundational)
   
-  console.log('[CourseSelector] All courses:', allCourses.length, 'isAdmin:', isAdmin)
+  console.log('[CourseSelector] SkillBank courses:', skillbankCourses.length, 'isAdmin:', isAdmin)
   
   // State for dropdown menu
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
