@@ -151,7 +151,7 @@ export function CheckpointSubmission({
         textLength: submissionText.trim().length
       })
 
-      const res = await fetch(`/api/checkpoints/${checkpointId}/submit`, {
+      const res = await fetch(`/api/checkpoints/submit/${checkpointId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
