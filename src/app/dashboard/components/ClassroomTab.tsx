@@ -54,7 +54,7 @@ export default function ClassroomTab({
   activeTab,
   setActiveTab,
   glowIntensity,
-}: ClassroomTabProps) {
+}: ClassroomTabProps): JSX.Element {
   console.log('[ClassroomTab] Component rendering/re-rendering')
   const isAdmin = useAdmin(affiliate)
   
