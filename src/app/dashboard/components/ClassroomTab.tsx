@@ -1060,7 +1060,7 @@ export default function ClassroomTab({
                     <h3 className="text-xs font-semibold uppercase tracking-widest" style={{
                       color: 'rgba(34,211,238,0.9)',
                       textShadow: '0 0 8px rgba(34,211,238,0.4)'
-                    }}>Course Modules</h3>
+                    }}>COURSE MODULES</h3>
                   </div>
 
                   <div className="flex-1 overflow-y-auto">

@@ -49,9 +49,8 @@ export function ModuleCard({
       <div 
         className="w-full px-4 py-3 flex items-center gap-2.5" 
         style={{
-          background: 'rgba(15,15,20,0.6)',
-          borderLeft: '2px solid transparent',
-          borderBottom: '1px solid rgba(34,211,238,0.1)',
+          background: 'rgba(30,30,35,0.6)',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
           position: 'relative',
           overflow: 'hidden',
           opacity: isLocked ? 0.5 : 1
@@ -59,12 +58,6 @@ export function ModuleCard({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="absolute left-0 top-0 bottom-0 w-0.5" style={{
-          background: 'linear-gradient(to bottom, rgba(34,211,238,0.4), rgba(6,182,212,0.5), rgba(34,211,238,0.4))',
-          boxShadow: '0 0 4px rgba(34,211,238,0.3)',
-          opacity: 0.6
-        }} />
-        
         {isLocked && (
           <div className="absolute right-4 flex items-center gap-2 text-slate-400 text-xs">
             <Lock className="w-3 h-3" />
@@ -82,12 +75,13 @@ export function ModuleCard({
             cursor: isLocked ? 'not-allowed' : 'pointer'
           }}
         >
+          {/* Expand/Collapse Chevron */}
           <svg
             className="transition-transform duration-200"
             style={{
-              width: '10px',
-              height: '10px',
-              color: 'rgba(34,211,238,0.5)',
+              width: '16px',
+              height: '16px',
+              color: 'rgba(255,255,255,0.5)',
               transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
               opacity: isLocked ? 0.3 : 1
             }}
@@ -98,19 +92,13 @@ export function ModuleCard({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
           </svg>
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold uppercase tracking-wider" style={{
+            <div className="text-sm font-semibold uppercase tracking-wide" style={{
               color: isLocked ? 'rgba(120,120,125,0.7)' : 'rgba(220,220,225,0.95)',
               textShadow: isLocked ? 'none' : '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3), 0 0 30px rgba(34,211,238,0.2)',
-              letterSpacing: '0.08em',
-              fontWeight: 600
+              letterSpacing: '0.08em'
             }}>
               {module.title}
             </div>
-            {module.description && (
-              <div className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">
-                {module.description}
-              </div>
-            )}
           </div>
         </button>
 

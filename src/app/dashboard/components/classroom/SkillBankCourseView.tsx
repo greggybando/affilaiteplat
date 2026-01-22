@@ -1073,64 +1073,19 @@ export function SkillBankCourseView({
           <div 
             className="p-3 shrink-0 border-b" 
             style={{
-              borderColor: `rgba(${rgbValues},0.2)`,
+              borderColor: 'rgba(34,211,238,0.2)',
               background: 'linear-gradient(135deg, rgba(40,40,45,0.9) 0%, rgba(35,35,40,0.95) 100%)'
             }}
           >
-            <div className="flex items-center justify-between gap-2 mb-2">
-              {isAdmin && editingCourseTitle ? (
-                <input
-                  type="text"
-                  value={courseTitle}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    setCourseTitle(e.target.value)
-                  }}
-                  onBlur={(e) => {
-                    e.stopPropagation()
-                    setEditingCourseTitle(false)
-                    handleSaveCourseTitle()
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    e.stopPropagation()
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      setEditingCourseTitle(false)
-                      handleSaveCourseTitle()
-                    }
-                    if (e.key === 'Escape') {
-                      e.preventDefault()
-                      setCourseTitle(courseData.title)
-                      setEditingCourseTitle(false)
-                    }
-                  }}
-                  className="flex-1 bg-transparent border-b-2 border-cyan-500 outline-none text-sm font-semibold text-white px-1 min-w-0"
-                  style={{
-                    color: `rgba(${rgbValues},0.9)`,
-                  }}
-                  autoFocus
-                />
-              ) : (
-                <h3 
-                  className={`text-sm font-semibold truncate flex-1 ${isAdmin ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (isAdmin) {
-                      console.log('[SkillBank] Clicked course title to edit, isAdmin:', isAdmin)
-                      setEditingCourseTitle(true)
-                    }
-                  }}
-                  style={{
-                    color: `rgba(${rgbValues},0.9)`,
-                    textShadow: `0 0 8px rgba(${rgbValues},0.4)`
-                  }}
-                  title={isAdmin ? 'Click to edit course title' : ''}
-                >
-                  {courseData.title}
-                </h3>
-              )}
-            </div>
+            <h3 
+              className="text-xs font-semibold uppercase tracking-widest"
+              style={{
+                color: 'rgba(34,211,238,0.9)',
+                textShadow: '0 0 8px rgba(34,211,238,0.4)'
+              }}
+            >
+              COURSE MODULES
+            </h3>
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -1151,23 +1106,29 @@ export function SkillBankCourseView({
                       {/* Section Header */}
                       <div
                         className="px-4 py-3 border-b border-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-pointer"
+                        style={{
+                          background: 'rgba(30,30,35,0.6)'
+                        }}
                         onClick={() => toggleSection(section.id)}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2.5">
+                          {/* Draggable Icon - Always visible for admins */}
                           {isAdmin && (
-                            <div className="opacity-80 flex-shrink-0" title="Drag to reorder (admin)">
+                            <div className="opacity-80 flex-shrink-0 cursor-grab active:cursor-grabbing" title="Drag to reorder (admin)">
                               <GripVertical size={16} className="text-[rgba(255,255,255,0.5)]" />
                             </div>
                           )}
                           
+                          {/* Expand/Collapse Chevron */}
                           <div className="flex-shrink-0">
                             {isExpanded ? (
-                              <ChevronDown size={18} className="text-[rgba(255,255,255,0.5)]" />
+                              <ChevronDown size={16} className="text-[rgba(255,255,255,0.5)]" />
                             ) : (
-                              <ChevronRight size={18} className="text-[rgba(255,255,255,0.5)]" />
+                              <ChevronRight size={16} className="text-[rgba(255,255,255,0.5)]" />
                             )}
                           </div>
                           
+                          {/* Module Title */}
                           <div className="flex-1 min-w-0">
                             {editingSectionId === section.id && isAdmin ? (
                               <input
@@ -1194,29 +1155,32 @@ export function SkillBankCourseView({
                                     }
                                   }
                                 }}
-                                className="w-full bg-transparent border-b border-cyan-500 outline-none text-sm font-bold uppercase tracking-wide"
-                                style={{ color: `rgba(${rgbValues},0.9)` }}
+                                className="w-full bg-transparent border-b border-cyan-500 outline-none text-sm font-semibold uppercase tracking-wide"
+                                style={{ 
+                                  color: 'rgba(220,220,225,0.95)',
+                                  textShadow: '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3)'
+                                }}
                                 autoFocus
                               />
                             ) : (
-                              <>
-                                <h4
-                                  className="text-sm font-bold uppercase tracking-wide mb-1"
-                                  style={{ color: `rgba(${rgbValues},0.9)` }}
-                                  onDoubleClick={(e) => {
-                                    e.stopPropagation()
-                                    if (isAdmin) setEditingSectionId(section.id)
-                                  }}
-                                >
-                                  {section.title}
-                                </h4>
-                                <p className="text-xs text-slate-500">
-                                  {sectionLessons.length} lesson{sectionLessons.length !== 1 ? 's' : ''}
-                                </p>
-                              </>
+                              <h4
+                                className="text-sm font-semibold uppercase tracking-wide"
+                                style={{ 
+                                  color: 'rgba(220,220,225,0.95)',
+                                  textShadow: '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3), 0 0 30px rgba(34,211,238,0.2)',
+                                  letterSpacing: '0.08em'
+                                }}
+                                onDoubleClick={(e) => {
+                                  e.stopPropagation()
+                                  if (isAdmin) setEditingSectionId(section.id)
+                                }}
+                              >
+                                {section.title}
+                              </h4>
                             )}
                           </div>
                           
+                          {/* Delete Button - Only visible on hover for admins */}
                           {isAdmin && (
                             <button
                               onClick={(e) => {
@@ -1225,7 +1189,7 @@ export function SkillBankCourseView({
                                 console.log('Delete section clicked:', section.id)
                                 handleDeleteSection(section.id)
                               }}
-                              className="opacity-70 hover:opacity-100 hover:text-red-400 transition-opacity p-1.5 flex-shrink-0"
+                              className="opacity-0 group-hover:opacity-70 hover:opacity-100 hover:text-red-400 transition-opacity p-1.5 flex-shrink-0"
                               title="Delete section (admin)"
                             >
                               <Trash2 size={14} />
@@ -1237,7 +1201,7 @@ export function SkillBankCourseView({
                       {/* Lessons */}
                       {isExpanded && (
                         <div className="bg-[rgba(0,0,0,0.2)]">
-                          {sectionLessons.map((lesson: any) => (
+                          {sectionLessons.map((lesson: any, lessonIndex: number) => (
                             <div
                               key={lesson.id}
                               onClick={() => {
@@ -1248,12 +1212,11 @@ export function SkillBankCourseView({
                                 selectedLesson?.id === lesson.id ? 'bg-[rgba(6,182,212,0.15)]' : ''
                               }`}
                             >
-                              <div className="flex items-center gap-3">
-                                {isAdmin && (
-                                  <div className="opacity-80 flex-shrink-0" title="Drag to reorder (admin)">
-                                    <GripVertical size={14} className="text-[rgba(255,255,255,0.5)]" />
-                                  </div>
-                                )}
+                              <div className="flex items-center gap-2.5">
+                                {/* Lesson Number */}
+                                <span className="text-xs text-slate-400 flex-shrink-0 min-w-[20px]">
+                                  {lessonIndex + 1}.
+                                </span>
                                 
                                 {editingLessonId === lesson.id && isAdmin ? (
                                   <input
@@ -1365,7 +1328,7 @@ export function SkillBankCourseView({
                                 ) : (
                                   <span
                                     className={`flex-1 text-sm transition-colors ${
-                                      selectedLesson?.id === lesson.id ? 'text-cyan-300' : 'text-slate-400 hover:text-slate-200'
+                                      selectedLesson?.id === lesson.id ? 'text-cyan-300' : 'text-slate-300 hover:text-slate-200'
                                     } ${isAdmin ? 'cursor-text hover:underline' : ''}`}
                                     onDoubleClick={(e) => {
                                       e.stopPropagation()
@@ -1388,6 +1351,7 @@ export function SkillBankCourseView({
                                   </span>
                                 )}
                                 
+                                {/* Delete Button - Only visible on hover for admins */}
                                 {isAdmin && (
                                   <button
                                     onClick={(e) => {
@@ -1396,7 +1360,7 @@ export function SkillBankCourseView({
                                       console.log('Delete lesson clicked:', lesson.id, 'from section:', section.id)
                                       handleDeleteLesson(section.id, lesson.id)
                                     }}
-                                    className="opacity-70 hover:opacity-100 hover:text-red-400 transition-opacity p-1 flex-shrink-0"
+                                    className="opacity-0 group-hover/lesson:opacity-70 hover:opacity-100 hover:text-red-400 transition-opacity p-1 flex-shrink-0"
                                     title="Delete lesson (admin)"
                                   >
                                     <Trash2 size={12} />

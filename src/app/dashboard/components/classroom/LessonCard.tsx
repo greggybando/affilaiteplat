@@ -58,18 +58,18 @@ export function LessonCard({
           onSelect?.()
         }}
       >
-        <div className="text-xs leading-relaxed" style={{
-          color: isSelected ? 'rgba(34,211,238,0.9)' : 'rgba(170,170,175,0.85)',
-          textShadow: isSelected ? '0 0 6px rgba(34,211,238,0.2)' : 'none',
-          fontWeight: isSelected ? 500 : 400
-        }}>
-          <span style={{ 
-            color: 'rgba(110,110,115,0.5)',
-            marginRight: '8px',
-            fontSize: '10px',
-            fontVariantNumeric: 'tabular-nums'
-          }}>{lessonIndex + 1}.</span>
-          {lesson.title}
+        <div className="flex items-center gap-2.5">
+          {/* Lesson Number */}
+          <span className="text-xs text-slate-400 flex-shrink-0 min-w-[20px]">
+            {lessonIndex + 1}.
+          </span>
+          <span className="text-sm" style={{
+            color: isSelected ? 'rgba(34,211,238,0.9)' : 'rgba(220,220,225,0.85)',
+            textShadow: isSelected ? '0 0 6px rgba(34,211,238,0.2)' : 'none',
+            fontWeight: isSelected ? 500 : 400
+          }}>
+            {lesson.title}
+          </span>
         </div>
       </button>
       
