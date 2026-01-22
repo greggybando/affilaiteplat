@@ -57,6 +57,15 @@ export function SkillBankCourseView({
   onPublish,
   glowIntensity 
 }: SkillBankCourseViewProps) {
+  // Debug: Log admin status
+  useEffect(() => {
+    console.log('[SkillBankCourseView] Admin status:', {
+      isAdmin,
+      courseSlug: course.slug,
+      courseTitle: course.title
+    })
+  }, [isAdmin, course.slug, course.title])
+  
   const [courseData, setCourseData] = useState(course)
   
   // Update courseTitle when course prop changes
@@ -1004,8 +1013,8 @@ export function SkillBankCourseView({
         <div className="flex items-center gap-3 flex-shrink-0">
           {isAdmin && (
             <>
-              <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30 whitespace-nowrap">
-                Admin Mode
+              <span className="px-3 py-1.5 bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-cyan-300 text-xs font-semibold rounded-full border border-cyan-500/50 whitespace-nowrap shadow-lg shadow-cyan-500/20">
+                👑 Admin Mode - Double-click to edit
               </span>
               <button
                 onClick={() => {
@@ -1146,8 +1155,8 @@ export function SkillBankCourseView({
                       >
                         <div className="flex items-center gap-3">
                           {isAdmin && (
-                            <div className="opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                              <GripVertical size={16} className="text-[rgba(255,255,255,0.3)]" />
+                            <div className="opacity-80 flex-shrink-0" title="Drag to reorder (admin)">
+                              <GripVertical size={16} className="text-[rgba(255,255,255,0.5)]" />
                             </div>
                           )}
                           
@@ -1216,7 +1225,7 @@ export function SkillBankCourseView({
                                 console.log('Delete section clicked:', section.id)
                                 handleDeleteSection(section.id)
                               }}
-                              className="opacity-60 hover:opacity-100 transition-opacity p-1.5 hover:text-red-400 flex-shrink-0"
+                              className="opacity-70 hover:opacity-100 hover:text-red-400 transition-opacity p-1.5 flex-shrink-0"
                               title="Delete section (admin)"
                             >
                               <Trash2 size={14} />
@@ -1241,8 +1250,8 @@ export function SkillBankCourseView({
                             >
                               <div className="flex items-center gap-3">
                                 {isAdmin && (
-                                  <div className="opacity-60 group-hover/lesson:opacity-100 transition-opacity flex-shrink-0">
-                                    <GripVertical size={14} className="text-[rgba(255,255,255,0.3)]" />
+                                  <div className="opacity-80 flex-shrink-0" title="Drag to reorder (admin)">
+                                    <GripVertical size={14} className="text-[rgba(255,255,255,0.5)]" />
                                   </div>
                                 )}
                                 
@@ -1387,8 +1396,8 @@ export function SkillBankCourseView({
                                       console.log('Delete lesson clicked:', lesson.id, 'from section:', section.id)
                                       handleDeleteLesson(section.id, lesson.id)
                                     }}
-                                    className="opacity-60 hover:opacity-100 transition-opacity p-1 hover:text-red-400 flex-shrink-0"
-                                    title="Delete lesson"
+                                    className="opacity-70 hover:opacity-100 hover:text-red-400 transition-opacity p-1 flex-shrink-0"
+                                    title="Delete lesson (admin)"
                                   >
                                     <Trash2 size={12} />
                                   </button>

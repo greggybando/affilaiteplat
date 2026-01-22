@@ -65,18 +65,164 @@ async function cleanupDuplicateCategories() {
   }
 }
 
+// Fetch course structure from new tables (courses, course_modules, course_lessons)
+async function fetchFromNewTables(courseType: 'mindset' | 'lifedesign' | 'dreamjob') {
+  try {
+    const courseSlug = courseType === 'mindset' || courseType === 'lifedesign' ? 'mindset' : 'dream-job'
+    
+    // Fetch course
+    const { data: course, error: courseError } = await (supabaseAdmin as any)
+      .from('courses')
+      .select('id, slug, title')
+      .eq('slug', courseSlug)
+      .eq('is_published', true)
+      .single()
+
+    if (courseError || !course) {
+      return null // Course not found in new tables, fallback to old
+    }
+
+    // Fetch modules
+    const { data: modules, error: modulesError } = await (supabaseAdmin as any)
+      .from('course_modules')
+      .select('id, title, slug, description, sort_order')
+      .eq('course_id', course.id)
+      .eq('is_published', true)
+      .order('sort_order', { ascending: true })
+
+    if (modulesError) {
+      console.error('Error fetching modules from new tables:', modulesError)
+      return null
+    }
+
+    if (!modules || modules.length === 0) {
+      return null
+    }
+
+    // Fetch lessons for all modules
+    const moduleIds = modules.map((m: any) => m.id)
+    const { data: lessons, error: lessonsError } = await (supabaseAdmin as any)
+      .from('course_lessons')
+      .select('id, module_id, title, slug, video_url, video_type, sort_order')
+      .in('module_id', moduleIds)
+      .eq('is_published', true)
+      .order('sort_order', { ascending: true })
+
+    if (lessonsError) {
+      console.error('Error fetching lessons from new tables:', lessonsError)
+      return null
+    }
+
+    // Map lessons to videos format
+    const lessonsByModule = new Map<string, any[]>()
+    for (const lesson of (lessons || [])) {
+      if (!lessonsByModule.has(lesson.module_id)) {
+        lessonsByModule.set(lesson.module_id, [])
+      }
+      const videos = lessonsByModule.get(lesson.module_id)!
+      
+      // Extract video ID from slug (format: "title-video_id")
+      // Slug format: "how-to-use-this-course-v0-1" -> extract "v0-1"
+      // Look for pattern starting with "v" followed by numbers/hyphens
+      let videoId = lesson.slug
+      const vIndex = lesson.slug.lastIndexOf('-v')
+      if (vIndex !== -1) {
+        // Found "-v", extract everything after it (including the "v")
+        videoId = lesson.slug.substring(vIndex + 1) // +1 to skip the hyphen
+      } else {
+        // Fallback: use last part of slug or UUID
+        const slugParts = lesson.slug.split('-')
+        videoId = slugParts[slugParts.length - 1] || lesson.id
+      }
+      
+      videos.push({
+        id: videoId,
+        uuid: lesson.id,
+        title: lesson.title,
+        youtubeId: lesson.video_type === 'youtube' ? lesson.video_url : undefined,
+        loomId: lesson.video_type === 'loom' ? lesson.video_url : undefined,
+      })
+    }
+
+    // For Mindset: modules become categories, each module has sections (empty sections array for now)
+    if (courseType === 'mindset' || courseType === 'lifedesign') {
+      const categories = modules.map((module: any, index: number) => {
+        const moduleLessons = lessonsByModule.get(module.id) || []
+        
+        // For Mindset, each module (category) has sections
+        // Since we migrated categories directly to modules, we create a single section per module
+        const sections = [{
+          id: module.slug, // Use slug as ID
+          uuid: module.id,
+          number: index + 1,
+          title: module.title,
+          description: module.description || undefined,
+          videos: moduleLessons,
+        }]
+
+        return {
+          id: module.slug,
+          title: module.title,
+          isStartHere: false, // Can be enhanced later
+          sections: sections,
+        }
+      })
+
+      return { courseType, categories }
+    }
+
+    // For DreamJob: modules become modules array directly
+    if (courseType === 'dreamjob') {
+      const modulesList = modules.map((module: any, index: number) => {
+        const moduleLessons = lessonsByModule.get(module.id) || []
+        
+        return {
+          id: module.slug,
+          uuid: module.id,
+          number: index + 1,
+          title: module.title,
+          description: module.description || '',
+          videos: moduleLessons.map((v: any) => ({
+            id: v.id,
+            title: v.title,
+            youtubeId: v.youtubeId || '',
+            loomId: v.loomId || '',
+          })),
+        }
+      })
+
+      return { modules: modulesList }
+    }
+
+    return null
+  } catch (error) {
+    console.error('Error fetching from new tables:', error)
+    return null
+  }
+}
+
 // GET - Fetch course structure (categories, sections, videos)
 export async function GET(request: NextRequest) {
   try {
-    // Auto-cleanup any duplicate categories first
-    await cleanupDuplicateCategories()
-    
     const searchParams = request.nextUrl.searchParams
     const courseType = searchParams.get('courseType') as 'mindset' | 'lifedesign' | 'dreamjob' | null
 
     if (!courseType) {
       return NextResponse.json({ error: 'Missing courseType parameter' }, { status: 400 })
     }
+
+    // For foundational courses, try new tables first
+    if (courseType === 'mindset' || courseType === 'lifedesign' || courseType === 'dreamjob') {
+      const newData = await fetchFromNewTables(courseType)
+      if (newData) {
+        return NextResponse.json(newData)
+      }
+      // Fallback to old tables if new tables don't have data
+      console.log(`[Course Structure] Course ${courseType} not found in new tables, falling back to old tables`)
+    }
+
+    // Auto-cleanup any duplicate categories first (old tables)
+    await cleanupDuplicateCategories()
 
     // Fetch categories - only fetch 'mindset' since we've consolidated everything there
     const isMindsetWorld = courseType === 'mindset' || courseType === 'lifedesign'

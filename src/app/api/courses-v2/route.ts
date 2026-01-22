@@ -34,11 +34,24 @@ export async function GET(request: NextRequest) {
     const { data: courses, error } = await query
 
     if (error) {
-      console.error('Error fetching courses:', error)
+      console.error('[API courses-v2] Error fetching courses:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ courses: courses || [] })
+    const coursesList = courses || []
+    console.log('[API courses-v2] 📦 Returning courses:', {
+      count: coursesList.length,
+      showAll,
+      isAdmin,
+      courses: coursesList.map((c: any) => ({
+        slug: c.slug,
+        title: c.title,
+        is_published: c.is_published,
+        id: c.id
+      }))
+    })
+
+    return NextResponse.json({ courses: coursesList })
   } catch (error: any) {
     console.error('Error in courses API:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })

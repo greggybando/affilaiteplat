@@ -58,12 +58,12 @@ export function CourseSelector({
   onAddCourse,
   onCourseDeleted
 }: CourseSelectorProps) {
-  // Filter out foundation courses (mindset, dream-job, side-income)
-  const skillbankCourses = courses.filter(c => !['mindset', 'dream-job', 'side-income'].includes(c.slug))
+  // Include ALL courses (foundational + skillbank) in the SkillBank section
+  // Foundational courses can now be edited using the same editor
+  const allCourses = courses.filter(c => c.slug !== 'side-income') // Exclude side-income (affiliate page)
+  const foundationalSlugs = ['mindset', 'dream-job']
   
-  console.log('[CourseSelector] SkillBank courses:', skillbankCourses.length, 'isAdmin:', isAdmin)
-  
-  console.log('[CourseSelector] SkillBank courses:', skillbankCourses.length, 'isAdmin:', isAdmin)
+  console.log('[CourseSelector] All courses:', allCourses.length, 'isAdmin:', isAdmin)
   
   // State for dropdown menu
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -216,8 +216,32 @@ export function CourseSelector({
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              console.log('[CourseSelector] Mindset button clicked, calling onSelectMindset')
-              onSelectMindset()
+              console.log('[CourseSelector] 🔵 STEP 1: Mindset button clicked')
+              console.log('[CourseSelector] 🔵 STEP 2: Current courses array:', {
+                count: courses.length,
+                courses: courses.map(c => ({ slug: c.slug, title: c.title, id: c.id, is_published: (c as any).is_published }))
+              })
+              
+              // Try to find mindset course in already-loaded courses first
+              const mindsetCourse = courses.find(c => c.slug === 'mindset')
+              console.log('[CourseSelector] 🔵 STEP 3: Lookup result:', {
+                found: !!mindsetCourse,
+                course: mindsetCourse ? { slug: mindsetCourse.slug, title: mindsetCourse.title, id: mindsetCourse.id } : null
+              })
+              
+              if (mindsetCourse) {
+                console.log('[CourseSelector] ✅ STEP 4: Found mindset course, calling onSelectCourse')
+                console.log('[CourseSelector] ✅ STEP 4: Course data:', {
+                  id: mindsetCourse.id,
+                  slug: mindsetCourse.slug,
+                  title: mindsetCourse.title
+                })
+                onSelectCourse(mindsetCourse)
+                console.log('[CourseSelector] ✅ STEP 5: onSelectCourse called - should set selectedCourse state')
+              } else {
+                console.log('[CourseSelector] ⚠️ STEP 4: Mindset course NOT in loaded courses, calling onSelectMindset handler')
+                onSelectMindset()
+              }
             }}
             className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-emerald-500 rounded-2xl p-6 text-left hover:shadow-lg transition-all group"
             style={{
@@ -248,8 +272,32 @@ export function CourseSelector({
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              console.log('[CourseSelector] DreamJob button clicked, calling onSelectDreamJob')
-              onSelectDreamJob()
+              console.log('[CourseSelector] 🔵 STEP 1: DreamJob button clicked')
+              console.log('[CourseSelector] 🔵 STEP 2: Current courses array:', {
+                count: courses.length,
+                courses: courses.map(c => ({ slug: c.slug, title: c.title, id: c.id, is_published: (c as any).is_published }))
+              })
+              
+              // Try to find dream-job course in already-loaded courses first
+              const dreamJobCourse = courses.find(c => c.slug === 'dream-job')
+              console.log('[CourseSelector] 🔵 STEP 3: Lookup result:', {
+                found: !!dreamJobCourse,
+                course: dreamJobCourse ? { slug: dreamJobCourse.slug, title: dreamJobCourse.title, id: dreamJobCourse.id } : null
+              })
+              
+              if (dreamJobCourse) {
+                console.log('[CourseSelector] ✅ STEP 4: Found dream-job course, calling onSelectCourse')
+                console.log('[CourseSelector] ✅ STEP 4: Course data:', {
+                  id: dreamJobCourse.id,
+                  slug: dreamJobCourse.slug,
+                  title: dreamJobCourse.title
+                })
+                onSelectCourse(dreamJobCourse)
+                console.log('[CourseSelector] ✅ STEP 5: onSelectCourse called - should set selectedCourse state')
+              } else {
+                console.log('[CourseSelector] ⚠️ STEP 4: DreamJob course NOT in loaded courses, calling onSelectDreamJob handler')
+                onSelectDreamJob()
+              }
             }}
             className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-cyan-500 rounded-2xl p-6 text-left hover:shadow-lg transition-all group"
             style={{
@@ -325,7 +373,8 @@ export function CourseSelector({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {skillbankCourses.map((course) => {
+          {allCourses.map((course) => {
+            const isFoundational = foundationalSlugs.includes(course.slug)
             const courseColor = course.color || '#06B6D4'
             const rgbValues = hexToRgb(courseColor)
             // Note: We'll need to check is_published from the actual course data
@@ -378,6 +427,11 @@ export function CourseSelector({
                   
                   {/* Top right corner - menu and badges */}
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    {isFoundational && (
+                      <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded-full font-semibold border border-purple-500/30 whitespace-nowrap">
+                        Foundational
+                      </span>
+                    )}
                     {!isPublished && (
                       <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full font-semibold border border-yellow-500/30 whitespace-nowrap">
                         Draft
@@ -473,7 +527,7 @@ export function CourseSelector({
             )
           })}
           
-          {skillbankCourses.length === 0 && !isAdmin && (
+          {allCourses.length === 0 && !isAdmin && (
             <div className="col-span-full text-center py-12">
               <p className="text-[rgba(255,255,255,0.5)]">No courses available yet</p>
             </div>

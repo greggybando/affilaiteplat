@@ -58,6 +58,16 @@ export default function ClassroomTab({
   console.log('[ClassroomTab] Component rendering/re-rendering')
   const isAdmin = useAdmin(affiliate)
   
+  // Debug admin status
+  useEffect(() => {
+    console.log('[ClassroomTab] Admin status check:', {
+      isAdmin,
+      affiliateRole: affiliate?.role,
+      affiliateId: affiliate?.id,
+      isModerator: affiliate?.role === 'moderator'
+    })
+  }, [isAdmin, affiliate?.role, affiliate?.id])
+  
   // Helper to generate slug from title
   const generateSlug = (title: string): string => {
     if (!title || typeof title !== 'string') {
@@ -91,11 +101,16 @@ export default function ClassroomTab({
   useEffect(() => {
     console.log('[ClassroomTab] ===== STATE CHANGE =====')
     console.log('[ClassroomTab] selectedWorld:', selectedWorld, '(type:', typeof selectedWorld, ')')
-    console.log('[ClassroomTab] selectedCourse:', selectedCourse)
-    console.log('[ClassroomTab] Will render:', selectedWorld === 'mindset' ? 'MINDSET' : selectedWorld === 'dreamjob' ? 'DREAMJOB' : selectedCourse ? 'COURSE' : 'SELECTOR')
+    console.log('[ClassroomTab] selectedCourse:', selectedCourse ? {
+      id: selectedCourse.id,
+      slug: selectedCourse.slug,
+      title: selectedCourse.title
+    } : null)
+    console.log('[ClassroomTab] Will render:', selectedWorld === 'mindset' ? 'MINDSET (OLD UI)' : selectedWorld === 'dreamjob' ? 'DREAMJOB (OLD UI)' : selectedCourse ? `COURSE: ${selectedCourse.slug} (SKILLBANK VIEW)` : 'SELECTOR')
     console.log('[ClassroomTab] Conditional checks:')
     console.log('[ClassroomTab]   selectedWorld === "mindset":', selectedWorld === 'mindset')
     console.log('[ClassroomTab]   selectedWorld === "dreamjob":', selectedWorld === 'dreamjob')
+    console.log('[ClassroomTab]   selectedCourse exists:', !!selectedCourse)
     console.log('[ClassroomTab]   !selectedWorld && !selectedCourse:', !selectedWorld && !selectedCourse)
     console.log('[ClassroomTab] ========================')
   }, [selectedWorld, selectedCourse])
@@ -138,11 +153,20 @@ export default function ClassroomTab({
         setLoading(true)
         // Fetch courses - admins see drafts too
         const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
+        console.log('[ClassroomTab] 🔄 Loading courses on mount from:', url)
         const res = await fetch(url)
         const data = await res.json()
-        setCourses(data.courses || [])
+        const loadedCourses = data.courses || []
+        console.log('[ClassroomTab] 📚 Loaded courses count:', loadedCourses.length)
+        console.log('[ClassroomTab] 📚 All loaded courses:', loadedCourses.map((c: Course) => ({ 
+          slug: c.slug, 
+          title: c.title, 
+          id: c.id,
+          is_published: (c as any).is_published 
+        })))
+        setCourses(loadedCourses)
       } catch (error) {
-        console.error('Error loading courses:', error)
+        console.error('[ClassroomTab] ❌ Error loading courses:', error)
       } finally {
         setLoading(false)
       }
@@ -693,6 +717,15 @@ export default function ClassroomTab({
           </div>
 
           <div className="flex-1 overflow-y-auto min-h-0 w-full relative z-10" style={{ width: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0, padding: 0 }}>
+            {(() => {
+              console.log('[ClassroomTab] 🎨 RENDER CHECK:', {
+                loading,
+                selectedWorld,
+                selectedCourse: selectedCourse ? { id: selectedCourse.id, slug: selectedCourse.slug } : null,
+                willRender: loading ? 'LOADING' : (!selectedWorld && !selectedCourse) ? 'SELECTOR' : selectedCourse ? 'SKILLBANK_VIEW' : selectedWorld === 'mindset' ? 'MINDSET_OLD' : selectedWorld === 'dreamjob' ? 'DREAMJOB_OLD' : 'UNKNOWN'
+              })
+              return null
+            })()}
             {loading ? (
               <div className="text-center py-12 text-white">Loading...</div>
             ) : !selectedWorld && !selectedCourse ? (
@@ -701,14 +734,112 @@ export default function ClassroomTab({
                   courses={courses}
                   glowIntensity={glowIntensity}
                   isAdmin={isAdmin}
-                  onSelectCourse={setSelectedCourse}
-                  onSelectMindset={() => {
-                    console.log('[ClassroomTab] onSelectMindset called, setting selectedWorld to "mindset"')
-                    setSelectedWorld('mindset')
+                  onSelectCourse={(course) => {
+                    console.log('[ClassroomTab] 🎯 onSelectCourse called with:', {
+                      id: course.id,
+                      slug: course.slug,
+                      title: course.title
+                    })
+                    console.log('[ClassroomTab] 🎯 Setting selectedCourse and clearing selectedWorld')
+                    setSelectedCourse(course)
+                    setSelectedWorld(null)
+                    console.log('[ClassroomTab] 🎯 State should now be: selectedCourse=' + course.slug + ', selectedWorld=null')
                   }}
-                  onSelectDreamJob={() => {
-                    console.log('[ClassroomTab] onSelectDreamJob called, setting selectedWorld to "dreamjob"')
-                    setSelectedWorld('dreamjob')
+                  onSelectMindset={async () => {
+                    console.log('[ClassroomTab] 🔵 onSelectMindset called')
+                    console.log('[ClassroomTab] Current courses count:', courses.length)
+                    console.log('[ClassroomTab] Current courses:', courses.map(c => ({ slug: c.slug, title: c.title, id: c.id })))
+                    
+                    // Always fetch fresh courses to ensure we have the latest
+                    try {
+                      const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
+                      console.log('[ClassroomTab] Fetching courses from:', url)
+                      const res = await fetch(url)
+                      const data = await res.json()
+                      const allCourses = data.courses || []
+                      console.log('[ClassroomTab] 📦 Fetched courses count:', allCourses.length)
+                      console.log('[ClassroomTab] 📦 All fetched courses:', allCourses.map((c: Course) => ({ slug: c.slug, title: c.title, id: c.id, is_published: (c as any).is_published })))
+                      
+                      setCourses(allCourses)
+                      
+                      // Try multiple slug variations
+                      let mindsetCourse = allCourses.find((c: Course) => c.slug === 'mindset')
+                      if (!mindsetCourse) {
+                        mindsetCourse = allCourses.find((c: Course) => c.slug === 'mindset-foundations')
+                      }
+                      if (!mindsetCourse) {
+                        mindsetCourse = allCourses.find((c: Course) => (c as any).title?.toLowerCase().includes('mindset'))
+                      }
+                      
+                      if (mindsetCourse) {
+                        console.log('[ClassroomTab] ✅ FOUND MINDSET COURSE!', {
+                          id: mindsetCourse.id,
+                          slug: mindsetCourse.slug,
+                          title: mindsetCourse.title
+                        })
+                        console.log('[ClassroomTab] Setting selectedCourse and clearing selectedWorld')
+                        setSelectedCourse(mindsetCourse)
+                        setSelectedWorld(null) // Clear old state
+                        console.log('[ClassroomTab] ✅ State updated - should render SkillBankCourseView')
+                      } else {
+                        console.error('[ClassroomTab] ❌ Mindset course NOT FOUND!')
+                        console.error('[ClassroomTab] Available slugs:', allCourses.map((c: Course) => c.slug))
+                        console.error('[ClassroomTab] Falling back to old UI')
+                        setSelectedWorld('mindset')
+                      }
+                    } catch (error) {
+                      console.error('[ClassroomTab] ❌ Error fetching courses:', error)
+                      alert('Error loading courses. Please try again.')
+                      setSelectedWorld('mindset') // Fallback
+                    }
+                  }}
+                  onSelectDreamJob={async () => {
+                    console.log('[ClassroomTab] 🔵 onSelectDreamJob called')
+                    console.log('[ClassroomTab] Current courses count:', courses.length)
+                    console.log('[ClassroomTab] Current courses:', courses.map(c => ({ slug: c.slug, title: c.title, id: c.id })))
+                    
+                    // Always fetch fresh courses to ensure we have the latest
+                    try {
+                      const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
+                      console.log('[ClassroomTab] Fetching courses from:', url)
+                      const res = await fetch(url)
+                      const data = await res.json()
+                      const allCourses = data.courses || []
+                      console.log('[ClassroomTab] 📦 Fetched courses count:', allCourses.length)
+                      console.log('[ClassroomTab] 📦 All fetched courses:', allCourses.map((c: Course) => ({ slug: c.slug, title: c.title, id: c.id, is_published: (c as any).is_published })))
+                      
+                      setCourses(allCourses)
+                      
+                      // Try multiple slug variations
+                      let dreamJobCourse = allCourses.find((c: Course) => c.slug === 'dream-job')
+                      if (!dreamJobCourse) {
+                        dreamJobCourse = allCourses.find((c: Course) => c.slug === 'dreamjob')
+                      }
+                      if (!dreamJobCourse) {
+                        dreamJobCourse = allCourses.find((c: Course) => (c as any).title?.toLowerCase().includes('dream job'))
+                      }
+                      
+                      if (dreamJobCourse) {
+                        console.log('[ClassroomTab] ✅ FOUND DREAMJOB COURSE!', {
+                          id: dreamJobCourse.id,
+                          slug: dreamJobCourse.slug,
+                          title: dreamJobCourse.title
+                        })
+                        console.log('[ClassroomTab] Setting selectedCourse and clearing selectedWorld')
+                        setSelectedCourse(dreamJobCourse)
+                        setSelectedWorld(null) // Clear old state
+                        console.log('[ClassroomTab] ✅ State updated - should render SkillBankCourseView')
+                      } else {
+                        console.error('[ClassroomTab] ❌ DreamJob course NOT FOUND!')
+                        console.error('[ClassroomTab] Available slugs:', allCourses.map((c: Course) => c.slug))
+                        console.error('[ClassroomTab] Falling back to old UI')
+                        setSelectedWorld('dreamjob')
+                      }
+                    } catch (error) {
+                      console.error('[ClassroomTab] ❌ Error fetching courses:', error)
+                      alert('Error loading courses. Please try again.')
+                      setSelectedWorld('dreamjob') // Fallback
+                    }
                   }}
                   onCourseDeleted={async () => {
                     try {
@@ -795,6 +926,39 @@ export default function ClassroomTab({
                   }}
                 />
               </div>
+            ) : selectedCourse ? (
+              (() => {
+                console.log('[ClassroomTab] 🎨 RENDERING SkillBankCourseView for course:', {
+                  id: selectedCourse.id,
+                  slug: selectedCourse.slug,
+                  title: selectedCourse.title,
+                  isAdmin
+                })
+                return null
+              })() || (
+              // Use SkillBankCourseView for ALL courses (including foundational)
+              // Foundational courses (mindset, dream-job) can now be edited using the same editor
+              // The isAdmin prop controls editing permissions within the component
+              <SkillBankCourseView
+                course={selectedCourse}
+                isAdmin={isAdmin}
+                onBack={() => {
+                  console.log('[ClassroomTab] 🔙 Back button clicked, clearing selectedCourse')
+                  setSelectedCourse(null)
+                  setSelectedWorld(null) // Clear both
+                }}
+                onPublish={async () => {
+                  // Refetch courses after publishing
+                  const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
+                  const res = await fetch(url)
+                  const data = await res.json()
+                  if (data.courses) {
+                    setCourses(data.courses)
+                  }
+                }}
+                glowIntensity={glowIntensity}
+              />
+              )
             ) : selectedWorld === 'mindset' ? (
               loadingCourses ? (
                 <div className="text-center py-12 text-white">Loading courses...</div>
@@ -881,31 +1045,27 @@ export default function ClassroomTab({
                 </div>
               )
             ) : selectedCourse ? (
-              // Check if this is a SkillBank course (not a foundation course)
-              // Foundation courses: mindset, dream-job, side-income
-              // All users (admin and non-admin) should see SkillBankCourseView for SkillBank courses
+              // Use SkillBankCourseView for ALL courses (including foundational)
+              // Foundational courses (mindset, dream-job) can now be edited using the same editor
               // The isAdmin prop controls editing permissions within the component
-              (() => {
-                const foundationSlugs = ['mindset', 'dream-job', 'side-income']
-                const isSkillBankCourse = !foundationSlugs.includes(selectedCourse.slug)
-                return isSkillBankCourse
-              })() ? (
-                <SkillBankCourseView
-                  course={selectedCourse}
-                  isAdmin={isAdmin}
-                  onBack={() => setSelectedCourse(null)}
-                  onPublish={async () => {
-                    // Refetch courses after publishing
-                    const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
-                    const res = await fetch(url)
-                    const data = await res.json()
-                    if (data.courses) {
-                      setCourses(data.courses)
-                    }
-                  }}
-                  glowIntensity={glowIntensity}
-                />
-              ) : (
+              <SkillBankCourseView
+                course={selectedCourse}
+                isAdmin={isAdmin}
+                onBack={() => setSelectedCourse(null)}
+                onPublish={async () => {
+                  // Refetch courses after publishing
+                  const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
+                  const res = await fetch(url)
+                  const data = await res.json()
+                  if (data.courses) {
+                    setCourses(data.courses)
+                  }
+                }}
+                glowIntensity={glowIntensity}
+              />
+            ) : selectedWorld ? (
+              // Fallback: Old foundational course UI (for backward compatibility)
+              // This is triggered by clicking the old Mindset/DreamJob buttons
               <div className="flex gap-6">
                 {/* Left Sidebar - Course Navigation */}
                 <div className="w-80 rounded-lg overflow-hidden flex flex-col max-h-[calc(100vh-200px)] sticky top-4" style={{
