@@ -140,9 +140,25 @@ export async function GET(
       let isLocked = false
       let lockReason: string | null = null
 
+      // Debug logging for "The Game of Capitalism"
+      const isDebugModule = module.title.toLowerCase().includes('game of capitalism')
+      if (isDebugModule) {
+        console.log('[Unlock Status] Debugging module:', {
+          title: module.title,
+          id: module.id,
+          sort_order: module.sort_order,
+          index,
+          hasCheckpoint: !!checkpoint,
+          checkpointStatus
+        })
+      }
+
       // a. First module (index 0 or sort_order 0) is always unlocked
       if (index === 0 || module.sort_order === 0) {
         isLocked = false
+        if (isDebugModule) {
+          console.log('[Unlock Status] Module is first, unlocked')
+        }
       } else {
         // b. Check unlock_rules for this module
         const requiredCheckpointId = unlockRuleMap.get(module.id)
@@ -150,6 +166,12 @@ export async function GET(
         if (requiredCheckpointId) {
           // Custom unlock rule exists - check if required checkpoint is approved
           const requiredStatus = userCheckpointStatusMap.get(requiredCheckpointId)
+          if (isDebugModule) {
+            console.log('[Unlock Status] Has unlock rule:', {
+              requiredCheckpointId,
+              requiredStatus
+            })
+          }
           if (requiredStatus !== 'approved') {
             isLocked = true
             const requiredCheckpoint = checkpoints.find((cp) => cp.id === requiredCheckpointId)
@@ -162,15 +184,35 @@ export async function GET(
           const previousModule = modules[index - 1]
           if (previousModule) {
             const previousCheckpoint = checkpointMap.get(previousModule.id)
+            if (isDebugModule) {
+              console.log('[Unlock Status] Checking previous module:', {
+                previousTitle: previousModule.title,
+                previousId: previousModule.id,
+                hasPreviousCheckpoint: !!previousCheckpoint,
+                previousCheckpointId: previousCheckpoint?.id,
+                previousCheckpointStatus: previousCheckpoint ? userCheckpointStatusMap.get(previousCheckpoint.id) : null
+              })
+            }
             if (previousCheckpoint) {
               // Previous module has a checkpoint - must be approved to unlock this module
               const previousStatus = userCheckpointStatusMap.get(previousCheckpoint.id)
               if (previousStatus !== 'approved') {
                 isLocked = true
                 lockReason = `Complete "${previousCheckpoint.title}" to unlock this module`
+                if (isDebugModule) {
+                  console.log('[Unlock Status] Module locked because previous checkpoint not approved:', previousStatus)
+                }
+              } else {
+                if (isDebugModule) {
+                  console.log('[Unlock Status] Previous checkpoint approved, module unlocked')
+                }
+              }
+            } else {
+              // If previous module has no checkpoint, this module is unlocked (sequential progression)
+              if (isDebugModule) {
+                console.log('[Unlock Status] Previous module has no checkpoint, module unlocked')
               }
             }
-            // If previous module has no checkpoint, this module is unlocked (sequential progression)
           }
         }
       }
