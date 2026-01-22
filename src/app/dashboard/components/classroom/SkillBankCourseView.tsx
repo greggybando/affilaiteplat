@@ -1588,7 +1588,7 @@ export function SkillBankCourseView({
                           
                           {/* Checkpoint Editor */}
                           {isAdmin && (
-                            <div className="border-t border-[rgba(255,255,255,0.05)] mt-2">
+                            <div className="border-t border-[rgba(255,255,255,0.05)] mt-2" onClick={(e) => e.stopPropagation()}>
                               {!checkpoints[section.id] && creatingCheckpointModuleId !== section.id ? (
                                 <button
                                   onClick={(e) => {
@@ -1603,13 +1603,13 @@ export function SkillBankCourseView({
                                       requires_manual_review: false
                                     })
                                   }}
-                                  className="w-full px-4 py-2.5 pl-14 text-left text-sm text-[rgba(255,255,255,0.4)] hover:text-cyan-400 hover:bg-[rgba(255,255,255,0.02)] transition-colors flex items-center gap-2"
+                                  className="w-full px-4 py-2.5 pl-14 text-left text-sm text-[rgba(255,255,255,0.4)] hover:text-cyan-400 hover:bg-[rgba(255,255,255,0.02)] transition-colors flex items-center gap-2 cursor-pointer"
                                 >
                                   <Plus size={16} />
                                   Add Checkpoint
                                 </button>
                               ) : creatingCheckpointModuleId === section.id ? (
-                                <div className="p-4 space-y-3 bg-slate-800/30">
+                                <div className="p-4 space-y-3 bg-slate-800/30 cursor-default">
                                   <div>
                                     <label className="block text-xs text-slate-400 mb-1">Title *</label>
                                     <input
@@ -1651,21 +1651,21 @@ export function SkillBankCourseView({
                                     />
                                   </div>
                                   <div className="flex items-center gap-4">
-                                    <label className="flex items-center gap-2 text-xs text-slate-300">
+                                    <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
                                       <input
                                         type="checkbox"
                                         checked={checkpointFormData.ai_review_enabled}
                                         onChange={(e) => setCheckpointFormData(prev => ({ ...prev, ai_review_enabled: e.target.checked }))}
-                                        className="rounded"
+                                        className="rounded cursor-pointer"
                                       />
                                       AI Review Enabled
                                     </label>
-                                    <label className="flex items-center gap-2 text-xs text-slate-300">
+                                    <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
                                       <input
                                         type="checkbox"
                                         checked={checkpointFormData.requires_manual_review}
                                         onChange={(e) => setCheckpointFormData(prev => ({ ...prev, requires_manual_review: e.target.checked }))}
-                                        className="rounded"
+                                        className="rounded cursor-pointer"
                                       />
                                       Requires Manual Review
                                     </label>
@@ -1692,7 +1692,7 @@ export function SkillBankCourseView({
                                   </div>
                                 </div>
                               ) : checkpoints[section.id] ? (
-                                <div className="p-4 bg-slate-800/30">
+                                <div className="p-4 bg-slate-800/30 cursor-default">
                                   <div className="flex items-start justify-between mb-3">
                                     <h4 className="text-sm font-semibold text-white">Checkpoint</h4>
                                     <div className="flex items-center gap-2">
@@ -1774,25 +1774,25 @@ export function SkillBankCourseView({
                                         />
                                       </div>
                                       <div className="flex items-center gap-4">
-                                        <label className="flex items-center gap-2 text-xs text-slate-300">
+                                        <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
                                           <input
                                             type="checkbox"
                                             defaultChecked={checkpoints[section.id].ai_review_enabled}
                                             onChange={(e) => {
                                               handleUpdateCheckpoint(checkpoints[section.id].id, { ai_review_enabled: e.target.checked })
                                             }}
-                                            className="rounded"
+                                            className="rounded cursor-pointer"
                                           />
                                           AI Review Enabled
                                         </label>
-                                        <label className="flex items-center gap-2 text-xs text-slate-300">
+                                        <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
                                           <input
                                             type="checkbox"
                                             defaultChecked={checkpoints[section.id].requires_manual_review}
                                             onChange={(e) => {
                                               handleUpdateCheckpoint(checkpoints[section.id].id, { requires_manual_review: e.target.checked })
                                             }}
-                                            className="rounded"
+                                            className="rounded cursor-pointer"
                                           />
                                           Requires Manual Review
                                         </label>
