@@ -927,6 +927,9 @@ export default function ClassroomTab({
                 />
               </div>
             ) : selectedCourse ? (
+              // Use SkillBankCourseView for ALL courses (including foundational)
+              // Foundational courses (mindset, dream-job) can now be edited using the same editor
+              // The isAdmin prop controls editing permissions within the component
               (() => {
                 console.log('[ClassroomTab] 🎨 RENDERING SkillBankCourseView for course:', {
                   id: selectedCourse.id,
@@ -934,31 +937,28 @@ export default function ClassroomTab({
                   title: selectedCourse.title,
                   isAdmin
                 })
-                return null
-              })() || (
-              // Use SkillBankCourseView for ALL courses (including foundational)
-              // Foundational courses (mindset, dream-job) can now be edited using the same editor
-              // The isAdmin prop controls editing permissions within the component
-              <SkillBankCourseView
-                course={selectedCourse}
-                isAdmin={isAdmin}
-                onBack={() => {
-                  console.log('[ClassroomTab] 🔙 Back button clicked, clearing selectedCourse')
-                  setSelectedCourse(null)
-                  setSelectedWorld(null) // Clear both
-                }}
-                onPublish={async () => {
-                  // Refetch courses after publishing
-                  const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
-                  const res = await fetch(url)
-                  const data = await res.json()
-                  if (data.courses) {
-                    setCourses(data.courses)
-                  }
-                }}
-                glowIntensity={glowIntensity}
-              />
-              )
+                return (
+                  <SkillBankCourseView
+                    course={selectedCourse}
+                    isAdmin={isAdmin}
+                    onBack={() => {
+                      console.log('[ClassroomTab] 🔙 Back button clicked, clearing selectedCourse')
+                      setSelectedCourse(null)
+                      setSelectedWorld(null) // Clear both
+                    }}
+                    onPublish={async () => {
+                      // Refetch courses after publishing
+                      const url = isAdmin ? '/api/courses-v2?all=true' : '/api/courses-v2'
+                      const res = await fetch(url)
+                      const data = await res.json()
+                      if (data.courses) {
+                        setCourses(data.courses)
+                      }
+                    }}
+                    glowIntensity={glowIntensity}
+                  />
+                )
+              })()
             ) : selectedWorld === 'mindset' ? (
               loadingCourses ? (
                 <div className="text-center py-12 text-white">Loading courses...</div>
