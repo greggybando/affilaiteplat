@@ -1171,7 +1171,7 @@ export function SkillBankCourseView({
                                 className="w-full bg-transparent border-b border-cyan-500 outline-none text-sm font-semibold uppercase tracking-wide"
                                 style={{ 
                                   color: 'rgba(220,220,225,0.95)',
-                                  textShadow: '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3)'
+                                  textShadow: '0 0 8px rgba(34,211,238,0.3), 0 0 16px rgba(34,211,238,0.2)'
                                 }}
                                 autoFocus
                               />
@@ -1180,7 +1180,7 @@ export function SkillBankCourseView({
                                 className="text-sm font-semibold uppercase tracking-wide"
                                 style={{ 
                                   color: 'rgba(220,220,225,0.95)',
-                                  textShadow: '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3), 0 0 30px rgba(34,211,238,0.2)',
+                                  textShadow: '0 0 8px rgba(34,211,238,0.3), 0 0 16px rgba(34,211,238,0.2)',
                                   letterSpacing: '0.08em'
                                 }}
                                 onDoubleClick={(e) => {

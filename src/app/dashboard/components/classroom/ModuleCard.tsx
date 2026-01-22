@@ -94,7 +94,7 @@ export function ModuleCard({
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold uppercase tracking-wide" style={{
               color: isLocked ? 'rgba(120,120,125,0.7)' : 'rgba(220,220,225,0.95)',
-              textShadow: isLocked ? 'none' : '0 0 12px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.3), 0 0 30px rgba(34,211,238,0.2)',
+              textShadow: isLocked ? 'none' : '0 0 8px rgba(34,211,238,0.3), 0 0 16px rgba(34,211,238,0.2)',
               letterSpacing: '0.08em'
             }}>
               {module.title}
