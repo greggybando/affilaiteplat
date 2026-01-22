@@ -122,6 +122,19 @@ export function SkillBankCourseView({
   const courseColor = courseData.color || '#06B6D4'
   const rgbValues = hexToRgb(courseColor)
 
+  // Get dynamic header text based on course
+  const getCourseHeaderText = (): string => {
+    const slug = courseData.slug?.toLowerCase() || ''
+    if (slug === 'mindset') {
+      return 'LIFEDESIGN SYSTEM'
+    } else if (slug === 'dream-job') {
+      return 'DREAM JOB SYSTEM'
+    } else {
+      // For other courses, use course title + "SYSTEM" or just course title
+      return courseData.title ? `${courseData.title.toUpperCase()} SYSTEM` : 'COURSE MODULES'
+    }
+  }
+
   // Extract video ID helpers
   const extractYouTubeId = (url: string): string => {
     if (!url) return ''
@@ -1084,7 +1097,7 @@ export function SkillBankCourseView({
                 textShadow: '0 0 8px rgba(34,211,238,0.4)'
               }}
             >
-              COURSE MODULES
+              {getCourseHeaderText()}
             </h3>
           </div>
 
