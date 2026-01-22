@@ -8,7 +8,7 @@ export const runtime = 'nodejs'
 // PATCH - Update checkpoint
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { checkpointId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const affiliate = await getCurrentAffiliate()
@@ -63,7 +63,7 @@ export async function PATCH(
 // DELETE - Delete checkpoint
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { checkpointId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const affiliate = await getCurrentAffiliate()
