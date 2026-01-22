@@ -50,11 +50,11 @@ interface ClassroomTabProps {
   glowIntensity: number
 }
 
-export default function ClassroomTab({ 
-  affiliate, 
-  activeTab, 
+export default function ClassroomTab({
+  affiliate,
+  activeTab,
   setActiveTab,
-  glowIntensity
+  glowIntensity,
 }: ClassroomTabProps) {
   console.log('[ClassroomTab] Component rendering/re-rendering')
   const isAdmin = useAdmin(affiliate)
@@ -107,7 +107,7 @@ export default function ClassroomTab({
       slug: selectedCourse.slug,
       title: selectedCourse.title
     } : null)
-    console.log('[ClassroomTab] Will render:', selectedWorld === 'mindset' ? 'MINDSET (OLD UI)' : selectedWorld === 'dreamjob' ? 'DREAMJOB (OLD UI)' : selectedCourse ? `COURSE: ${selectedCourse.slug} (SKILLBANK VIEW)` : 'SELECTOR')
+    console.log('[ClassroomTab] Will render:', selectedWorld === 'mindset' ? 'MINDSET (OLD UI)' : selectedWorld === 'dreamjob' ? 'DREAMJOB (OLD UI)' : selectedCourse ? 'COURSE: ' + selectedCourse.slug + ' (SKILLBANK VIEW)' : 'SELECTOR')
     console.log('[ClassroomTab] Conditional checks:')
     console.log('[ClassroomTab]   selectedWorld === "mindset":', selectedWorld === 'mindset')
     console.log('[ClassroomTab]   selectedWorld === "dreamjob":', selectedWorld === 'dreamjob')
