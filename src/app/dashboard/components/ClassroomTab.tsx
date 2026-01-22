@@ -365,7 +365,19 @@ export default function ClassroomTab({
   }
 
   return (
-    <div className="flex h-full w-full" style={{ display: 'flex', width: '100%', height: '100%', boxSizing: 'border-box', margin: 0, padding: 0, gap: 0, backgroundColor: '#0f0f1a' }}>
+    <div 
+      className="flex h-full w-full" 
+      style={{ 
+        display: 'flex', 
+        width: '100%', 
+        height: '100%', 
+        boxSizing: 'border-box', 
+        margin: 0, 
+        padding: 0, 
+        gap: 0, 
+        backgroundColor: '#0f0f1a' 
+      }}
+    >
       {/* Sidebar - Match CommunityTab styling - Always visible */}
       <div className="w-[250px] text-white flex flex-col shrink-0 h-full relative" style={{ width: '250px', minWidth: '250px', flexShrink: 0, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)', height: '100%', zIndex: 100 }}>
         <div className="p-5 border-b border-slate-700">
