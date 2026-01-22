@@ -413,7 +413,7 @@ export function SkillBankCourseView({
       } else {
         // Preserve current selection after reload
         if (selectedLesson) {
-          const updatedSection = sectionsWithLessons.find(s => s.id === selectedSectionId)
+          const updatedSection = sectionsWithLessons.find((s: any) => s.id === selectedSectionId)
           const updatedLesson = updatedSection?.lessons?.find((l: any) => l.id === selectedLesson.id)
           if (updatedLesson) {
             setSelectedLesson(updatedLesson)
