@@ -69,7 +69,7 @@ export async function POST(
 
     if (existingSubmission) {
       // Update existing submission (resubmission)
-      const { data: updated, error: updateError } = await supabaseAdmin
+      const { data: updated, error: updateError } = await (supabaseAdmin as any)
         .from('user_checkpoints')
         .update({
           submission_text: submission_text.trim(),
@@ -94,7 +94,7 @@ export async function POST(
       userCheckpointId = updated.id
     } else {
       // Create new submission
-      const { data: newSubmission, error: insertError } = await supabaseAdmin
+      const { data: newSubmission, error: insertError } = await (supabaseAdmin as any)
         .from('user_checkpoints')
         .insert({
           user_id: affiliate.id,
@@ -237,7 +237,7 @@ Guidelines:
           ? new Date().toISOString() 
           : null
 
-        await supabaseAdmin
+        await (supabaseAdmin as any)
           .from('user_checkpoints')
           .update({
             status: finalStatus,
@@ -260,7 +260,7 @@ Guidelines:
       } catch (aiError: any) {
         console.error('[Checkpoint Submit] AI review error:', aiError)
         // If AI fails, set status to needs_review
-        await supabaseAdmin
+        await (supabaseAdmin as any)
           .from('user_checkpoints')
           .update({
             status: 'needs_review',
