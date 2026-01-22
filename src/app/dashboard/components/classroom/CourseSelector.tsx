@@ -58,10 +58,11 @@ export function CourseSelector({
   onAddCourse,
   onCourseDeleted
 }: CourseSelectorProps) {
-  // Include ALL courses (foundational + skillbank) in the SkillBank section
-  // Foundational courses can now be edited using the same editor
-  const allCourses = courses.filter(c => c.slug !== 'side-income') // Exclude side-income (affiliate page)
+  // Filter courses: foundational courses should NOT be in SkillBank section
   const foundationalSlugs = ['mindset', 'dream-job']
+  const skillbankCourses = courses.filter(c => 
+    c.slug !== 'side-income' && !foundationalSlugs.includes(c.slug)
+  ) // Only SkillBank courses (exclude side-income and foundational)
   
   console.log('[CourseSelector] All courses:', allCourses.length, 'isAdmin:', isAdmin)
   
@@ -245,17 +246,17 @@ export function CourseSelector({
                 onSelectMindset()
               }
             }}
-            className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-emerald-500 rounded-2xl p-6 text-left hover:shadow-lg transition-all group"
+            className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-cyan-500 rounded-2xl p-6 text-left hover:shadow-lg transition-all group"
             style={{
               backdropFilter: 'blur(10px)',
-              boxShadow: glowShadow('0 0 30px rgba(16,185,129,0.3), 0 0 60px rgba(16,185,129,0.2)', glowIntensity)
+              boxShadow: glowShadow('0 0 30px rgba(6,182,212,0.3), 0 0 60px rgba(6,182,212,0.2)', glowIntensity)
             } as React.CSSProperties}
           >
             <div 
               className="text-4xl mb-3"
               style={{
-                textShadow: glowShadow('0 0 20px rgba(16,185,129,0.8), 0 0 40px rgba(16,185,129,0.6), 0 0 60px rgba(16,185,129,0.4)', glowIntensity),
-                filter: glowIntensity > 0 ? `drop-shadow(0 0 ${glowIntensity * 0.3}px rgba(16,185,129,${glowIntensity / 100 * 0.6}))` : 'none'
+                textShadow: glowShadow('0 0 20px rgba(6,182,212,0.8), 0 0 40px rgba(6,182,212,0.6), 0 0 60px rgba(6,182,212,0.4)', glowIntensity),
+                filter: glowIntensity > 0 ? `drop-shadow(0 0 ${glowIntensity * 0.3}px rgba(6,182,212,${glowIntensity / 100 * 0.6}))` : 'none'
               } as React.CSSProperties}
             >
               🧠
@@ -264,7 +265,7 @@ export function CourseSelector({
             <p className="text-[rgba(255,255,255,0.6)] text-sm mb-4">
               Build your mental foundation for success
             </p>
-            <div className="text-emerald-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+            <div className="text-cyan-400 text-sm font-medium group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
               Start →
             </div>
           </button>
@@ -377,7 +378,7 @@ export function CourseSelector({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {allCourses.map((course) => {
+          {skillbankCourses.map((course) => {
             const isFoundational = foundationalSlugs.includes(course.slug)
             const courseColor = course.color || '#06B6D4'
             const rgbValues = hexToRgb(courseColor)
