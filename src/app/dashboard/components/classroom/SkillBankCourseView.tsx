@@ -205,45 +205,24 @@ export function SkillBankCourseView({
         videoUrl: selectedLesson.video_url,
         videoType: selectedLesson.video_type,
         extractedVideoInfo: videoInfo,
-        title: selectedLesson.title,
-        fullLesson: selectedLesson
+        title: selectedLesson.title
       })
       
-      // Reset video URL and increment key to force iframe remount
-      setLessonVideoUrl('')
-      setVideoKey(prev => prev + 1)
+      // Set video URL immediately - no delay needed
+      setLessonVideoUrl(selectedLesson.video_url || '')
+      setVideoKey(prev => prev + 1) // Increment key to force iframe remount
       
-      // Use setTimeout to ensure React unmounts old iframe before mounting new one
-      const timer = setTimeout(() => {
-        console.log('[SkillBankCourseView] Setting video URL:', selectedLesson.video_url)
-        setLessonVideoUrl(selectedLesson.video_url || '')
-      }, 50) // Increased delay to ensure unmount
+      // Reset notes state immediately
+      setLessonNotes('')
       
-      setLessonNotes('') // Reset notes first, then load from API
-      
-      // Debug: Check what data exists for this lesson
-      const debugCheck = async () => {
-        try {
-          const debugRes = await fetch(`/api/courses-v2/debug-notes-attachments?lessonId=${selectedLesson.id}`, {
-            credentials: 'include'
-          })
-          if (debugRes.ok) {
-            const debugData = await debugRes.json()
-            console.log('[SkillBankCourseView] 🔍 DEBUG - Lesson data check:', debugData)
-          }
-        } catch (err) {
-          console.error('[SkillBankCourseView] Debug check failed:', err)
-        }
-      }
-      debugCheck()
-      
-      loadLessonAttachments()
-      loadNotes()
-      loadCheckpoint()
-      
-      return () => {
-        clearTimeout(timer)
-      }
+      // Load additional data in parallel (non-blocking)
+      Promise.all([
+        loadNotes(),
+        loadLessonAttachments(),
+        loadCheckpoint()
+      ]).catch(err => {
+        console.error('[SkillBankCourseView] Error loading lesson data:', err)
+      })
     } else {
       setLessonNotes('')
       setLessonVideoUrl('')
@@ -393,14 +372,18 @@ export function SkillBankCourseView({
 
   const loadSections = async () => {
     try {
+      // Don't block UI - show content immediately while loading
       setLoading(true)
+      
       // Optimized: Fetch sections with lessons in a single API call
       const res = await fetch(`/api/courses-v2/${course.id}/sections?includeLessons=true`)
       const data = await res.json()
       
       const sectionsWithLessons = data.sections || []
       
+      // Set sections immediately to show UI
       setSections(sectionsWithLessons)
+      setLoading(false) // Hide loading state as soon as data arrives
       
       // Only auto-expand/select on initial load, not on reloads
       if (sections.length === 0 && sectionsWithLessons.length > 0) {
@@ -424,9 +407,8 @@ export function SkillBankCourseView({
       return sectionsWithLessons
     } catch (error) {
       console.error('Error loading sections:', error)
-      return []
-    } finally {
       setLoading(false)
+      return []
     }
   }
 
@@ -1135,7 +1117,7 @@ export function SkillBankCourseView({
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {loading ? (
+            {sections.length === 0 && loading ? (
               <div className="p-4 text-center text-slate-400 text-sm">Loading...</div>
             ) : sections.length === 0 ? (
               <div className="p-4 text-center text-slate-400 text-sm">
