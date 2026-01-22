@@ -47,6 +47,8 @@ export async function POST(
       return NextResponse.json({ error: 'Checkpoint not found' }, { status: 404 })
     }
 
+    const checkpointData = checkpoint as any
+
     // Step 2: Create user_checkpoint entry with status 'pending'
     const { data: existingSubmission } = await supabaseAdmin
       .from('user_checkpoints')
@@ -59,7 +61,7 @@ export async function POST(
     let initialStatus: string
 
     // Step 2a: If checkpoint.requires_manual_review = true → set status = 'needs_review'
-    if (checkpoint.requires_manual_review) {
+    if (checkpointData.requires_manual_review) {
       initialStatus = 'needs_review'
     } else {
       initialStatus = 'pending'
@@ -112,7 +114,7 @@ export async function POST(
     }
 
     // Step 2b: If requires_manual_review, return early
-    if (checkpoint.requires_manual_review) {
+    if (checkpointData.requires_manual_review) {
       return NextResponse.json({
         status: 'needs_review',
         reason: 'This checkpoint requires manual review. You\'ll be notified when reviewed.',
@@ -121,7 +123,7 @@ export async function POST(
     }
 
     // Step 3: If checkpoint.ai_review_enabled = true → call Claude Vision API
-    if (checkpoint.ai_review_enabled) {
+    if (checkpointData.ai_review_enabled) {
       try {
         // Fetch screenshot image if provided
         let imageBase64: string | undefined
@@ -141,9 +143,9 @@ export async function POST(
 
         // Build Claude prompt
         const prompt = `You are reviewing a course checkpoint submission.
-CHECKPOINT TITLE: ${checkpoint.title}
-REQUIREMENTS: ${checkpoint.requirements}
-GRADING INSTRUCTIONS: ${checkpoint.ai_grading_prompt || 'Review the submission and determine if it meets the requirements.'}
+CHECKPOINT TITLE: ${checkpointData.title}
+REQUIREMENTS: ${checkpointData.requirements}
+GRADING INSTRUCTIONS: ${checkpointData.ai_grading_prompt || 'Review the submission and determine if it meets the requirements.'}
 USER'S SUBMISSION TEXT:
 ${submission_text}
 ${imageBase64 ? '[Screenshot attached]' : ''}
