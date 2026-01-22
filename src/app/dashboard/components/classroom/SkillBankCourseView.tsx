@@ -138,6 +138,11 @@ export function SkillBankCourseView({
   // Extract video ID helpers
   const extractYouTubeId = (url: string): string => {
     if (!url) return ''
+    // If it's already just an ID (no http/https), return as-is
+    if (!url.includes('http') && !url.includes('://')) {
+      return url
+    }
+    // Extract from full URL
     if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0]
     if (url.includes('youtube.com/watch?v=')) return url.split('v=')[1].split('&')[0]
     if (url.includes('youtube.com/embed/')) return url.split('embed/')[1].split('?')[0]
@@ -145,8 +150,45 @@ export function SkillBankCourseView({
   }
 
   const extractLoomId = (url: string): string => {
+    if (!url) return ''
+    // If it's already just an ID (no http/https), return as-is
+    if (!url.includes('http') && !url.includes('://')) {
+      return url
+    }
+    // Extract from full URL
     const match = url.match(/loom\.com\/share\/([a-f0-9]+)/i)
-    return match ? match[1] : ''
+    return match ? match[1] : url
+  }
+  
+  // Get video ID for display (handles both URL and ID formats)
+  const getVideoId = (lesson: any): { type: 'youtube' | 'loom' | null, id: string } => {
+    if (!lesson) return { type: null, id: '' }
+    
+    // Check video_type first (from database)
+    if (lesson.video_type === 'youtube' && lesson.video_url) {
+      return { type: 'youtube', id: extractYouTubeId(lesson.video_url) }
+    }
+    if (lesson.video_type === 'loom' && lesson.video_url) {
+      return { type: 'loom', id: extractLoomId(lesson.video_url) }
+    }
+    
+    // Fallback: try to detect from video_url format
+    if (lesson.video_url) {
+      if (lesson.video_url.includes('youtube') || lesson.video_url.includes('youtu.be')) {
+        return { type: 'youtube', id: extractYouTubeId(lesson.video_url) }
+      }
+      if (lesson.video_url.includes('loom')) {
+        return { type: 'loom', id: extractLoomId(lesson.video_url) }
+      }
+      // If it's just an ID without URL, check video_type or assume YouTube
+      if (!lesson.video_url.includes('http') && !lesson.video_url.includes('://')) {
+        // It's just an ID - use video_type to determine platform, or default to YouTube
+        const type = lesson.video_type === 'loom' ? 'loom' : 'youtube'
+        return { type, id: lesson.video_url }
+      }
+    }
+    
+    return { type: null, id: '' }
   }
 
   // Fetch sections with lessons
@@ -157,10 +199,14 @@ export function SkillBankCourseView({
   // Update when lesson changes
   useEffect(() => {
     if (selectedLesson) {
+      const videoInfo = getVideoId(selectedLesson)
       console.log('[SkillBankCourseView] Lesson changed:', {
         lessonId: selectedLesson.id,
         videoUrl: selectedLesson.video_url,
-        title: selectedLesson.title
+        videoType: selectedLesson.video_type,
+        extractedVideoInfo: videoInfo,
+        title: selectedLesson.title,
+        fullLesson: selectedLesson
       })
       
       // Reset video URL and increment key to force iframe remount
@@ -1425,43 +1471,56 @@ export function SkillBankCourseView({
             <div className="space-y-0 h-full overflow-y-auto">
               {/* Video Player */}
               <div className="aspect-video bg-slate-900 border-b border-slate-700/50 relative">
-                {selectedLesson.video_url && (selectedLesson.video_url.includes('youtube') || selectedLesson.video_url.includes('youtu.be')) && extractYouTubeId(selectedLesson.video_url) && (
-                  <iframe
-                    key={`youtube-${selectedLesson.id}-${videoKey}`}
-                    src={`https://www.youtube.com/embed/${extractYouTubeId(selectedLesson.video_url)}?rel=0`}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="w-full h-full absolute inset-0"
-                    title={selectedLesson.title}
-                    loading="eager"
-                    onLoad={() => console.log('[SkillBankCourseView] YouTube iframe loaded:', selectedLesson.id)}
-                    onError={(e) => console.error('[SkillBankCourseView] YouTube iframe error:', e)}
-                  />
-                )}
-                {selectedLesson.video_url && selectedLesson.video_url.includes('loom') && extractLoomId(selectedLesson.video_url) && (
-                  <iframe
-                    key={`loom-${selectedLesson.id}-${videoKey}`}
-                    src={`https://www.loom.com/embed/${extractLoomId(selectedLesson.video_url)}`}
-                    frameBorder="0"
-                    allowFullScreen
-                    className="w-full h-full absolute inset-0"
-                    title={selectedLesson.title}
-                    loading="eager"
-                    onLoad={() => console.log('[SkillBankCourseView] Loom iframe loaded:', selectedLesson.id)}
-                    onError={(e) => console.error('[SkillBankCourseView] Loom iframe error:', e)}
-                  />
-                )}
-                {!selectedLesson.video_url && isAdmin && (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <p className="text-slate-400">No video URL set. Add one below.</p>
-                  </div>
-                )}
-                {!selectedLesson.video_url && !isAdmin && (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <p className="text-slate-400">Video coming soon</p>
-                  </div>
-                )}
+                {(() => {
+                  const videoInfo = getVideoId(selectedLesson)
+                  
+                  if (videoInfo.type === 'youtube' && videoInfo.id) {
+                    return (
+                      <iframe
+                        key={`youtube-${selectedLesson.id}-${videoKey}`}
+                        src={`https://www.youtube.com/embed/${videoInfo.id}?rel=0`}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full absolute inset-0"
+                        title={selectedLesson.title}
+                        loading="eager"
+                        onLoad={() => console.log('[SkillBankCourseView] YouTube iframe loaded:', selectedLesson.id, videoInfo.id)}
+                        onError={(e) => console.error('[SkillBankCourseView] YouTube iframe error:', e, videoInfo)}
+                      />
+                    )
+                  }
+                  
+                  if (videoInfo.type === 'loom' && videoInfo.id) {
+                    return (
+                      <iframe
+                        key={`loom-${selectedLesson.id}-${videoKey}`}
+                        src={`https://www.loom.com/embed/${videoInfo.id}`}
+                        frameBorder="0"
+                        allowFullScreen
+                        className="w-full h-full absolute inset-0"
+                        title={selectedLesson.title}
+                        loading="eager"
+                        onLoad={() => console.log('[SkillBankCourseView] Loom iframe loaded:', selectedLesson.id, videoInfo.id)}
+                        onError={(e) => console.error('[SkillBankCourseView] Loom iframe error:', e, videoInfo)}
+                      />
+                    )
+                  }
+                  
+                  if (isAdmin) {
+                    return (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <p className="text-slate-400">No video URL set. Add one below.</p>
+                      </div>
+                    )
+                  }
+                  
+                  return (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <p className="text-slate-400">Video coming soon</p>
+                    </div>
+                  )
+                })()}
               </div>
 
               {/* Video Info & Description */}
