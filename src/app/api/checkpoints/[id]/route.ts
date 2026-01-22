@@ -5,6 +5,97 @@ import { supabaseAdmin } from '@/lib/supabase'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
+// GET - Get checkpoint for a specific section or checkpoint ID
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = await params
+
+    // First, check if this is a checkpoint ID (UUID)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+    
+    if (isUUID) {
+      // Try as checkpoint ID first
+      const { data: checkpointById } = await supabaseAdmin
+        .from('checkpoints')
+        .select('*')
+        .eq('id', id)
+        .single()
+      
+      if (checkpointById) {
+        return NextResponse.json({ checkpoint: checkpointById })
+      }
+      
+      // Try as section/module UUID
+      const { data: section } = await (supabaseAdmin as any)
+        .from('course_sections')
+        .select('id')
+        .eq('id', id)
+        .single()
+      
+      if (section) {
+        const sectionTyped = section as any
+        const { data: checkpoint } = await (supabaseAdmin as any)
+          .from('checkpoints')
+          .select('*')
+          .eq('section_id', sectionTyped.id)
+          .single()
+        
+        return NextResponse.json({ checkpoint: checkpoint || null })
+      }
+      
+      // Try as module UUID (new system)
+      const { data: module } = await (supabaseAdmin as any)
+        .from('course_modules')
+        .select('id')
+        .eq('id', id)
+        .single()
+      
+      if (module) {
+        const { data: checkpoint } = await (supabaseAdmin as any)
+          .from('checkpoints')
+          .select('*')
+          .eq('module_id', id)
+          .single()
+        
+        return NextResponse.json({ checkpoint: checkpoint || null })
+      }
+    } else {
+      // Try as numeric section_id field (the numeric identifier, not the UUID primary key)
+      const numericId = parseInt(id, 10)
+      if (!isNaN(numericId)) {
+        const { data: section } = await (supabaseAdmin as any)
+          .from('course_sections')
+          .select('id')
+          .eq('section_id', numericId)
+          .single()
+        
+        if (section) {
+          const sectionTyped = section as any
+          const { data: checkpoint } = await (supabaseAdmin as any)
+            .from('checkpoints')
+            .select('*')
+            .eq('section_id', sectionTyped.id)
+            .single()
+          
+          return NextResponse.json({ checkpoint: checkpoint || null })
+        }
+      }
+    }
+
+    return NextResponse.json({ checkpoint: null })
+
+  } catch (error: any) {
+    console.error('Error fetching checkpoint:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch checkpoint', message: error.message },
+      { status: 500 }
+    )
+  }
+}
+
 // PATCH - Update checkpoint
 export async function PATCH(
   request: NextRequest,
