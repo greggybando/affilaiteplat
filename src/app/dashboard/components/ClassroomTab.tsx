@@ -352,7 +352,7 @@ export default function ClassroomTab({
     loadCourseDetails()
   }, [selectedCourse])
 
-  const toggleModule = (moduleId: string) => {
+  const toggleModule = useCallback((moduleId: string) => {
     setExpandedModules(prev => {
       const newSet = new Set(prev)
       if (newSet.has(moduleId)) {
@@ -362,7 +362,7 @@ export default function ClassroomTab({
       }
       return newSet
     })
-  }
+  }, [])
 
   return (
     <div 
