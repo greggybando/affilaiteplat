@@ -36,6 +36,7 @@ export async function GET(
             duration_minutes,
             sort_order,
             is_published,
+            always_unlocked,
             created_at,
             updated_at
           )

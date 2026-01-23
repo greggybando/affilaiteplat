@@ -1329,7 +1329,7 @@ export function SkillBankCourseView({
           }}
         >
           <div 
-            className="p-3 shrink-0 border-b" 
+            className="p-3 shrink-0 border-b flex items-center justify-between gap-2" 
             style={{
               borderColor: 'rgba(34,211,238,0.2)',
               background: 'linear-gradient(135deg, rgba(40,40,45,0.9) 0%, rgba(35,35,40,0.95) 100%)'
@@ -1344,6 +1344,41 @@ export function SkillBankCourseView({
             >
               {getCourseHeaderText()}
             </h3>
+            
+            {/* Globally Unlocked Toggle (Admin) */}
+            {isAdmin && (
+              <button
+                onClick={async () => {
+                  const newValue = !courseData.globally_unlocked
+                  try {
+                    const res = await fetch(`/api/courses-v2/${course.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ globally_unlocked: newValue })
+                    })
+                    if (res.ok) {
+                      const data = await res.json()
+                      setCourseData({ ...courseData, globally_unlocked: newValue })
+                      // Reload unlock status to reflect change
+                      loadUnlockStatus()
+                    } else {
+                      alert('Failed to update course unlock status')
+                    }
+                  } catch (error) {
+                    console.error('Error updating globally_unlocked:', error)
+                    alert('Error updating course unlock status')
+                  }
+                }}
+                className="flex-shrink-0 p-1.5 hover:bg-slate-700/50 rounded transition-colors"
+                title={courseData.globally_unlocked ? 'Course is globally unlocked (click to lock)' : 'Course uses sequential unlocking (click to unlock all)'}
+              >
+                {courseData.globally_unlocked ? (
+                  <span className="text-xs text-emerald-400" title="Globally unlocked">🔓</span>
+                ) : (
+                  <span className="text-xs text-slate-500" title="Sequential unlocking">🔒</span>
+                )}
+              </button>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -1504,16 +1539,27 @@ export function SkillBankCourseView({
                       </div>
 
                       {/* Lessons */}
-                      {isExpanded && !isLocked && (
+                      {isExpanded && (
                         <div className="bg-[rgba(0,0,0,0.2)]">
-                          {sectionLessons.map((lesson: any, lessonIndex: number) => (
+                          {sectionLessons.map((lesson: any, lessonIndex: number) => {
+                            // Check if lesson is accessible
+                            // Lesson is accessible if: section is unlocked OR lesson.always_unlocked OR user is admin
+                            const lessonAccessible = !isLocked || lesson.always_unlocked || isAdmin
+                            
+                            return (
                             <div
                               key={lesson.id}
                               onClick={() => {
-                                setSelectedLesson(lesson)
-                                setSelectedSectionId(section.id)
+                                if (lessonAccessible) {
+                                  setSelectedLesson(lesson)
+                                  setSelectedSectionId(section.id)
+                                } else if (lockReason) {
+                                  alert(lockReason)
+                                }
                               }}
-                              className={`group/lesson px-4 py-2.5 pl-14 border-b border-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.05)] transition-colors cursor-pointer ${
+                              className={`group/lesson px-4 py-2.5 pl-14 border-b border-[rgba(255,255,255,0.03)] transition-colors ${
+                                lessonAccessible ? 'hover:bg-[rgba(255,255,255,0.05)] cursor-pointer' : 'cursor-not-allowed opacity-60'
+                              } ${
                                 selectedLesson?.id === lesson.id ? 'bg-[rgba(6,182,212,0.15)]' : ''
                               }`}
                             >
@@ -1522,6 +1568,26 @@ export function SkillBankCourseView({
                                 <span className="text-xs text-slate-400 flex-shrink-0 min-w-[20px]">
                                   {lessonIndex + 1}.
                                 </span>
+                                
+                                {/* Always Unlocked Toggle (Admin) */}
+                                {isAdmin && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleUpdateLesson(section.id, lesson.id, {
+                                        always_unlocked: !lesson.always_unlocked
+                                      })
+                                    }}
+                                    className="flex-shrink-0 p-1 hover:bg-slate-700/50 rounded transition-colors"
+                                    title={lesson.always_unlocked ? 'Lesson is always unlocked (click to lock)' : 'Lesson follows section lock (click to always unlock)'}
+                                  >
+                                    {lesson.always_unlocked ? (
+                                      <span className="text-xs text-cyan-400" title="Always unlocked">🔓</span>
+                                    ) : (
+                                      <span className="text-xs text-slate-500" title="Follows section lock">🔒</span>
+                                    )}
+                                  </button>
+                                )}
                                 
                                 {editingLessonId === lesson.id && isAdmin ? (
                                   <input
