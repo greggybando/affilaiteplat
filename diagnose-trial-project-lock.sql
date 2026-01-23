@@ -58,7 +58,7 @@ LEFT JOIN checkpoints cp ON cp.module_id = cm.id
 LEFT JOIN user_checkpoints uc ON uc.checkpoint_id = cp.id
 WHERE c.slug = 'dream-job'
   AND cm.sort_order < (
-    SELECT sort_order 
+    SELECT cm2.sort_order 
     FROM course_modules cm2
     JOIN courses c2 ON c2.id = cm2.course_id
     WHERE c2.slug = 'dream-job'
