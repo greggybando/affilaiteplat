@@ -165,6 +165,14 @@ export async function GET(
       }
     })
 
+    // Find the first section (lowest sort_order) - this will always be unlocked
+    const firstModule = modules.length > 0 
+      ? modules.reduce((first, current) => 
+          (current.sort_order < first.sort_order) ? current : first
+        )
+      : null
+    const firstModuleId = firstModule?.id || null
+
     // Step 5: Build response for each module
     const modulesWithStatus = modules.map((module, index: number) => {
       const checkpoint = checkpointMap.get(module.id)
@@ -187,8 +195,8 @@ export async function GET(
         isLocked = false
         lockReason = null
       }
-      // Check 3: Is this the first section (lowest sort_order)?
-      else if (index === 0 || module.sort_order === 0) {
+      // Check 3: Is this the first section? (ALWAYS UNLOCKED - explicit check)
+      else if (module.id === firstModuleId || index === 0 || module.sort_order === 0) {
         isLocked = false
         lockReason = null
       }
