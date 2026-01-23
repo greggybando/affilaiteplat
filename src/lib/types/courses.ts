@@ -8,6 +8,9 @@ export interface Course {
   type: 'foundation' | 'skillbank'
   order_index: number
   created_at: string
+  globally_unlocked?: boolean
+  is_published?: boolean
+  sort_order?: number
 }
 
 export interface Module {
