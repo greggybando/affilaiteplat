@@ -186,7 +186,7 @@ export async function GET(
       let lockReason: string | null = null
 
       // Check 1: Is course globally unlocked?
-      if (course.globally_unlocked) {
+      if (course.globally_unlocked === true) {
         isLocked = false
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Course is globally unlocked`)
