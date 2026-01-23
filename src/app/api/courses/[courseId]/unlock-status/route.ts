@@ -290,6 +290,8 @@ export async function GET(
         checkpointStatusFormatted = 'none'
       }
 
+      console.log(`[Unlock Status] FINAL: Module "${module.title}" → isLocked=${isLocked}, lockReason="${lockReason}"`)
+
       return {
         id: module.id,
         title: module.title,
@@ -305,6 +307,8 @@ export async function GET(
           : null
       }
     })
+
+    console.log(`[Unlock Status] Returning ${modulesWithStatus.length} modules. Locked count: ${modulesWithStatus.filter(m => m.isLocked).length}`)
 
     return NextResponse.json({
       courseId: params.courseId,
