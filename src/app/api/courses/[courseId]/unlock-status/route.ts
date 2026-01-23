@@ -189,16 +189,19 @@ export async function GET(
       if (course.globally_unlocked) {
         isLocked = false
         lockReason = null
+        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Course is globally unlocked`)
       }
       // Check 2: Is this module user-unlocked?
       else if (userCourseUnlocksData || userModuleUnlocks.has(module.id)) {
         isLocked = false
         lockReason = null
+        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: User-specific unlock`)
       }
       // Check 3: Is this the first section? (ALWAYS UNLOCKED - explicit check)
       else if (module.id === firstModuleId || index === 0 || module.sort_order === 0) {
         isLocked = false
         lockReason = null
+        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: First section (sort_order=${module.sort_order}, index=${index})`)
       }
       // Check 4: Explicit unlock rule (overrides default sequential behavior)
       else {
@@ -246,18 +249,23 @@ export async function GET(
             } else {
               lockReason = `Complete the required checkpoint to unlock this module`
             }
+            console.log(`[Unlock Status] Module "${module.title}" LOCKED: No previous checkpoint found (index=${index})`)
           } else {
             // Previous section has checkpoint - check if it's approved
             const previousStatus = userCheckpointStatusMap.get(previousCheckpoint.id) || 'not_started'
+            
+            console.log(`[Unlock Status] Module "${module.title}": Previous checkpoint "${previousCheckpoint.title}" status="${previousStatus}"`)
             
             if (previousStatus === 'approved') {
               // Previous checkpoint approved - unlock this section
               isLocked = false
               lockReason = null
+              console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Previous checkpoint approved`)
             } else {
               // Previous checkpoint not approved - lock this section
               isLocked = true
               lockReason = `Complete "${previousCheckpoint.title}" to unlock this module`
+              console.log(`[Unlock Status] Module "${module.title}" LOCKED: Previous checkpoint not approved (status=${previousStatus})`)
             }
           }
         }
