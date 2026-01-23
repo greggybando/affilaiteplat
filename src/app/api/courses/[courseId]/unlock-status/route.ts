@@ -236,9 +236,16 @@ export async function GET(
           }
           
           if (!previousCheckpointSection || !previousCheckpoint) {
-            // No previous section with checkpoint found - unlock this section
-            isLocked = false
-            lockReason = null
+            // No previous section with checkpoint found - KEEP LOCKED
+            // (Default behavior: sections are locked until previous checkpoint is approved)
+            isLocked = true
+            // Find the immediate previous section to show lock reason
+            if (index > 0) {
+              const immediatePrevModule = modules[index - 1]
+              lockReason = `Complete the previous section to unlock this module`
+            } else {
+              lockReason = `Complete the required checkpoint to unlock this module`
+            }
           } else {
             // Previous section has checkpoint - check if it's approved
             const previousStatus = userCheckpointStatusMap.get(previousCheckpoint.id) || 'not_started'
