@@ -32,6 +32,7 @@ export interface Lesson {
   youtube_id?: string
   order_index: number
   created_at: string
+  always_unlocked?: boolean
 }
 
 export interface Checkpoint {
