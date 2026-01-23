@@ -1739,7 +1739,8 @@ export function SkillBankCourseView({
                                 )}
                               </div>
                             </div>
-                          ))}
+                          )
+                          })}
                           
                           {/* Add Lesson Button */}
                           {isAdmin && (
