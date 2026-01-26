@@ -1507,15 +1507,35 @@ export function SkillBankCourseView({
                                       ok: res.ok, 
                                       data,
                                       moduleId,
-                                      moduleTitle: section.title
+                                      moduleTitle: section.title,
+                                      responseText: await res.clone().text().catch(() => 'N/A')
                                     })
                                     
                                     if (res.ok && data.success) {
                                       console.log('[Frontend] Toggle successful, reloading unlock status for module:', moduleId, 'Response:', data)
                                       // Small delay to ensure database update is committed
-                                      await new Promise(resolve => setTimeout(resolve, 100))
-                                      await loadUnlockStatus()
-                                      console.log('[Frontend] Unlock status reloaded')
+                                      await new Promise(resolve => setTimeout(resolve, 200))
+                                      
+                                      // Force reload unlock status
+                                      console.log('[Frontend] Calling loadUnlockStatus...')
+                                      const unlockRes = await fetch(`/api/courses/${course.id}/unlock-status`)
+                                      const unlockData = await unlockRes.json()
+                                      console.log('[Frontend] Unlock status response:', unlockData)
+                                      
+                                      const statusMap: Record<string, { isLocked: boolean; wouldBeLocked?: boolean; lockReason: string | null; checkpoint: any }> = {}
+                                      unlockData.modules?.forEach((module: any) => {
+                                        console.log(`[Frontend] Processing module "${module.title}": isLocked=${module.isLocked}, wouldBeLocked=${module.wouldBeLocked}, globally_unlocked=${module.globally_unlocked}`)
+                                        statusMap[module.id] = {
+                                          isLocked: module.isLocked,
+                                          wouldBeLocked: module.wouldBeLocked,
+                                          lockReason: module.lockReason,
+                                          checkpoint: module.checkpoint
+                                        }
+                                      })
+                                      
+                                      console.log('[Frontend] Setting unlock status:', statusMap)
+                                      setUnlockStatus(statusMap)
+                                      console.log('[Frontend] Unlock status updated in state')
                                     } else {
                                       console.error('[Frontend] Toggle failed:', data)
                                       alert(`Failed to toggle unlock status: ${data.error || 'Unknown error'}`)
