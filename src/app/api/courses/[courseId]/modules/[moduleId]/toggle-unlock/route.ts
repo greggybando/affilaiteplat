@@ -39,36 +39,18 @@ export async function POST(
       isAdmin
     })
 
-    if (unlocked) {
-      // Add unlock - use upsert to handle both insert and update
-      const { error } = await (supabaseAdmin as any)
-        .from('user_module_unlocks')
-        .upsert({
-          user_id: affiliate.id,
-          module_id: moduleId,
-          unlocked_at: new Date().toISOString(),
-          unlocked_by: affiliate.id
-        }, {
-          onConflict: 'user_id,module_id'
-        })
+    // Update the module's globally_unlocked flag (unlocks for ALL users)
+    const { error: updateError } = await (supabaseAdmin as any)
+      .from('course_modules')
+      .update({ globally_unlocked: unlocked })
+      .eq('id', moduleId)
 
-      if (error) {
-        console.error('[Toggle Unlock] Error upserting unlock:', error)
-        return NextResponse.json({ error: error.message, details: error }, { status: 500 })
-      }
-    } else {
-      // Remove unlock
-      const { error } = await (supabaseAdmin as any)
-        .from('user_module_unlocks')
-        .delete()
-        .eq('user_id', affiliate.id)
-        .eq('module_id', moduleId)
-
-      if (error) {
-        console.error('[Toggle Unlock] Error removing unlock:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
-      }
+    if (updateError) {
+      console.error('[Toggle Unlock] Error updating module globally_unlocked:', updateError)
+      return NextResponse.json({ error: updateError.message, details: updateError }, { status: 500 })
     }
+
+    console.log('[Toggle Unlock] Updated module globally_unlocked:', { moduleId, globally_unlocked: unlocked })
 
     console.log('[Toggle Unlock] Success:', { unlocked })
 

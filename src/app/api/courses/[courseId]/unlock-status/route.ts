@@ -60,10 +60,10 @@ export async function GET(
 
     const course = courseData as { id: string; title: string; slug: string; globally_unlocked: boolean }
 
-    // Step 2: Get all modules for courseId, ordered by sort_order
+    // Step 2: Get all modules for courseId, ordered by sort_order (including globally_unlocked flag)
     const { data: modulesData, error: modulesError } = await (supabaseAdmin as any)
       .from('course_modules')
-      .select('id, title, sort_order')
+      .select('id, title, sort_order, globally_unlocked')
       .eq('course_id', courseId)
       .order('sort_order', { ascending: true })
 
@@ -212,6 +212,13 @@ export async function GET(
         isLocked = false
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Course is globally unlocked`)
+      }
+      // Check 1: Is this module globally unlocked?
+      else if (module.globally_unlocked === true) {
+        isLocked = false
+        wouldBeLocked = false
+        lockReason = null
+        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Module is globally unlocked`)
       }
       // Check 2: Is this module user-unlocked?
       else if (userCourseUnlocksData || userModuleUnlocks.has(module.id)) {
