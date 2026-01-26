@@ -354,10 +354,17 @@ export async function GET(
 
     console.log(`[Unlock Status] Returning ${modulesWithStatus.length} modules. Locked count: ${modulesWithStatus.filter(m => m.isLocked).length}`)
 
-    return NextResponse.json({
+    const response = {
       courseId: courseId,
-      modules: modulesWithStatus
-    })
+      modules: modulesWithStatus.map((m: any) => ({
+        ...m,
+        globally_unlocked: modules.find((mod) => mod.id === m.id)?.globally_unlocked ?? false
+      }))
+    }
+    
+    console.log('[Unlock Status] Response:', JSON.stringify(response, null, 2))
+    
+    return NextResponse.json(response)
   } catch (error: any) {
     console.error('[Unlock Status] Error:', error)
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
