@@ -8,6 +8,7 @@ interface Module {
   id: string
   title: string
   sort_order: number
+  globally_unlocked?: boolean
 }
 
 interface Checkpoint {
