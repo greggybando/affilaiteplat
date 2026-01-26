@@ -1507,8 +1507,7 @@ export function SkillBankCourseView({
                                       ok: res.ok, 
                                       data,
                                       moduleId,
-                                      moduleTitle: section.title,
-                                      responseText: await res.clone().text().catch(() => 'N/A')
+                                      moduleTitle: section.title
                                     })
                                     
                                     if (res.ok && data.success) {
