@@ -40,49 +40,21 @@ export async function POST(
     })
 
     if (unlocked) {
-      // Add unlock - first check if it exists
-      const { data: existing, error: checkError } = await (supabaseAdmin as any)
+      // Add unlock - use upsert to handle both insert and update
+      const { error } = await (supabaseAdmin as any)
         .from('user_module_unlocks')
-        .select('id')
-        .eq('user_id', affiliate.id)
-        .eq('module_id', moduleId)
-        .maybeSingle()
+        .upsert({
+          user_id: affiliate.id,
+          module_id: moduleId,
+          unlocked_at: new Date().toISOString(),
+          unlocked_by: affiliate.id
+        }, {
+          onConflict: 'user_id,module_id'
+        })
 
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('[Toggle Unlock] Error checking existing unlock:', checkError)
-        return NextResponse.json({ error: checkError.message }, { status: 500 })
-      }
-
-      if (existing) {
-        // Already exists, update timestamp
-        const { error } = await (supabaseAdmin as any)
-          .from('user_module_unlocks')
-          .update({
-            unlocked_at: new Date().toISOString(),
-            unlocked_by: affiliate.id
-          })
-          .eq('user_id', affiliate.id)
-          .eq('module_id', moduleId)
-
-        if (error) {
-          console.error('[Toggle Unlock] Error updating unlock:', error)
-          return NextResponse.json({ error: error.message, details: error }, { status: 500 })
-        }
-      } else {
-        // Insert new
-        const { error } = await (supabaseAdmin as any)
-          .from('user_module_unlocks')
-          .insert({
-            user_id: affiliate.id,
-            module_id: moduleId,
-            unlocked_at: new Date().toISOString(),
-            unlocked_by: affiliate.id
-          })
-
-        if (error) {
-          console.error('[Toggle Unlock] Error inserting unlock:', error)
-          return NextResponse.json({ error: error.message, details: error }, { status: 500 })
-        }
+      if (error) {
+        console.error('[Toggle Unlock] Error upserting unlock:', error)
+        return NextResponse.json({ error: error.message, details: error }, { status: 500 })
       }
     } else {
       // Remove unlock
