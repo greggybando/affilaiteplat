@@ -76,7 +76,7 @@ export async function GET(
 
     if (modules.length === 0) {
       return NextResponse.json({
-        courseId: params.courseId,
+        courseId: courseId,
         modules: []
       })
     }
