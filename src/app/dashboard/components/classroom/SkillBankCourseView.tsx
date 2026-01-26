@@ -1444,7 +1444,40 @@ export function SkillBankCourseView({
                           title={wouldBeLocked && !isAdmin ? lockReason || 'Complete the required checkpoint to unlock this module' : ''}
                         >
                           <div className="flex items-center gap-2.5">
-                            {/* Lock Icon - Show before drag handle if locked */}
+                            {/* Admin Toggle Button */}
+                            {isAdmin && (
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation()
+                                  const currentlyUnlocked = !wouldBeLocked
+                                  try {
+                                    const res = await fetch(`/api/courses/${course.id}/modules/${section.id}/toggle-unlock`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ unlocked: !currentlyUnlocked })
+                                    })
+                                    if (res.ok) {
+                                      await loadUnlockStatus()
+                                    } else {
+                                      alert('Failed to toggle unlock status')
+                                    }
+                                  } catch (error) {
+                                    console.error('Error toggling unlock:', error)
+                                    alert('Error toggling unlock status')
+                                  }
+                                }}
+                                className="flex-shrink-0 p-1 hover:bg-slate-700/50 rounded transition-colors"
+                                title={wouldBeLocked ? 'Click to unlock this module' : 'Click to lock this module'}
+                              >
+                                {wouldBeLocked ? (
+                                  <Lock size={14} className="text-slate-500" />
+                                ) : (
+                                  <Unlock size={14} className="text-emerald-400" />
+                                )}
+                              </button>
+                            )}
+                            
+                            {/* Lock Icon - Show for non-admins if locked */}
                             {isLocked && !isAdmin && (
                               <Lock size={14} className="text-slate-500 flex-shrink-0" />
                             )}
@@ -1457,9 +1490,9 @@ export function SkillBankCourseView({
                           {/* Expand/Collapse Chevron */}
                           <div className="flex-shrink-0">
                             {isExpanded ? (
-                              <ChevronDown size={16} className={`${isLocked ? 'text-slate-600' : 'text-[rgba(255,255,255,0.5)]'}`} />
+                              <ChevronDown size={16} className={`${wouldBeLocked ? 'text-slate-600' : 'text-[rgba(255,255,255,0.5)]'}`} />
                             ) : (
-                              <ChevronRight size={16} className={`${isLocked ? 'text-slate-600' : 'text-[rgba(255,255,255,0.5)]'}`} />
+                              <ChevronRight size={16} className={`${wouldBeLocked ? 'text-slate-600' : 'text-[rgba(255,255,255,0.5)]'}`} />
                             )}
                           </div>
                           
