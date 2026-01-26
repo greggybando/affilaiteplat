@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, Upload, Paperclip, Check, FileCheck, Loader2, Save, X, Download, FileUp, Lock, Pencil } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, Upload, Paperclip, Check, FileCheck, Loader2, Save, X, Download, FileUp, Lock, Unlock, Pencil } from 'lucide-react'
 import { Course, Module, Lesson } from '@/lib/types/courses'
 import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 import { CourseImporter } from './CourseImporter'
@@ -121,7 +121,7 @@ export function SkillBankCourseView({
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
-  const [unlockStatus, setUnlockStatus] = useState<Record<string, { isLocked: boolean; lockReason: string | null; checkpoint: any }>>({})
+  const [unlockStatus, setUnlockStatus] = useState<Record<string, { isLocked: boolean; wouldBeLocked?: boolean; lockReason: string | null; checkpoint: any }>>({})
   
   // Editing states
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
@@ -1403,8 +1403,10 @@ export function SkillBankCourseView({
                   const isExpanded = expandedSections.has(section.id)
                   const sectionLessons = section.lessons || []
                   const moduleStatus = unlockStatus[section.id]
-                  // Default to LOCKED if status not loaded yet (safer default)
-                  const isLocked = moduleStatus?.isLocked ?? true
+                  // For admins: use wouldBeLocked to show lock symbol, but allow access (isLocked = false)
+                  // For non-admins: use isLocked normally
+                  const wouldBeLocked = isAdmin ? (moduleStatus?.wouldBeLocked ?? true) : (moduleStatus?.isLocked ?? true)
+                  const isLocked = isAdmin ? false : (moduleStatus?.isLocked ?? true) // Admins always have access
                   const lockReason = moduleStatus?.lockReason
                   const checkpoint = moduleStatus?.checkpoint
                   

@@ -185,15 +185,10 @@ export async function GET(
       // NEW DEFAULT BEHAVIOR: Sequential unlocking - all sections locked except first
       let isLocked = true // Default: LOCKED (changed from false)
       let lockReason: string | null = null
+      let wouldBeLocked = true // Track what the lock status would be for non-admins (for UI display)
 
-      // Check 0: Is user an admin? (Admins bypass all locks)
-      if (isAdmin) {
-        isLocked = false
-        lockReason = null
-        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: User is admin`)
-      }
-      // Check 1: Is course globally unlocked?
-      else if (course.globally_unlocked === true) {
+      // Check 0: Is course globally unlocked?
+      if (course.globally_unlocked === true) {
         isLocked = false
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Course is globally unlocked`)
@@ -249,6 +244,7 @@ export async function GET(
             // No previous section with checkpoint found - KEEP LOCKED
             // (Default behavior: sections are locked until previous checkpoint is approved)
             isLocked = true
+            wouldBeLocked = true
             // Find the immediate previous section to show lock reason
             if (index > 0) {
               const immediatePrevModule = modules[index - 1]
@@ -266,16 +262,24 @@ export async function GET(
             if (previousStatus === 'approved') {
               // Previous checkpoint approved - unlock this section
               isLocked = false
+              wouldBeLocked = false
               lockReason = null
               console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Previous checkpoint approved`)
             } else {
               // Previous checkpoint not approved - lock this section
               isLocked = true
+              wouldBeLocked = true
               lockReason = `Complete "${previousCheckpoint.title}" to unlock this module`
               console.log(`[Unlock Status] Module "${module.title}" LOCKED: Previous checkpoint not approved (status=${previousStatus})`)
             }
           }
         }
+      }
+
+      // For admins: Always allow access, but preserve wouldBeLocked for UI display
+      if (isAdmin) {
+        isLocked = false // Admins can always access
+        // Keep wouldBeLocked as-is so UI can show lock symbol
       }
 
       // Map checkpoint status to response format
@@ -304,6 +308,7 @@ export async function GET(
         title: module.title,
         sort_order: module.sort_order,
         isLocked,
+        wouldBeLocked: isAdmin ? wouldBeLocked : isLocked, // For admins, show what it would be locked for regular users
         lockReason,
         checkpoint: checkpoint
           ? {
