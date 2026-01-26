@@ -1535,8 +1535,8 @@ export function SkillBankCourseView({
                                 <h4
                                   className="text-sm font-semibold uppercase tracking-wide"
                                   style={{ 
-                                    color: isLocked ? 'rgba(120,120,125,0.7)' : 'rgba(34,211,238,0.9)',
-                                    textShadow: isLocked ? 'none' : '0 0 8px rgba(34,211,238,0.3), 0 0 16px rgba(34,211,238,0.2)',
+                                    color: wouldBeLocked && !isAdmin ? 'rgba(120,120,125,0.7)' : 'rgba(34,211,238,0.9)',
+                                    textShadow: wouldBeLocked && !isAdmin ? 'none' : '0 0 8px rgba(34,211,238,0.3), 0 0 16px rgba(34,211,238,0.2)',
                                     letterSpacing: '0.08em'
                                   }}
                                   onDoubleClick={(e) => {
