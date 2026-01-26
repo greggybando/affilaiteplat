@@ -1403,7 +1403,8 @@ export function SkillBankCourseView({
                   const isExpanded = expandedSections.has(section.id)
                   const sectionLessons = section.lessons || []
                   const moduleStatus = unlockStatus[section.id]
-                  const isLocked = moduleStatus?.isLocked ?? false
+                  // Default to LOCKED if status not loaded yet (safer default)
+                  const isLocked = moduleStatus?.isLocked ?? true
                   const lockReason = moduleStatus?.lockReason
                   const checkpoint = moduleStatus?.checkpoint
                   
