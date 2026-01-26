@@ -75,6 +75,14 @@ export async function GET(
 
     const modules = (modulesData || []) as Module[]
 
+    // Debug: Log the modules data to verify globally_unlocked is being fetched
+    console.log('[Unlock Status] Fetched modules:', modules.map(m => ({
+      id: m.id,
+      title: m.title,
+      globally_unlocked: m.globally_unlocked,
+      globally_unlocked_type: typeof m.globally_unlocked
+    })))
+
     if (modules.length === 0) {
       return NextResponse.json({
         courseId: courseId,
