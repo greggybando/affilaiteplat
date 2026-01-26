@@ -40,21 +40,41 @@ export async function POST(
     })
 
     // Update the module's globally_unlocked flag (unlocks for ALL users)
-    const { error: updateError } = await (supabaseAdmin as any)
+    const { data: updateData, error: updateError } = await (supabaseAdmin as any)
       .from('course_modules')
       .update({ globally_unlocked: unlocked })
       .eq('id', moduleId)
+      .select('id, title, globally_unlocked')
+      .single()
 
     if (updateError) {
       console.error('[Toggle Unlock] Error updating module globally_unlocked:', updateError)
       return NextResponse.json({ error: updateError.message, details: updateError }, { status: 500 })
     }
 
-    console.log('[Toggle Unlock] Updated module globally_unlocked:', { moduleId, globally_unlocked: unlocked })
+    console.log('[Toggle Unlock] Updated module globally_unlocked:', { 
+      moduleId, 
+      moduleTitle: updateData?.title,
+      globally_unlocked: updateData?.globally_unlocked,
+      requested: unlocked
+    })
 
-    console.log('[Toggle Unlock] Success:', { unlocked })
+    // Verify the update worked
+    if (updateData?.globally_unlocked !== unlocked) {
+      console.error('[Toggle Unlock] WARNING: Update may not have worked correctly', {
+        expected: unlocked,
+        actual: updateData?.globally_unlocked
+      })
+    }
 
-    return NextResponse.json({ success: true, unlocked })
+    console.log('[Toggle Unlock] Success:', { unlocked, verified: updateData?.globally_unlocked })
+
+    return NextResponse.json({ 
+      success: true, 
+      unlocked: updateData?.globally_unlocked ?? unlocked,
+      moduleId,
+      moduleTitle: updateData?.title
+    })
   } catch (error: any) {
     console.error('[Toggle Unlock] Error:', error)
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })

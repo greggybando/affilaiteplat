@@ -208,6 +208,9 @@ export async function GET(
       let lockReason: string | null = null
       let wouldBeLocked = true // Track what the lock status would be for non-admins (for UI display)
 
+      // Normalize globally_unlocked to boolean (handle null/undefined/string cases)
+      const moduleGloballyUnlocked = module.globally_unlocked === true || module.globally_unlocked === 'true' || module.globally_unlocked === 1
+
       // Check 0: Is course globally unlocked?
       if (course.globally_unlocked === true) {
         isLocked = false
@@ -215,11 +218,11 @@ export async function GET(
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Course is globally unlocked`)
       }
       // Check 1: Is this module globally unlocked?
-      else if (module.globally_unlocked === true) {
+      else if (moduleGloballyUnlocked) {
         isLocked = false
         wouldBeLocked = false
         lockReason = null
-        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Module is globally unlocked`)
+        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Module is globally unlocked (value: ${module.globally_unlocked})`)
       }
       // Check 2: Is this module user-unlocked?
       else if (userCourseUnlocksData || userModuleUnlocks.has(module.id)) {
