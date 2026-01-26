@@ -196,6 +196,7 @@ export async function GET(
       // Check 2: Is this module user-unlocked?
       else if (userCourseUnlocksData || userModuleUnlocks.has(module.id)) {
         isLocked = false
+        wouldBeLocked = false
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: User-specific unlock`)
       }
