@@ -1453,13 +1453,22 @@ export function SkillBankCourseView({
                             {isAdmin && (
                               <button
                                 onClick={async (e) => {
+                                  e.preventDefault()
                                   e.stopPropagation()
+                                  console.log('[Frontend] Button clicked!', {
+                                    sectionId: section.id,
+                                    wouldBeLocked,
+                                    moduleStatus,
+                                    isAdmin
+                                  })
                                   const currentlyUnlocked = !wouldBeLocked
                                   try {
                                     console.log('[Frontend] Toggling unlock:', {
                                       courseId: course.id,
                                       moduleId: section.id,
-                                      unlocked: !currentlyUnlocked
+                                      unlocked: !currentlyUnlocked,
+                                      currentlyUnlocked,
+                                      wouldBeLocked
                                     })
                                     const res = await fetch(`/api/courses/${course.id}/modules/${section.id}/toggle-unlock`, {
                                       method: 'POST',
@@ -1469,7 +1478,9 @@ export function SkillBankCourseView({
                                     const data = await res.json()
                                     console.log('[Frontend] Toggle response:', { status: res.status, ok: res.ok, data })
                                     if (res.ok) {
+                                      console.log('[Frontend] Reloading unlock status...')
                                       await loadUnlockStatus()
+                                      console.log('[Frontend] Unlock status reloaded')
                                     } else {
                                       console.error('[Frontend] Toggle failed:', data)
                                       alert(`Failed to toggle unlock status: ${data.error || 'Unknown error'}`)
@@ -1479,7 +1490,13 @@ export function SkillBankCourseView({
                                     alert(`Error toggling unlock status: ${error instanceof Error ? error.message : 'Unknown error'}`)
                                   }
                                 }}
-                                className="flex-shrink-0 p-1 hover:bg-slate-700/50 rounded transition-colors"
+                                onMouseDown={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  console.log('[Frontend] Button mousedown!')
+                                }}
+                                className="flex-shrink-0 p-1.5 hover:bg-slate-700/50 rounded transition-colors cursor-pointer z-10 relative"
+                                style={{ pointerEvents: 'auto' }}
                                 title={wouldBeLocked ? 'Click to unlock this module' : 'Click to lock this module'}
                               >
                                 {wouldBeLocked ? (
