@@ -38,6 +38,7 @@ export async function GET(
     }
 
     const userId = affiliate.id
+    const isAdmin = affiliate.role === 'admin' || affiliate.role === 'moderator'
 
     // Step 1: Get course info (including globally_unlocked flag)
     const { data: courseData, error: courseError } = await (supabaseAdmin as any)
@@ -185,8 +186,14 @@ export async function GET(
       let isLocked = true // Default: LOCKED (changed from false)
       let lockReason: string | null = null
 
+      // Check 0: Is user an admin? (Admins bypass all locks)
+      if (isAdmin) {
+        isLocked = false
+        lockReason = null
+        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: User is admin`)
+      }
       // Check 1: Is course globally unlocked?
-      if (course.globally_unlocked === true) {
+      else if (course.globally_unlocked === true) {
         isLocked = false
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Course is globally unlocked`)
