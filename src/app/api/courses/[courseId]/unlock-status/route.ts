@@ -29,7 +29,7 @@ interface UnlockRule {
 // GET - Fetch unlock status for all modules in a course
 export async function GET(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> | { courseId: string } }
 ) {
   try {
     const affiliate = await getCurrentAffiliate()
@@ -37,14 +37,20 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Handle params as Promise (Next.js 14)
+    const resolvedParams = await Promise.resolve(params)
+    const { courseId } = resolvedParams
+
     const userId = affiliate.id
     const isAdmin = affiliate.role === 'admin' || affiliate.role === 'moderator'
+
+    console.log('[Unlock Status] Request:', { courseId, userId, isAdmin })
 
     // Step 1: Get course info (including globally_unlocked flag)
     const { data: courseData, error: courseError } = await (supabaseAdmin as any)
       .from('courses')
       .select('id, title, slug, globally_unlocked')
-      .eq('id', params.courseId)
+      .eq('id', courseId)
       .single()
 
     if (courseError) {
@@ -58,7 +64,7 @@ export async function GET(
     const { data: modulesData, error: modulesError } = await (supabaseAdmin as any)
       .from('course_modules')
       .select('id, title, sort_order')
-      .eq('course_id', params.courseId)
+      .eq('course_id', courseId)
       .order('sort_order', { ascending: true })
 
     if (modulesError) {
@@ -78,19 +84,27 @@ export async function GET(
     const moduleIds = modules.map((m) => m.id)
 
     // Step 3: Get user-specific unlocks (course-level and module-level)
-    const { data: userCourseUnlocksData } = await (supabaseAdmin as any)
+    const { data: userCourseUnlocksData, error: userCourseUnlocksError } = await (supabaseAdmin as any)
       .from('user_course_unlocks')
       .select('course_id')
       .eq('user_id', userId)
-      .eq('course_id', params.courseId)
-      .single()
-      .catch(() => ({ data: null }))
+      .eq('course_id', courseId)
+      .maybeSingle()
 
-    const { data: userModuleUnlocksData } = await (supabaseAdmin as any)
+    if (userCourseUnlocksError && userCourseUnlocksError.code !== 'PGRST116') {
+      console.error('[Unlock Status] Error fetching user course unlocks:', userCourseUnlocksError)
+    }
+
+    const { data: userModuleUnlocksData, error: userModuleUnlocksError } = await (supabaseAdmin as any)
       .from('user_module_unlocks')
       .select('module_id')
       .eq('user_id', userId)
-      .in('module_id', moduleIds)
+      .in('module_id', moduleIds.length > 0 ? moduleIds : ['00000000-0000-0000-0000-000000000000'])
+
+    if (userModuleUnlocksError) {
+      console.error('[Unlock Status] Error fetching user module unlocks:', userModuleUnlocksError)
+      // Don't fail - just continue with empty set
+    }
 
     const userModuleUnlocks = new Set<string>()
     if (userModuleUnlocksData) {
@@ -98,6 +112,12 @@ export async function GET(
         if (u.module_id) userModuleUnlocks.add(u.module_id)
       })
     }
+
+    console.log('[Unlock Status] User unlocks:', {
+      courseUnlock: !!userCourseUnlocksData,
+      moduleUnlocks: Array.from(userModuleUnlocks),
+      moduleIdsCount: moduleIds.length
+    })
 
     // Step 4: Get all checkpoints for these modules
     const { data: checkpointsData, error: checkpointsError } = await (supabaseAdmin as any)
@@ -324,7 +344,7 @@ export async function GET(
     console.log(`[Unlock Status] Returning ${modulesWithStatus.length} modules. Locked count: ${modulesWithStatus.filter(m => m.isLocked).length}`)
 
     return NextResponse.json({
-      courseId: params.courseId,
+      courseId: courseId,
       modules: modulesWithStatus
     })
   } catch (error: any) {
