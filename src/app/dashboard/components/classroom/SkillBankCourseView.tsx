@@ -1510,8 +1510,10 @@ export function SkillBankCourseView({
                                       moduleTitle: section.title
                                     })
                                     
-                                    if (res.ok) {
-                                      console.log('[Frontend] Reloading unlock status for module:', moduleId)
+                                    if (res.ok && data.success) {
+                                      console.log('[Frontend] Toggle successful, reloading unlock status for module:', moduleId, 'Response:', data)
+                                      // Small delay to ensure database update is committed
+                                      await new Promise(resolve => setTimeout(resolve, 100))
                                       await loadUnlockStatus()
                                       console.log('[Frontend] Unlock status reloaded')
                                     } else {
