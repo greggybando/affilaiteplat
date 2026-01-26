@@ -1448,9 +1448,11 @@ export function SkillBankCourseView({
                           }}
                           title={wouldBeLocked && !isAdmin ? lockReason || 'Complete the required checkpoint to unlock this module' : ''}
                         >
-                          <div className="flex items-center gap-2.5">
-                            {/* Admin Toggle Button */}
-                            {isAdmin && (
+                          <div className="flex items-center gap-2.5 relative">
+                            {/* Admin Toggle Button - Must be first to avoid drag handle overlay */}
+                            {isAdmin && (() => {
+                              console.log('[Frontend] Rendering unlock button for section:', section.id, 'wouldBeLocked:', wouldBeLocked)
+                              return (
                               <button
                                 onClick={async (e) => {
                                   e.preventDefault()
@@ -1493,19 +1495,23 @@ export function SkillBankCourseView({
                                 onMouseDown={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
-                                  console.log('[Frontend] Button mousedown!')
+                                  console.log('[Frontend] Button mousedown!', { sectionId: section.id })
                                 }}
-                                className="flex-shrink-0 p-1.5 hover:bg-slate-700/50 rounded transition-colors cursor-pointer z-10 relative"
-                                style={{ pointerEvents: 'auto' }}
+                                onMouseEnter={() => {
+                                  console.log('[Frontend] Button hover!', { sectionId: section.id })
+                                }}
+                                className="flex-shrink-0 p-1.5 hover:bg-slate-700/50 rounded transition-colors cursor-pointer z-50 relative"
+                                style={{ pointerEvents: 'auto', zIndex: 50 }}
                                 title={wouldBeLocked ? 'Click to unlock this module' : 'Click to lock this module'}
                               >
                                 {wouldBeLocked ? (
-                                  <Lock size={14} className="text-slate-500" />
+                                  <Lock size={16} className="text-slate-500" />
                                 ) : (
-                                  <Unlock size={14} className="text-emerald-400" />
+                                  <Unlock size={16} className="text-emerald-400" />
                                 )}
                               </button>
-                            )}
+                              )
+                            })()}
                             
                             {/* Lock Icon - Show for non-admins if locked */}
                             {isLocked && !isAdmin && (
