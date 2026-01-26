@@ -263,15 +263,20 @@ export function SkillBankCourseView({
       const res = await fetch(`/api/courses/${course.id}/unlock-status`)
       if (res.ok) {
         const data = await res.json()
-        const statusMap: Record<string, { isLocked: boolean; lockReason: string | null; checkpoint: any }> = {}
+        console.log('[SkillBankCourseView] Unlock status loaded:', data)
+        const statusMap: Record<string, { isLocked: boolean; wouldBeLocked?: boolean; lockReason: string | null; checkpoint: any }> = {}
         data.modules?.forEach((module: any) => {
+          console.log(`[SkillBankCourseView] Module "${module.title}": isLocked=${module.isLocked}, wouldBeLocked=${module.wouldBeLocked}`)
           statusMap[module.id] = {
             isLocked: module.isLocked,
+            wouldBeLocked: module.wouldBeLocked,
             lockReason: module.lockReason,
             checkpoint: module.checkpoint
           }
         })
         setUnlockStatus(statusMap)
+      } else {
+        console.error('[SkillBankCourseView] Failed to load unlock status:', res.status, res.statusText)
       }
     } catch (error) {
       console.error('[SkillBankCourseView] Error loading unlock status:', error)
