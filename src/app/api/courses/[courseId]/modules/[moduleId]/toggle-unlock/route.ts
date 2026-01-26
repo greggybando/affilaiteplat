@@ -27,22 +27,54 @@ export async function POST(
       return NextResponse.json({ error: 'unlocked boolean is required' }, { status: 400 })
     }
 
-    if (unlocked) {
-      // Add unlock
-      const { error } = await (supabaseAdmin as any)
-        .from('user_module_unlocks')
-        .upsert({
-          user_id: affiliate.id,
-          module_id: params.moduleId,
-          unlocked_at: new Date().toISOString(),
-          unlocked_by: affiliate.id
-        }, {
-          onConflict: 'user_id,module_id'
-        })
+    console.log('[Toggle Unlock] Request:', {
+      courseId: params.courseId,
+      moduleId: params.moduleId,
+      userId: affiliate.id,
+      unlocked,
+      isAdmin
+    })
 
-      if (error) {
-        console.error('[Toggle Unlock] Error adding unlock:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+    if (unlocked) {
+      // Add unlock - first check if it exists
+      const { data: existing } = await (supabaseAdmin as any)
+        .from('user_module_unlocks')
+        .select('id')
+        .eq('user_id', affiliate.id)
+        .eq('module_id', params.moduleId)
+        .single()
+        .catch(() => ({ data: null }))
+
+      if (existing) {
+        // Already exists, update timestamp
+        const { error } = await (supabaseAdmin as any)
+          .from('user_module_unlocks')
+          .update({
+            unlocked_at: new Date().toISOString(),
+            unlocked_by: affiliate.id
+          })
+          .eq('user_id', affiliate.id)
+          .eq('module_id', params.moduleId)
+
+        if (error) {
+          console.error('[Toggle Unlock] Error updating unlock:', error)
+          return NextResponse.json({ error: error.message }, { status: 500 })
+        }
+      } else {
+        // Insert new
+        const { error } = await (supabaseAdmin as any)
+          .from('user_module_unlocks')
+          .insert({
+            user_id: affiliate.id,
+            module_id: params.moduleId,
+            unlocked_at: new Date().toISOString(),
+            unlocked_by: affiliate.id
+          })
+
+        if (error) {
+          console.error('[Toggle Unlock] Error inserting unlock:', error)
+          return NextResponse.json({ error: error.message }, { status: 500 })
+        }
       }
     } else {
       // Remove unlock
@@ -57,6 +89,8 @@ export async function POST(
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
     }
+
+    console.log('[Toggle Unlock] Success:', { unlocked })
 
     return NextResponse.json({ success: true, unlocked })
   } catch (error: any) {
