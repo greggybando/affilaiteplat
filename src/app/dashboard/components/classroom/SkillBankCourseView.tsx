@@ -122,6 +122,7 @@ export function SkillBankCourseView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [unlockStatus, setUnlockStatus] = useState<Record<string, { isLocked: boolean; wouldBeLocked?: boolean; lockReason: string | null; checkpoint: any }>>({})
+  const [togglingModuleId, setTogglingModuleId] = useState<string | null>(null)
   
   // Editing states
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
@@ -1452,31 +1453,48 @@ export function SkillBankCourseView({
                             {/* Admin Toggle Button - Must be first to avoid drag handle overlay */}
                             {isAdmin && (
                               <button
+                                disabled={togglingModuleId !== null}
                                 onClick={async (e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
+                                  
+                                  // Prevent multiple simultaneous toggles
+                                  if (togglingModuleId !== null) {
+                                    console.log('[Frontend] Toggle already in progress, ignoring click')
+                                    return
+                                  }
+                                  
+                                  const moduleId = section.id
+                                  setTogglingModuleId(moduleId)
+                                  
                                   console.log('[Frontend] Button clicked!', {
-                                    sectionId: section.id,
+                                    sectionId: moduleId,
                                     wouldBeLocked,
                                     moduleStatus,
                                     isAdmin
                                   })
+                                  
                                   const currentlyUnlocked = !wouldBeLocked
+                                  const newUnlockedState = !currentlyUnlocked
+                                  
                                   try {
                                     console.log('[Frontend] Toggling unlock:', {
                                       courseId: course.id,
-                                      moduleId: section.id,
-                                      unlocked: !currentlyUnlocked,
+                                      moduleId: moduleId,
+                                      unlocked: newUnlockedState,
                                       currentlyUnlocked,
                                       wouldBeLocked
                                     })
-                                    const res = await fetch(`/api/courses/${course.id}/modules/${section.id}/toggle-unlock`, {
+                                    
+                                    const res = await fetch(`/api/courses/${course.id}/modules/${moduleId}/toggle-unlock`, {
                                       method: 'POST',
                                       headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ unlocked: !currentlyUnlocked })
+                                      body: JSON.stringify({ unlocked: newUnlockedState })
                                     })
+                                    
                                     const data = await res.json()
                                     console.log('[Frontend] Toggle response:', { status: res.status, ok: res.ok, data })
+                                    
                                     if (res.ok) {
                                       console.log('[Frontend] Reloading unlock status...')
                                       await loadUnlockStatus()
@@ -1488,21 +1506,25 @@ export function SkillBankCourseView({
                                   } catch (error) {
                                     console.error('[Frontend] Error toggling unlock:', error)
                                     alert(`Error toggling unlock status: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                                  } finally {
+                                    setTogglingModuleId(null)
                                   }
                                 }}
                                 onMouseDown={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
-                                  console.log('[Frontend] Button mousedown!', { sectionId: section.id })
                                 }}
-                                onMouseEnter={() => {
-                                  console.log('[Frontend] Button hover!', { sectionId: section.id, wouldBeLocked })
-                                }}
-                                className="flex-shrink-0 p-2 hover:bg-slate-700/50 rounded transition-colors cursor-pointer relative"
+                                className={`flex-shrink-0 p-2 rounded transition-colors relative ${
+                                  togglingModuleId === section.id 
+                                    ? 'cursor-wait opacity-50' 
+                                    : 'hover:bg-slate-700/50 cursor-pointer'
+                                }`}
                                 style={{ pointerEvents: 'auto', zIndex: 999 }}
-                                title={wouldBeLocked ? 'Click to unlock this module' : 'Click to lock this module'}
+                                title={togglingModuleId === section.id ? 'Updating...' : (wouldBeLocked ? 'Click to unlock this module' : 'Click to lock this module')}
                               >
-                                {wouldBeLocked ? (
+                                {togglingModuleId === section.id ? (
+                                  <Loader2 size={18} className="text-slate-400 animate-spin" />
+                                ) : wouldBeLocked ? (
                                   <Lock size={18} className="text-slate-500" />
                                 ) : (
                                   <Unlock size={18} className="text-emerald-400" />
