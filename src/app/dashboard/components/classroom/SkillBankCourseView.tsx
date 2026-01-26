@@ -1453,22 +1453,30 @@ export function SkillBankCourseView({
                             {/* Admin Toggle Button - Must be first to avoid drag handle overlay */}
                             {isAdmin && (
                               <button
-                                disabled={togglingModuleId !== null}
+                                disabled={togglingModuleId !== null && togglingModuleId !== section.id}
                                 onClick={async (e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
-                                  
-                                  // Prevent multiple simultaneous toggles
-                                  if (togglingModuleId !== null) {
-                                    console.log('[Frontend] Toggle already in progress, ignoring click')
-                                    return
+                                  if (e.nativeEvent) {
+                                    e.nativeEvent.stopImmediatePropagation()
                                   }
                                   
                                   const moduleId = section.id
+                                  
+                                  // Prevent multiple simultaneous toggles (but allow the same module to be clicked again)
+                                  if (togglingModuleId !== null && togglingModuleId !== moduleId) {
+                                    console.log('[Frontend] Toggle already in progress for another module, ignoring click', {
+                                      currentToggling: togglingModuleId,
+                                      clickedModule: moduleId
+                                    })
+                                    return
+                                  }
+                                  
                                   setTogglingModuleId(moduleId)
                                   
                                   console.log('[Frontend] Button clicked!', {
                                     sectionId: moduleId,
+                                    sectionTitle: section.title,
                                     wouldBeLocked,
                                     moduleStatus,
                                     isAdmin
@@ -1481,6 +1489,7 @@ export function SkillBankCourseView({
                                     console.log('[Frontend] Toggling unlock:', {
                                       courseId: course.id,
                                       moduleId: moduleId,
+                                      moduleTitle: section.title,
                                       unlocked: newUnlockedState,
                                       currentlyUnlocked,
                                       wouldBeLocked
@@ -1493,10 +1502,16 @@ export function SkillBankCourseView({
                                     })
                                     
                                     const data = await res.json()
-                                    console.log('[Frontend] Toggle response:', { status: res.status, ok: res.ok, data })
+                                    console.log('[Frontend] Toggle response:', { 
+                                      status: res.status, 
+                                      ok: res.ok, 
+                                      data,
+                                      moduleId,
+                                      moduleTitle: section.title
+                                    })
                                     
                                     if (res.ok) {
-                                      console.log('[Frontend] Reloading unlock status...')
+                                      console.log('[Frontend] Reloading unlock status for module:', moduleId)
                                       await loadUnlockStatus()
                                       console.log('[Frontend] Unlock status reloaded')
                                     } else {
@@ -1507,12 +1522,16 @@ export function SkillBankCourseView({
                                     console.error('[Frontend] Error toggling unlock:', error)
                                     alert(`Error toggling unlock status: ${error instanceof Error ? error.message : 'Unknown error'}`)
                                   } finally {
-                                    setTogglingModuleId(null)
+                                    // Only clear if this is still the module being toggled
+                                    setTogglingModuleId((current) => current === moduleId ? null : current)
                                   }
                                 }}
                                 onMouseDown={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
+                                  if (e.nativeEvent) {
+                                    e.nativeEvent.stopImmediatePropagation()
+                                  }
                                 }}
                                 className={`flex-shrink-0 p-2 rounded transition-colors relative ${
                                   togglingModuleId === section.id 
