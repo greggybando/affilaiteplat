@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 // POST - Toggle module unlock for admin
 export async function POST(
   request: NextRequest,
-  { params }: { params: { courseId: string; moduleId: string } }
+  { params }: { params: Promise<{ courseId: string; moduleId: string }> | { courseId: string; moduleId: string } }
 ) {
   try {
     const affiliate = await getCurrentAffiliate()
@@ -20,6 +20,10 @@ export async function POST(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
+    // Handle params as Promise (Next.js 14)
+    const resolvedParams = await Promise.resolve(params)
+    const { courseId, moduleId } = resolvedParams
+
     const body = await request.json()
     const { unlocked } = body
 
@@ -28,8 +32,8 @@ export async function POST(
     }
 
     console.log('[Toggle Unlock] Request:', {
-      courseId: params.courseId,
-      moduleId: params.moduleId,
+      courseId,
+      moduleId,
       userId: affiliate.id,
       unlocked,
       isAdmin
@@ -37,13 +41,17 @@ export async function POST(
 
     if (unlocked) {
       // Add unlock - first check if it exists
-      const { data: existing } = await (supabaseAdmin as any)
+      const { data: existing, error: checkError } = await (supabaseAdmin as any)
         .from('user_module_unlocks')
         .select('id')
         .eq('user_id', affiliate.id)
-        .eq('module_id', params.moduleId)
-        .single()
-        .catch(() => ({ data: null }))
+        .eq('module_id', moduleId)
+        .maybeSingle()
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('[Toggle Unlock] Error checking existing unlock:', checkError)
+        return NextResponse.json({ error: checkError.message }, { status: 500 })
+      }
 
       if (existing) {
         // Already exists, update timestamp
@@ -54,11 +62,11 @@ export async function POST(
             unlocked_by: affiliate.id
           })
           .eq('user_id', affiliate.id)
-          .eq('module_id', params.moduleId)
+          .eq('module_id', moduleId)
 
         if (error) {
           console.error('[Toggle Unlock] Error updating unlock:', error)
-          return NextResponse.json({ error: error.message }, { status: 500 })
+          return NextResponse.json({ error: error.message, details: error }, { status: 500 })
         }
       } else {
         // Insert new
@@ -66,14 +74,14 @@ export async function POST(
           .from('user_module_unlocks')
           .insert({
             user_id: affiliate.id,
-            module_id: params.moduleId,
+            module_id: moduleId,
             unlocked_at: new Date().toISOString(),
             unlocked_by: affiliate.id
           })
 
         if (error) {
           console.error('[Toggle Unlock] Error inserting unlock:', error)
-          return NextResponse.json({ error: error.message }, { status: 500 })
+          return NextResponse.json({ error: error.message, details: error }, { status: 500 })
         }
       }
     } else {
@@ -82,7 +90,7 @@ export async function POST(
         .from('user_module_unlocks')
         .delete()
         .eq('user_id', affiliate.id)
-        .eq('module_id', params.moduleId)
+        .eq('module_id', moduleId)
 
       if (error) {
         console.error('[Toggle Unlock] Error removing unlock:', error)

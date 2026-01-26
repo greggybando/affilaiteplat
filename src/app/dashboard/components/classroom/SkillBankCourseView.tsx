@@ -1451,19 +1451,27 @@ export function SkillBankCourseView({
                                   e.stopPropagation()
                                   const currentlyUnlocked = !wouldBeLocked
                                   try {
+                                    console.log('[Frontend] Toggling unlock:', {
+                                      courseId: course.id,
+                                      moduleId: section.id,
+                                      unlocked: !currentlyUnlocked
+                                    })
                                     const res = await fetch(`/api/courses/${course.id}/modules/${section.id}/toggle-unlock`, {
                                       method: 'POST',
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ unlocked: !currentlyUnlocked })
                                     })
+                                    const data = await res.json()
+                                    console.log('[Frontend] Toggle response:', { status: res.status, ok: res.ok, data })
                                     if (res.ok) {
                                       await loadUnlockStatus()
                                     } else {
-                                      alert('Failed to toggle unlock status')
+                                      console.error('[Frontend] Toggle failed:', data)
+                                      alert(`Failed to toggle unlock status: ${data.error || 'Unknown error'}`)
                                     }
                                   } catch (error) {
-                                    console.error('Error toggling unlock:', error)
-                                    alert('Error toggling unlock status')
+                                    console.error('[Frontend] Error toggling unlock:', error)
+                                    alert(`Error toggling unlock status: ${error instanceof Error ? error.message : 'Unknown error'}`)
                                   }
                                 }}
                                 className="flex-shrink-0 p-1 hover:bg-slate-700/50 rounded transition-colors"
