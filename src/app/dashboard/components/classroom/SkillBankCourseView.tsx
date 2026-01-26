@@ -1428,7 +1428,7 @@ export function SkillBankCourseView({
                           {/* Section Header */}
                           <div
                           className={`px-4 py-3 border-b border-[rgba(255,255,255,0.05)] transition-colors ${
-                            isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-[rgba(255,255,255,0.02)]'
+                            wouldBeLocked && !isAdmin ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-[rgba(255,255,255,0.02)]'
                           }`}
                           style={{
                             background: 'rgba(30,30,35,0.6)'
@@ -1441,7 +1441,7 @@ export function SkillBankCourseView({
                               alert(lockReason)
                             }
                           }}
-                          title={isLocked ? lockReason || 'Complete the required checkpoint to unlock this module' : ''}
+                          title={wouldBeLocked && !isAdmin ? lockReason || 'Complete the required checkpoint to unlock this module' : ''}
                         >
                           <div className="flex items-center gap-2.5">
                             {/* Lock Icon - Show before drag handle if locked */}
