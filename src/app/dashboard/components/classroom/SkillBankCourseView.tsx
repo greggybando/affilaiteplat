@@ -1519,12 +1519,14 @@ export function SkillBankCourseView({
                                   
                                   // Optimistically update the UI immediately for instant feedback
                                   setUnlockStatus((prevStatus) => {
-                                    const optimisticStatus = {
+                                    const optimisticStatus: Record<string, { isLocked: boolean; wouldBeLocked?: boolean; lockReason: string | null; checkpoint: any }> = {
                                       ...prevStatus,
                                       [moduleId]: {
                                         ...prevStatus[moduleId],
                                         wouldBeLocked: newWouldBeLocked,
-                                        isLocked: isAdmin ? false : newWouldBeLocked
+                                        isLocked: isAdmin ? false : newWouldBeLocked,
+                                        lockReason: prevStatus[moduleId]?.lockReason ?? null,
+                                        checkpoint: prevStatus[moduleId]?.checkpoint ?? null
                                       }
                                     }
                                     console.log('[Frontend] Optimistic update - new state:', optimisticStatus[moduleId])
