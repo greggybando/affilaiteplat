@@ -27,7 +27,7 @@ export function MentorToggle() {
       const res = await fetch('/api/user/completed-courses')
       if (res.ok) {
         const data = await res.json()
-        setCanBecomeMentor = data.hasCompletedCourse || false
+        setCanBecomeMentor(data.hasCompletedCourse || false)
       }
     } catch (error) {
       console.error('Error checking mentor eligibility:', error)
