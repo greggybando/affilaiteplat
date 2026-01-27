@@ -1518,21 +1518,46 @@ export function SkillBankCourseView({
                                   })
                                   
                                   // Optimistically update the UI immediately for instant feedback
+                                  console.log('[Frontend] Before optimistic update:', {
+                                    moduleId,
+                                    currentWouldBeLocked: wouldBeLocked,
+                                    newWouldBeLocked,
+                                    currentStatus: unlockStatus[moduleId]
+                                  })
+                                  
                                   setUnlockStatus((prevStatus) => {
+                                    const currentModuleStatus = prevStatus[moduleId] || {
+                                      isLocked: true,
+                                      wouldBeLocked: true,
+                                      lockReason: null,
+                                      checkpoint: null
+                                    }
+                                    
                                     const optimisticStatus: Record<string, { isLocked: boolean; wouldBeLocked?: boolean; lockReason: string | null; checkpoint: any }> = {
                                       ...prevStatus,
                                       [moduleId]: {
-                                        ...prevStatus[moduleId],
+                                        ...currentModuleStatus,
                                         wouldBeLocked: newWouldBeLocked,
                                         isLocked: isAdmin ? false : newWouldBeLocked,
-                                        lockReason: prevStatus[moduleId]?.lockReason ?? null,
-                                        checkpoint: prevStatus[moduleId]?.checkpoint ?? null
+                                        lockReason: currentModuleStatus.lockReason,
+                                        checkpoint: currentModuleStatus.checkpoint
                                       }
                                     }
-                                    console.log('[Frontend] Optimistic update - new state:', optimisticStatus[moduleId])
+                                    console.log('[Frontend] Optimistic update - new state:', {
+                                      moduleId,
+                                      oldState: currentModuleStatus,
+                                      newState: optimisticStatus[moduleId],
+                                      wouldBeLockedChanged: currentModuleStatus.wouldBeLocked !== newWouldBeLocked
+                                    })
                                     return optimisticStatus
                                   })
-                                  setUnlockStatusVersion((v) => v + 1) // Force re-render
+                                  
+                                  // Force re-render immediately
+                                  setUnlockStatusVersion((v) => {
+                                    const newVersion = v + 1
+                                    console.log(`[Frontend] Incrementing version to ${newVersion} to force re-render`)
+                                    return newVersion
+                                  })
                                   
                                   try {
                                     console.log('[Frontend] Toggling unlock:', {
@@ -1682,6 +1707,7 @@ export function SkillBankCourseView({
                                     e.nativeEvent.stopImmediatePropagation()
                                   }
                                 }}
+                                key={`unlock-toggle-${section.id}-${unlockStatusVersion}`}
                                 className={`flex-shrink-0 p-2 rounded transition-colors relative ${
                                   togglingModuleId === section.id 
                                     ? 'cursor-wait opacity-50' 
