@@ -1501,13 +1501,13 @@ export function SkillBankCourseView({
                                   })
                                   
                                   // Determine current state and what to toggle to
-                                  // wouldBeLocked = true means module is LOCKED (gray icon) → we want to UNLOCK it → set globally_unlocked = true
-                                  // wouldBeLocked = false means module is UNLOCKED (green icon) → we want to LOCK it → set globally_unlocked = false
-                                  // Since wouldBeLocked and globally_unlocked are opposites:
-                                  // - If wouldBeLocked = true (locked), set globally_unlocked = true (unlock)
-                                  // - If wouldBeLocked = false (unlocked), set globally_unlocked = false (lock)
-                                  const newUnlockedState = !wouldBeLocked
-                                  const newWouldBeLocked = !wouldBeLocked // Opposite of current state
+                                  // wouldBeLocked = true means module is LOCKED (gray icon) → we want to UNLOCK it → send unlocked = true
+                                  // wouldBeLocked = false means module is UNLOCKED (green icon) → we want to LOCK it → send unlocked = false
+                                  // The logic: unlocked = wouldBeLocked
+                                  // - If wouldBeLocked = true (locked), send unlocked = true to unlock it
+                                  // - If wouldBeLocked = false (unlocked), send unlocked = false to lock it
+                                  const newUnlockedState = wouldBeLocked
+                                  const newWouldBeLocked = !wouldBeLocked // Opposite of current state for UI
                                   
                                   console.log('[Frontend] Toggle calculation:', {
                                     wouldBeLocked,
