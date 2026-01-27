@@ -1585,10 +1585,6 @@ export function SkillBankCourseView({
                                       
                                       console.log('[Frontend] Setting unlock status map:', statusMap)
                                       console.log(`[Frontend] Toggled module "${section.title}" (${moduleId}) new wouldBeLocked:`, statusMap[moduleId]?.wouldBeLocked)
-                                      
-                                      // Find the toggled module in the response for debugging
-                                      const toggledModule = unlockData.modules?.find((m: any) => m.id === moduleId)
-                                      console.log('[Frontend] Toggled module in response:', toggledModule)
                                       console.log(`[Frontend] Expected: globally_unlocked=${toggledModule?.globally_unlocked}, wouldBeLocked should be ${toggledModule?.globally_unlocked === false ? 'true (locked)' : 'false (unlocked)'}`)
                                       
                                       // Force React re-render by creating completely new object reference
