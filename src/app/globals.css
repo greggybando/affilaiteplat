@@ -140,3 +140,43 @@ body {
 .emoji-picker-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(255,255,255,0.5);
 }
+
+/* Mentor Badge Glow Effects */
+.mentor-badge { display: inline-block; }
+
+.mentor-badge.bronze { animation: bronzeGlow 3s ease-in-out infinite; }
+.mentor-badge.iron { animation: ironGlow 3s ease-in-out infinite; }
+.mentor-badge.steel { animation: steelGlow 2.5s ease-in-out infinite; }
+.mentor-badge.mithril { animation: mithrilGlow 2s ease-in-out infinite; }
+.mentor-badge.adamant { animation: adamantGlow 1.8s ease-in-out infinite; }
+.mentor-badge.rune { animation: runeGlow 1.5s ease-in-out infinite; }
+.mentor-badge.dragon { animation: dragonGlow 1s ease-in-out infinite; }
+
+@keyframes bronzeGlow {
+  0%, 100% { filter: drop-shadow(0 0 2px #CD7F32); }
+  50% { filter: drop-shadow(0 0 8px #CD7F32); }
+}
+@keyframes ironGlow {
+  0%, 100% { filter: drop-shadow(0 0 3px #6B6B6B); }
+  50% { filter: drop-shadow(0 0 10px #8B8B8B); }
+}
+@keyframes steelGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px #C0C0C0); }
+  50% { filter: drop-shadow(0 0 14px #FFFFFF); }
+}
+@keyframes mithrilGlow {
+  0%, 100% { filter: drop-shadow(0 0 5px #4B0082) drop-shadow(0 0 10px #8A2BE2); }
+  50% { filter: drop-shadow(0 0 12px #8A2BE2) drop-shadow(0 0 24px #9932CC); }
+}
+@keyframes adamantGlow {
+  0%, 100% { filter: drop-shadow(0 0 6px #228B22) drop-shadow(0 0 12px #32CD32); }
+  50% { filter: drop-shadow(0 0 14px #32CD32) drop-shadow(0 0 28px #00FF00); }
+}
+@keyframes runeGlow {
+  0%, 100% { filter: drop-shadow(0 0 8px #00BFFF) drop-shadow(0 0 16px #00BFFF); }
+  50% { filter: drop-shadow(0 0 18px #00FFFF) drop-shadow(0 0 36px #00BFFF); }
+}
+@keyframes dragonGlow {
+  0%, 100% { filter: drop-shadow(0 0 10px #FF4500) drop-shadow(0 0 20px #FF6600) drop-shadow(0 0 30px #FF0000); }
+  50% { filter: drop-shadow(0 0 22px #FF6600) drop-shadow(0 0 44px #FF4500) drop-shadow(0 0 66px #FF0000); }
+}

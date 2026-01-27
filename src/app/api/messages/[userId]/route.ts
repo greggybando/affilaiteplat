@@ -119,6 +119,41 @@ export async function POST(
       .update({ updated_at: new Date().toISOString() })
       .eq('id', conversationId)
 
+    // Check if this is a mentor's first response in a help session
+    const { data: mentor } = await (supabaseAdmin as any)
+      .from('mentors')
+      .select('id')
+      .eq('user_id', affiliate.id)
+      .maybeSingle()
+
+    if (mentor) {
+      // Find active help session where mentor_id matches and conversation matches
+      const { data: helpSession } = await (supabaseAdmin as any)
+        .from('help_sessions')
+        .select('id, mentor_id, first_response_at')
+        .eq('dm_thread_id', conversationId)
+        .eq('mentor_id', mentor.id)
+        .is('first_response_at', null)
+        .maybeSingle()
+
+      // If this is the mentor's first message in an unresponded help session, record response time
+      if (helpSession) {
+        try {
+          const respondRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/help-sessions/respond`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ help_session_id: helpSession.id })
+          })
+          if (!respondRes.ok) {
+            console.error('[DM Message] Failed to record help session response:', await respondRes.text())
+          }
+        } catch (error) {
+          console.error('[DM Message] Error recording help session response:', error)
+          // Don't fail the message send if this fails
+        }
+      }
+    }
+
     return NextResponse.json({ message: inserted, conversationId })
   } catch (error: any) {
     console.error('API messages POST userId error:', error)
