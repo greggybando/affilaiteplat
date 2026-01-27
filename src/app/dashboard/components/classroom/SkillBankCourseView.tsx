@@ -123,6 +123,7 @@ export function SkillBankCourseView({
   const [loading, setLoading] = useState(true)
   const [unlockStatus, setUnlockStatus] = useState<Record<string, { isLocked: boolean; wouldBeLocked?: boolean; lockReason: string | null; checkpoint: any }>>({})
   const [togglingModuleId, setTogglingModuleId] = useState<string | null>(null)
+  const [unlockStatusVersion, setUnlockStatusVersion] = useState(0) // Force re-render trigger
   
   // Editing states
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
@@ -267,10 +268,25 @@ export function SkillBankCourseView({
         console.log('[SkillBankCourseView] Unlock status loaded:', data)
         const statusMap: Record<string, { isLocked: boolean; wouldBeLocked?: boolean; lockReason: string | null; checkpoint: any }> = {}
         data.modules?.forEach((module: any) => {
-          console.log(`[SkillBankCourseView] Module "${module.title}": isLocked=${module.isLocked}, wouldBeLocked=${module.wouldBeLocked}`)
+          // Determine wouldBeLocked based on globally_unlocked if explicitly set
+          // Otherwise use the API's calculated wouldBeLocked
+          let wouldBeLockedValue: boolean
+          
+          if (module.globally_unlocked === true) {
+            // Explicitly unlocked by admin
+            wouldBeLockedValue = false
+          } else if (module.globally_unlocked === false) {
+            // Explicitly locked by admin
+            wouldBeLockedValue = true
+          } else {
+            // Not explicitly set, use API's calculation
+            wouldBeLockedValue = module.wouldBeLocked ?? true
+          }
+          
+          console.log(`[SkillBankCourseView] Module "${module.title}": isLocked=${module.isLocked}, wouldBeLocked=${module.wouldBeLocked}, globally_unlocked=${module.globally_unlocked}, finalWouldBeLocked=${wouldBeLockedValue}`)
           statusMap[module.id] = {
             isLocked: module.isLocked,
-            wouldBeLocked: module.wouldBeLocked,
+            wouldBeLocked: wouldBeLockedValue,
             lockReason: module.lockReason,
             checkpoint: module.checkpoint
           }
@@ -1408,6 +1424,8 @@ export function SkillBankCourseView({
                     {sections.map((section, index) => {
                   const isExpanded = expandedSections.has(section.id)
                   const sectionLessons = section.lessons || []
+                  // Force dependency on unlockStatusVersion to ensure fresh reads after toggle
+                  const _versionCheck = unlockStatusVersion
                   const moduleStatus = unlockStatus[section.id]
                   // For admins: use wouldBeLocked to show lock symbol, but allow access (isLocked = false)
                   // For non-admins: use isLocked normally
@@ -1583,12 +1601,23 @@ export function SkillBankCourseView({
                                           newStatusMap[key] = { ...statusMap[key] }
                                         })
                                         
-                                        console.log('[Frontend] Functional update - new status map:', newStatusMap)
-                                        console.log(`[Frontend] Module ${moduleId} in new state:`, newStatusMap[moduleId])
-                                        console.log(`[Frontend] Previous state for ${moduleId}:`, prevStatus[moduleId])
+                                        const prevModuleState = prevStatus[moduleId]
+                                        const newModuleState = newStatusMap[moduleId]
                                         
-                                        return newStatusMap
+                                        console.log('[Frontend] Functional update - new status map:', newStatusMap)
+                                        console.log(`[Frontend] Module ${moduleId} state change:`, {
+                                          prev: prevModuleState,
+                                          new: newModuleState,
+                                          changed: prevModuleState?.wouldBeLocked !== newModuleState?.wouldBeLocked
+                                        })
+                                        
+                                        // Force a new object reference even if values are the same
+                                        return { ...newStatusMap }
                                       })
+                                      
+                                      // Force re-render by incrementing version counter
+                                      setUnlockStatusVersion((v) => v + 1)
+                                      
                                       console.log('[Frontend] State update function called, React should re-render now')
                                     } else {
                                       console.error('[Frontend] Toggle failed:', data)
