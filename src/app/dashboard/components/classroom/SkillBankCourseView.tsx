@@ -1482,8 +1482,20 @@ export function SkillBankCourseView({
                                     isAdmin
                                   })
                                   
-                                  const currentlyUnlocked = !wouldBeLocked
-                                  const newUnlockedState = !currentlyUnlocked
+                                  // Determine current state and what to toggle to
+                                  // wouldBeLocked = true means module is LOCKED (gray icon) → we want to UNLOCK it → set globally_unlocked = true
+                                  // wouldBeLocked = false means module is UNLOCKED (green icon) → we want to LOCK it → set globally_unlocked = false
+                                  // Since wouldBeLocked and globally_unlocked are opposites:
+                                  // - If wouldBeLocked = true (locked), set globally_unlocked = true (unlock)
+                                  // - If wouldBeLocked = false (unlocked), set globally_unlocked = false (lock)
+                                  const newUnlockedState = !wouldBeLocked
+                                  
+                                  console.log('[Frontend] Toggle calculation:', {
+                                    wouldBeLocked,
+                                    currentState: wouldBeLocked ? 'LOCKED (gray icon)' : 'UNLOCKED (green icon)',
+                                    newUnlockedState,
+                                    action: newUnlockedState ? 'UNLOCKING → set globally_unlocked=true' : 'LOCKING → set globally_unlocked=false'
+                                  })
                                   
                                   try {
                                     console.log('[Frontend] Toggling unlock:', {
@@ -1523,18 +1535,41 @@ export function SkillBankCourseView({
                                       
                                       const statusMap: Record<string, { isLocked: boolean; wouldBeLocked?: boolean; lockReason: string | null; checkpoint: any }> = {}
                                       unlockData.modules?.forEach((module: any) => {
-                                        console.log(`[Frontend] Processing module "${module.title}": isLocked=${module.isLocked}, wouldBeLocked=${module.wouldBeLocked}, globally_unlocked=${module.globally_unlocked}`)
+                                        // Ensure wouldBeLocked is explicitly set based on globally_unlocked if available
+                                        let wouldBeLockedValue = module.wouldBeLocked
+                                        
+                                        // If globally_unlocked is explicitly true, module should be unlocked
+                                        if (module.globally_unlocked === true) {
+                                          wouldBeLockedValue = false
+                                        } else if (module.globally_unlocked === false) {
+                                          // If explicitly false, check other unlock conditions
+                                          wouldBeLockedValue = module.wouldBeLocked ?? true
+                                        } else {
+                                          // Fallback to wouldBeLocked from API
+                                          wouldBeLockedValue = module.wouldBeLocked ?? true
+                                        }
+                                        
+                                        console.log(`[Frontend] Processing module "${module.title}": isLocked=${module.isLocked}, wouldBeLocked=${module.wouldBeLocked}, globally_unlocked=${module.globally_unlocked}, finalWouldBeLocked=${wouldBeLockedValue}`)
                                         statusMap[module.id] = {
                                           isLocked: module.isLocked,
-                                          wouldBeLocked: module.wouldBeLocked,
+                                          wouldBeLocked: wouldBeLockedValue,
                                           lockReason: module.lockReason,
                                           checkpoint: module.checkpoint
                                         }
                                       })
                                       
-                                      console.log('[Frontend] Setting unlock status:', statusMap)
-                                      setUnlockStatus(statusMap)
-                                      console.log('[Frontend] Unlock status updated in state')
+                                      console.log('[Frontend] Setting unlock status map:', statusMap)
+                                      console.log(`[Frontend] Toggled module "${section.title}" (${moduleId}) new wouldBeLocked:`, statusMap[moduleId]?.wouldBeLocked)
+                                      
+                                      // Force React re-render by creating completely new object reference
+                                      const newStatusMap = Object.keys(statusMap).reduce((acc, key) => {
+                                        acc[key] = { ...statusMap[key] }
+                                        return acc
+                                      }, {} as typeof statusMap)
+                                      
+                                      console.log('[Frontend] Updating state with:', newStatusMap)
+                                      setUnlockStatus(newStatusMap)
+                                      console.log('[Frontend] State updated')
                                     } else {
                                       console.error('[Frontend] Toggle failed:', data)
                                       alert(`Failed to toggle unlock status: ${data.error || 'Unknown error'}`)

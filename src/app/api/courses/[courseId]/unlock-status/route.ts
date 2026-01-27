@@ -218,34 +218,45 @@ export async function GET(
 
       // Normalize globally_unlocked to boolean (handle null/undefined cases)
       const moduleGloballyUnlocked = module.globally_unlocked === true
+      const moduleGloballyLocked = module.globally_unlocked === false // Explicitly locked by admin
+
+      console.log(`[Unlock Status] Checking module "${module.title}": globally_unlocked=${module.globally_unlocked} (type: ${typeof module.globally_unlocked}), unlocked=${moduleGloballyUnlocked}, locked=${moduleGloballyLocked}`)
 
       // Check 0: Is course globally unlocked?
       if (course.globally_unlocked === true) {
         isLocked = false
+        wouldBeLocked = false
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Course is globally unlocked`)
       }
-      // Check 1: Is this module globally unlocked?
+      // Check 1: Is this module explicitly globally locked? (Admin locked it - HIGHEST PRIORITY)
+      else if (moduleGloballyLocked) {
+        isLocked = true
+        wouldBeLocked = true
+        lockReason = 'This module is locked by admin'
+        console.log(`[Unlock Status] Module "${module.title}" LOCKED: Module is explicitly globally locked (admin locked it)`)
+      }
+      // Check 2: Is this module globally unlocked? (Admin unlocked it)
       else if (moduleGloballyUnlocked) {
         isLocked = false
         wouldBeLocked = false
         lockReason = null
-        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Module is globally unlocked (value: ${module.globally_unlocked})`)
+        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Module is globally unlocked (raw value: ${module.globally_unlocked}, type: ${typeof module.globally_unlocked})`)
       }
-      // Check 2: Is this module user-unlocked?
+      // Check 3: Is this module user-unlocked?
       else if (userCourseUnlocksData || userModuleUnlocks.has(module.id)) {
         isLocked = false
         wouldBeLocked = false
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: User-specific unlock`)
       }
-      // Check 3: Is this the first section? (ALWAYS UNLOCKED - explicit check)
+      // Check 4: Is this the first section? (ALWAYS UNLOCKED - explicit check)
       else if (module.id === firstModuleId || index === 0 || module.sort_order === 0) {
         isLocked = false
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: First section (sort_order=${module.sort_order}, index=${index})`)
       }
-      // Check 4: Explicit unlock rule (overrides default sequential behavior)
+      // Check 5: Explicit unlock rule (overrides default sequential behavior)
       else {
         const requiredCheckpointId = unlockRuleMap.get(module.id)
         
@@ -341,15 +352,18 @@ export async function GET(
         checkpointStatusFormatted = 'none'
       }
 
-      console.log(`[Unlock Status] FINAL: Module "${module.title}" → isLocked=${isLocked}, lockReason="${lockReason}"`)
+      const finalWouldBeLocked = isAdmin ? wouldBeLocked : isLocked
+      
+      console.log(`[Unlock Status] FINAL for "${module.title}": isLocked=${isLocked}, wouldBeLocked=${wouldBeLocked}, finalWouldBeLocked=${finalWouldBeLocked}, isAdmin=${isAdmin}, globally_unlocked=${module.globally_unlocked}`)
 
       return {
         id: module.id,
         title: module.title,
         sort_order: module.sort_order,
         isLocked,
-        wouldBeLocked: isAdmin ? wouldBeLocked : isLocked, // For admins, show what it would be locked for regular users
+        wouldBeLocked: finalWouldBeLocked, // For admins, show what it would be locked for regular users
         lockReason,
+        globally_unlocked: module.globally_unlocked ?? false, // Include in response for debugging
         checkpoint: checkpoint
           ? {
               id: checkpoint.id,
