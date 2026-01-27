@@ -1607,7 +1607,7 @@ export function SkillBankCourseView({
                                       console.log('[Frontend] Response modules count:', unlockData.modules?.length)
                                       
                                       // DEBUG: Log raw API response modules
-                                      console.log('[Frontend] RAW API response modules:', unlockData.modules?.map(m => ({
+                                      console.log('[Frontend] RAW API response modules:', unlockData.modules?.map((m: any) => ({
                                         title: m.title,
                                         globally_unlocked: m.globally_unlocked,
                                         typeofGloballyUnlocked: typeof m.globally_unlocked,
