@@ -1524,8 +1524,10 @@ export function SkillBankCourseView({
                                     
                                     if (res.ok && data.success) {
                                       console.log('[Frontend] Toggle successful, reloading unlock status for module:', moduleId, 'Response:', data)
+                                      console.log('[Frontend] Toggle API returned:', { unlocked: data.unlocked, moduleId: data.moduleId })
+                                      
                                       // Small delay to ensure database update is committed
-                                      await new Promise(resolve => setTimeout(resolve, 200))
+                                      await new Promise(resolve => setTimeout(resolve, 500))
                                       
                                       // Force reload unlock status
                                       console.log('[Frontend] Calling loadUnlockStatus...')
@@ -1533,19 +1535,24 @@ export function SkillBankCourseView({
                                       const unlockData = await unlockRes.json()
                                       console.log('[Frontend] Unlock status response:', unlockData)
                                       
+                                      // Find the toggled module in the response
+                                      const toggledModule = unlockData.modules?.find((m: any) => m.id === moduleId)
+                                      console.log('[Frontend] Toggled module in response:', toggledModule)
+                                      
                                       const statusMap: Record<string, { isLocked: boolean; wouldBeLocked?: boolean; lockReason: string | null; checkpoint: any }> = {}
                                       unlockData.modules?.forEach((module: any) => {
-                                        // Ensure wouldBeLocked is explicitly set based on globally_unlocked if available
-                                        let wouldBeLockedValue = module.wouldBeLocked
+                                        // Determine wouldBeLocked based on globally_unlocked if explicitly set
+                                        // Otherwise use the API's calculated wouldBeLocked
+                                        let wouldBeLockedValue: boolean
                                         
-                                        // If globally_unlocked is explicitly true, module should be unlocked
                                         if (module.globally_unlocked === true) {
+                                          // Explicitly unlocked by admin
                                           wouldBeLockedValue = false
                                         } else if (module.globally_unlocked === false) {
-                                          // If explicitly false, check other unlock conditions
-                                          wouldBeLockedValue = module.wouldBeLocked ?? true
+                                          // Explicitly locked by admin
+                                          wouldBeLockedValue = true
                                         } else {
-                                          // Fallback to wouldBeLocked from API
+                                          // Not explicitly set, use API's calculation
                                           wouldBeLockedValue = module.wouldBeLocked ?? true
                                         }
                                         
@@ -1561,15 +1568,28 @@ export function SkillBankCourseView({
                                       console.log('[Frontend] Setting unlock status map:', statusMap)
                                       console.log(`[Frontend] Toggled module "${section.title}" (${moduleId}) new wouldBeLocked:`, statusMap[moduleId]?.wouldBeLocked)
                                       
-                                      // Force React re-render by creating completely new object reference
-                                      const newStatusMap = Object.keys(statusMap).reduce((acc, key) => {
-                                        acc[key] = { ...statusMap[key] }
-                                        return acc
-                                      }, {} as typeof statusMap)
+                                      // Find the toggled module in the response for debugging
+                                      const toggledModule = unlockData.modules?.find((m: any) => m.id === moduleId)
+                                      console.log('[Frontend] Toggled module in response:', toggledModule)
+                                      console.log(`[Frontend] Expected: globally_unlocked=${toggledModule?.globally_unlocked}, wouldBeLocked should be ${toggledModule?.globally_unlocked === false ? 'true (locked)' : 'false (unlocked)'}`)
                                       
-                                      console.log('[Frontend] Updating state with:', newStatusMap)
-                                      setUnlockStatus(newStatusMap)
-                                      console.log('[Frontend] State updated')
+                                      // Force React re-render by creating completely new object reference
+                                      // Use functional update to ensure React sees the change
+                                      setUnlockStatus((prevStatus) => {
+                                        const newStatusMap: Record<string, { isLocked: boolean; wouldBeLocked?: boolean; lockReason: string | null; checkpoint: any }> = {}
+                                        
+                                        // Copy all existing statuses
+                                        Object.keys(statusMap).forEach((key) => {
+                                          newStatusMap[key] = { ...statusMap[key] }
+                                        })
+                                        
+                                        console.log('[Frontend] Functional update - new status map:', newStatusMap)
+                                        console.log(`[Frontend] Module ${moduleId} in new state:`, newStatusMap[moduleId])
+                                        console.log(`[Frontend] Previous state for ${moduleId}:`, prevStatus[moduleId])
+                                        
+                                        return newStatusMap
+                                      })
+                                      console.log('[Frontend] State update function called, React should re-render now')
                                     } else {
                                       console.error('[Frontend] Toggle failed:', data)
                                       alert(`Failed to toggle unlock status: ${data.error || 'Unknown error'}`)
