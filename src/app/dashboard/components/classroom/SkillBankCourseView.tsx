@@ -1594,8 +1594,17 @@ export function SkillBankCourseView({
                                       // Force reload unlock status
                                       console.log('[Frontend] Calling loadUnlockStatus...')
                                       const unlockRes = await fetch(`/api/courses/${course.id}/unlock-status`)
+                                      
+                                      if (!unlockRes.ok) {
+                                        console.error('[Frontend] Failed to reload unlock status:', unlockRes.status, unlockRes.statusText)
+                                        const errorText = await unlockRes.text()
+                                        console.error('[Frontend] Error response:', errorText)
+                                        throw new Error(`Failed to reload unlock status: ${unlockRes.status}`)
+                                      }
+                                      
                                       const unlockData = await unlockRes.json()
                                       console.log('[Frontend] Unlock status response:', unlockData)
+                                      console.log('[Frontend] Response modules count:', unlockData.modules?.length)
                                       
                                       // Find the toggled module in the response
                                       const toggledModule = unlockData.modules?.find((m: any) => m.id === moduleId)

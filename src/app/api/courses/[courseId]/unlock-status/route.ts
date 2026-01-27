@@ -363,7 +363,7 @@ export async function GET(
         isLocked,
         wouldBeLocked: finalWouldBeLocked, // For admins, show what it would be locked for regular users
         lockReason,
-        globally_unlocked: module.globally_unlocked ?? false, // Include in response for debugging
+        globally_unlocked: module.globally_unlocked, // Preserve null/undefined to distinguish from explicitly false
         checkpoint: checkpoint
           ? {
               id: checkpoint.id,
@@ -380,7 +380,7 @@ export async function GET(
       courseId: courseId,
       modules: modulesWithStatus.map((m: any) => ({
         ...m,
-        globally_unlocked: modules.find((mod) => mod.id === m.id)?.globally_unlocked ?? false
+        globally_unlocked: modules.find((mod) => mod.id === m.id)?.globally_unlocked // Preserve null/undefined
       }))
     }
     
