@@ -1507,13 +1507,30 @@ export function SkillBankCourseView({
                                   // - If wouldBeLocked = true (locked), set globally_unlocked = true (unlock)
                                   // - If wouldBeLocked = false (unlocked), set globally_unlocked = false (lock)
                                   const newUnlockedState = !wouldBeLocked
+                                  const newWouldBeLocked = !wouldBeLocked // Opposite of current state
                                   
                                   console.log('[Frontend] Toggle calculation:', {
                                     wouldBeLocked,
                                     currentState: wouldBeLocked ? 'LOCKED (gray icon)' : 'UNLOCKED (green icon)',
                                     newUnlockedState,
+                                    newWouldBeLocked,
                                     action: newUnlockedState ? 'UNLOCKING → set globally_unlocked=true' : 'LOCKING → set globally_unlocked=false'
                                   })
+                                  
+                                  // Optimistically update the UI immediately for instant feedback
+                                  setUnlockStatus((prevStatus) => {
+                                    const optimisticStatus = {
+                                      ...prevStatus,
+                                      [moduleId]: {
+                                        ...prevStatus[moduleId],
+                                        wouldBeLocked: newWouldBeLocked,
+                                        isLocked: isAdmin ? false : newWouldBeLocked
+                                      }
+                                    }
+                                    console.log('[Frontend] Optimistic update - new state:', optimisticStatus[moduleId])
+                                    return optimisticStatus
+                                  })
+                                  setUnlockStatusVersion((v) => v + 1) // Force re-render
                                   
                                   try {
                                     console.log('[Frontend] Toggling unlock:', {
@@ -1611,16 +1628,45 @@ export function SkillBankCourseView({
                                         return { ...newStatusMap }
                                       })
                                       
+                                      // Final state update from API response (confirms optimistic update)
                                       // Force re-render by incrementing version counter
                                       setUnlockStatusVersion((v) => v + 1)
                                       
-                                      console.log('[Frontend] State update function called, React should re-render now')
+                                      console.log('[Frontend] Final state update from API, React should re-render now')
                                     } else {
                                       console.error('[Frontend] Toggle failed:', data)
+                                      // Revert optimistic update on failure
+                                      setUnlockStatus((prevStatus) => {
+                                        const revertedStatus = {
+                                          ...prevStatus,
+                                          [moduleId]: {
+                                            ...prevStatus[moduleId],
+                                            wouldBeLocked: wouldBeLocked, // Revert to original state
+                                            isLocked: isAdmin ? false : wouldBeLocked
+                                          }
+                                        }
+                                        console.log('[Frontend] Reverting optimistic update due to API failure')
+                                        return revertedStatus
+                                      })
+                                      setUnlockStatusVersion((v) => v + 1)
                                       alert(`Failed to toggle unlock status: ${data.error || 'Unknown error'}`)
                                     }
                                   } catch (error) {
                                     console.error('[Frontend] Error toggling unlock:', error)
+                                    // Revert optimistic update on error
+                                    setUnlockStatus((prevStatus) => {
+                                      const revertedStatus = {
+                                        ...prevStatus,
+                                        [moduleId]: {
+                                          ...prevStatus[moduleId],
+                                          wouldBeLocked: wouldBeLocked, // Revert to original state
+                                          isLocked: isAdmin ? false : wouldBeLocked
+                                        }
+                                      }
+                                      console.log('[Frontend] Reverting optimistic update due to error')
+                                      return revertedStatus
+                                    })
+                                    setUnlockStatusVersion((v) => v + 1)
                                     alert(`Error toggling unlock status: ${error instanceof Error ? error.message : 'Unknown error'}`)
                                   } finally {
                                     // Only clear if this is still the module being toggled
