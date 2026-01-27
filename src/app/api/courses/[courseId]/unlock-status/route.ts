@@ -172,6 +172,17 @@ export async function GET(
     userCheckpoints.forEach((ucp) => {
       userCheckpointStatusMap.set(ucp.checkpoint_id, ucp.status)
     })
+    
+    // DEBUG: Log all user checkpoint statuses
+    console.log('[Unlock Status] User checkpoint statuses:', Array.from(userCheckpointStatusMap.entries()).map(([cpId, status]) => {
+      const cp = checkpoints.find(c => c.id === cpId)
+      return {
+        checkpointId: cpId,
+        checkpointTitle: cp?.title || 'Unknown',
+        moduleId: cp?.module_id || 'Unknown',
+        status: status
+      }
+    }))
 
     // Step 6: Get unlock_rules for these modules (explicit rules override default behavior)
     const { data: unlockRulesData, error: unlockRulesError } = await (supabaseAdmin as any)
@@ -308,20 +319,24 @@ export async function GET(
             // Previous section has checkpoint - check if it's approved
             const previousStatus = userCheckpointStatusMap.get(previousCheckpoint.id) || 'not_started'
             
-            console.log(`[Unlock Status] Module "${module.title}": Previous checkpoint "${previousCheckpoint.title}" status="${previousStatus}"`)
+            console.log(`[Unlock Status] Module "${module.title}" (index=${index}, sort_order=${module.sort_order}):`)
+            console.log(`  - Previous module: "${previousCheckpointSection.title}" (index=${modules.indexOf(previousCheckpointSection)}, sort_order=${previousCheckpointSection.sort_order})`)
+            console.log(`  - Previous checkpoint: "${previousCheckpoint.title}" (id=${previousCheckpoint.id})`)
+            console.log(`  - Checkpoint status: "${previousStatus}"`)
+            console.log(`  - Status in map: ${userCheckpointStatusMap.has(previousCheckpoint.id) ? 'FOUND' : 'NOT FOUND'}`)
             
             if (previousStatus === 'approved') {
               // Previous checkpoint approved - unlock this section
               isLocked = false
               wouldBeLocked = false
               lockReason = null
-              console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Previous checkpoint approved`)
+              console.log(`  ✓ Module "${module.title}" UNLOCKED: Previous checkpoint "${previousCheckpoint.title}" is approved`)
             } else {
               // Previous checkpoint not approved - lock this section
               isLocked = true
               wouldBeLocked = true
               lockReason = `Complete "${previousCheckpoint.title}" to unlock this module`
-              console.log(`[Unlock Status] Module "${module.title}" LOCKED: Previous checkpoint not approved (status=${previousStatus})`)
+              console.log(`  ✗ Module "${module.title}" LOCKED: Previous checkpoint "${previousCheckpoint.title}" status="${previousStatus}" (needs "approved")`)
             }
           }
         }
