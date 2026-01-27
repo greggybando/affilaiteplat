@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      response_time_seconds,
+      response_time_seconds: responseTimeSeconds,
       first_response_at: updated.first_response_at
     })
   } catch (error: any) {
