@@ -227,9 +227,6 @@ export async function GET(
       let lockReason: string | null = null
       let wouldBeLocked = true // Track what the lock status would be for non-admins (for UI display)
 
-      // Check if admin explicitly unlocked this module
-      const moduleGloballyUnlocked = module.globally_unlocked === true
-
       console.log(`[Unlock Status] Checking module "${module.title}": globally_unlocked=${module.globally_unlocked} (type: ${typeof module.globally_unlocked}), sort_order=${module.sort_order}, index=${index}`)
 
       // Check 0: Is course globally unlocked?
@@ -239,21 +236,28 @@ export async function GET(
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Course is globally unlocked`)
       }
-      // Check 1: Is this module globally unlocked? (Admin explicitly unlocked it)
-      else if (moduleGloballyUnlocked) {
+      // Check 1: Admin explicitly LOCKED this module (globally_unlocked = false)
+      else if (module.globally_unlocked === false) {
+        isLocked = true
+        wouldBeLocked = true
+        lockReason = 'This module is locked'
+        console.log(`[Unlock Status] Module "${module.title}" LOCKED: Admin locked`)
+      }
+      // Check 2: Admin explicitly UNLOCKED this module (globally_unlocked = true)
+      else if (module.globally_unlocked === true) {
         isLocked = false
         wouldBeLocked = false
         lockReason = null
-        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Module is globally unlocked (raw value: ${module.globally_unlocked}, type: ${typeof module.globally_unlocked})`)
+        console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Admin unlocked`)
       }
-      // Check 3: Is this module user-unlocked?
+      // Check 3: User-specific unlock
       else if (userCourseUnlocksData || userModuleUnlocks.has(module.id)) {
         isLocked = false
         wouldBeLocked = false
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: User-specific unlock`)
       }
-      // Check 4: Is this the first section? (ALWAYS UNLOCKED - explicit check)
+      // Check 4: First section always unlocked
       // Only check firstModuleId or index=0, NOT sort_order=0 (multiple modules could have sort_order=0)
       else if (module.id === firstModuleId || index === 0) {
         isLocked = false
