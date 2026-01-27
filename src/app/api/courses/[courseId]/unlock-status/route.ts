@@ -283,58 +283,49 @@ export async function GET(
             lockReason = null
           }
         }
-        // Check 5: Default sequential logic - find previous section WITH a checkpoint
+        // Check 5: Sequential logic - check IMMEDIATE previous section only
         else {
-          // Find the previous section that HAS a checkpoint
-          let previousCheckpointSection: Module | null = null
-          let previousCheckpoint: Checkpoint | null = null
-          
-          // Look backwards through modules to find the most recent one with a checkpoint
-          for (let i = index - 1; i >= 0; i--) {
-            const prevModule = modules[i]
-            const prevCheckpoint = checkpointMap.get(prevModule.id)
-            if (prevCheckpoint) {
-              previousCheckpointSection = prevModule
-              previousCheckpoint = prevCheckpoint
-              break
-            }
-          }
-          
-          if (!previousCheckpointSection || !previousCheckpoint) {
-            // No previous section with checkpoint found - KEEP LOCKED
-            // (Default behavior: sections are locked until previous checkpoint is approved)
+          // Check IMMEDIATE previous section only
+          if (index === 0) {
+            // This is the first section, should have been caught by Check 4
+            // But if we're here, keep it locked
             isLocked = true
             wouldBeLocked = true
-            // Find the immediate previous section to show lock reason
-            if (index > 0) {
-              const immediatePrevModule = modules[index - 1]
-              lockReason = `Complete the previous section to unlock this module`
-            } else {
-              lockReason = `Complete the required checkpoint to unlock this module`
-            }
-            console.log(`[Unlock Status] Module "${module.title}" LOCKED: No previous checkpoint found (index=${index})`)
+            lockReason = `Complete the required checkpoint to unlock this module`
+            console.log(`[Unlock Status] Module "${module.title}" LOCKED: First section but not caught by Check 4`)
           } else {
-            // Previous section has checkpoint - check if it's approved
-            const previousStatus = userCheckpointStatusMap.get(previousCheckpoint.id) || 'not_started'
-            
-            console.log(`[Unlock Status] Module "${module.title}" (index=${index}, sort_order=${module.sort_order}):`)
-            console.log(`  - Previous module: "${previousCheckpointSection.title}" (index=${modules.indexOf(previousCheckpointSection)}, sort_order=${previousCheckpointSection.sort_order})`)
-            console.log(`  - Previous checkpoint: "${previousCheckpoint.title}" (id=${previousCheckpoint.id})`)
-            console.log(`  - Checkpoint status: "${previousStatus}"`)
-            console.log(`  - Status in map: ${userCheckpointStatusMap.has(previousCheckpoint.id) ? 'FOUND' : 'NOT FOUND'}`)
-            
-            if (previousStatus === 'approved') {
-              // Previous checkpoint approved - unlock this section
-              isLocked = false
-              wouldBeLocked = false
-              lockReason = null
-              console.log(`  ✓ Module "${module.title}" UNLOCKED: Previous checkpoint "${previousCheckpoint.title}" is approved`)
-            } else {
-              // Previous checkpoint not approved - lock this section
+            const immediatePrevModule = modules[index - 1]
+            const immediatePrevCheckpoint = checkpointMap.get(immediatePrevModule.id)
+
+            if (!immediatePrevCheckpoint) {
+              // Previous section has NO checkpoint - this section stays LOCKED
               isLocked = true
               wouldBeLocked = true
-              lockReason = `Complete "${previousCheckpoint.title}" to unlock this module`
-              console.log(`  ✗ Module "${module.title}" LOCKED: Previous checkpoint "${previousCheckpoint.title}" status="${previousStatus}" (needs "approved")`)
+              lockReason = `Add a checkpoint to "${immediatePrevModule.title}" to unlock this section`
+              console.log(`[Unlock Status] Module "${module.title}" LOCKED: Previous section "${immediatePrevModule.title}" has no checkpoint`)
+            } else {
+              // Previous section has checkpoint - check if approved
+              const prevStatus = userCheckpointStatusMap.get(immediatePrevCheckpoint.id) || 'not_started'
+              
+              console.log(`[Unlock Status] Module "${module.title}" (index=${index}, sort_order=${module.sort_order}):`)
+              console.log(`  - Immediate previous module: "${immediatePrevModule.title}" (index=${index - 1}, sort_order=${immediatePrevModule.sort_order})`)
+              console.log(`  - Previous checkpoint: "${immediatePrevCheckpoint.title}" (id=${immediatePrevCheckpoint.id})`)
+              console.log(`  - Checkpoint status: "${prevStatus}"`)
+              console.log(`  - Status in map: ${userCheckpointStatusMap.has(immediatePrevCheckpoint.id) ? 'FOUND' : 'NOT FOUND'}`)
+              
+              if (prevStatus === 'approved') {
+                // Previous checkpoint approved - unlock this section
+                isLocked = false
+                wouldBeLocked = false
+                lockReason = null
+                console.log(`  ✓ Module "${module.title}" UNLOCKED: Immediate previous checkpoint "${immediatePrevCheckpoint.title}" is approved`)
+              } else {
+                // Previous checkpoint not approved - lock this section
+                isLocked = true
+                wouldBeLocked = true
+                lockReason = `Complete "${immediatePrevCheckpoint.title}" to unlock`
+                console.log(`  ✗ Module "${module.title}" LOCKED: Immediate previous checkpoint "${immediatePrevCheckpoint.title}" status="${prevStatus}" (needs "approved")`)
+              }
             }
           }
         }
