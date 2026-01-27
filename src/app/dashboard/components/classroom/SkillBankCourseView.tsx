@@ -1606,6 +1606,15 @@ export function SkillBankCourseView({
                                       console.log('[Frontend] Unlock status response:', unlockData)
                                       console.log('[Frontend] Response modules count:', unlockData.modules?.length)
                                       
+                                      // DEBUG: Log raw API response modules
+                                      console.log('[Frontend] RAW API response modules:', unlockData.modules?.map(m => ({
+                                        title: m.title,
+                                        globally_unlocked: m.globally_unlocked,
+                                        typeofGloballyUnlocked: typeof m.globally_unlocked,
+                                        isLocked: m.isLocked,
+                                        wouldBeLocked: m.wouldBeLocked
+                                      })))
+                                      
                                       // Find the toggled module in the response
                                       const toggledModule = unlockData.modules?.find((m: any) => m.id === moduleId)
                                       console.log('[Frontend] Toggled module in response:', toggledModule)
@@ -1725,6 +1734,11 @@ export function SkillBankCourseView({
                                 style={{ pointerEvents: 'auto', zIndex: 999 }}
                                 title={togglingModuleId === section.id ? 'Updating...' : (wouldBeLocked ? 'Click to unlock this module' : 'Click to lock this module')}
                               >
+                                {(() => {
+                                  // DEBUG: Log render-time values
+                                  console.log(`[RENDER] ${section.title}: wouldBeLocked=${wouldBeLocked}, moduleStatus=`, moduleStatus)
+                                  return null
+                                })()}
                                 {togglingModuleId === section.id ? (
                                   <Loader2 size={18} className="text-slate-400 animate-spin" />
                                 ) : wouldBeLocked ? (

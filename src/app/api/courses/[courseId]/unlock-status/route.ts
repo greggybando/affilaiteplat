@@ -386,6 +386,15 @@ export async function GET(
     
     console.log('[Unlock Status] Response:', JSON.stringify(response, null, 2))
     
+    // DEBUG: Log globally_unlocked values right before returning
+    console.log('[Unlock Status] FINAL RESPONSE - Module globally_unlocked values:', 
+      modules.map(m => ({ 
+        title: m.title, 
+        globally_unlocked: m.globally_unlocked, 
+        type: typeof m.globally_unlocked 
+      }))
+    )
+    
     return NextResponse.json(response)
   } catch (error: any) {
     console.error('[Unlock Status] Error:', error)
