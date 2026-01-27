@@ -265,8 +265,7 @@ export async function GET(
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: First section (sort_order=${module.sort_order}, index=${index})`)
       }
-      // Check 4: Explicit unlock rule OR sequential checkpoint logic
-      // Note: globally_unlocked=false or null means "use sequential logic" (NOT locked by admin)
+      // Check 5: Sequential checkpoint logic (globally_unlocked is NULL - default)
       else {
         const requiredCheckpointId = unlockRuleMap.get(module.id)
         
