@@ -262,8 +262,10 @@ export async function GET(
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: User-specific unlock`)
       }
       // Check 4: Is this the first section? (ALWAYS UNLOCKED - explicit check)
-      else if (module.id === firstModuleId || index === 0 || module.sort_order === 0) {
+      // Only check firstModuleId or index=0, NOT sort_order=0 (multiple modules could have sort_order=0)
+      else if (module.id === firstModuleId || index === 0) {
         isLocked = false
+        wouldBeLocked = false
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: First section (sort_order=${module.sort_order}, index=${index})`)
       }
