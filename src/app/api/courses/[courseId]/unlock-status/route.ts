@@ -227,11 +227,10 @@ export async function GET(
       let lockReason: string | null = null
       let wouldBeLocked = true // Track what the lock status would be for non-admins (for UI display)
 
-      // Normalize globally_unlocked to boolean (handle null/undefined cases)
+      // Check if admin explicitly unlocked this module
       const moduleGloballyUnlocked = module.globally_unlocked === true
-      const moduleGloballyLocked = module.globally_unlocked === false // Explicitly locked by admin
 
-      console.log(`[Unlock Status] Checking module "${module.title}": globally_unlocked=${module.globally_unlocked} (type: ${typeof module.globally_unlocked}), unlocked=${moduleGloballyUnlocked}, locked=${moduleGloballyLocked}`)
+      console.log(`[Unlock Status] Checking module "${module.title}": globally_unlocked=${module.globally_unlocked} (type: ${typeof module.globally_unlocked}), sort_order=${module.sort_order}, index=${index}`)
 
       // Check 0: Is course globally unlocked?
       if (course.globally_unlocked === true) {
@@ -240,14 +239,7 @@ export async function GET(
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: Course is globally unlocked`)
       }
-      // Check 1: Is this module explicitly globally locked? (Admin locked it - HIGHEST PRIORITY)
-      else if (moduleGloballyLocked) {
-        isLocked = true
-        wouldBeLocked = true
-        lockReason = 'This module is locked by admin'
-        console.log(`[Unlock Status] Module "${module.title}" LOCKED: Module is explicitly globally locked (admin locked it)`)
-      }
-      // Check 2: Is this module globally unlocked? (Admin unlocked it)
+      // Check 1: Is this module globally unlocked? (Admin explicitly unlocked it)
       else if (moduleGloballyUnlocked) {
         isLocked = false
         wouldBeLocked = false
@@ -269,7 +261,8 @@ export async function GET(
         lockReason = null
         console.log(`[Unlock Status] Module "${module.title}" UNLOCKED: First section (sort_order=${module.sort_order}, index=${index})`)
       }
-      // Check 5: Explicit unlock rule (overrides default sequential behavior)
+      // Check 4: Explicit unlock rule OR sequential checkpoint logic
+      // Note: globally_unlocked=false or null means "use sequential logic" (NOT locked by admin)
       else {
         const requiredCheckpointId = unlockRuleMap.get(module.id)
         
