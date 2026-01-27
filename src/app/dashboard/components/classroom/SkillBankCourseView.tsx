@@ -1503,8 +1503,8 @@ export function SkillBankCourseView({
                                       moduleId: moduleId,
                                       moduleTitle: section.title,
                                       unlocked: newUnlockedState,
-                                      currentlyUnlocked,
-                                      wouldBeLocked
+                                      currentWouldBeLocked: wouldBeLocked,
+                                      newUnlockedState
                                     })
                                     
                                     const res = await fetch(`/api/courses/${course.id}/modules/${moduleId}/toggle-unlock`, {
