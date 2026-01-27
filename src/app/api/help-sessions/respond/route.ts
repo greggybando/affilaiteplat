@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       .from('help_sessions')
       .update({
         first_response_at: respondedAt.toISOString(),
-        response_time_seconds,
+        response_time_seconds: responseTimeSeconds,
         updated_at: respondedAt.toISOString()
       })
       .eq('id', help_session_id)
