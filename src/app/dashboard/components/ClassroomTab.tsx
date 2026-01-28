@@ -45,8 +45,8 @@ interface ClassroomTabProps {
     avatar_url: string | null
     role?: string
   }
-  activeTab: 'community' | 'classroom' | 'groupchat'
-  setActiveTab: (tab: 'community' | 'classroom' | 'groupchat') => void
+  activeTab: 'community' | 'classroom' | 'mentors' | 'groupchat'
+  setActiveTab: (tab: 'community' | 'classroom' | 'mentors' | 'groupchat') => void
   glowIntensity: number
 }
 

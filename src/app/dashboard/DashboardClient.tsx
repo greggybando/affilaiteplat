@@ -672,8 +672,8 @@ function CommunityTab({
   searchQuery
 }: { 
   affiliate: DashboardClientProps['affiliate']
-  activeTab: 'community' | 'classroom' | 'groupchat'
-  setActiveTab: (tab: 'community' | 'classroom' | 'groupchat') => void
+  activeTab: 'community' | 'classroom' | 'mentors' | 'groupchat'
+  setActiveTab: (tab: 'community' | 'classroom' | 'mentors' | 'groupchat') => void
   setIsGroupChatOpen: (open: boolean) => void
   glowIntensity: number
   searchQuery: string
