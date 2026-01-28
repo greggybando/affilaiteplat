@@ -594,9 +594,9 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
               >
                 <div className="w-5 h-5 flex items-center justify-center">
                   {item.id === 'community' && (
-                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' }}>
                       <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" 
-                        stroke="rgba(120,120,120,0.8)" 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         fill="rgba(60,60,60,0.8)"
                         style={{
@@ -604,7 +604,7 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                         }}
                       />
                       <path d="M7 9h10M7 13h6" 
-                        stroke="rgba(120,120,120,0.8)" 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         strokeLinecap="round"
                       />

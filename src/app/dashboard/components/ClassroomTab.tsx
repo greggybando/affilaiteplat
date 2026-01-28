@@ -448,16 +448,15 @@ export default function ClassroomTab({
                   {item.id === 'community' && (
                     <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' }}>
                       <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" 
-                        stroke="currentColor" 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         fill="rgba(60,60,60,0.8)"
                         style={{
-                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
-                          stroke: isActive ? 'rgba(253,224,71,0.9)' : 'rgba(120,120,120,0.8)'
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))'
                         }}
                       />
                       <path d="M7 9h10M7 13h6" 
-                        stroke={isActive ? 'rgba(253,224,71,0.9)' : 'rgba(120,120,120,0.8)'} 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         strokeLinecap="round"
                       />
@@ -466,7 +465,7 @@ export default function ClassroomTab({
                   {item.id === 'classroom' && (
                     <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' }}>
                       <path d="M12 2L12 22" 
-                        stroke={isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'} 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="2" 
                         strokeLinecap="round"
                         style={{
@@ -474,7 +473,7 @@ export default function ClassroomTab({
                         }}
                       />
                       <path d="M8 6L12 2L16 6" 
-                        stroke={isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'} 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -484,7 +483,7 @@ export default function ClassroomTab({
                         }}
                       />
                       <path d="M10 18L12 22L14 18" 
-                        stroke={isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'} 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         strokeLinecap="round"
                         strokeLinejoin="round"
