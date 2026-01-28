@@ -461,7 +461,7 @@ export default function ClassroomTab({
                         strokeWidth="1.5" 
                         strokeLinecap="round"
                         style={{
-                          filter: isActive ? 'drop-shadow(0 0 4px rgba(253,224,71,0.6)) drop-shadow(0 0 8px rgba(253,224,71,0.4))' : 'none'
+                          filter: 'drop-shadow(0 0 4px rgba(253,224,71,0.6)) drop-shadow(0 0 8px rgba(253,224,71,0.4))'
                         }}
                       />
                     </svg>
@@ -473,7 +473,7 @@ export default function ClassroomTab({
                         strokeWidth="2" 
                         strokeLinecap="round"
                         style={{
-                          filter: isActive ? 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' : 'none'
+                          filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))'
                         }}
                       />
                       <path d="M8 6L12 2L16 6" 
@@ -523,7 +523,7 @@ export default function ClassroomTab({
                         strokeWidth="1.5" 
                         strokeLinecap="round"
                         style={{
-                          filter: isActive ? 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' : 'none'
+                          filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))'
                         }}
                       />
                     </svg>
