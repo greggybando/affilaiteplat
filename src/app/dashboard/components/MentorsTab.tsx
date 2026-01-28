@@ -579,7 +579,20 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col h-full min-w-0 relative" style={{ flex: 1, minWidth: 0, height: '100%', margin: 0, padding: 0, boxSizing: 'border-box', overflow: 'hidden', zIndex: 1 }}>
+          {/* Content Overlay */}
           <div className="relative flex-1 flex flex-col overflow-hidden" style={{ zIndex: 1 }}>
+            {/* Color Splash Header - Only in main content area, contained */}
+            <div 
+              className="absolute top-0 left-0 right-0 h-[300px]"
+              style={{
+                background: 'linear-gradient(135deg, #fde047 0%, #fde047 25%, #f472b6 25%, #f472b6 50%, #22d3ee 50%, #22d3ee 75%, #0ea5e9 75%, #0ea5e9 100%)',
+                pointerEvents: 'none',
+                zIndex: 0
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(15,15,26,0.5)] to-[#0f0f1a]" />
+            </div>
+
             <div className="flex-1 overflow-y-auto min-h-0 w-full relative z-10" style={{ width: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0, padding: 0 }}>
               <div className="max-w-6xl mx-auto px-6 py-8">
                 {/* Header */}
