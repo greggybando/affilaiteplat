@@ -611,31 +611,41 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                     </svg>
                   )}
                   {item.id === 'classroom' && (
-                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" 
-                        stroke="rgba(120,120,120,0.8)" 
-                        strokeWidth="1.5" 
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' }}>
+                      <path d="M12 2L12 22" 
+                        stroke="rgba(34,211,238,0.8)" 
+                        strokeWidth="2" 
                         strokeLinecap="round"
-                      />
-                      <path d="M6 16V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16" 
-                        stroke="rgba(120,120,120,0.8)" 
-                        strokeWidth="1.5" 
-                        fill="rgba(60,60,60,0.8)"
                         style={{
                           filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))'
                         }}
                       />
-                      <path d="M10 6h4M10 10h4M10 14h4" 
-                        stroke="rgba(120,120,120,0.8)" 
-                        strokeWidth="1" 
+                      <path d="M8 6L12 2L16 6" 
+                        stroke="rgba(34,211,238,0.8)" 
+                        strokeWidth="1.5" 
                         strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="rgba(60,60,60,0.8)"
+                        style={{
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
+                        }}
+                      />
+                      <path d="M10 18L12 22L14 18" 
+                        stroke="rgba(34,211,238,0.8)" 
+                        strokeWidth="1.5" 
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="rgba(60,60,60,0.8)"
+                        style={{
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
+                        }}
                       />
                     </svg>
                   )}
                   {item.id === 'members' && (
-                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' }}>
                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" 
-                        stroke="rgba(120,120,120,0.8)" 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         fill="rgba(60,60,60,0.8)"
                         style={{
@@ -643,7 +653,7 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                         }}
                       />
                       <circle cx="9" cy="7" r="4" 
-                        stroke="rgba(120,120,120,0.8)" 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         fill="rgba(60,60,60,0.8)"
                         style={{
@@ -651,7 +661,7 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                         }}
                       />
                       <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" 
-                        stroke="rgba(120,120,120,0.8)" 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         strokeLinecap="round"
                       />

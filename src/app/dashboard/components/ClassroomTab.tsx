@@ -495,32 +495,27 @@ export default function ClassroomTab({
                     </svg>
                   )}
                   {item.id === 'members' && (
-                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' }}>
                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" 
-                        stroke="currentColor" 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         fill="rgba(60,60,60,0.8)"
                         style={{
-                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
-                          stroke: isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))'
                         }}
                       />
                       <circle cx="9" cy="7" r="4" 
-                        stroke="currentColor" 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         fill="rgba(60,60,60,0.8)"
                         style={{
-                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
-                          stroke: isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))'
                         }}
                       />
                       <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" 
-                        stroke={isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'} 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         strokeLinecap="round"
-                        style={{
-                          filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))'
-                        }}
                       />
                     </svg>
                   )}
