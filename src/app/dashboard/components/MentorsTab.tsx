@@ -234,31 +234,6 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
   const onlineMentors = mentors.filter(m => m.availability === 'online')
   const awayMentors = mentors.filter(m => m.availability === 'away')
 
-  if (loading) {
-    return (
-      <React.Fragment>
-        <div 
-          className="flex h-full w-full" 
-          style={{ 
-            display: 'flex', 
-            width: '100%', 
-            height: '100%', 
-            boxSizing: 'border-box', 
-            margin: 0, 
-            padding: 0, 
-            gap: 0, 
-            backgroundColor: '#0f0f1a' 
-          }}
-        >
-          <div className="w-[250px] text-white flex flex-col shrink-0 h-full relative" style={{ width: '250px', minWidth: '250px', flexShrink: 0, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)', height: '100%', zIndex: 100 }}></div>
-          <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-          </div>
-        </div>
-      </React.Fragment>
-    )
-  }
-
   return (
     <React.Fragment>
       <div 
@@ -888,7 +863,8 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
             </div>
           </div>
         )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
