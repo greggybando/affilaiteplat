@@ -704,23 +704,20 @@ export default function ClassroomTab({
               <h1 className="text-lg font-bold text-white">Classroom</h1>
               <p className="text-xs text-[rgba(255,255,255,0.6)]">don't just watch. ENACT the lessons IRL. Make your life ACTUALLY better &lt;3</p>
             </div>
-            <div className="absolute top-2 right-4 sm:right-6 lg:right-8" style={{ zIndex: 20 }}>
-              <div className="relative" style={{
-                background: 'linear-gradient(135deg, rgba(35,35,40,0.95) 0%, rgba(30,30,35,0.98) 50%, rgba(25,25,30,0.95) 100%)',
+            <div className="flex items-center gap-3">
+              <div className="relative px-3 py-1.5 rounded" style={{
+                background: 'linear-gradient(135deg, rgba(50,50,55,0.85) 0%, rgba(35,35,40,0.9) 50%, rgba(30,30,35,0.85) 100%)',
                 border: '1px solid rgba(70,70,75,0.6)',
-                borderRadius: '8px',
-                padding: '12px 16px',
                 boxShadow: `
-                  inset 0 1px 1px rgba(255,255,255,0.05),
+                  inset 0 1px 1px rgba(255,255,255,0.08),
                   inset 0 -1px 1px rgba(0,0,0,0.8),
-                  0 2px 8px rgba(0,0,0,0.6),
-                  0 0 1px rgba(34,211,238,0.3)
+                  0 1px 3px rgba(0,0,0,0.6)
                 `,
-                minWidth: '280px',
-                maxWidth: '320px'
+                position: 'relative',
+                overflow: 'hidden'
               }}>
-                <div className="absolute inset-0 opacity-20 rounded-lg" style={{
-                  background: 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(34,211,238,0.1) 2px, rgba(34,211,238,0.1) 4px)',
+                <div className="absolute inset-0 opacity-20" style={{
+                  background: 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(100,100,100,0.08) 2px, rgba(100,100,100,0.08) 4px)',
                   backgroundSize: '6px 100%'
                 }} />
                 <div className="relative text-xs font-serif italic" style={{
@@ -758,25 +755,25 @@ export default function ClassroomTab({
                   "he who jumps into the void owes no explanation to those who stand and watch"
                 </div>
               </div>
+              {(selectedWorld || selectedCourse) && (
+                <button
+                  onClick={() => {
+                    setSelectedWorld(null)
+                    setSelectedCourse(null)
+                    setSelectedLesson(null)
+                    setExpandedModules(new Set())
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.2)'
+                  }}
+                >
+                  ← Back to Courses
+                </button>
+              )}
             </div>
-            {(selectedWorld || selectedCourse) && (
-              <button
-                onClick={() => {
-                  setSelectedWorld(null)
-                  setSelectedCourse(null)
-                  setSelectedLesson(null)
-                  setExpandedModules(new Set())
-                }}
-                className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-all"
-                style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255,255,255,0.2)'
-                }}
-              >
-                ← Back to Courses
-              </button>
-            )}
           </div>
 
           <div className="flex-1 overflow-y-auto min-h-0 w-full relative z-10" style={{ width: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0, padding: 0 }}>
