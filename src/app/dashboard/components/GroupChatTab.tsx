@@ -704,14 +704,45 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
           <div className="mt-6 pt-6 border-t border-[rgba(255,255,255,0.1)]">
             <button
               onClick={() => {}}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm mb-1 text-left transition-all text-white"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm mb-1 text-left transition-all relative"
               style={{
-                background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                border: '1px solid rgba(34,211,238,0.3)'
+                background: 'transparent',
+                border: '1px solid transparent'
               }}
             >
-              <span className="text-base">💬</span>
-              <span className="font-medium">Group Chat</span>
+              <div className="w-5 h-5 flex items-center justify-center relative">
+                <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" 
+                    stroke="rgba(34,211,238,0.9)" 
+                    strokeWidth="1.5" 
+                    fill="rgba(60,60,60,0.8)"
+                    style={{
+                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1)) drop-shadow(0 0 6px rgba(34,211,238,0.6))'
+                    }}
+                  />
+                  <path d="M7 9h10M7 13h6" 
+                    stroke="rgba(34,211,238,0.9)" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round"
+                    style={{
+                      filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))'
+                    }}
+                  />
+                </svg>
+                <div className="absolute -bottom-0.5 -right-0.5 text-[6px] font-bold leading-none" style={{
+                  color: '#fde047',
+                  textShadow: '0 0 3px rgba(253,224,71,0.8), 0 1px 1px rgba(0,0,0,0.9)',
+                  filter: 'drop-shadow(0 0 2px rgba(253,224,71,0.6))',
+                  background: 'linear-gradient(135deg, rgba(60,60,60,0.95) 0%, rgba(40,40,40,0.98) 50%, rgba(30,30,30,0.95) 100%)',
+                  padding: '1px 2px',
+                  borderRadius: '2px',
+                  border: '0.5px solid rgba(253,224,71,0.3)',
+                  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.1), inset 0 -1px 1px rgba(0,0,0,0.9)'
+                }}>
+                  ld
+                </div>
+              </div>
+              <span className="font-medium text-[rgba(255,255,255,0.6)]">Group Chat</span>
               <span className="ml-auto w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
             </button>
           </div>
