@@ -39,12 +39,24 @@ async function handleLogout(request: NextRequest) {
     }
   }
   
-  // Create response and clear cookie on it
-  const response = NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'))
-  
-  // Clear cookie - MUST match the exact settings used when setting the cookie
-  // Use secure: true in production (Vercel uses HTTPS)
   const isProduction = !!process.env.VERCEL || process.env.NODE_ENV === 'production'
+  
+  // For POST requests, return JSON (frontend handles redirect)
+  // For GET requests, redirect directly
+  if (request.method === 'POST') {
+    const response = NextResponse.json({ success: true })
+    response.cookies.set(COOKIE_NAME, '', {
+      httpOnly: false,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 0,
+      path: '/',
+    })
+    return response
+  }
+  
+  // GET request - redirect
+  const response = NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'))
   response.cookies.set(COOKIE_NAME, '', {
     httpOnly: false, // Must match login/signup setting
     secure: isProduction, // Must match login/signup setting
