@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import MentorBadge from '@/components/MentorBadge'
-import { MessageSquare, Loader2, Settings, LogOut } from 'lucide-react'
+import { MessageSquare, Loader2, Settings, LogOut, Trophy, Edit2, Check, X } from 'lucide-react'
 import { useAdmin } from '@/lib/hooks/useAdmin'
 
 // Helper function for glow shadow
@@ -110,6 +110,14 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
   const [updatingAvailability, setUpdatingAvailability] = useState(false)
   const [togglingMentor, setTogglingMentor] = useState(false)
   const [leaderboardTab, setLeaderboardTab] = useState<'today' | 'this_week' | 'all_time'>('today')
+  const [raffleText, setRaffleText] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('mentor_raffle_text') || '1-on-1 Call with Grant'
+    }
+    return '1-on-1 Call with Grant'
+  })
+  const [editingRaffle, setEditingRaffle] = useState(false)
+  const [tempRaffleText, setTempRaffleText] = useState(raffleText)
 
   useEffect(() => {
     loadData()
@@ -254,26 +262,32 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
         <div className="w-[250px] text-white flex flex-col shrink-0 h-full relative" style={{ width: '250px', minWidth: '250px', flexShrink: 0, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)', height: '100%', zIndex: 100 }}>
           <div className="p-5 border-b border-slate-700">
             <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center relative overflow-hidden" style={{
-                background: 'linear-gradient(135deg, rgba(60,60,60,0.95) 0%, rgba(40,40,40,0.98) 50%, rgba(30,30,30,0.95) 100%)',
-                border: '2px solid rgba(168,85,247,0.6)',
-                boxShadow: `
-                  inset 0 1px 2px rgba(255,255,255,0.1),
-                  inset 0 -1px 2px rgba(0,0,0,0.9),
-                  0 2px 8px rgba(0,0,0,0.8),
-                  0 0 1px rgba(168,85,247,0.5),
-                  0 0 20px rgba(168,85,247,0.6), 0 0 40px rgba(168,85,247,0.4)
-                `
-              }}>
-                <div className="absolute inset-0 opacity-20" style={{
-                  background: 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(168,85,247,0.1) 2px, rgba(168,85,247,0.1) 4px)',
-                  backgroundSize: '8px 100%'
-                }} />
-                <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 relative z-10" style={{
-                  filter: 'drop-shadow(0 0 4px rgba(168,85,247,0.8)) drop-shadow(0 0 8px rgba(168,85,247,0.6))',
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center relative overflow-hidden" style={{
+                  background: 'linear-gradient(135deg, rgba(60,60,60,0.95) 0%, rgba(40,40,40,0.98) 50%, rgba(30,30,30,0.95) 100%)',
+                  border: '2px solid rgba(168,85,247,0.6)',
+                  boxShadow: `
+                    inset 0 1px 2px rgba(255,255,255,0.1),
+                    inset 0 -1px 2px rgba(0,0,0,0.9),
+                    0 2px 8px rgba(0,0,0,0.8),
+                    0 0 1px rgba(168,85,247,0.5),
+                    0 0 20px rgba(168,85,247,0.6), 0 0 40px rgba(168,85,247,0.4)
+                  `
                 }}>
-                  <path d="M13 2L3 14h12v8l10-12H13V2z" fill="rgba(168,85,247,0.9)" stroke="rgba(168,85,247,0.9)" />
-                </svg>
+                  <div className="absolute inset-0 opacity-20" style={{
+                    background: 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(168,85,247,0.1) 2px, rgba(168,85,247,0.1) 4px)',
+                    backgroundSize: '8px 100%'
+                  }} />
+                  <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 relative z-10" style={{
+                    filter: 'drop-shadow(0 0 4px rgba(168,85,247,0.8)) drop-shadow(0 0 8px rgba(168,85,247,0.6))',
+                  }}>
+                    <path d="M13 2L3 14h12v8l10-12H13V2z" fill="rgba(168,85,247,0.9)" stroke="rgba(168,85,247,0.9)" />
+                  </svg>
+                </div>
+                <Trophy className="w-5 h-5 relative z-10" style={{
+                  filter: 'drop-shadow(0 0 4px rgba(253,224,71,0.8)) drop-shadow(0 0 8px rgba(253,224,71,0.6))',
+                  color: 'rgba(253,224,71,0.9)'
+                }} />
               </div>
               <div>
                 <div className="font-bold text-sm">LifeDesign</div>
@@ -765,11 +779,71 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
         {/* Section 4 - MONTHLY RAFFLE */}
         {leaderboard && (
           <div className="mb-6 bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 border border-[rgba(255,255,255,0.1)]">
-            <h2 className="text-lg font-semibold text-yellow-400 mb-2">🎟️ MONTHLY RAFFLE: 1-on-1 Call with Grant</h2>
-            <div className="text-[rgba(255,255,255,0.8)]">
+            <div className="flex items-start justify-between mb-2">
+              {editingRaffle && isAdmin ? (
+                <div className="flex-1 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={tempRaffleText}
+                    onChange={(e) => setTempRaffleText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        setRaffleText(tempRaffleText)
+                        localStorage.setItem('mentor_raffle_text', tempRaffleText)
+                        setEditingRaffle(false)
+                      } else if (e.key === 'Escape') {
+                        setTempRaffleText(raffleText)
+                        setEditingRaffle(false)
+                      }
+                    }}
+                    className="flex-1 px-3 py-1 bg-[rgba(255,255,255,0.1)] border border-yellow-500/50 rounded-lg text-white text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => {
+                      setRaffleText(tempRaffleText)
+                      localStorage.setItem('mentor_raffle_text', tempRaffleText)
+                      setEditingRaffle(false)
+                    }}
+                    className="p-1.5 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 rounded-lg transition-colors"
+                  >
+                    <Check className="w-4 h-4 text-green-400" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTempRaffleText(raffleText)
+                      setEditingRaffle(false)
+                    }}
+                    className="p-1.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4 text-red-400" />
+                  </button>
+                </div>
+              ) : (
+                <h2 className="text-lg font-semibold text-yellow-400 flex items-center gap-2">
+                  🎟️ MONTHLY RAFFLE: {raffleText}
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        setTempRaffleText(raffleText)
+                        setEditingRaffle(true)
+                      }}
+                      className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded transition-colors"
+                      title="Edit raffle text"
+                    >
+                      <Edit2 className="w-4 h-4 text-yellow-400" />
+                    </button>
+                  )}
+                </h2>
+              )}
+            </div>
+            <div className="text-[rgba(255,255,255,0.8)] mb-3">
               <div>Your entries: <span className="font-semibold text-yellow-400">{leaderboard.user_raffle_entries}</span></div>
               <div>Days left: <span className="font-semibold text-yellow-400">{leaderboard.days_left_in_month}</span></div>
             </div>
+            <p className="text-xs text-[rgba(255,255,255,0.6)] mt-3 pt-3 border-t border-[rgba(255,255,255,0.1)]">
+              Mentors who win the day (most helpful in 24 hours window via points) are added into the raffle & chosen from random generator. More daily wins, more chances to win the raffle.
+            </p>
           </div>
         )}
 
