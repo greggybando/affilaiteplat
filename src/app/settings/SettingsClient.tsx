@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Upload, User, X, LogOut, Mail } from 'lucide-react'
 import { ImageCropper } from '@/app/affiliate/components/ImageCropper'
-import { MentorToggle } from '@/components/MentorToggle'
 
 interface SettingsClientProps {
   affiliate: {
@@ -477,11 +476,6 @@ export function SettingsClient({ affiliate }: SettingsClientProps) {
                   {savingEmailPrefs ? 'Saving...' : 'Save Preferences'}
                 </button>
               </div>
-            </div>
-
-            {/* Mentor Program Section */}
-            <div className="mt-6 pt-6 border-t border-[rgba(6,182,212,0.3)]">
-              <MentorToggle />
             </div>
 
             {/* Log Out */}

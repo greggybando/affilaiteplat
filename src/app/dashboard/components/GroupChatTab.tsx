@@ -569,7 +569,7 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
           {[
             { id: 'community', icon: '💬', label: 'Community' },
             { id: 'classroom', icon: '📚', label: 'Classroom' },
-            { id: 'members', icon: '👥', label: 'Members' },
+            { id: 'mentors', icon: '🎓', label: 'Mentors' },
             ...((affiliate as any).role === 'admin' || (affiliate as any).role === 'moderator' 
               ? [{ id: 'admin', icon: '⚙️', label: 'Admin', href: '/community/admin' }]
               : []
@@ -580,7 +580,7 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
               <button
                 key={item.id}
                 onClick={() => {
-                  if (item.id === 'community' || item.id === 'classroom') {
+                  if (item.id === 'community' || item.id === 'classroom' || item.id === 'mentors') {
                     window.location.href = '/dashboard'
                   } else if (hasHref) {
                     window.location.href = (item as any).href
@@ -642,7 +642,7 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                       />
                     </svg>
                   )}
-                  {item.id === 'members' && (
+                  {item.id === 'mentors' && (
                     <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' }}>
                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" 
                         stroke="rgba(34,211,238,0.8)" 

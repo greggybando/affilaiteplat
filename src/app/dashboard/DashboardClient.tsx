@@ -12,6 +12,7 @@ import { NotificationBell } from './components/NotificationBell'
 import { DMInbox } from './components/DMInbox'
 import { GroupChatTab } from './components/GroupChatTab'
 import ClassroomTab from './components/ClassroomTab'
+import MentorsTab from './components/MentorsTab'
 
 interface DashboardClientProps {
   affiliate: {
@@ -225,8 +226,8 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   
   const router = useRouter()
   const searchParams = useSearchParams()
-  const tabParam = searchParams.get('tab') as 'community' | 'classroom' | 'groupchat' | null
-  const [activeTab, setActiveTab] = useState<'community' | 'classroom' | 'groupchat'>(tabParam || 'community')
+  const tabParam = searchParams.get('tab') as 'community' | 'classroom' | 'mentors' | 'groupchat' | null
+  const [activeTab, setActiveTab] = useState<'community' | 'classroom' | 'mentors' | 'groupchat'>(tabParam || 'community')
   const [openDMUserId, setOpenDMUserId] = useState<string | null>(null)
   
   // Handle openDM query param on initial load only (for external links)
@@ -269,7 +270,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
   
   // Update activeTab when tab query param changes
   useEffect(() => {
-    if (tabParam && ['community', 'classroom', 'groupchat'].includes(tabParam)) {
+    if (tabParam && ['community', 'classroom', 'mentors', 'groupchat'].includes(tabParam)) {
       setActiveTab(tabParam)
     }
   }, [tabParam])
@@ -588,6 +589,29 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
               Classroom
             </button>
             <button
+              onClick={() => setActiveTab('mentors')}
+              className={`px-4 py-1.5 text-sm font-semibold rounded-xl transition-all ${
+                activeTab === 'mentors'
+                  ? 'text-white'
+                  : 'text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.1)]'
+              }`}
+              style={activeTab === 'mentors' ? {
+                background: 'linear-gradient(135deg, rgba(60,60,60,0.95) 0%, rgba(40,40,40,0.98) 50%, rgba(30,30,30,0.95) 100%)',
+                border: '2px solid rgba(34,211,238,0.6)',
+                boxShadow: `
+                  inset 0 1px 2px rgba(255,255,255,0.1),
+                  inset 0 -1px 2px rgba(0,0,0,0.9),
+                  0 2px 8px rgba(0,0,0,0.8),
+                  0 0 1px rgba(34,211,238,0.5),
+                  ${glowShadow('0 0 20px rgba(34,211,238,0.7), 0 0 40px rgba(34,211,238,0.5), 0 8px 30px rgba(34,211,238,0.4)', glowIntensity)}
+                `,
+                color: 'rgba(34,211,238,0.95)',
+                textShadow: '0 0 8px rgba(34,211,238,0.6), 0 1px 2px rgba(0,0,0,0.8)'
+              } : {}}
+            >
+              Mentors
+            </button>
+            <button
               onClick={() => setActiveTab('groupchat')}
               className={`px-4 py-1.5 text-sm font-semibold rounded-xl transition-all ${
                 activeTab === 'groupchat'
@@ -620,6 +644,8 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
           <CommunityTab affiliate={affiliate} activeTab={activeTab} setActiveTab={setActiveTab} setIsGroupChatOpen={setIsGroupChatOpen} glowIntensity={glowIntensity} searchQuery={searchQuery} />
         ) : activeTab === 'classroom' ? (
           <ClassroomTab key={classroomResetKey} affiliate={affiliate} activeTab={activeTab} setActiveTab={setActiveTab} glowIntensity={glowIntensity} />
+        ) : activeTab === 'mentors' ? (
+          <MentorsTab affiliate={affiliate} glowIntensity={glowIntensity} />
         ) : (
           <GroupChatTab affiliate={affiliate} glowIntensity={glowIntensity} />
         )}
@@ -995,20 +1021,20 @@ function CommunityTab({
           {[
             { id: 'community', icon: '💬', label: 'Community' },
             { id: 'classroom', icon: '📚', label: 'Classroom' },
-            { id: 'members', icon: '👥', label: 'Members' },
+            { id: 'mentors', icon: '🎓', label: 'Mentors' },
             ...((affiliate as any).role === 'admin' || (affiliate as any).role === 'moderator' 
               ? [{ id: 'admin', icon: '⚙️', label: 'Admin', href: '/community/admin' }]
               : []
             ),
           ].map(item => {
             const hasHref = !!(item as any).href
-            const isActive = activeTab === (item.id as any) || item.id === 'members' || item.id === 'admin'
+            const isActive = activeTab === (item.id as any) || item.id === 'mentors' || item.id === 'admin'
             return (
               <button
                 key={item.id}
                 onClick={() => {
-                  if (item.id === 'community' || item.id === 'classroom') {
-                    setActiveTab(item.id as 'community' | 'classroom')
+                  if (item.id === 'community' || item.id === 'classroom' || item.id === 'mentors') {
+                    setActiveTab(item.id as 'community' | 'classroom' | 'mentors')
                   } else if (hasHref) {
                     window.location.href = (item as any).href
                   }
@@ -1073,33 +1099,28 @@ function CommunityTab({
                       />
                     </svg>
                   )}
-                  {item.id === 'members' && (
-                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                  {item.id === 'mentors' && (
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' }}>
                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" 
-                        stroke="currentColor" 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         fill="rgba(60,60,60,0.8)"
                         style={{
-                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
-                          stroke: isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))'
                         }}
                       />
                       <circle cx="9" cy="7" r="4" 
-                        stroke="currentColor" 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         fill="rgba(60,60,60,0.8)"
                         style={{
-                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
-                          stroke: isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))'
                         }}
                       />
                       <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" 
-                        stroke={isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'} 
+                        stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         strokeLinecap="round"
-                        style={{
-                          filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))'
-                        }}
                       />
                     </svg>
                   )}
