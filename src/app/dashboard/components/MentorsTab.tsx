@@ -296,13 +296,9 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
               { id: 'community', icon: '💬', label: 'Community' },
               { id: 'classroom', icon: '📚', label: 'Classroom' },
               { id: 'mentors', icon: '🎓', label: 'Mentors' },
-              ...(isAdmin 
-                ? [{ id: 'admin', icon: '⚙️', label: 'Admin', href: '/community/admin' }]
-                : []
-              ),
             ].map(item => {
               const hasHref = !!(item as any).href
-              const isActive = activeTab === (item.id as any) || item.id === 'mentors' || item.id === 'admin'
+              const isActive = activeTab === (item.id as any) || item.id === 'mentors'
               return (
                 <button
                   key={item.id}
