@@ -569,14 +569,17 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0 w-full relative z-10" style={{ width: '100%', flex: 1, minWidth: 0, boxSizing: 'border-box', margin: 0, padding: 0 }}>
-              <div className="max-w-6xl mx-auto px-6 py-8">
-                {/* Header */}
-                <div className="mb-8">
-                  <h1 className="text-4xl font-bold text-white mb-2">Mentors</h1>
-                  <p className="text-[rgba(255,255,255,0.6)]">Get help from experienced members & climb the ranks</p>
-                </div>
+              {loading ? (
+                <div className="text-center py-12 text-white">Loading...</div>
+              ) : (
+                <div className="max-w-6xl mx-auto px-6 py-8">
+                  {/* Header */}
+                  <div className="mb-8">
+                    <h1 className="text-4xl font-bold text-white mb-2">Mentors</h1>
+                    <p className="text-[rgba(255,255,255,0.6)]">Get help from experienced members & climb the ranks</p>
+                  </div>
 
-        {/* Section 1 - YOUR MENTOR STATUS */}
+                  {/* Section 1 - YOUR MENTOR STATUS */}
         {mentorStatus && (
           <div className="mb-6 bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-2xl p-6 border border-[rgba(255,255,255,0.1)]">
             <h2 className="text-xl font-semibold text-white mb-4">You are a mentor!</h2>
