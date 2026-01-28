@@ -582,17 +582,20 @@ export default function ClassroomTab({
               <div className="w-5 h-5 flex items-center justify-center relative">
                 <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
                   <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" 
-                    stroke="rgba(255,255,255,0.9)" 
+                    stroke="rgba(34,211,238,0.9)" 
                     strokeWidth="1.5" 
                     fill="rgba(60,60,60,0.8)"
                     style={{
-                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))'
+                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1)) drop-shadow(0 0 6px rgba(34,211,238,0.6))'
                     }}
                   />
                   <path d="M7 9h10M7 13h6" 
-                    stroke="rgba(255,255,255,0.9)" 
+                    stroke="rgba(34,211,238,0.9)" 
                     strokeWidth="1.5" 
                     strokeLinecap="round"
+                    style={{
+                      filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))'
+                    }}
                   />
                 </svg>
                 <div className="absolute -bottom-0.5 -right-0.5 text-[6px] font-bold leading-none" style={{
