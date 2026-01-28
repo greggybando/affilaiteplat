@@ -645,7 +645,7 @@ export function DashboardClient({ affiliate, isAdmin = false }: DashboardClientP
         ) : activeTab === 'classroom' ? (
           <ClassroomTab key={classroomResetKey} affiliate={affiliate} activeTab={activeTab} setActiveTab={setActiveTab} glowIntensity={glowIntensity} />
         ) : activeTab === 'mentors' ? (
-          <MentorsTab affiliate={affiliate} glowIntensity={glowIntensity} />
+          <MentorsTab affiliate={affiliate} activeTab={activeTab} setActiveTab={setActiveTab} glowIntensity={glowIntensity} />
         ) : (
           <GroupChatTab affiliate={affiliate} glowIntensity={glowIntensity} />
         )}
