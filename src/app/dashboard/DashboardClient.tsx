@@ -1025,13 +1025,13 @@ function CommunityTab({
               >
                 <div className="w-5 h-5 flex items-center justify-center">
                   {item.id === 'community' && (
-                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' }}>
                       <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" 
                         stroke="currentColor" 
                         strokeWidth="1.5" 
                         fill="rgba(60,60,60,0.8)"
                         style={{
-                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1)) drop-shadow(0 0 4px rgba(34,211,238,0.6))',
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
                           stroke: isActive ? 'rgba(253,224,71,0.9)' : 'rgba(120,120,120,0.8)'
                         }}
                       />
@@ -1039,20 +1039,17 @@ function CommunityTab({
                         stroke={isActive ? 'rgba(253,224,71,0.9)' : 'rgba(120,120,120,0.8)'} 
                         strokeWidth="1.5" 
                         strokeLinecap="round"
-                        style={{
-                          filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))'
-                        }}
                       />
                     </svg>
                   )}
                   {item.id === 'classroom' && (
-                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))' }}>
                       <path d="M12 2L12 22" 
                         stroke={isActive ? 'rgba(34,211,238,0.9)' : 'rgba(120,120,120,0.8)'} 
                         strokeWidth="2" 
                         strokeLinecap="round"
                         style={{
-                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1)) drop-shadow(0 0 4px rgba(34,211,238,0.6))'
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))'
                         }}
                       />
                       <path d="M8 6L12 2L16 6" 
