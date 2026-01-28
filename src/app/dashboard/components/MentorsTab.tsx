@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import MentorBadge from '@/components/MentorBadge'
-import { MessageSquare, Loader2, Settings, LogOut, Trophy, Edit2, Check, X } from 'lucide-react'
+import { MessageSquare, Loader2, Settings, LogOut, Edit2, Check, X } from 'lucide-react'
 import { useAdmin } from '@/lib/hooks/useAdmin'
 
 // Helper function for glow shadow
@@ -262,32 +262,26 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
         <div className="w-[250px] text-white flex flex-col shrink-0 h-full relative" style={{ width: '250px', minWidth: '250px', flexShrink: 0, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)', height: '100%', zIndex: 100 }}>
           <div className="p-5 border-b border-slate-700">
             <div className="flex items-center gap-3 mb-1">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center relative overflow-hidden" style={{
-                  background: 'linear-gradient(135deg, rgba(60,60,60,0.95) 0%, rgba(40,40,40,0.98) 50%, rgba(30,30,30,0.95) 100%)',
-                  border: '2px solid rgba(168,85,247,0.6)',
-                  boxShadow: `
-                    inset 0 1px 2px rgba(255,255,255,0.1),
-                    inset 0 -1px 2px rgba(0,0,0,0.9),
-                    0 2px 8px rgba(0,0,0,0.8),
-                    0 0 1px rgba(168,85,247,0.5),
-                    0 0 20px rgba(168,85,247,0.6), 0 0 40px rgba(168,85,247,0.4)
-                  `
-                }}>
-                  <div className="absolute inset-0 opacity-20" style={{
-                    background: 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(168,85,247,0.1) 2px, rgba(168,85,247,0.1) 4px)',
-                    backgroundSize: '8px 100%'
-                  }} />
-                  <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 relative z-10" style={{
-                    filter: 'drop-shadow(0 0 4px rgba(168,85,247,0.8)) drop-shadow(0 0 8px rgba(168,85,247,0.6))',
-                  }}>
-                    <path d="M13 2L3 14h12v8l10-12H13V2z" fill="rgba(168,85,247,0.9)" stroke="rgba(168,85,247,0.9)" />
-                  </svg>
-                </div>
-                <Trophy className="w-5 h-5 relative z-10" style={{
-                  filter: 'drop-shadow(0 0 4px rgba(253,224,71,0.8)) drop-shadow(0 0 8px rgba(253,224,71,0.6))',
-                  color: 'rgba(253,224,71,0.9)'
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center relative overflow-hidden" style={{
+                background: 'linear-gradient(135deg, rgba(60,60,60,0.95) 0%, rgba(40,40,40,0.98) 50%, rgba(30,30,30,0.95) 100%)',
+                border: '2px solid rgba(168,85,247,0.6)',
+                boxShadow: `
+                  inset 0 1px 2px rgba(255,255,255,0.1),
+                  inset 0 -1px 2px rgba(0,0,0,0.9),
+                  0 2px 8px rgba(0,0,0,0.8),
+                  0 0 1px rgba(168,85,247,0.5),
+                  0 0 20px rgba(168,85,247,0.6), 0 0 40px rgba(168,85,247,0.4)
+                `
+              }}>
+                <div className="absolute inset-0 opacity-20" style={{
+                  background: 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(168,85,247,0.1) 2px, rgba(168,85,247,0.1) 4px)',
+                  backgroundSize: '8px 100%'
                 }} />
+                <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 relative z-10" style={{
+                  filter: 'drop-shadow(0 0 4px rgba(168,85,247,0.8)) drop-shadow(0 0 8px rgba(168,85,247,0.6))',
+                }}>
+                  <path d="M13 2L3 14h12v8l10-12H13V2z" fill="rgba(168,85,247,0.9)" stroke="rgba(168,85,247,0.9)" />
+                </svg>
               </div>
               <div>
                 <div className="font-bold text-sm">LifeDesign</div>
