@@ -704,6 +704,61 @@ export default function ClassroomTab({
               <h1 className="text-lg font-bold text-white">Classroom</h1>
               <p className="text-xs text-[rgba(255,255,255,0.6)]">don't just watch. ENACT the lessons IRL. Make your life ACTUALLY better &lt;3</p>
             </div>
+            <div className="absolute top-2 right-4 sm:right-6 lg:right-8" style={{ zIndex: 20 }}>
+              <div className="relative" style={{
+                background: 'linear-gradient(135deg, rgba(35,35,40,0.95) 0%, rgba(30,30,35,0.98) 50%, rgba(25,25,30,0.95) 100%)',
+                border: '1px solid rgba(70,70,75,0.6)',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                boxShadow: `
+                  inset 0 1px 1px rgba(255,255,255,0.05),
+                  inset 0 -1px 1px rgba(0,0,0,0.8),
+                  0 2px 8px rgba(0,0,0,0.6),
+                  0 0 1px rgba(34,211,238,0.3)
+                `,
+                minWidth: '280px',
+                maxWidth: '320px'
+              }}>
+                <div className="absolute inset-0 opacity-20 rounded-lg" style={{
+                  background: 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(34,211,238,0.1) 2px, rgba(34,211,238,0.1) 4px)',
+                  backgroundSize: '6px 100%'
+                }} />
+                <div className="relative text-xs font-serif italic" style={{
+                  letterSpacing: '0.02em',
+                  fontWeight: 500,
+                  fontStyle: 'italic',
+                  textTransform: 'none',
+                  color: 'rgba(130, 130, 135, 0.9)',
+                  textShadow: `
+                    0 0.5px 0 rgba(0,0,0,1),
+                    0 1px 0 rgba(0,0,0,0.9),
+                    inset 0 0.5px 1px rgba(255,255,255,0.06),
+                    inset 0 -0.5px 1px rgba(0,0,0,0.9)
+                  `,
+                  filter: 'drop-shadow(0 0.5px 1px rgba(0,0,0,0.8))',
+                  position: 'relative',
+                  zIndex: 2,
+                  borderBottom: '1.5px solid transparent',
+                  backgroundImage: 'linear-gradient(to bottom, transparent 0%, transparent 96%, rgba(34,211,238,0.7) 96%, rgba(6,182,212,0.8) 98%, rgba(34,211,238,0.7) 100%)',
+                  backgroundSize: '200% 100%',
+                  backgroundPosition: '0% 100%',
+                  paddingBottom: '1px',
+                  animation: 'neon-underline 3s ease-in-out infinite'
+                }}>
+                  <style jsx>{`
+                    @keyframes neon-underline {
+                      0%, 100% { 
+                        background-position: 0% 100%;
+                      }
+                      50% { 
+                        background-position: 100% 100%;
+                      }
+                    }
+                  `}</style>
+                  "he who jumps into the void owes no explanation to those who stand and watch"
+                </div>
+              </div>
+            </div>
             {(selectedWorld || selectedCourse) && (
               <button
                 onClick={() => {
