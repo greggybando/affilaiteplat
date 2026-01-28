@@ -212,7 +212,8 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
       })
 
       if (!sessionRes.ok) {
-        throw new Error('Failed to create help session')
+        const errorData = await sessionRes.json().catch(() => ({ error: 'Failed to create help session' }))
+        throw new Error(errorData.error || 'Failed to create help session')
       }
 
       // Open DM with mentor using existing pattern
