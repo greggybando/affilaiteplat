@@ -136,6 +136,8 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showBanConfirm, setShowBanConfirm] = useState<{ userId: string; userName: string } | null>(null)
   const [banReason, setBanReason] = useState('')
+  const [showBanConfirm, setShowBanConfirm] = useState<{ userId: string; userName: string } | null>(null)
+  const [banReason, setBanReason] = useState('')
   const [isBoldActive, setIsBoldActive] = useState(false)
   const [emojiPickerPosition, setEmojiPickerPosition] = useState({ top: 0, left: 0 })
   const composerRef = useRef<HTMLDivElement>(null)
@@ -1400,6 +1402,30 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                   <Pin className="w-4 h-4" />
                                   {post.pinned ? 'Unpin' : 'Pin'}
                                 </button>
+                                {!isOwner(post) && (
+                                  <>
+                                    <div className="border-t border-[rgba(255,255,255,0.1)] my-1" />
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        e.preventDefault()
+                                        console.log('✅ Ban button clicked for user:', post.user.id)
+                                        setShowBanConfirm({ userId: post.user.id, userName: post.user.name })
+                                        setShowMenu(null)
+                                      }}
+                                      onMouseDown={(e) => {
+                                        e.stopPropagation()
+                                        e.preventDefault()
+                                      }}
+                                      className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.2)] flex items-center gap-2 transition-colors cursor-pointer"
+                                      style={{ pointerEvents: 'auto' }}
+                                    >
+                                      <ShieldX className="w-4 h-4" />
+                                      Ban User
+                                    </button>
+                                  </>
+                                )}
                               </>
                             )}
                             {(isOwner(post) || isAdmin) && (
@@ -2066,6 +2092,56 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ban Confirmation Modal */}
+      {showBanConfirm && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => {
+            setShowBanConfirm(null)
+            setBanReason('')
+          }}
+        >
+          <div
+            className="bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.2)] rounded-xl shadow-2xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              boxShadow: glowShadow('0 0 30px rgba(239,68,68,0.5), 0 0 60px rgba(239,68,68,0.3)', glowIntensity)
+            }}
+          >
+            <h3 className="text-lg font-semibold text-white mb-2">Ban User</h3>
+            <p className="text-[rgba(255,255,255,0.7)] mb-4">
+              Are you sure you want to ban <span className="font-semibold text-white">{showBanConfirm.userName}</span>? 
+              This will prevent them from accessing the platform.
+            </p>
+            <textarea
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+              placeholder="Reason for ban (optional)"
+              className="w-full px-4 py-3 mb-4 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] rounded-lg border-2 border-red-500/30 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 text-white placeholder-[rgba(255,255,255,0.5)] resize-none"
+              rows={3}
+              maxLength={500}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowBanConfirm(null)
+                  setBanReason('')
+                }}
+                className="flex-1 px-4 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] text-white rounded-lg font-medium transition-colors border border-[rgba(255,255,255,0.2)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleBanUser(showBanConfirm.userId, banReason)}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Ban User
+              </button>
             </div>
           </div>
         </div>
