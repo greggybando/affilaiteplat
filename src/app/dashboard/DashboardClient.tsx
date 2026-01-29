@@ -1022,13 +1022,9 @@ function CommunityTab({
             { id: 'community', icon: '💬', label: 'Community' },
             { id: 'classroom', icon: '📚', label: 'Classroom' },
             { id: 'mentors', icon: '🎓', label: 'Mentors' },
-            ...((affiliate as any).role === 'admin' || (affiliate as any).role === 'moderator' 
-              ? [{ id: 'admin', icon: '⚙️', label: 'Admin', href: '/community/admin' }]
-              : []
-            ),
           ].map(item => {
             const hasHref = !!(item as any).href
-            const isActive = activeTab === (item.id as any) || item.id === 'mentors' || item.id === 'admin'
+            const isActive = activeTab === (item.id as any) || item.id === 'mentors'
             return (
               <button
                 key={item.id}
@@ -1121,35 +1117,6 @@ function CommunityTab({
                         stroke="rgba(34,211,238,0.8)" 
                         strokeWidth="1.5" 
                         strokeLinecap="round"
-                      />
-                    </svg>
-                  )}
-                  {item.id === 'admin' && (
-                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
-                      <circle cx="12" cy="12" r="3" 
-                        stroke="currentColor" 
-                        strokeWidth="1.5" 
-                        fill="rgba(60,60,60,0.8)"
-                        style={{
-                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(inset 0 1px 1px rgba(255,255,255,0.1))',
-                          stroke: 'rgba(34,211,238,0.9)'
-                        }}
-                      />
-                      <path d="M12 1v6m0 6v6M1 12h6m6 0h6" 
-                        stroke="rgba(34,211,238,0.9)" 
-                        strokeWidth="1.5" 
-                        strokeLinecap="round"
-                        style={{
-                          filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))'
-                        }}
-                      />
-                      <path d="M19.07 4.93l-4.24 4.24m0 5.66l4.24 4.24M4.93 19.07l4.24-4.24m0-5.66L4.93 4.93" 
-                        stroke="rgba(34,211,238,0.9)" 
-                        strokeWidth="1.5" 
-                        strokeLinecap="round"
-                        style={{
-                          filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.6))'
-                        }}
                       />
                     </svg>
                   )}

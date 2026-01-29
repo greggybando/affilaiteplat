@@ -413,17 +413,13 @@ export default function ClassroomTab({
 
         <div className="p-3 flex-1 overflow-y-auto">
           <div className="text-[10px] text-[rgba(255,255,255,0.6)] mb-3 font-semibold uppercase tracking-wider px-2">Navigation</div>
-          {[
-            { id: 'community', icon: '💬', label: 'Community' },
-            { id: 'classroom', icon: '📚', label: 'Classroom' },
-            { id: 'mentors', icon: '🎓', label: 'Mentors' },
-            ...(isAdmin 
-              ? [{ id: 'admin', icon: '⚙️', label: 'Admin', href: '/community/admin' }]
-              : []
-            ),
-          ].map(item => {
-            const hasHref = !!(item as any).href
-            const isActive = activeTab === (item.id as any) || item.id === 'mentors' || item.id === 'admin'
+            {[
+              { id: 'community', icon: '💬', label: 'Community' },
+              { id: 'classroom', icon: '📚', label: 'Classroom' },
+              { id: 'mentors', icon: '🎓', label: 'Mentors' },
+            ].map(item => {
+              const hasHref = !!(item as any).href
+              const isActive = activeTab === (item.id as any) || item.id === 'mentors'
             return (
               <button
                 key={item.id}
