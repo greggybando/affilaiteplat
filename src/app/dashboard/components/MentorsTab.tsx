@@ -878,7 +878,7 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
                                     setEditingRaffle(false)
                                   }
                                 }}
-                                className="px-2 py-1 bg-[rgba(255,255,255,0.1)] border border-yellow-500/50 rounded text-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-yellow-500 w-32"
+                                className="px-2 py-1 bg-[rgba(255,255,255,0.1)] border border-cyan-500/50 rounded text-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-cyan-500 w-32"
                                 autoFocus
                               />
                               <button
@@ -903,8 +903,8 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
                             </div>
                           ) : (
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-yellow-400 font-semibold">🎟️ Monthly Raffle Reward:</span>
-                              <span className="text-xs text-yellow-300 font-bold">{raffleText}</span>
+                              <span className="text-xs text-cyan-400 font-semibold">🎟️ Monthly Raffle Reward:</span>
+                              <span className="text-xs text-cyan-300 font-bold">{raffleText}</span>
                               {isAdmin && (
                                 <button
                                   onClick={() => {
@@ -914,13 +914,13 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
                                   className="p-0.5 hover:bg-[rgba(255,255,255,0.1)] rounded transition-colors"
                                   title="Edit raffle text"
                                 >
-                                  <Edit2 className="w-3 h-3 text-yellow-400" />
+                                  <Edit2 className="w-3 h-3 text-cyan-400" />
                                 </button>
                               )}
                             </div>
                           )}
                           <div className="text-[10px] text-[rgba(255,255,255,0.6)] mt-0.5">
-                            <span className="text-yellow-400">{leaderboard.user_raffle_entries}</span> entries • <span className="text-yellow-400">{leaderboard.days_left_in_month}</span> days left
+                            <span className="text-cyan-400">{leaderboard.user_raffle_entries}</span> entries • <span className="text-cyan-400">{leaderboard.days_left_in_month}</span> days left
                           </div>
                         </div>
                       </div>
