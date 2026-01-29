@@ -858,7 +858,72 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
                         boxShadow: glowShadow('0 0 30px rgba(6,182,212,0.3), 0 0 60px rgba(6,182,212,0.2)', glowIntensity)
                       }}
                     >
-                      <h2 className="text-lg font-semibold text-cyan-400 mb-4">Leaderboard</h2>
+                      <div className="flex items-start justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-cyan-400">Leaderboard</h2>
+                        {/* Monthly Raffle Reward - Compact in top right */}
+                        <div className="text-right">
+                          {editingRaffle && isAdmin ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                value={tempRaffleText}
+                                onChange={(e) => setTempRaffleText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    setRaffleText(tempRaffleText)
+                                    localStorage.setItem('mentor_raffle_text', tempRaffleText)
+                                    setEditingRaffle(false)
+                                  } else if (e.key === 'Escape') {
+                                    setTempRaffleText(raffleText)
+                                    setEditingRaffle(false)
+                                  }
+                                }}
+                                className="px-2 py-1 bg-[rgba(255,255,255,0.1)] border border-yellow-500/50 rounded text-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-yellow-500 w-32"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => {
+                                  setRaffleText(tempRaffleText)
+                                  localStorage.setItem('mentor_raffle_text', tempRaffleText)
+                                  setEditingRaffle(false)
+                                }}
+                                className="p-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 rounded transition-colors"
+                              >
+                                <Check className="w-3 h-3 text-green-400" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setTempRaffleText(raffleText)
+                                  setEditingRaffle(false)
+                                }}
+                                className="p-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded transition-colors"
+                              >
+                                <X className="w-3 h-3 text-red-400" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-yellow-400 font-semibold">🎟️ Monthly Raffle Reward:</span>
+                              <span className="text-xs text-yellow-300 font-bold">{raffleText}</span>
+                              {isAdmin && (
+                                <button
+                                  onClick={() => {
+                                    setTempRaffleText(raffleText)
+                                    setEditingRaffle(true)
+                                  }}
+                                  className="p-0.5 hover:bg-[rgba(255,255,255,0.1)] rounded transition-colors"
+                                  title="Edit raffle text"
+                                >
+                                  <Edit2 className="w-3 h-3 text-yellow-400" />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          <div className="text-[10px] text-[rgba(255,255,255,0.6)] mt-0.5">
+                            <span className="text-yellow-400">{leaderboard.user_raffle_entries}</span> entries • <span className="text-yellow-400">{leaderboard.days_left_in_month}</span> days left
+                          </div>
+                        </div>
+                      </div>
                       
                       {/* Tabs */}
                       <div className="flex gap-2 mb-4">
@@ -931,82 +996,6 @@ export default function MentorsTab({ affiliate, activeTab, setActiveTab, glowInt
                     </div>
                   )}
 
-                  {/* Section 7 - MONTHLY RAFFLE (at bottom) */}
-                  {leaderboard && (
-                    <div 
-                      className="bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] border-2 border-yellow-500 rounded-2xl p-6 transition-all hover:shadow-lg"
-                      style={{
-                        backdropFilter: 'blur(10px)',
-                        boxShadow: glowShadow('0 0 30px rgba(234,179,8,0.3), 0 0 60px rgba(234,179,8,0.2)', glowIntensity)
-                      }}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        {editingRaffle && isAdmin ? (
-                          <div className="flex-1 flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={tempRaffleText}
-                              onChange={(e) => setTempRaffleText(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  setRaffleText(tempRaffleText)
-                                  localStorage.setItem('mentor_raffle_text', tempRaffleText)
-                                  setEditingRaffle(false)
-                                } else if (e.key === 'Escape') {
-                                  setTempRaffleText(raffleText)
-                                  setEditingRaffle(false)
-                                }
-                              }}
-                              className="flex-1 px-3 py-1 bg-[rgba(255,255,255,0.1)] border border-yellow-500/50 rounded-lg text-white text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => {
-                                setRaffleText(tempRaffleText)
-                                localStorage.setItem('mentor_raffle_text', tempRaffleText)
-                                setEditingRaffle(false)
-                              }}
-                              className="p-1.5 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 rounded-lg transition-colors"
-                            >
-                              <Check className="w-4 h-4 text-green-400" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setTempRaffleText(raffleText)
-                                setEditingRaffle(false)
-                              }}
-                              className="p-1.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg transition-colors"
-                            >
-                              <X className="w-4 h-4 text-red-400" />
-                            </button>
-                          </div>
-                        ) : (
-                          <h2 className="text-lg font-semibold text-yellow-400 flex items-center gap-2">
-                            🎟️ Monthly Raffle Reward: {raffleText}
-                            {isAdmin && (
-                              <button
-                                onClick={() => {
-                                  setTempRaffleText(raffleText)
-                                  setEditingRaffle(true)
-                                }}
-                                className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded transition-colors"
-                                title="Edit raffle text"
-                              >
-                                <Edit2 className="w-4 h-4 text-yellow-400" />
-                              </button>
-                            )}
-                          </h2>
-                        )}
-                      </div>
-                      <div className="text-[rgba(255,255,255,0.8)] mb-3">
-                        <div>Your entries: <span className="font-semibold text-yellow-400">{leaderboard.user_raffle_entries}</span></div>
-                        <div>Days left: <span className="font-semibold text-yellow-400">{leaderboard.days_left_in_month}</span></div>
-                      </div>
-                      <p className="text-xs text-[rgba(255,255,255,0.6)] mt-3 pt-3 border-t border-[rgba(255,255,255,0.1)]">
-                        Mentors who win the day (most helpful in 24 hours window via points) are added into the raffle & chosen from random generator. More daily wins, more chances to win the raffle.
-                      </p>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
