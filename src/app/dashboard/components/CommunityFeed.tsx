@@ -711,6 +711,34 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
     }
   }
 
+  const handleBanUser = async (userId: string, reason: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}/ban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ban', reason })
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to ban user')
+      }
+
+      const data = await res.json()
+      
+      // Refresh posts to remove banned user's content
+      await fetchPosts()
+      
+      setShowBanConfirm(null)
+      setBanReason('')
+      setShowMenu(null)
+      alert(`User banned successfully: ${data.message}`)
+    } catch (error: any) {
+      console.error('Error banning user:', error)
+      alert(error.message || 'Failed to ban user. Please try again.')
+    }
+  }
+
   const handleReport = async (postId: string) => {
     if (!reportReason) {
       alert('Please select a reason')
