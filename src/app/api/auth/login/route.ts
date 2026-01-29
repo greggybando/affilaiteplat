@@ -32,6 +32,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
+    // Check if user is banned
+    if ((affiliate as any).banned === true) {
+      return NextResponse.json({ 
+        error: 'Your account has been banned. Please contact support if you believe this is an error.' 
+      }, { status: 403 })
+    }
+
     const token = jwt.sign(
       { affiliateId: affiliate.id, email: affiliate.email },
       process.env.JWT_SECRET!,

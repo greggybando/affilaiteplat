@@ -96,11 +96,16 @@ export async function getCurrentAffiliate() {
     // DB lookup (only on cache miss)
     const { data: affiliate, error } = await supabaseAdmin
       .from('affiliates')
-      .select('id, email, name, avatar_name, avatar_url, role, onboarding_completed, status, is_admin')
+      .select('id, email, name, avatar_name, avatar_url, role, onboarding_completed, status, is_admin, banned')
       .eq('id', payload.affiliateId)
       .single()
 
     if (error || !affiliate) {
+      return null
+    }
+
+    // Check if user is banned
+    if ((affiliate as any).banned === true) {
       return null
     }
 
