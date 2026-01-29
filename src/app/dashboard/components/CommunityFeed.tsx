@@ -1300,7 +1300,6 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           type="button"
                           data-menu-button
                           onClick={(e) => {
-                            alert('Menu button clicked!') // TEMP DEBUG
                             console.log('🔵 Menu button clicked for post:', post.id, 'Current showMenu:', showMenu)
                             e.stopPropagation()
                             e.preventDefault()
@@ -1323,9 +1322,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           style={{ 
                             pointerEvents: 'auto', 
                             position: 'relative', 
-                            zIndex: 101,
-                            backgroundColor: 'rgba(255,0,0,0.2)', // TEMP DEBUG - make button visible
-                            border: '2px solid red' // TEMP DEBUG
+                            zIndex: 101
                           }}
                         >
                           <MoreVertical className="w-4 h-4 text-white" />
@@ -1453,33 +1450,43 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                   </div>
 
                   {editingPost === post.id ? (
-                    <div className="space-y-3 mb-4">
+                    <div className="space-y-3 mb-4 p-4 bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-xl border border-[rgba(255,255,255,0.1)]">
                       <textarea
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
-                        className="w-full px-4 py-2 bg-slate-50 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-slate-900 resize-none"
+                        className="w-full px-4 py-3 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] rounded-lg border-2 border-cyan-500/30 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white placeholder-[rgba(255,255,255,0.5)] resize-none transition-all"
+                        style={{
+                          boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.2), 0 0 30px rgba(6,182,212,0.1)', glowIntensity)
+                        }}
                         rows={4}
                         maxLength={2000}
+                        placeholder="Edit your post..."
                       />
                       <select
                         value={editCategory}
                         onChange={(e) => setEditCategory(e.target.value)}
-                        className="px-3 py-1.5 bg-slate-50 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-slate-900 text-sm"
+                        className="w-full px-4 py-2.5 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] rounded-lg border-2 border-cyan-500/30 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white text-sm transition-all"
+                        style={{
+                          boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.2), 0 0 30px rgba(6,182,212,0.1)', glowIntensity)
+                        }}
                       >
                         {categories.filter(c => c !== 'All').map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
+                          <option key={cat} value={cat} className="bg-[#1a1a2e] text-white">{cat}</option>
                         ))}
                       </select>
-                      <div className="flex gap-2">
+                      <div className="flex gap-3 pt-2">
                         <button
                           onClick={() => handleSaveEdit(post.id)}
-                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+                          className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-lg font-medium transition-all"
+                          style={{
+                            boxShadow: glowShadow('0 0 20px rgba(6,182,212,0.5), 0 0 40px rgba(6,182,212,0.3)', glowIntensity)
+                          }}
                         >
                           Save
                         </button>
                         <button
                           onClick={() => setEditingPost(null)}
-                          className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
+                          className="px-6 py-2.5 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] border-2 border-[rgba(255,255,255,0.2)] text-white rounded-lg font-medium transition-all"
                         >
                           Cancel
                         </button>
