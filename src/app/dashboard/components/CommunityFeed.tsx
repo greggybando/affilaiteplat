@@ -620,18 +620,12 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
     setEditContent(post.content)
     setEditImages([...post.imageUrls])
     setShowMenu(null)
-    // Focus the contentEditable div after a brief delay to ensure it's rendered
+    // Focus the textarea after a brief delay to ensure it's rendered
     setTimeout(() => {
-      const editableDiv = document.querySelector(`[contenteditable="true"]`) as HTMLElement
-      if (editableDiv) {
-        editableDiv.focus()
-        // Move cursor to end
-        const range = document.createRange()
-        range.selectNodeContents(editableDiv)
-        range.collapse(false)
-        const selection = window.getSelection()
-        selection?.removeAllRanges()
-        selection?.addRange(range)
+      const textarea = document.querySelector(`textarea[value="${post.content}"]`) as HTMLTextAreaElement
+      if (textarea) {
+        textarea.focus()
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length)
       }
     }, 50)
   }
@@ -1464,22 +1458,13 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                   <div className="text-white mb-4 whitespace-pre-wrap">
                     {editingPost === post.id ? (
                       <div className="space-y-3" data-editor-container onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-                        <div
-                          contentEditable
-                          suppressContentEditableWarning
-                          data-editor-container
-                          onClick={(e) => e.stopPropagation()}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onInput={(e) => {
-                            const text = e.currentTarget.textContent || ''
+                        <textarea
+                          value={editContent}
+                          onChange={(e) => {
+                            const text = e.target.value
                             if (text.length <= 2000) {
                               setEditContent(text)
-                            } else {
-                              e.currentTarget.textContent = editContent
                             }
-                          }}
-                          onBlur={(e) => {
-                            setEditContent(e.currentTarget.textContent || '')
                           }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -1492,14 +1477,16 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                               setEditContent(post.content)
                             }
                           }}
-                          className="w-full px-4 py-3 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] rounded-lg border-2 border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white min-h-[80px] transition-all"
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          className="w-full px-4 py-3 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] rounded-lg border-2 border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white min-h-[80px] transition-all resize-none"
                           style={{
                             boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.3), 0 0 30px rgba(6,182,212,0.2)', glowIntensity),
                             pointerEvents: 'auto'
                           }}
-                        >
-                          {editContent}
-                        </div>
+                          rows={4}
+                          maxLength={2000}
+                        />
                         <div className="flex gap-3" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
                           <button
                             type="button"
