@@ -618,9 +618,22 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const handleEditPost = (post: Post) => {
     setEditingPost(post.id)
     setEditContent(post.content)
-    setEditCategory(post.category)
     setEditImages([...post.imageUrls])
     setShowMenu(null)
+    // Focus the contentEditable div after a brief delay to ensure it's rendered
+    setTimeout(() => {
+      const editableDiv = document.querySelector(`[contenteditable="true"]`) as HTMLElement
+      if (editableDiv) {
+        editableDiv.focus()
+        // Move cursor to end
+        const range = document.createRange()
+        range.selectNodeContents(editableDiv)
+        range.collapse(false)
+        const selection = window.getSelection()
+        selection?.removeAllRanges()
+        selection?.addRange(range)
+      }
+    }, 50)
   }
 
   const handleSaveEdit = async (postId: string) => {
@@ -630,8 +643,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'edit',
-          content: editContent,
-          category: getCategoryValue(editCategory),
+          content: editContent.trim(),
           imageUrls: editImages
         })
       })
@@ -1466,12 +1478,24 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           onBlur={(e) => {
                             setEditContent(e.currentTarget.textContent || '')
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                              e.preventDefault()
+                              handleSaveEdit(post.id)
+                            }
+                            if (e.key === 'Escape') {
+                              e.preventDefault()
+                              setEditingPost(null)
+                              setEditContent(post.content)
+                            }
+                          }}
                           className="w-full px-4 py-3 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] rounded-lg border-2 border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white min-h-[80px] transition-all"
                           style={{
                             boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.3), 0 0 30px rgba(6,182,212,0.2)', glowIntensity)
                           }}
-                          dangerouslySetInnerHTML={{ __html: editContent }}
-                        />
+                        >
+                          {editContent}
+                        </div>
                         <div className="flex gap-3">
                           <button
                             onClick={() => handleSaveEdit(post.id)}
