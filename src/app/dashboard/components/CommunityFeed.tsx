@@ -295,13 +295,17 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   // Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (showMenu && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement
+      // Check if click is outside any menu container
+      if (showMenu && !target.closest('[data-menu-container]')) {
+        console.log('Click outside menu detected, closing menu')
         setShowMenu(null)
       }
     }
     if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      // Use capture phase to catch clicks before they bubble
+      document.addEventListener('mousedown', handleClickOutside, true)
+      return () => document.removeEventListener('mousedown', handleClickOutside, true)
     }
   }, [showMenu])
 
@@ -1287,51 +1291,59 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                       {post.pinned && (
                         <Pin className="w-4 h-4 text-yellow-400 fill-yellow-400 flex-shrink-0" />
                       )}
-                      <div className="relative" ref={menuRef} data-menu-container onClick={(e) => e.stopPropagation()}>
+                      <div className="relative" data-menu-container>
                         <button
+                          type="button"
                           data-menu-button
                           onClick={(e) => {
+                            console.log('Menu button clicked for post:', post.id, 'Current showMenu:', showMenu)
                             e.stopPropagation()
                             e.preventDefault()
-                            setShowMenu(showMenu === post.id ? null : post.id)
+                            const newMenuState = showMenu === post.id ? null : post.id
+                            console.log('Setting showMenu to:', newMenuState)
+                            setShowMenu(newMenuState)
                           }}
                           onMouseDown={(e) => {
+                            console.log('Menu button mousedown for post:', post.id)
                             e.stopPropagation()
                             e.preventDefault()
                           }}
-                          className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors"
+                          className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors z-10 relative"
+                          style={{ pointerEvents: 'auto' }}
                         >
                           <MoreVertical className="w-4 h-4 text-white" />
                         </button>
                         {showMenu === post.id && (
                           <div 
                             data-menu-container
-                            className="absolute right-0 top-full mt-1 w-48 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden z-[100]"
+                            className="absolute right-0 top-full mt-1 w-48 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden z-[1000]"
                             onClick={(e) => {
+                              console.log('Menu container clicked')
                               e.stopPropagation()
-                              e.preventDefault()
                             }}
                             onMouseDown={(e) => {
+                              console.log('Menu container mousedown')
                               e.stopPropagation()
-                              e.preventDefault()
                             }}
-                            style={{ pointerEvents: 'auto' }}
+                            style={{ pointerEvents: 'auto', position: 'absolute' }}
                           >
                             {isOwner(post) && (
                               <>
                                 <button
                                   type="button"
                                   onClick={(e) => {
+                                    console.log('✅ Edit button clicked for post:', post.id)
                                     e.stopPropagation()
                                     e.preventDefault()
-                                    console.log('Edit button clicked for post:', post.id)
                                     handleEditPost(post)
                                   }}
                                   onMouseDown={(e) => {
+                                    console.log('Edit button mousedown')
                                     e.stopPropagation()
                                     e.preventDefault()
                                   }}
-                                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2 transition-colors"
+                                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2 transition-colors cursor-pointer"
+                                  style={{ pointerEvents: 'auto' }}
                                 >
                                   <Edit className="w-4 h-4" />
                                   Edit
@@ -1344,16 +1356,18 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                 <button
                                   type="button"
                                   onClick={(e) => {
+                                    console.log('✅ Pin button clicked for post:', post.id, 'pinned:', post.pinned)
                                     e.stopPropagation()
                                     e.preventDefault()
-                                    console.log('Pin button clicked for post:', post.id, 'pinned:', post.pinned)
                                     handleModeratePost(post.id, post.pinned ? 'unpin' : 'pin')
                                   }}
                                   onMouseDown={(e) => {
+                                    console.log('Pin button mousedown')
                                     e.stopPropagation()
                                     e.preventDefault()
                                   }}
-                                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2 transition-colors"
+                                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2 transition-colors cursor-pointer"
+                                  style={{ pointerEvents: 'auto' }}
                                 >
                                   <Pin className="w-4 h-4" />
                                   {post.pinned ? 'Unpin' : 'Pin'}
@@ -1366,17 +1380,19 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                 <button
                                   type="button"
                                   onClick={(e) => {
+                                    console.log('✅ Delete button clicked for post:', post.id)
                                     e.stopPropagation()
                                     e.preventDefault()
-                                    console.log('Delete button clicked for post:', post.id)
                                     setShowDeleteConfirm(post.id)
                                     setShowMenu(null)
                                   }}
                                   onMouseDown={(e) => {
+                                    console.log('Delete button mousedown')
                                     e.stopPropagation()
                                     e.preventDefault()
                                   }}
-                                  className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.2)] flex items-center gap-2 transition-colors"
+                                  className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.2)] flex items-center gap-2 transition-colors cursor-pointer"
+                                  style={{ pointerEvents: 'auto' }}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                   Delete
@@ -1389,17 +1405,19 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                 <button
                                   type="button"
                                   onClick={(e) => {
+                                    console.log('✅ Report button clicked for post:', post.id)
                                     e.stopPropagation()
                                     e.preventDefault()
-                                    console.log('Report button clicked for post:', post.id)
                                     setShowReportModal(post.id)
                                     setShowMenu(null)
                                   }}
                                   onMouseDown={(e) => {
+                                    console.log('Report button mousedown')
                                     e.stopPropagation()
                                     e.preventDefault()
                                   }}
-                                  className="w-full px-4 py-3 text-left text-sm text-amber-400 hover:bg-[rgba(251,191,36,0.2)] flex items-center gap-2 transition-colors"
+                                  className="w-full px-4 py-3 text-left text-sm text-amber-400 hover:bg-[rgba(251,191,36,0.2)] flex items-center gap-2 transition-colors cursor-pointer"
+                                  style={{ pointerEvents: 'auto' }}
                                 >
                                   <Flag className="w-4 h-4" />
                                   Report
