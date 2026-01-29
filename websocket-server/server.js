@@ -168,6 +168,18 @@ io.on('connection', (socket) => {
     }
     
     try {
+      // Check if user is muted
+      const { data: user } = await supabase
+        .from('affiliates')
+        .select('group_chat_muted')
+        .eq('id', socket.userId)
+        .single()
+      
+      if (user?.group_chat_muted) {
+        socket.emit('error', { message: 'You are muted and cannot send messages' })
+        return
+      }
+      
       // Save message to database
       const { data: newMessage, error } = await supabase
         .from('group_chat_messages')

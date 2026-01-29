@@ -96,7 +96,7 @@ export async function getCurrentAffiliate() {
     // DB lookup (only on cache miss)
     const { data: affiliate, error } = await supabaseAdmin
       .from('affiliates')
-      .select('id, email, name, avatar_name, avatar_url, role, onboarding_completed, status, is_admin, banned')
+      .select('id, email, name, avatar_name, avatar_url, role, onboarding_completed, status, is_admin, banned, group_chat_muted')
       .eq('id', payload.affiliateId)
       .single()
 

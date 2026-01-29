@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Send, Users, Plus, Bell, BellOff, Trash2, MoreVertical, Search, UserPlus, X, MessageCircle, LogOut, Settings, Zap, Wifi, WifiOff } from 'lucide-react'
+import { Send, Users, Plus, Bell, BellOff, Trash2, MoreVertical, Search, UserPlus, X, MessageCircle, LogOut, Settings, Zap, Wifi, WifiOff, VolumeX, Ban } from 'lucide-react'
 import { useSocket } from '@/hooks/useSocket'
 import Link from 'next/link'
 import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
+import { useAdmin } from '@/lib/hooks/useAdmin'
 
 // Helper to get main chat ID
 const getMainChatId = (chats: GroupChat[]): string | null => {
@@ -47,6 +48,7 @@ interface GroupChatTabProps {
     name: string
     avatar_name: string | null
     avatar_url: string | null
+    role?: string
   }
   setIsDMModalOpen?: (open: boolean) => void
   glowIntensity?: number
@@ -67,6 +69,9 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
   const [showMemberSearch, setShowMemberSearch] = useState(false)
   const [showChatMenu, setShowChatMenu] = useState<string | null>(null)
   const [showUserMenu, setShowUserMenu] = useState<string | null>(null)
+  const [showBanConfirm, setShowBanConfirm] = useState<{ userId: string; userName: string } | null>(null)
+  const [banReason, setBanReason] = useState('')
+  const isAdmin = useAdmin(affiliate)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -460,6 +465,56 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
     } catch (error) {
       console.error('Error deleting message:', error)
       alert('Failed to delete message')
+    }
+  }
+
+  const handleMuteUser = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}/mute`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mute' })
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to mute user')
+      }
+
+      const data = await res.json()
+      alert(`User muted successfully: ${data.message}`)
+      setShowUserMenu(null)
+    } catch (error: any) {
+      console.error('Error muting user:', error)
+      alert(error.message || 'Failed to mute user. Please try again.')
+    }
+  }
+
+  const handleBanUser = async (userId: string, reason: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}/ban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ban', reason })
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to ban user')
+      }
+
+      const data = await res.json()
+      
+      // Refresh messages to remove banned user's content
+      await fetchMessages()
+      
+      setShowBanConfirm(null)
+      setBanReason('')
+      setShowUserMenu(null)
+      alert(`User banned successfully: ${data.message}`)
+    } catch (error: any) {
+      console.error('Error banning user:', error)
+      alert(error.message || 'Failed to ban user. Please try again.')
     }
   }
 
@@ -1487,14 +1542,14 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                                     onClick={(e) => {
                                       e.preventDefault()
                                       e.stopPropagation()
-                                      setShowUserMenu(showUserMenu === msg.user_id ? null : msg.user_id)
+                                      setShowUserMenu(showUserMenu === msg.id ? null : msg.id)
                                     }}
                                     className="p-0.5 hover:bg-[rgba(255,255,255,0.1)] rounded transition-colors opacity-0 group-hover:opacity-100"
                                     title={`Options for ${msg.user_name}`}
                                   >
                                     <MoreVertical className="w-3 h-3 text-cyan-400" />
                                   </button>
-                                  {showUserMenu === msg.user_id && (
+                                  {showUserMenu === msg.id && (
                                     <div 
                                       className="absolute left-0 top-5 z-50 rounded-lg shadow-lg min-w-[140px]"
                                       style={{
@@ -1531,6 +1586,47 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                                         <MessageCircle className="w-4 h-4" />
                                         Send DM
                                       </button>
+                                      {isAdmin && (
+                                        <>
+                                          <button
+                                            onClick={(e) => {
+                                              e.preventDefault()
+                                              e.stopPropagation()
+                                              handleMuteUser(msg.user_id)
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 transition-colors"
+                                            style={{ color: 'rgba(255,255,255,0.9)' }}
+                                            onMouseEnter={(e) => {
+                                              e.currentTarget.style.background = 'rgba(253,224,71,0.1)'
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.currentTarget.style.background = 'transparent'
+                                            }}
+                                          >
+                                            <VolumeX className="w-4 h-4" />
+                                            Mute User
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.preventDefault()
+                                              e.stopPropagation()
+                                              setShowBanConfirm({ userId: msg.user_id, userName: msg.user_name })
+                                              setShowUserMenu(null)
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 transition-colors"
+                                            style={{ color: 'rgba(255,255,255,0.9)' }}
+                                            onMouseEnter={(e) => {
+                                              e.currentTarget.style.background = 'rgba(239,68,68,0.1)'
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.currentTarget.style.background = 'transparent'
+                                            }}
+                                          >
+                                            <Ban className="w-4 h-4" />
+                                            Ban User
+                                          </button>
+                                        </>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -1669,6 +1765,57 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
           )}
         </div>
       </div>
+
+      {/* Ban Confirmation Modal */}
+      {showBanConfirm && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => {
+            setShowBanConfirm(null)
+            setBanReason('')
+          }}
+        >
+          <div
+            className="bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.2)] rounded-xl shadow-2xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              boxShadow: '0 0 30px rgba(239,68,68,0.5), 0 0 60px rgba(239,68,68,0.3)'
+            }}
+          >
+            <h3 className="text-lg font-semibold text-white mb-2">Ban User?</h3>
+            <p className="text-[rgba(255,255,255,0.7)] mb-4">
+              Are you sure you want to ban <strong>{showBanConfirm.userName}</strong>? This will remove them from the platform.
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm text-[rgba(255,255,255,0.8)] mb-2">Ban Reason (optional)</label>
+              <input
+                type="text"
+                value={banReason}
+                onChange={(e) => setBanReason(e.target.value)}
+                placeholder="e.g., Spam, harassment, etc."
+                className="w-full px-4 py-2 bg-[rgba(255,255,255,0.1)] border border-[rgba(255,255,255,0.2)] rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowBanConfirm(null)
+                  setBanReason('')
+                }}
+                className="flex-1 px-4 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] text-white rounded-lg font-medium transition-colors border border-[rgba(255,255,255,0.2)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleBanUser(showBanConfirm.userId, banReason)}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Ban User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

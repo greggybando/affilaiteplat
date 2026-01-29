@@ -95,6 +95,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message too long (max 1000 characters)' }, { status: 400 })
     }
 
+    // Check if user is muted
+    if ((affiliate as any).group_chat_muted) {
+      return NextResponse.json({ error: 'You are muted and cannot send messages' }, { status: 403 })
+    }
+
     // Check if user is a participant in this specific chat
     const { data: chatParticipant } = await supabaseAdmin
       .from('group_chat_participants')
