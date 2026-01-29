@@ -615,6 +615,8 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const isOwner = (post: Post) => post.user.id === currentUser.id
   const isAdmin = currentUser.role === 'admin' || currentUser.role === 'moderator'
 
+  const editTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+
   const handleEditPost = (post: Post) => {
     setEditingPost(post.id)
     setEditContent(post.content)
@@ -622,10 +624,9 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
     setShowMenu(null)
     // Focus the textarea after a brief delay to ensure it's rendered
     setTimeout(() => {
-      const textarea = document.querySelector(`textarea[value="${post.content}"]`) as HTMLTextAreaElement
-      if (textarea) {
-        textarea.focus()
-        textarea.setSelectionRange(textarea.value.length, textarea.value.length)
+      if (editTextareaRef.current) {
+        editTextareaRef.current.focus()
+        editTextareaRef.current.setSelectionRange(editTextareaRef.current.value.length, editTextareaRef.current.value.length)
       }
     }, 50)
   }
@@ -1459,6 +1460,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                     {editingPost === post.id ? (
                       <div className="space-y-3" data-editor-container onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
                         <textarea
+                          ref={editingPost === post.id ? editTextareaRef : null}
                           value={editContent}
                           onChange={(e) => {
                             const text = e.target.value
