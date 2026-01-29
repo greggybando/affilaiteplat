@@ -1148,10 +1148,14 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                   key={post.id}
                   onClick={(e) => {
                     // Don't open post if clicking on menu or menu button
-                    if ((e.target as HTMLElement).closest('[data-menu-container]') || 
-                        (e.target as HTMLElement).closest('button[data-menu-button]')) {
+                    const target = e.target as HTMLElement
+                    if (target.closest('[data-menu-container]') || 
+                        target.closest('button[data-menu-button]') ||
+                        target.closest('[data-menu-dropdown]')) {
+                      console.log('Post card click blocked by menu element')
                       return
                     }
+                    console.log('Post card clicked, opening post:', post.id)
                     setSelectedPost(post)
                   }}
                   className="rounded-2xl p-6 cursor-pointer hover:-translate-y-0.5 transition-all duration-150 w-full relative"
@@ -1291,41 +1295,48 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                       {post.pinned && (
                         <Pin className="w-4 h-4 text-yellow-400 fill-yellow-400 flex-shrink-0" />
                       )}
-                      <div className="relative" data-menu-container>
+                      <div className="relative" data-menu-container style={{ pointerEvents: 'auto', zIndex: 100 }}>
                         <button
                           type="button"
                           data-menu-button
                           onClick={(e) => {
-                            console.log('Menu button clicked for post:', post.id, 'Current showMenu:', showMenu)
+                            console.log('🔵 Menu button clicked for post:', post.id, 'Current showMenu:', showMenu)
                             e.stopPropagation()
                             e.preventDefault()
+                            e.nativeEvent.stopImmediatePropagation()
                             const newMenuState = showMenu === post.id ? null : post.id
-                            console.log('Setting showMenu to:', newMenuState)
+                            console.log('🔵 Setting showMenu to:', newMenuState)
                             setShowMenu(newMenuState)
                           }}
                           onMouseDown={(e) => {
-                            console.log('Menu button mousedown for post:', post.id)
+                            console.log('🔵 Menu button mousedown for post:', post.id)
                             e.stopPropagation()
                             e.preventDefault()
+                            e.nativeEvent.stopImmediatePropagation()
                           }}
-                          className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors z-10 relative"
-                          style={{ pointerEvents: 'auto' }}
+                          className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors"
+                          style={{ pointerEvents: 'auto', position: 'relative', zIndex: 101 }}
                         >
                           <MoreVertical className="w-4 h-4 text-white" />
                         </button>
                         {showMenu === post.id && (
                           <div 
                             data-menu-container
-                            className="absolute right-0 top-full mt-1 w-48 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden z-[1000]"
+                            data-menu-dropdown
+                            className="absolute right-0 top-full mt-1 w-48 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden"
                             onClick={(e) => {
-                              console.log('Menu container clicked')
+                              console.log('🔵 Menu dropdown clicked')
                               e.stopPropagation()
+                              e.preventDefault()
+                              e.nativeEvent.stopImmediatePropagation()
                             }}
                             onMouseDown={(e) => {
-                              console.log('Menu container mousedown')
+                              console.log('🔵 Menu dropdown mousedown')
                               e.stopPropagation()
+                              e.preventDefault()
+                              e.nativeEvent.stopImmediatePropagation()
                             }}
-                            style={{ pointerEvents: 'auto', position: 'absolute' }}
+                            style={{ pointerEvents: 'auto', position: 'absolute', zIndex: 1000 }}
                           >
                             {isOwner(post) && (
                               <>
