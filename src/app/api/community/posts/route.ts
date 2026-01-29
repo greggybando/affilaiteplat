@@ -116,6 +116,7 @@ export async function GET(request: NextRequest) {
       imageUrls: post.image_urls || [],
       videoUrl: (post as any).video_url || null,
       pinned: post.pinned,
+      pinnedAt: post.pinned_at || null,
       createdAt: post.created_at,
       user: {
         id: post.user.id,
