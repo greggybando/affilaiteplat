@@ -1449,56 +1449,56 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                     </div>
                   </div>
 
-                  {editingPost === post.id ? (
-                    <div className="space-y-3 mb-4 p-4 bg-[rgba(255,255,255,0.05)] backdrop-blur-[10px] rounded-xl border border-[rgba(255,255,255,0.1)]">
-                      <textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        className="w-full px-4 py-3 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] rounded-lg border-2 border-cyan-500/30 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white placeholder-[rgba(255,255,255,0.5)] resize-none transition-all"
-                        style={{
-                          boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.2), 0 0 30px rgba(6,182,212,0.1)', glowIntensity)
-                        }}
-                        rows={4}
-                        maxLength={2000}
-                        placeholder="Edit your post..."
-                      />
-                      <select
-                        value={editCategory}
-                        onChange={(e) => setEditCategory(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] rounded-lg border-2 border-cyan-500/30 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white text-sm transition-all"
-                        style={{
-                          boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.2), 0 0 30px rgba(6,182,212,0.1)', glowIntensity)
-                        }}
-                      >
-                        {categories.filter(c => c !== 'All').map(cat => (
-                          <option key={cat} value={cat} className="bg-[#1a1a2e] text-white">{cat}</option>
-                        ))}
-                      </select>
-                      <div className="flex gap-3 pt-2">
-                        <button
-                          onClick={() => handleSaveEdit(post.id)}
-                          className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-lg font-medium transition-all"
-                          style={{
-                            boxShadow: glowShadow('0 0 20px rgba(6,182,212,0.5), 0 0 40px rgba(6,182,212,0.3)', glowIntensity)
+                  <div className="text-white mb-4 whitespace-pre-wrap">
+                    {editingPost === post.id ? (
+                      <div className="space-y-3">
+                        <div
+                          contentEditable
+                          suppressContentEditableWarning
+                          onInput={(e) => {
+                            const text = e.currentTarget.textContent || ''
+                            if (text.length <= 2000) {
+                              setEditContent(text)
+                            } else {
+                              e.currentTarget.textContent = editContent
+                            }
                           }}
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditingPost(null)}
-                          className="px-6 py-2.5 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] border-2 border-[rgba(255,255,255,0.2)] text-white rounded-lg font-medium transition-all"
-                        >
-                          Cancel
-                        </button>
+                          onBlur={(e) => {
+                            setEditContent(e.currentTarget.textContent || '')
+                          }}
+                          className="w-full px-4 py-3 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] rounded-lg border-2 border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white min-h-[80px] transition-all"
+                          style={{
+                            boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.3), 0 0 30px rgba(6,182,212,0.2)', glowIntensity)
+                          }}
+                          dangerouslySetInnerHTML={{ __html: editContent }}
+                        />
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => handleSaveEdit(post.id)}
+                            className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-lg font-medium transition-all text-sm"
+                            style={{
+                              boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.5), 0 0 30px rgba(6,182,212,0.3)', glowIntensity)
+                            }}
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingPost(null)
+                              setEditContent(post.content)
+                            }}
+                            className="px-4 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] border border-[rgba(255,255,255,0.2)] text-white rounded-lg font-medium transition-all text-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="text-white mb-4 line-clamp-3 whitespace-pre-wrap">
+                    ) : (
+                      <div className="line-clamp-3">
                         {renderContent(post.content)}
                       </div>
-                    </>
-                  )}
+                    )}
+                  </div>
 
                   {post.videoUrl && (
                     <div className="mb-4">
