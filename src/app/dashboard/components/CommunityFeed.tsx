@@ -136,8 +136,6 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showBanConfirm, setShowBanConfirm] = useState<{ userId: string; userName: string } | null>(null)
   const [banReason, setBanReason] = useState('')
-  const [showBanConfirm, setShowBanConfirm] = useState<{ userId: string; userName: string } | null>(null)
-  const [banReason, setBanReason] = useState('')
   const [isBoldActive, setIsBoldActive] = useState(false)
   const [emojiPickerPosition, setEmojiPickerPosition] = useState({ top: 0, left: 0 })
   const composerRef = useRef<HTMLDivElement>(null)
