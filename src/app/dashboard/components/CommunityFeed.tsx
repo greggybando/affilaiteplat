@@ -1208,17 +1208,6 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                     border: post.pinned ? '2px solid rgba(250,204,21,0.5)' : 'none'
                   }}
                 >
-                  {post.pinned && (
-                    <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-2 py-1 rounded-md" style={{
-                      background: 'rgba(0,0,0,0.3)',
-                      backdropFilter: 'blur(8px)'
-                    }}>
-                      <Pin className="w-4 h-4 text-yellow-400 fill-yellow-400" style={{
-                        filter: 'drop-shadow(0 0 4px rgba(250,204,21,0.8))'
-                      }} />
-                      <span className="text-xs text-yellow-300 font-semibold">Pinned</span>
-                    </div>
-                  )}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div onClick={(e) => e.stopPropagation()}>
@@ -1331,7 +1320,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                         {getCategoryDisplay(post.category)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-end gap-1">
                       <div className="relative" data-menu-container style={{ pointerEvents: 'auto', zIndex: 100 }}>
                         <button
                           type="button"
@@ -1507,6 +1496,9 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           </div>
                         )}
                       </div>
+                      {post.pinned && (
+                        <span className="text-[10px] text-yellow-300">Pinned</span>
+                      )}
                     </div>
                   </div>
 
