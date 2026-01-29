@@ -611,31 +611,23 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
         body: JSON.stringify({
           action: 'edit',
           content: editContent,
-          category: editCategory,
+          category: getCategoryValue(editCategory),
           imageUrls: editImages
         })
       })
 
-      if (!res.ok) throw new Error('Failed to update post')
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to update post')
+      }
 
-      const data = await res.json()
+      // Refresh posts to get correct ordering (pinned posts at top)
+      await fetchPosts()
       
-      setPosts(posts.map(p =>
-        p.id === postId
-          ? {
-              ...p,
-              content: editContent,
-              category: editCategory,
-              imageUrls: editImages,
-              editedAt: data.post.edited_at
-            }
-          : p
-      ))
-
       setEditingPost(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating post:', error)
-      alert('Failed to update post. Please try again.')
+      alert(error.message || 'Failed to update post. Please try again.')
     }
   }
 
@@ -647,14 +639,19 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
         body: JSON.stringify({ action: 'delete' })
       })
 
-      if (!res.ok) throw new Error('Failed to delete post')
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to delete post')
+      }
 
-      setPosts(posts.filter(p => p.id !== postId))
+      // Refresh posts to get correct ordering (pinned posts at top)
+      await fetchPosts()
+      
       setShowDeleteConfirm(null)
       setShowMenu(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting post:', error)
-      alert('Failed to delete post. Please try again.')
+      alert(error.message || 'Failed to delete post. Please try again.')
     }
   }
 
@@ -1144,8 +1141,11 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                   }}
                 >
                   {post.pinned && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <Pin className="w-5 h-5 text-yellow-200 fill-yellow-200" />
+                    <div className="absolute top-4 right-4 z-10 flex flex-col items-end">
+                      <Pin className="w-5 h-5 text-yellow-400 fill-yellow-400" style={{
+                        filter: 'drop-shadow(0 0 8px rgba(250,204,21,0.8)) drop-shadow(0 0 16px rgba(250,204,21,0.6))'
+                      }} />
+                      <span className="text-[10px] text-yellow-300 mt-0.5 font-medium">(pinned post)</span>
                     </div>
                   )}
                   <div className="flex items-start justify-between mb-3">
@@ -1276,7 +1276,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                         </button>
                         {showMenu === post.id && (
                           <div 
-                            className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50"
+                            className="absolute right-0 top-full mt-1 w-48 bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] rounded-xl border border-[rgba(255,255,255,0.2)] shadow-2xl overflow-hidden z-[100]"
                             onClick={(e) => e.stopPropagation()}
                             onMouseDown={(e) => e.stopPropagation()}
                             style={{ pointerEvents: 'auto' }}
@@ -1286,9 +1286,10 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
+                                    e.preventDefault()
                                     handleEditPost(post)
                                   }}
-                                  className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2 transition-colors"
                                 >
                                   <Edit className="w-4 h-4" />
                                   Edit
@@ -1297,7 +1298,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                             )}
                             {isAdmin && (
                               <>
-                                {isOwner(post) && <div className="border-t border-slate-200 my-1" />}
+                                {isOwner(post) && <div className="border-t border-[rgba(255,255,255,0.1)] my-1" />}
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -1305,7 +1306,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                                     e.preventDefault()
                                     handleModeratePost(post.id, post.pinned ? 'unpin' : 'pin')
                                   }}
-                                  className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] flex items-center gap-2 transition-colors"
                                 >
                                   <Pin className="w-4 h-4" />
                                   {post.pinned ? 'Unpin' : 'Pin'}
@@ -1314,30 +1315,32 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                             )}
                             {(isOwner(post) || isAdmin) && (
                               <>
-                                <div className="border-t border-slate-200 my-1" />
+                                <div className="border-t border-[rgba(255,255,255,0.1)] my-1" />
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
+                                    e.preventDefault()
                                     setShowDeleteConfirm(post.id)
                                     setShowMenu(null)
                                   }}
-                                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                  className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-[rgba(239,68,68,0.2)] flex items-center gap-2 transition-colors"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                   Delete
                                 </button>
                               </>
                             )}
-                            {!isOwner(post) && (
+                            {!isOwner(post) && !isAdmin && (
                               <>
-                                <div className="border-t border-slate-200 my-1" />
+                                <div className="border-t border-[rgba(255,255,255,0.1)] my-1" />
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
+                                    e.preventDefault()
                                     setShowReportModal(post.id)
                                     setShowMenu(null)
                                   }}
-                                  className="w-full px-4 py-2 text-left text-sm text-amber-600 hover:bg-amber-50 flex items-center gap-2"
+                                  className="w-full px-4 py-3 text-left text-sm text-amber-400 hover:bg-[rgba(251,191,36,0.2)] flex items-center gap-2 transition-colors"
                                 >
                                   <Flag className="w-4 h-4" />
                                   Report
