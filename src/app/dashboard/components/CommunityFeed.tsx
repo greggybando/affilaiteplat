@@ -1943,19 +1943,22 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={() => setShowDeleteConfirm(null)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6"
+            className="bg-[rgba(26,26,46,0.95)] backdrop-blur-[20px] border border-[rgba(255,255,255,0.2)] rounded-xl shadow-2xl max-w-md w-full p-6"
             onClick={(e) => e.stopPropagation()}
+            style={{
+              boxShadow: glowShadow('0 0 30px rgba(239,68,68,0.5), 0 0 60px rgba(239,68,68,0.3)', glowIntensity)
+            }}
           >
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Delete Post?</h3>
-            <p className="text-slate-600 mb-6">This action cannot be undone.</p>
+            <h3 className="text-lg font-semibold text-white mb-2">Delete Post?</h3>
+            <p className="text-[rgba(255,255,255,0.7)] mb-6">This action cannot be undone.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(null)}
-                className="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
+                className="flex-1 px-4 py-2 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] text-white rounded-lg font-medium transition-colors border border-[rgba(255,255,255,0.2)]"
               >
                 Cancel
               </button>
