@@ -1159,15 +1159,15 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                 <div
                   key={post.id}
                   onClick={(e) => {
-                    // Don't open post if clicking on menu or menu button
+                    // Don't open post if clicking on menu, menu button, or editor
                     const target = e.target as HTMLElement
                     if (target.closest('[data-menu-container]') || 
                         target.closest('button[data-menu-button]') ||
-                        target.closest('[data-menu-dropdown]')) {
-                      console.log('Post card click blocked by menu element')
+                        target.closest('[data-menu-dropdown]') ||
+                        target.closest('[contenteditable="true"]') ||
+                        target.closest('[data-editor-container]')) {
                       return
                     }
-                    console.log('Post card clicked, opening post:', post.id)
                     setSelectedPost(post)
                   }}
                   className="rounded-2xl p-6 cursor-pointer hover:-translate-y-0.5 transition-all duration-150 w-full relative"
@@ -1463,10 +1463,13 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
 
                   <div className="text-white mb-4 whitespace-pre-wrap">
                     {editingPost === post.id ? (
-                      <div className="space-y-3">
+                      <div className="space-y-3" data-editor-container onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
                         <div
                           contentEditable
                           suppressContentEditableWarning
+                          data-editor-container
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
                           onInput={(e) => {
                             const text = e.currentTarget.textContent || ''
                             if (text.length <= 2000) {
@@ -1491,14 +1494,19 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           }}
                           className="w-full px-4 py-3 bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px] rounded-lg border-2 border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white min-h-[80px] transition-all"
                           style={{
-                            boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.3), 0 0 30px rgba(6,182,212,0.2)', glowIntensity)
+                            boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.3), 0 0 30px rgba(6,182,212,0.2)', glowIntensity),
+                            pointerEvents: 'auto'
                           }}
                         >
                           {editContent}
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex gap-3" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
                           <button
-                            onClick={() => handleSaveEdit(post.id)}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleSaveEdit(post.id)
+                            }}
                             className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-lg font-medium transition-all text-sm"
                             style={{
                               boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.5), 0 0 30px rgba(6,182,212,0.3)', glowIntensity)
@@ -1507,7 +1515,9 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                             Save
                           </button>
                           <button
-                            onClick={() => {
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
                               setEditingPost(null)
                               setEditContent(post.content)
                             }}
