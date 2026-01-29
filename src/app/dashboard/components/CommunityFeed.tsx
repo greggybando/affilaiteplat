@@ -2012,7 +2012,7 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                 )}
 
                 {/* Reply Composer */}
-                <div className="sticky bottom-0 bg-[#0f0f1a] border-t border-[rgba(255,255,255,0.1)] p-4">
+                <div className="sticky bottom-0 bg-white/10 backdrop-blur-[10px] border-t border-white/20 p-4">
                   <div className="flex items-start gap-3">
                     {currentUser.avatar ? (
                       <img
@@ -2020,8 +2020,8 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                         alt={currentUser.name}
                         className="w-8 h-8 rounded-full shrink-0 border-2"
                         style={{
-                          borderColor: 'rgba(34,211,238,0.5)',
-                          boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
+                          borderColor: 'rgba(255,255,255,0.3)',
+                          boxShadow: glowShadow('0 0 10px rgba(255,255,255,0.3), 0 0 20px rgba(255,255,255,0.2)', glowIntensity)
                         }}
                       />
                     ) : (
@@ -2029,8 +2029,8 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                         className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 border-2"
                         style={{
                           background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                          borderColor: 'rgba(34,211,238,0.5)',
-                          boxShadow: glowShadow('0 0 15px rgba(34,211,238,0.7), 0 0 30px rgba(34,211,238,0.4)', glowIntensity)
+                          borderColor: 'rgba(255,255,255,0.3)',
+                          boxShadow: glowShadow('0 0 10px rgba(255,255,255,0.3), 0 0 20px rgba(255,255,255,0.2)', glowIntensity)
                         }}
                       >
                         {currentUser.name[0]?.toUpperCase()}
@@ -2045,10 +2045,14 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`
                         }}
                         placeholder="Write a reply..."
-                        className="flex-1 px-4 py-2 bg-[rgba(255,255,255,0.05)] rounded-lg border border-[rgba(255,255,255,0.1)] focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-white placeholder-[rgba(255,255,255,0.5)] resize-none"
+                        className="flex-1 px-4 py-2 bg-white/20 backdrop-blur-[10px] rounded-lg border-2 border-white/30 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-white/50 text-white placeholder-white/60 resize-none transition-all"
                         rows={1}
                         maxLength={500}
-                        style={{ minHeight: '40px', maxHeight: '100px' }}
+                        style={{
+                          minHeight: '40px',
+                          maxHeight: '100px',
+                          boxShadow: glowShadow('0 0 10px rgba(255,255,255,0.2), 0 0 20px rgba(255,255,255,0.1)', glowIntensity)
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault()
@@ -2059,9 +2063,9 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                       <button
                         onClick={() => handleReply(selectedPost.id)}
                         disabled={!replyContent.trim() || replying}
-                        className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:bg-[rgba(255,255,255,0.1)] disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+                        className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 disabled:from-white/20 disabled:to-white/10 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all"
                         style={!replying && replyContent.trim() ? {
-                          boxShadow: glowShadow('0 0 20px rgba(34,211,238,0.7), 0 0 40px rgba(34,211,238,0.5), 0 8px 30px rgba(34,211,238,0.4)', glowIntensity)
+                          boxShadow: glowShadow('0 0 15px rgba(6,182,212,0.5), 0 0 30px rgba(6,182,212,0.3)', glowIntensity)
                         } : {}}
                       >
                         {replying ? 'Posting...' : 'Reply'}
