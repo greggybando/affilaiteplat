@@ -1300,10 +1300,13 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                           type="button"
                           data-menu-button
                           onClick={(e) => {
+                            alert('Menu button clicked!') // TEMP DEBUG
                             console.log('🔵 Menu button clicked for post:', post.id, 'Current showMenu:', showMenu)
                             e.stopPropagation()
                             e.preventDefault()
-                            e.nativeEvent.stopImmediatePropagation()
+                            if (e.nativeEvent) {
+                              e.nativeEvent.stopImmediatePropagation()
+                            }
                             const newMenuState = showMenu === post.id ? null : post.id
                             console.log('🔵 Setting showMenu to:', newMenuState)
                             setShowMenu(newMenuState)
@@ -1312,10 +1315,18 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
                             console.log('🔵 Menu button mousedown for post:', post.id)
                             e.stopPropagation()
                             e.preventDefault()
-                            e.nativeEvent.stopImmediatePropagation()
+                            if (e.nativeEvent) {
+                              e.nativeEvent.stopImmediatePropagation()
+                            }
                           }}
                           className="p-1 hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors"
-                          style={{ pointerEvents: 'auto', position: 'relative', zIndex: 101 }}
+                          style={{ 
+                            pointerEvents: 'auto', 
+                            position: 'relative', 
+                            zIndex: 101,
+                            backgroundColor: 'rgba(255,0,0,0.2)', // TEMP DEBUG - make button visible
+                            border: '2px solid red' // TEMP DEBUG
+                          }}
                         >
                           <MoreVertical className="w-4 h-4 text-white" />
                         </button>
