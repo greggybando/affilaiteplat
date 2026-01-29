@@ -1621,29 +1621,35 @@ export function CommunityFeed({ currentUser, glowIntensity = 50, searchQuery = '
       {/* Expanded Post Modal */}
       {selectedPost && (
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedPost(null)}
         >
           <div
-            className="bg-[#0f0f1a] border border-[rgba(255,255,255,0.1)] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            className="rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
             style={{
-              boxShadow: glowShadow('0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.3), 0 20px 40px rgba(14,165,233,0.25)', glowIntensity)
+              background: selectedPost.pinned 
+                ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)'
+                : 'linear-gradient(135deg, #3b82f6 0%, #0ea5e9 50%, #22d3ee 100%)',
+              boxShadow: selectedPost.pinned
+                ? glowShadow('0 0 40px rgba(250,204,21,0.6), 0 0 80px rgba(250,204,21,0.4), 0 20px 40px rgba(217,119,6,0.3)', glowIntensity)
+                : glowShadow('0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.3), 0 20px 40px rgba(14,165,233,0.25)', glowIntensity),
+              border: selectedPost.pinned ? '2px solid rgba(250,204,21,0.5)' : 'none'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-[rgba(255,255,255,0.1)]">
+            <div className="flex items-center justify-between p-6 border-b border-white/20">
               <h2 className="text-xl font-bold text-white">Post</h2>
               <button
                 onClick={() => setSelectedPost(null)}
-                className="p-2 hover:bg-[rgba(255,255,255,0.1)] rounded-lg transition-colors"
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-[rgba(255,255,255,0.6)]" />
+                <X className="w-5 h-5 text-white" />
               </button>
             </div>
 
             {/* Post Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 bg-white/5">
               <div className="flex items-center gap-3 mb-4">
                 <ProfileHoverCard
                   userId={selectedPost.user.id}
