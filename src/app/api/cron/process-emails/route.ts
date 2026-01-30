@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
 
     for (const recipient of recipients as any[]) {
       try {
-        const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://affiliate-platform-three.vercel.app'}/unsubscribe?token=${unsubscribeTokens[recipient.user_id] || ''}`
+        const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://millionairelifedesign.com'}/unsubscribe?token=${unsubscribeTokens[recipient.user_id] || ''}`
 
         const html = generateEmailTemplate({
           title: broadcast.subject,

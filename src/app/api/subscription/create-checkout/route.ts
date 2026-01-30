@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}))
     const plan = body.plan || 'monthly'
 
-    const appUrl = 'https://affiliate-platform-three.vercel.app'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://millionairelifedesign.com'
     
     const priceId = (plan === 'yearly'
       ? process.env.STRIPE_YEARLY_PRICE_ID

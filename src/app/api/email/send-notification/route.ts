@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     let title = ''
     let emailBody = ''
     let buttonText = 'View conversation'
-    let buttonUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://affiliate-platform-three.vercel.app'}/dashboard?post=${postId}`
+    let buttonUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://millionairelifedesign.com'}/dashboard?post=${postId}`
 
     switch (type) {
       case 'reply':
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     // Get unsubscribe token
     const unsubscribeToken = preferences?.unsubscribe_token || ''
-    const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://affiliate-platform-three.vercel.app'}/unsubscribe?token=${unsubscribeToken}`
+    const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://millionairelifedesign.com'}/unsubscribe?token=${unsubscribeToken}`
 
     const html = generateEmailTemplate({
       title,

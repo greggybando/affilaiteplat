@@ -168,7 +168,7 @@ export async function GET(
 function redirectToLandingPage(link: any): NextResponse {
   const productSlug = link.landing_pages?.products?.slug || link.landing_page?.product?.slug || 'default'
   const pageSlug = link.landing_pages?.slug || link.landing_page?.slug || 'default'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://affiliate-platform-three.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://millionairelifedesign.com'
   return NextResponse.redirect(new URL(`/p/${productSlug}/${pageSlug}`, appUrl))
 }
 

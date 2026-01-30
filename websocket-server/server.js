@@ -4,7 +4,7 @@ const { Server } = require('socket.io')
 const { createClient } = require('@supabase/supabase-js')
 
 const PORT = process.env.PORT || 3001
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://affiliate-platform-three.vercel.app'
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://millionairelifedesign.com'
 
 // Initialize Supabase
 const supabase = createClient(

@@ -196,7 +196,7 @@ function LandingPageRow({
   const [isGenerating, setIsGenerating] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://affiliate-platform-three.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://millionairelifedesign.com'
   const fullUrl = link
     ? (link as any).url || `${appUrl}/go/${link.tracking_code}`
     : null
