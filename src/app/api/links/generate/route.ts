@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
     }
 
     const linkData = newLink as { id: string; tracking_code: string }
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://affiliate-platform-three.vercel.app'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://millionairelifedesign.com'
     const productSlug = (landingPage as any).product?.slug || 'adhd-course'
     const pageSlug = (landingPage as any).slug || 'main'
     const fullUrl = `${appUrl}/go/${linkData.tracking_code}`
