@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import { Course } from '@/lib/types/courses'
-import { Plus, MoreVertical, Trash2, FileText } from 'lucide-react'
+import { Plus, MoreVertical, Trash2, FileText, Pencil } from 'lucide-react'
+import { EditableTitle } from './admin/EditableTitle'
 
 interface CourseSelectorProps {
   courses: Course[]
@@ -75,6 +76,9 @@ export function CourseSelector({
   const [descriptionText, setDescriptionText] = useState<string>('')
   const [savingDescription, setSavingDescription] = useState(false)
   
+  // State for editing course names
+  const [editingCourseNameId, setEditingCourseNameId] = useState<string | null>(null)
+  
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -99,6 +103,35 @@ export function CourseSelector({
     setOpenMenuId(null)
     setEditingDescriptionCourseId(course.id)
     setDescriptionText(course.description || '')
+  }
+
+  const handleSaveCourseName = async (courseId: string, newTitle: string) => {
+    try {
+      const res = await fetch('/api/courses-v2', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          id: courseId, 
+          title: newTitle.trim() 
+        })
+      })
+      
+      if (!res.ok) {
+        const data = await res.json()
+        alert(`Failed to save course name: ${data.error || 'Unknown error'}`)
+        throw new Error('Failed to save')
+      }
+      
+      // Refresh courses
+      if (onCourseDeleted) {
+        await onCourseDeleted()
+      }
+      
+      setEditingCourseNameId(null)
+    } catch (error: any) {
+      alert(`Error: ${error.message || 'Failed to save course name'}`)
+      throw error
+    }
   }
 
   const handleSaveDescription = async () => {
@@ -473,6 +506,19 @@ export function CourseSelector({
                           >
                             <button
                               type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                e.preventDefault()
+                                setOpenMenuId(null)
+                                setEditingCourseNameId(course.id)
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] transition-colors flex items-center gap-2 border-b border-[rgba(255,255,255,0.1)]"
+                            >
+                              <Pencil size={14} />
+                              Edit Course Name
+                            </button>
+                            <button
+                              type="button"
                               onClick={(e) => handleEditDescription(course, e)}
                               className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-[rgba(255,255,255,0.1)] transition-colors flex items-center gap-2 border-b border-[rgba(255,255,255,0.1)]"
                             >
@@ -503,7 +549,28 @@ export function CourseSelector({
                 
                 {/* Content section - flex-grow to push footer down */}
                 <div className="flex-grow flex flex-col">
-                  <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">{course.title}</h3>
+                  {isAdmin ? (
+                    <EditableTitle
+                      value={course.title}
+                      isAdmin={isAdmin}
+                      onSave={async (newTitle) => {
+                        await handleSaveCourseName(course.id, newTitle)
+                        setEditingCourseNameId(null)
+                      }}
+                      forceEditing={editingCourseNameId === course.id}
+                      onEditingChange={(editing) => {
+                        if (!editing) {
+                          setEditingCourseNameId(null)
+                        }
+                      }}
+                      className="text-lg font-bold text-white mb-2 line-clamp-1"
+                      placeholder="Enter course name..."
+                    />
+                  ) : (
+                    <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">
+                      {course.title}
+                    </h3>
+                  )}
                   
                   {course.description && (
                     <p className="text-[rgba(255,255,255,0.6)] text-sm mb-4 line-clamp-2">

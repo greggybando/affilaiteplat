@@ -5,6 +5,7 @@ import { ArrowLeft, Plus, Trash2, Eye, GripVertical, ChevronDown, ChevronRight, 
 import { Course, Module, Lesson } from '@/lib/types/courses'
 import { CheckpointSubmission } from '@/components/CheckpointSubmission'
 import { CourseImporter } from './CourseImporter'
+import { EditableTitle } from './admin/EditableTitle'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -730,21 +731,31 @@ export function SkillBankCourseView({
     }
   }
 
-  const handleSaveCourseTitle = async () => {
-    if (courseTitle === courseData.title) return
+  const handleSaveCourseTitle = async (newTitle?: string) => {
+    const titleToSave = newTitle || courseTitle
+    if (titleToSave === courseData.title) return
     
     try {
       const res = await fetch('/api/courses-v2', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: course.id, title: courseTitle })
+        body: JSON.stringify({ id: course.id, title: titleToSave.trim() })
       })
       
-      if (!res.ok) return
-      setCourseData({ ...courseData, title: courseTitle })
+      if (!res.ok) {
+        const data = await res.json()
+        alert(`Failed to save course name: ${data.error || 'Unknown error'}`)
+        throw new Error('Failed to save')
+      }
+      
+      setCourseTitle(titleToSave)
+      setCourseData({ ...courseData, title: titleToSave })
       showSavedIndicator()
     } catch (error) {
       console.error('Error saving course title:', error)
+      // Reset to original title on error
+      setCourseTitle(courseData.title)
+      throw error
     }
   }
 
@@ -1351,13 +1362,70 @@ export function SkillBankCourseView({
           }}
         >
           <div 
-            className="p-3 shrink-0 border-b flex items-center justify-between gap-2" 
+            className="p-3 shrink-0 border-b flex flex-col gap-2" 
             style={{
               borderColor: 'rgba(34,211,238,0.2)',
               background: 'linear-gradient(135deg, rgba(40,40,45,0.9) 0%, rgba(35,35,40,0.95) 100%)'
             }}
           >
-            <h3 
+            <div className="flex items-center justify-between gap-2">
+              {isAdmin ? (
+                <EditableTitle
+                  value={courseTitle}
+                  isAdmin={isAdmin}
+                  onSave={async (newTitle) => {
+                    await handleSaveCourseTitle(newTitle)
+                  }}
+                  forceEditing={editingCourseTitle}
+                  onEditingChange={(editing) => {
+                    setEditingCourseTitle(editing)
+                  }}
+                  className="text-sm font-semibold text-white"
+                  placeholder="Enter course name..."
+                />
+              ) : (
+                <h3 className="text-sm font-semibold text-white">
+                  {courseTitle}
+                </h3>
+              )}
+              
+              {/* Globally Unlocked Toggle (Admin) */}
+              {isAdmin && (
+                <button
+                  onClick={async () => {
+                    const newValue = !courseData.globally_unlocked
+                    try {
+                      const res = await fetch(`/api/courses-v2/${course.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ globally_unlocked: newValue })
+                      })
+                      if (res.ok) {
+                        const data = await res.json()
+                        setCourseData({ ...courseData, globally_unlocked: newValue })
+                        // Reload unlock status to reflect change
+                        loadUnlockStatus()
+                      } else {
+                        alert('Failed to update course unlock status')
+                      }
+                    } catch (error) {
+                      console.error('Error updating globally_unlocked:', error)
+                      alert('Error updating course unlock status')
+                    }
+                  }}
+                  className="flex-shrink-0 p-1.5 hover:bg-slate-700/50 rounded transition-colors"
+                  title={courseData.globally_unlocked ? 'Course is globally unlocked (click to lock)' : 'Course uses sequential unlocking (click to unlock all)'}
+                >
+                  {courseData.globally_unlocked ? (
+                    <span className="text-xs text-emerald-400" title="Globally unlocked">🔓</span>
+                  ) : (
+                    <span className="text-xs text-slate-500" title="Sequential unlocking">🔒</span>
+                  )}
+                </button>
+              )}
+            </div>
+            
+            <h4 
               className="text-xs font-semibold uppercase tracking-widest"
               style={{
                 color: 'rgba(34,211,238,0.9)',
@@ -1365,7 +1433,7 @@ export function SkillBankCourseView({
               }}
             >
               {getCourseHeaderText()}
-            </h3>
+            </h4>
             
             {/* Globally Unlocked Toggle (Admin) */}
             {isAdmin && (

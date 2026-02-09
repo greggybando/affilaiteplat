@@ -10,6 +10,8 @@ interface EditableTitleProps {
   className?: string
   style?: React.CSSProperties
   placeholder?: string
+  forceEditing?: boolean
+  onEditingChange?: (editing: boolean) => void
 }
 
 export function EditableTitle({
@@ -18,12 +20,26 @@ export function EditableTitle({
   onSave,
   className = '',
   style = {},
-  placeholder = 'Enter title...'
+  placeholder = 'Enter title...',
+  forceEditing = false,
+  onEditingChange
 }: EditableTitleProps) {
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(forceEditing)
   const [editValue, setEditValue] = useState(value)
   const [isSaving, setIsSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  
+  useEffect(() => {
+    if (forceEditing !== isEditing) {
+      setIsEditing(forceEditing)
+    }
+  }, [forceEditing])
+  
+  useEffect(() => {
+    if (onEditingChange) {
+      onEditingChange(isEditing)
+    }
+  }, [isEditing, onEditingChange])
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
