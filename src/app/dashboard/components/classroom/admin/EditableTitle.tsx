@@ -105,7 +105,7 @@ export function EditableTitle({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-1 min-w-0">
       <input
         ref={inputRef}
         type="text"
@@ -113,26 +113,38 @@ export function EditableTitle({
         onChange={(e) => setEditValue(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={isSaving}
-        className={`bg-slate-800/80 border border-cyan-500/50 rounded px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${className}`}
+        className={`bg-slate-800/80 border border-cyan-500/50 rounded px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 flex-1 min-w-0 ${className}`}
         style={{
           ...style,
           minWidth: '200px',
+          width: '100%',
+          maxWidth: '100%',
           boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)'
         }}
         placeholder={placeholder}
       />
       <button
-        onClick={handleSave}
+        type="button"
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          handleSave()
+        }}
         disabled={isSaving}
-        className="p-1 rounded bg-emerald-600/80 hover:bg-emerald-600 transition-colors disabled:opacity-50"
+        className="p-1 rounded bg-emerald-600/80 hover:bg-emerald-600 transition-colors disabled:opacity-50 flex-shrink-0"
         title="Save"
       >
         <Check className="w-4 h-4 text-white" />
       </button>
       <button
-        onClick={handleCancel}
+        type="button"
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          handleCancel()
+        }}
         disabled={isSaving}
-        className="p-1 rounded bg-slate-700/80 hover:bg-slate-600 transition-colors disabled:opacity-50"
+        className="p-1 rounded bg-slate-700/80 hover:bg-slate-600 transition-colors disabled:opacity-50 flex-shrink-0"
         title="Cancel"
       >
         <X className="w-4 h-4 text-white" />

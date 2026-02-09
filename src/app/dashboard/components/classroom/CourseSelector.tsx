@@ -122,12 +122,20 @@ export function CourseSelector({
         throw new Error('Failed to save')
       }
       
-      // Refresh courses
-      if (onCourseDeleted) {
-        await onCourseDeleted()
-      }
-      
+      // Update is complete - close editor immediately
       setEditingCourseNameId(null)
+      
+      // Refresh courses list in background (non-blocking) to sync with server
+      // This updates the parent component's state without page reload
+      if (onCourseDeleted) {
+        // Use setTimeout to make it non-blocking and allow UI to update first
+        setTimeout(() => {
+          onCourseDeleted().catch(err => {
+            console.error('Background refresh failed:', err)
+            // Don't show error to user - the save already succeeded
+          })
+        }, 100)
+      }
     } catch (error: any) {
       alert(`Error: ${error.message || 'Failed to save course name'}`)
       throw error
@@ -548,33 +556,35 @@ export function CourseSelector({
                 </div>
                 
                 {/* Content section - flex-grow to push footer down */}
-                <div className="flex-grow flex flex-col">
+                <div className="flex-grow flex flex-col min-w-0">
                   {isAdmin ? (
-                    <EditableTitle
-                      value={course.title}
-                      isAdmin={isAdmin}
-                      onSave={async (newTitle) => {
-                        await handleSaveCourseName(course.id, newTitle)
-                        setEditingCourseNameId(null)
-                      }}
-                      forceEditing={editingCourseNameId === course.id}
-                      onEditingChange={(editing) => {
-                        if (!editing) {
+                    <div className="min-w-0 w-full">
+                      <EditableTitle
+                        value={course.title}
+                        isAdmin={isAdmin}
+                        onSave={async (newTitle) => {
+                          await handleSaveCourseName(course.id, newTitle)
                           setEditingCourseNameId(null)
-                        }
-                      }}
-                      className="text-xl font-bold mb-3 leading-tight"
-                      placeholder="Enter course name..."
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(200,200,255,0.9) 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        textShadow: '0 0 20px rgba(34,211,238,0.3)',
-                        wordWrap: 'break-word',
-                        overflowWrap: 'break-word'
-                      }}
-                    />
+                        }}
+                        forceEditing={editingCourseNameId === course.id}
+                        onEditingChange={(editing) => {
+                          if (!editing) {
+                            setEditingCourseNameId(null)
+                          }
+                        }}
+                        className="text-xl font-bold mb-3 leading-tight"
+                        placeholder="Enter course name..."
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(200,200,255,0.9) 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                          textShadow: '0 0 20px rgba(34,211,238,0.3)',
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word'
+                        }}
+                      />
+                    </div>
                   ) : (
                     <h3 
                       className="text-xl font-bold mb-3 leading-tight"
