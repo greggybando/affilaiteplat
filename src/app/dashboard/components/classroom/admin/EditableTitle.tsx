@@ -27,9 +27,7 @@ export function EditableTitle({
   const [isEditing, setIsEditing] = useState(forceEditing)
   const [editValue, setEditValue] = useState(value)
   const [isSaving, setIsSaving] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const measureRef = useRef<HTMLSpanElement>(null)
-  const [inputWidth, setInputWidth] = useState(200)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   
   useEffect(() => {
     if (forceEditing) {
@@ -44,34 +42,22 @@ export function EditableTitle({
   }, [isEditing, onEditingChange])
 
   useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus()
-      inputRef.current.select()
-      // Scroll to show cursor
-      setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.scrollLeft = inputRef.current.scrollWidth
-        }
-      }, 0)
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus()
+      textareaRef.current.select()
+      // Auto-resize textarea
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = `${Math.max(40, textareaRef.current.scrollHeight)}px`
     }
   }, [isEditing])
 
-  // Auto-resize input based on content
-  useEffect(() => {
-    if (isEditing && measureRef.current) {
-      measureRef.current.textContent = editValue || placeholder
-      const width = Math.max(200, measureRef.current.offsetWidth + 20)
-      setInputWidth(width)
-      // Scroll to show cursor
-      if (inputRef.current) {
-        setTimeout(() => {
-          if (inputRef.current) {
-            inputRef.current.scrollLeft = inputRef.current.scrollWidth
-          }
-        }, 0)
-      }
-    }
-  }, [editValue, isEditing, placeholder])
+  // Auto-resize textarea on input
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditValue(e.target.value)
+    // Auto-resize
+    e.target.style.height = 'auto'
+    e.target.style.height = `${Math.max(40, e.target.scrollHeight)}px`
+  }
 
   useEffect(() => {
     setEditValue(value)
@@ -130,54 +116,33 @@ export function EditableTitle({
   }
 
   return (
-    <div className="flex items-center gap-2 flex-1 min-w-0 relative" onClick={(e) => e.stopPropagation()}>
-      {/* Hidden span to measure text width */}
-      <span
-        ref={measureRef}
-        style={{
-          position: 'absolute',
-          visibility: 'hidden',
-          whiteSpace: 'pre',
-          fontSize: style.fontSize || '1.25rem',
-          fontWeight: style.fontWeight || 'bold',
-          fontFamily: 'inherit',
-          padding: '0 8px'
-        }}
-        aria-hidden="true"
-      />
-      <input
-        ref={inputRef}
-        type="text"
+    <div className="flex items-start gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+      <textarea
+        ref={textareaRef}
         value={editValue}
-        onChange={(e) => {
-          setEditValue(e.target.value)
-          // Scroll to end to show what we're typing
-          setTimeout(() => {
-            if (inputRef.current) {
-              inputRef.current.scrollLeft = inputRef.current.scrollWidth
-            }
-          }, 0)
+        onChange={handleInput}
+        onKeyDown={(e) => {
+          // Allow Enter to create new line, but Ctrl/Cmd+Enter to save
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault()
+            handleSave()
+          } else if (e.key === 'Escape') {
+            handleCancel()
+          }
         }}
-        onKeyDown={handleKeyDown}
-        onClick={(e) => {
-          e.stopPropagation()
-          // Scroll to cursor position
-          setTimeout(() => {
-            if (inputRef.current) {
-              const cursorPos = inputRef.current.selectionStart || 0
-              inputRef.current.scrollLeft = inputRef.current.scrollWidth
-            }
-          }, 0)
-        }}
+        onClick={(e) => e.stopPropagation()}
         disabled={isSaving}
-        className={`bg-slate-800/80 border border-cyan-500/50 rounded px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${className}`}
+        rows={1}
+        className={`bg-slate-800/80 border border-cyan-500/50 rounded px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none overflow-hidden w-full ${className}`}
         style={{
           ...style,
-          minWidth: `${inputWidth}px`,
-          width: `${inputWidth}px`,
-          maxWidth: '100%',
+          minHeight: '40px',
+          maxHeight: '200px',
           boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)',
-          overflow: 'visible'
+          overflowY: 'auto',
+          wordWrap: 'break-word',
+          overflowWrap: 'break-word',
+          lineHeight: '1.5'
         }}
         placeholder={placeholder}
       />
