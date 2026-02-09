@@ -448,7 +448,7 @@ export function CourseSelector({
                     : glowShadow('0 0 20px rgba(252,211,77,0.3), 0 0 40px rgba(252,211,77,0.2)', glowIntensity),
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: '240px'
+                  minHeight: 'auto'
                 }}
               >
                 {/* Top section with emoji and menu */}
@@ -563,11 +563,31 @@ export function CourseSelector({
                           setEditingCourseNameId(null)
                         }
                       }}
-                      className="text-lg font-bold text-white mb-2 line-clamp-1"
+                      className="text-xl font-bold mb-3 leading-tight"
                       placeholder="Enter course name..."
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(200,200,255,0.9) 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        textShadow: '0 0 20px rgba(34,211,238,0.3)',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}
                     />
                   ) : (
-                    <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">
+                    <h3 
+                      className="text-xl font-bold mb-3 leading-tight"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(200,200,255,0.9) 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        textShadow: '0 0 20px rgba(34,211,238,0.3)',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}
+                    >
                       {course.title}
                     </h3>
                   )}
