@@ -1305,8 +1305,19 @@ export function SkillBankCourseView({
           {isAdmin && (
             <>
               <span className="px-3 py-1.5 bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-cyan-300 text-xs font-semibold rounded-full border border-cyan-500/50 whitespace-nowrap shadow-lg shadow-cyan-500/20">
-                👑 Admin Mode - Double-click to edit
+                👑 Admin Mode - Click to edit
               </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setEditingCourseTitle(true)
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-purple-500/50 whitespace-nowrap"
+                title="Edit course name"
+              >
+                <Pencil size={14} />
+                Edit Course Name
+              </button>
               <button
                 onClick={() => {
                   console.log('[SkillBank] Import button clicked, isAdmin:', isAdmin)

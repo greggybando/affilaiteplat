@@ -30,8 +30,8 @@ export function EditableTitle({
   const inputRef = useRef<HTMLInputElement>(null)
   
   useEffect(() => {
-    if (forceEditing !== isEditing) {
-      setIsEditing(forceEditing)
+    if (forceEditing) {
+      setIsEditing(true)
     }
   }, [forceEditing])
   
@@ -94,9 +94,10 @@ export function EditableTitle({
     return (
       <span
         className={className}
-        style={style}
+        onClick={() => isAdmin && setIsEditing(true)}
         onDoubleClick={() => isAdmin && setIsEditing(true)}
-        title={isAdmin ? 'Double-click to edit' : undefined}
+        title={isAdmin ? 'Click to edit' : undefined}
+        style={{ ...style, cursor: isAdmin ? 'pointer' : style.cursor }}
       >
         {value}
       </span>
