@@ -1381,37 +1381,23 @@ export function SkillBankCourseView({
           >
             <div className="flex-1">
               {isAdmin ? (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <EditableTitle
-                    value={courseTitle}
-                    isAdmin={isAdmin}
-                    onSave={async (newTitle) => {
-                      await handleSaveCourseTitle(newTitle)
-                    }}
-                    forceEditing={editingCourseTitle}
-                    onEditingChange={(editing) => {
-                      setEditingCourseTitle(editing)
-                    }}
-                    className="text-xs font-semibold uppercase tracking-widest"
-                    placeholder="Enter course name..."
-                    style={{
-                      color: 'rgba(34,211,238,0.9)',
-                      textShadow: '0 0 8px rgba(34,211,238,0.4)'
-                    }}
-                  />
-                  {!editingCourseTitle && (
-                    <span 
-                      className="text-xs font-semibold uppercase tracking-widest"
-                      style={{
-                        color: 'rgba(34,211,238,0.9)',
-                        textShadow: '0 0 8px rgba(34,211,238,0.4)',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      SYSTEM
-                    </span>
-                  )}
-                </div>
+                <EditableTitle
+                  value={courseTitle}
+                  isAdmin={isAdmin}
+                  onSave={async (newTitle) => {
+                    await handleSaveCourseTitle(newTitle)
+                  }}
+                  forceEditing={editingCourseTitle}
+                  onEditingChange={(editing) => {
+                    setEditingCourseTitle(editing)
+                  }}
+                  className="text-xs font-semibold uppercase tracking-widest"
+                  placeholder="Enter course name..."
+                  style={{
+                    color: 'rgba(34,211,238,0.9)',
+                    textShadow: '0 0 8px rgba(34,211,238,0.4)'
+                  }}
+                />
               ) : (
                 <h4 
                   className="text-xs font-semibold uppercase tracking-widest"
@@ -1420,7 +1406,7 @@ export function SkillBankCourseView({
                     textShadow: '0 0 8px rgba(34,211,238,0.4)'
                   }}
                 >
-                  {getCourseHeaderText()}
+                  {courseTitle.toUpperCase()}
                 </h4>
               )}
             </div>
