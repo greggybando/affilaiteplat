@@ -131,10 +131,10 @@ export function CourseSelector({
         // Use setTimeout to make it non-blocking and allow UI to update first
         setTimeout(() => {
           try {
-            const result = onCourseDeleted()
+            const result = onCourseDeleted() as any
             // If it returns a Promise, handle errors silently
-            if (result instanceof Promise) {
-              result.catch(err => {
+            if (result && typeof result.then === 'function') {
+              result.catch((err: any) => {
                 console.error('Background refresh failed:', err)
                 // Don't show error to user - the save already succeeded
               })
