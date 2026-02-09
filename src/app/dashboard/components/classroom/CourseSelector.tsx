@@ -575,9 +575,9 @@ export function CourseSelector({
                 </div>
                 
                 {/* Content section - flex-grow to push footer down */}
-                <div className="flex-grow flex flex-col min-w-0" onClick={(e) => editingCourseNameId === course.id && e.stopPropagation()}>
+                <div className={`flex-grow flex flex-col min-w-0 ${editingCourseNameId === course.id ? 'overflow-visible z-10' : ''}`} onClick={(e) => editingCourseNameId === course.id && e.stopPropagation()}>
                   {isAdmin ? (
-                    <div className="min-w-0 w-full" onClick={(e) => editingCourseNameId === course.id && e.stopPropagation()}>
+                    <div className={`min-w-0 w-full ${editingCourseNameId === course.id ? 'overflow-visible' : ''}`} onClick={(e) => editingCourseNameId === course.id && e.stopPropagation()}>
                       <EditableTitle
                         value={course.title}
                         isAdmin={isAdmin}

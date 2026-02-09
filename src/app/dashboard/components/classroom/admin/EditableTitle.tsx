@@ -28,6 +28,8 @@ export function EditableTitle({
   const [editValue, setEditValue] = useState(value)
   const [isSaving, setIsSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const measureRef = useRef<HTMLSpanElement>(null)
+  const [inputWidth, setInputWidth] = useState(200)
   
   useEffect(() => {
     if (forceEditing) {
@@ -45,8 +47,31 @@ export function EditableTitle({
     if (isEditing && inputRef.current) {
       inputRef.current.focus()
       inputRef.current.select()
+      // Scroll to show cursor
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.scrollLeft = inputRef.current.scrollWidth
+        }
+      }, 0)
     }
   }, [isEditing])
+
+  // Auto-resize input based on content
+  useEffect(() => {
+    if (isEditing && measureRef.current) {
+      measureRef.current.textContent = editValue || placeholder
+      const width = Math.max(200, measureRef.current.offsetWidth + 20)
+      setInputWidth(width)
+      // Scroll to show cursor
+      if (inputRef.current) {
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.scrollLeft = inputRef.current.scrollWidth
+          }
+        }, 0)
+      }
+    }
+  }, [editValue, isEditing, placeholder])
 
   useEffect(() => {
     setEditValue(value)
@@ -105,27 +130,54 @@ export function EditableTitle({
   }
 
   return (
-    <div className="flex items-center gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+    <div className="flex items-center gap-2 flex-1 min-w-0 relative" onClick={(e) => e.stopPropagation()}>
+      {/* Hidden span to measure text width */}
+      <span
+        ref={measureRef}
+        style={{
+          position: 'absolute',
+          visibility: 'hidden',
+          whiteSpace: 'pre',
+          fontSize: style.fontSize || '1.25rem',
+          fontWeight: style.fontWeight || 'bold',
+          fontFamily: 'inherit',
+          padding: '0 8px'
+        }}
+        aria-hidden="true"
+      />
       <input
         ref={inputRef}
         type="text"
         value={editValue}
-        onChange={(e) => setEditValue(e.target.value)}
+        onChange={(e) => {
+          setEditValue(e.target.value)
+          // Scroll to end to show what we're typing
+          setTimeout(() => {
+            if (inputRef.current) {
+              inputRef.current.scrollLeft = inputRef.current.scrollWidth
+            }
+          }, 0)
+        }}
         onKeyDown={handleKeyDown}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation()
+          // Scroll to cursor position
+          setTimeout(() => {
+            if (inputRef.current) {
+              const cursorPos = inputRef.current.selectionStart || 0
+              inputRef.current.scrollLeft = inputRef.current.scrollWidth
+            }
+          }, 0)
+        }}
         disabled={isSaving}
-        className={`bg-slate-800/80 border border-cyan-500/50 rounded px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 flex-1 min-w-0 ${className}`}
+        className={`bg-slate-800/80 border border-cyan-500/50 rounded px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${className}`}
         style={{
           ...style,
-          minWidth: '200px',
-          width: '100%',
-          maxWidth: 'none',
-          flex: '1 1 auto',
+          minWidth: `${inputWidth}px`,
+          width: `${inputWidth}px`,
+          maxWidth: '100%',
           boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)',
-          overflow: 'visible',
-          whiteSpace: 'normal',
-          wordWrap: 'break-word',
-          overflowWrap: 'anywhere'
+          overflow: 'visible'
         }}
         placeholder={placeholder}
       />
