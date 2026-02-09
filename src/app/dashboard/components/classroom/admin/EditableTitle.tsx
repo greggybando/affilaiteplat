@@ -118,11 +118,14 @@ export function EditableTitle({
         style={{
           ...style,
           minWidth: '200px',
-          width: 'auto',
+          width: '100%',
+          maxWidth: 'none',
           flex: '1 1 auto',
           boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)',
           overflow: 'visible',
-          whiteSpace: 'nowrap'
+          whiteSpace: 'normal',
+          wordWrap: 'break-word',
+          overflowWrap: 'anywhere'
         }}
         placeholder={placeholder}
       />
