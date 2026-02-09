@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "deploy": "vercel --prod --yes"
+    "deploy": "vercel --prod --yes",
+    "push-deploy": "./scripts/push-and-deploy.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
