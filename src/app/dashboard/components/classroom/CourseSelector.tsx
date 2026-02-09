@@ -444,6 +444,16 @@ export function CourseSelector({
                   if ((e.target as HTMLElement).closest('[data-menu-container]')) {
                     return
                   }
+                  // Don't select course if editing the course name
+                  if (editingCourseNameId === course.id) {
+                    return
+                  }
+                  // Don't select course if clicking on editable title input or buttons
+                  if ((e.target as HTMLElement).closest('input') || 
+                      (e.target as HTMLElement).closest('button') ||
+                      (e.target as HTMLElement).closest('[role="textbox"]')) {
+                    return
+                  }
                   console.log('[CourseSelector] Click:', { 
                     title: course.title, 
                     isPublished, 
@@ -565,9 +575,9 @@ export function CourseSelector({
                 </div>
                 
                 {/* Content section - flex-grow to push footer down */}
-                <div className="flex-grow flex flex-col min-w-0">
+                <div className="flex-grow flex flex-col min-w-0" onClick={(e) => editingCourseNameId === course.id && e.stopPropagation()}>
                   {isAdmin ? (
-                    <div className="min-w-0 w-full">
+                    <div className="min-w-0 w-full" onClick={(e) => editingCourseNameId === course.id && e.stopPropagation()}>
                       <EditableTitle
                         value={course.title}
                         isAdmin={isAdmin}

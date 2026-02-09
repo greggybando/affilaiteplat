@@ -105,21 +105,24 @@ export function EditableTitle({
   }
 
   return (
-    <div className="flex items-center gap-2 flex-1 min-w-0">
+    <div className="flex items-center gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
       <input
         ref={inputRef}
         type="text"
         value={editValue}
         onChange={(e) => setEditValue(e.target.value)}
         onKeyDown={handleKeyDown}
+        onClick={(e) => e.stopPropagation()}
         disabled={isSaving}
         className={`bg-slate-800/80 border border-cyan-500/50 rounded px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 flex-1 min-w-0 ${className}`}
         style={{
           ...style,
           minWidth: '200px',
-          width: '100%',
-          maxWidth: '100%',
-          boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)'
+          width: 'auto',
+          flex: '1 1 auto',
+          boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)',
+          overflow: 'visible',
+          whiteSpace: 'nowrap'
         }}
         placeholder={placeholder}
       />
