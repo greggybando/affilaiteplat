@@ -93,14 +93,6 @@ export function EditableTitle({
     setIsEditing(false)
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSave()
-    } else if (e.key === 'Escape') {
-      handleCancel()
-    }
-  }
-
   if (!isAdmin || !isEditing) {
     return (
       <span
