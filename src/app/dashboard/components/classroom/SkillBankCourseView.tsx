@@ -184,12 +184,12 @@ export function SkillBankCourseView({
   const getCourseHeaderText = (): string => {
     const slug = courseData.slug?.toLowerCase() || ''
     if (slug === 'mindset') {
-      return 'LIFEDESIGN SYSTEM'
+      return 'LIFEDESIGN'
     } else if (slug === 'dream-job') {
-      return 'DREAM JOB SYSTEM'
+      return 'DREAM JOB'
     } else {
-      // For other courses, use course title + "SYSTEM" or just course title
-      return courseData.title ? `${courseData.title.toUpperCase()} SYSTEM` : 'COURSE MODULES'
+      // For other courses, use course title
+      return courseData.title ? courseData.title.toUpperCase() : 'COURSE MODULES'
     }
   }
 
