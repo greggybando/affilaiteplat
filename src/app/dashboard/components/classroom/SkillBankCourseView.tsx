@@ -111,9 +111,16 @@ export function SkillBankCourseView({
   
   const [courseData, setCourseData] = useState(course)
   
+  // Helper to clean course title (remove SYSTEM suffix if present)
+  const cleanCourseTitle = (title: string): string => {
+    if (!title) return ''
+    return title.replace(/\s+SYSTEM$/i, '').trim()
+  }
+  
   // Update courseTitle when course prop changes
   useEffect(() => {
-    setCourseTitle(course.title)
+    const cleanedTitle = cleanCourseTitle(course.title)
+    setCourseTitle(cleanedTitle)
     setCourseData(course)
   }, [course.title])
   
@@ -732,8 +739,9 @@ export function SkillBankCourseView({
   }
 
   const handleSaveCourseTitle = async (newTitle?: string) => {
-    const titleToSave = newTitle || courseTitle
-    if (titleToSave === courseData.title) return
+    const titleToSave = cleanCourseTitle(newTitle || courseTitle)
+    const currentTitle = cleanCourseTitle(courseData.title)
+    if (titleToSave === currentTitle) return
     
     try {
       const res = await fetch('/api/courses-v2', {
