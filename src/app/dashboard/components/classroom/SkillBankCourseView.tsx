@@ -1460,42 +1460,6 @@ export function SkillBankCourseView({
               </button>
             )}
           </div>
-            
-            {/* Globally Unlocked Toggle (Admin) */}
-            {isAdmin && (
-              <button
-                onClick={async () => {
-                  const newValue = !courseData.globally_unlocked
-                  try {
-                    const res = await fetch(`/api/courses-v2/${course.id}`, {
-                      method: 'PATCH',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ globally_unlocked: newValue })
-                    })
-                    if (res.ok) {
-                      const data = await res.json()
-                      setCourseData({ ...courseData, globally_unlocked: newValue })
-                      // Reload unlock status to reflect change
-                      loadUnlockStatus()
-                    } else {
-                      alert('Failed to update course unlock status')
-                    }
-                  } catch (error) {
-                    console.error('Error updating globally_unlocked:', error)
-                    alert('Error updating course unlock status')
-                  }
-                }}
-                className="flex-shrink-0 p-1.5 hover:bg-slate-700/50 rounded transition-colors"
-                title={courseData.globally_unlocked ? 'Course is globally unlocked (click to lock)' : 'Course uses sequential unlocking (click to unlock all)'}
-              >
-                {courseData.globally_unlocked ? (
-                  <span className="text-xs text-emerald-400" title="Globally unlocked">🔓</span>
-                ) : (
-                  <span className="text-xs text-slate-500" title="Sequential unlocking">🔒</span>
-                )}
-              </button>
-            )}
-          </div>
 
           <div className="flex-1 overflow-y-auto">
             {sections.length === 0 && loading ? (
