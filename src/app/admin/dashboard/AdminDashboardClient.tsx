@@ -8,7 +8,8 @@ import {
   Calendar, 
   Download,
   ArrowLeft,
-  BarChart3
+  BarChart3,
+  Package
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -468,6 +469,40 @@ export default function AdminDashboardClient({ affiliate }: AdminDashboardClient
           )}
           </div>
         </div>
+
+        {/* Manage Products */}
+        <Link href="/admin/products">
+          <div 
+            className="rounded-xl p-6 relative overflow-hidden cursor-pointer transition-all transform hover:scale-[1.02] group"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(6,182,212,0.2)',
+              boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+            <div className="relative z-10 flex items-center gap-4">
+              <div 
+                className="p-4 rounded-lg"
+                style={{
+                  background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                  boxShadow: '0 0 20px rgba(34,211,238,0.5)'
+                }}
+              >
+                <Package className="w-6 h-6 text-[#0f0f1a]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white mb-1">Manage Products</h3>
+                <p className="text-sm text-slate-400">Create, edit, and manage affiliate products</p>
+              </div>
+              <div className="text-cyan-400 group-hover:translate-x-1 transition-transform">
+                <ArrowLeft className="w-5 h-5 rotate-180" />
+              </div>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+          </div>
+        </Link>
       </div>
     </div>
   )
