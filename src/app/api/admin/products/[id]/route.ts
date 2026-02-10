@@ -62,7 +62,7 @@ export async function PATCH(
   if (body.price_cents && body.price_cents !== currentProduct.price_cents && currentProduct.stripe_product_id) {
     try {
       const newPrice = await stripe.prices.create({
-        product: current.stripe_product_id,
+        product: currentProduct.stripe_product_id,
         unit_amount: body.price_cents,
         currency: 'usd',
         ...(currentProduct.product_type === 'subscription'
