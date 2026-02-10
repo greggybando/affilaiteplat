@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   let filtered = products || []
   if (exclude) {
     const excludeSlugs = exclude.split(',').map(s => s.trim())
-    filtered = filtered.filter(p => !excludeSlugs.includes(p.slug))
+    filtered = filtered.filter((p: any) => !excludeSlugs.includes(p.slug))
   }
 
   return NextResponse.json({ products: filtered })
