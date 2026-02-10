@@ -1,11 +1,18 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 export default function CheckoutPage() {
   const [error, setError] = useState('')
+  const searchParams = useSearchParams()
+  const sid = searchParams.get('sid')
 
   useEffect(() => {
-    fetch('/api/checkout', { method: 'POST' })
+    fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sid: sid || undefined })
+    })
       .then(res => res.json())
       .then(data => {
         console.log('Checkout response:', data)
@@ -20,7 +27,7 @@ export default function CheckoutPage() {
         console.error('Checkout error:', err)
         setError('Failed to connect to checkout service')
       })
-  }, [])
+  }, [sid])
 
   if (error) return <div style={{color:'red',padding:'50px'}}>{error}</div>
   return <div style={{padding:'50px'}}>Redirecting to checkout...</div>
