@@ -56,21 +56,23 @@ export async function PATCH(
     return NextResponse.json({ error: 'Product not found' }, { status: 404 })
   }
 
+  const currentProduct = current as any
+
   // If price changed, create new Stripe price (prices are immutable in Stripe)
-  if (body.price_cents && body.price_cents !== current.price_cents && current.stripe_product_id) {
+  if (body.price_cents && body.price_cents !== currentProduct.price_cents && currentProduct.stripe_product_id) {
     try {
       const newPrice = await stripe.prices.create({
         product: current.stripe_product_id,
         unit_amount: body.price_cents,
         currency: 'usd',
-        ...(current.product_type === 'subscription'
+        ...(currentProduct.product_type === 'subscription'
           ? { recurring: { interval: 'month' } }
           : {}),
       })
 
       // Deactivate old price
-      if (current.stripe_price_id) {
-        await stripe.prices.update(current.stripe_price_id, { active: false })
+      if (currentProduct.stripe_price_id) {
+        await stripe.prices.update(currentProduct.stripe_price_id, { active: false })
       }
 
       body.stripe_price_id = newPrice.id
@@ -82,9 +84,9 @@ export async function PATCH(
   }
 
   // If name changed, update Stripe product
-  if (body.name && body.name !== current.name && current.stripe_product_id) {
+  if (body.name && body.name !== currentProduct.name && currentProduct.stripe_product_id) {
     try {
-      await stripe.products.update(current.stripe_product_id, { name: body.name })
+      await stripe.products.update(currentProduct.stripe_product_id, { name: body.name })
     } catch (err: any) {
       console.error('Error updating Stripe product name:', err)
     }
