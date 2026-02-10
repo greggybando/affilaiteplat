@@ -48,7 +48,7 @@ export default function UpsellShopClient() {
             const purchasedRes = await fetch(`/api/products/purchased?session_id=${sessionId}`)
             const purchasedData = await purchasedRes.json()
             if (purchasedData.purchased_slugs) {
-              alreadyPurchased = [...new Set([...alreadyPurchased, ...purchasedData.purchased_slugs])]
+              alreadyPurchased = Array.from(new Set([...alreadyPurchased, ...purchasedData.purchased_slugs]))
             }
           } catch (err) {
             console.error('Error fetching purchased products:', err)
