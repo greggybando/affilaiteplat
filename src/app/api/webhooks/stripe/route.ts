@@ -216,7 +216,7 @@ async function handleProductPurchase(
   }
 
   // Record the purchase
-  const { error: purchaseError } = await supabaseAdmin
+  const { error: purchaseError } = await (supabaseAdmin as any)
     .from('purchases')
     .upsert(
       {
@@ -245,7 +245,7 @@ async function handleProductPurchase(
 
   // Create/update permanent customer attribution
   if (affiliate_id && sid) {
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await (supabaseAdmin as any)
       .from('customer_attributions')
       .select('id')
       .eq('email', customerEmail)
@@ -260,7 +260,7 @@ async function handleProductPurchase(
       }
 
       // Set product_ref or sub_ref based on session entry_type
-      const { data: attrSession } = await supabaseAdmin
+      const { data: attrSession } = await (supabaseAdmin as any)
         .from('attribution_sessions')
         .select('entry_type')
         .eq('sid', sid)
@@ -274,14 +274,14 @@ async function handleProductPurchase(
         attrData.product_ref_code = affiliate_code
       }
 
-      await supabaseAdmin.from('customer_attributions').insert(attrData)
+      await (supabaseAdmin as any).from('customer_attributions').insert(attrData)
       console.log(`✅ Customer attribution created: ${customerEmail} → ${affiliate_code}`)
     }
   }
 
   // Record conversion for affiliate (backward compatible with existing system)
   if (affiliate_id && product_id) {
-    const { data: product } = await supabaseAdmin
+    const { data: product } = await (supabaseAdmin as any)
       .from('products')
       .select('commission_percent, commission_fixed_cents, price_cents')
       .eq('id', product_id)
@@ -344,7 +344,7 @@ async function handleSubscriptionCheckout(
   // If this subscription came through an affiliate link, credit them
   if (sid && affiliate_id) {
     // Verify this was a subscription entry (not a product funnel upsell)
-    const { data: attrSession } = await supabaseAdmin
+    const { data: attrSession } = await (supabaseAdmin as any)
       .from('attribution_sessions')
       .select('entry_type')
       .eq('sid', sid)
@@ -352,14 +352,14 @@ async function handleSubscriptionCheckout(
 
     if (attrSession?.entry_type === 'subscription') {
       // Create/update customer attribution with sub_ref
-      const { data: existing } = await supabaseAdmin
+      const { data: existing } = await (supabaseAdmin as any)
         .from('customer_attributions')
         .select('id, sub_ref_affiliate_id')
         .eq('email', customerEmail)
         .single()
 
       if (!existing) {
-        await supabaseAdmin.from('customer_attributions').insert({
+        await (supabaseAdmin as any).from('customer_attributions').insert({
           email: customerEmail,
           sub_ref_affiliate_id: affiliate_id,
           sub_ref_code: affiliate_code,
@@ -367,7 +367,7 @@ async function handleSubscriptionCheckout(
         })
       } else if (!existing.sub_ref_affiliate_id) {
         // Customer exists but doesn't have sub_ref yet (came through product first)
-        await supabaseAdmin
+        await (supabaseAdmin as any)
           .from('customer_attributions')
           .update({
             sub_ref_affiliate_id: affiliate_id,

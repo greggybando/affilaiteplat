@@ -30,7 +30,7 @@ export async function GET(
 
   try {
     // Look up the affiliate link
-    const { data: link, error } = await supabaseAdmin
+    const { data: link, error } = await (supabaseAdmin as any)
       .from('affiliate_links')
       .select(`
         id,
@@ -71,7 +71,7 @@ export async function GET(
     // Create attribution session
     const sid = generateSid()
 
-    await supabaseAdmin
+    await (supabaseAdmin as any)
       .from('attribution_sessions')
       .insert({
         sid,
@@ -84,7 +84,7 @@ export async function GET(
       })
 
     // Record click (backward compatible with existing system)
-    await supabaseAdmin
+    await (supabaseAdmin as any)
       .from('clicks')
       .insert({
         affiliate_link_id: link.id,

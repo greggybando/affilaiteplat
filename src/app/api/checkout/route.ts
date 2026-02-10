@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     let affiliateId = ''
 
     if (sid) {
-      const { data: attrSession } = await supabaseAdmin
+      const { data: attrSession } = await (supabaseAdmin as any)
         .from('attribution_sessions')
         .select('affiliate_id, affiliate_code, entry_type')
         .eq('sid', sid)

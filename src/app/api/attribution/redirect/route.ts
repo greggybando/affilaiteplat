@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // Look up the affiliate
-    const { data: link } = await supabaseAdmin
+    const { data: link } = await (supabaseAdmin as any)
       .from('affiliate_links')
       .select('affiliate_id')
       .eq('tracking_code', ref)
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     // Create attribution session
     const sid = generateSid()
 
-    await supabaseAdmin
+    await (supabaseAdmin as any)
       .from('attribution_sessions')
       .insert({
         sid,
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
 
     // Record click for backward compatibility
     if (link?.affiliate_id) {
-      await supabaseAdmin
+      await (supabaseAdmin as any)
         .from('clicks')
         .insert({
           affiliate_link_id: null,

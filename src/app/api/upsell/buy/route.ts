@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get the product
-    const { data: product, error: productError } = await supabaseAdmin
+    const { data: product, error: productError } = await (supabaseAdmin as any)
       .from('products')
       .select('*')
       .eq('slug', product_slug)
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if already purchased
-    const { data: existingPurchase } = await supabaseAdmin
+    const { data: existingPurchase } = await (supabaseAdmin as any)
       .from('purchases')
       .select('id')
       .eq('customer_email', customerEmail)
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     let affiliateCode = null
 
     if (sid) {
-      const { data: attrSession } = await supabaseAdmin
+      const { data: attrSession } = await (supabaseAdmin as any)
         .from('attribution_sessions')
         .select('affiliate_id, affiliate_code')
         .eq('sid', sid)
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
 
     if (upsellPaymentIntent.status === 'succeeded') {
       // Record the purchase immediately (webhook will also handle this, but we want instant UI update)
-      const { error: purchaseError } = await supabaseAdmin
+      const { error: purchaseError } = await (supabaseAdmin as any)
         .from('purchases')
         .insert({
           customer_email: customerEmail,
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
           ? product.commission_fixed_cents
           : Math.round(product.price_cents * product.commission_percent / 100)
 
-        await supabaseAdmin
+        await (supabaseAdmin as any)
           .from('conversions')
           .insert({
             affiliate_id: affiliateId,

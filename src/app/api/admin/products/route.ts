@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status') // 'active', 'draft', 'archived', or null for all
 
-  let query = supabaseAdmin
+  let query = (supabaseAdmin as any)
     .from('products')
     .select('*')
     .order('upsell_priority', { ascending: true })
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check slug uniqueness
-  const { data: existing } = await supabaseAdmin
+  const { data: existing } = await (supabaseAdmin as any)
     .from('products')
     .select('id')
     .eq('slug', slug)
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Insert into database
-    const { data: product, error } = await supabaseAdmin
+    const { data: product, error } = await (supabaseAdmin as any)
       .from('products')
       .insert({
         name,

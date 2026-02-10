@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get product
-    const { data: product, error: productError } = await supabaseAdmin
+    const { data: product, error: productError } = await (supabaseAdmin as any)
       .from('products')
       .select('*')
       .eq('slug', product_slug)
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     let affiliateId = null
 
     if (sid) {
-      const { data: session } = await supabaseAdmin
+      const { data: session } = await (supabaseAdmin as any)
         .from('attribution_sessions')
         .select('affiliate_id, affiliate_code')
         .eq('sid', sid)

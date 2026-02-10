@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   if (slug) {
     // Get single product by slug (for sales page)
-    const { data: product, error } = await supabaseAdmin
+    const { data: product, error } = await (supabaseAdmin as any)
       .from('products')
       .select('id, name, slug, headline, subheadline, bullets, sales_body, short_description, thumbnail_url, price_cents, price_display, cta_text, guarantee_text, product_type, status')
       .eq('slug', slug)
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Get all active products (for upsell shop)
-  let query = supabaseAdmin
+  let query = (supabaseAdmin as any)
     .from('products')
     .select('id, name, slug, short_description, thumbnail_url, price_cents, price_display, cta_text, upsell_priority, product_type')
     .eq('status', 'active')

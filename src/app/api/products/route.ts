@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET() {
   try {
-    const { data: products, error } = await supabaseAdmin
+    const { data: products, error } = await (supabaseAdmin as any)
       .from('products')
       .select('id, name, slug')
       .eq('is_active', true)

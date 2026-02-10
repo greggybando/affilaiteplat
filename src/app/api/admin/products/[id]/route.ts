@@ -20,7 +20,7 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: product, error } = await supabaseAdmin
+  const { data: product, error } = await (supabaseAdmin as any)
     .from('products')
     .select('*')
     .eq('id', params.id)
@@ -46,7 +46,7 @@ export async function PATCH(
   const body = await req.json()
 
   // Get current product
-  const { data: current, error: fetchError } = await supabaseAdmin
+  const { data: current, error: fetchError } = await (supabaseAdmin as any)
     .from('products')
     .select('*')
     .eq('id', params.id)
@@ -126,7 +126,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: product, error } = await supabaseAdmin
+  const { data: product, error } = await (supabaseAdmin as any)
     .from('products')
     .update({
       status: 'archived',

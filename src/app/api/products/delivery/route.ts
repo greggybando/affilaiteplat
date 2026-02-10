@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get all purchased products with delivery info
-    const { data: purchases } = await supabaseAdmin
+    const { data: purchases } = await (supabaseAdmin as any)
       .from('purchases')
       .select(`
         product_slug,

@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Look up the affiliate by their code
-    const { data: link } = await supabaseAdmin
+    const { data: link } = await (supabaseAdmin as any)
       .from('affiliate_links')
       .select('affiliate_id, tracking_code')
       .eq('tracking_code', ref)
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     const sid = generateSid()
 
-    const { data: session, error } = await supabaseAdmin
+    const { data: session, error } = await (supabaseAdmin as any)
       .from('attribution_sessions')
       .insert({
         sid,
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     // Also record the click in the existing clicks table for backward compatibility
     if (link) {
-      await supabaseAdmin
+      await (supabaseAdmin as any)
         .from('clicks')
         .insert({
           affiliate_link_id: link.affiliate_id ? undefined : null,
