@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   BarChart3
 } from 'lucide-react'
+import Link from 'next/link'
 import AdminProductsClient from '@/app/admin/products/AdminProductsClient'
 
 interface AdminDashboardClientProps {
