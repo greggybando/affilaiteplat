@@ -64,7 +64,7 @@ export async function POST(req: Request) {
           if (metadata.purchase_type === 'upsell') {
             // Upsell was already recorded in the /api/upsell/buy route
             // This is a safety net - check if purchase exists, if not, create it
-            const { data: existing } = await supabaseAdmin
+            const { data: existing } = await (supabaseAdmin as any)
               .from('purchases')
               .select('id')
               .eq('stripe_payment_intent_id', paymentIntent.id)
@@ -84,13 +84,13 @@ export async function POST(req: Request) {
 
           if (paymentIntentId) {
             // Mark purchase as refunded
-            await supabaseAdmin
+            await (supabaseAdmin as any)
               .from('purchases')
               .update({ status: 'refunded', refunded_at: new Date().toISOString() })
               .eq('stripe_payment_intent_id', paymentIntentId)
 
             // Mark conversion as refunded
-            await supabaseAdmin
+            await (supabaseAdmin as any)
               .from('conversions')
               .update({ status: 'refunded' })
               .eq('stripe_payment_intent_id', paymentIntentId)
@@ -292,7 +292,7 @@ async function handleProductPurchase(
         ? product.commission_fixed_cents
         : Math.round((session.amount_total || product.price_cents) * product.commission_percent / 100)
 
-      await supabaseAdmin
+      await (supabaseAdmin as any)
         .from('conversions')
         .upsert(
           {
@@ -385,7 +385,7 @@ async function handleSubscriptionCheckout(
       const commissionPercent = 30 // default subscription commission
       const commissionCents = Math.round(subscriptionAmount * commissionPercent / 100)
 
-      await supabaseAdmin
+      await (supabaseAdmin as any)
         .from('conversions')
         .upsert(
           {
@@ -425,7 +425,7 @@ async function recordProductPurchase(
     customerEmail = (customer as Stripe.Customer).email || ''
   }
 
-  await supabaseAdmin
+  await (supabaseAdmin as any)
     .from('purchases')
     .upsert(
       {
