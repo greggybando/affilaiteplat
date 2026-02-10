@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
             status: 'pending',
             visitor_id: sid || null,
           })
-          .catch(err => console.error('Error recording conversion:', err))
+          .catch((err: any) => console.error('Error recording conversion:', err))
       }
 
       return NextResponse.json({

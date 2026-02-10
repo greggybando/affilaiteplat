@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   // Filter out excluded slugs if provided
   let filtered = products || []
   if (exclude) {
-    const excludeSlugs = exclude.split(',').map(s => s.trim())
+    const excludeSlugs = exclude.split(',').map((s: string) => s.trim())
     filtered = filtered.filter((p: any) => !excludeSlugs.includes(p.slug))
   }
 

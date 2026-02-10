@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       .eq('customer_email', email)
       .eq('status', 'completed')
 
-    const purchasedSlugs = purchases?.map(p => p.product_slug) || []
+    const purchasedSlugs = purchases?.map((p: any) => p.product_slug) || []
 
     return NextResponse.json({ purchased_slugs: purchasedSlugs, email })
   } catch (err: any) {
