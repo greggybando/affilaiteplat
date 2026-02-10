@@ -98,7 +98,7 @@ export async function PATCH(
   }
 
   // Update in database
-  const { data: product, error } = await supabaseAdmin
+  const { data: product, error } = await (supabaseAdmin as any)
     .from('products')
     .update({
       ...body,
