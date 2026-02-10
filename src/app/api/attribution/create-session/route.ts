@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
           user_agent: userAgent,
           visitor_id: sid,
         })
-        .catch(err => console.error('Error recording click:', err))
+        .catch((err: any) => console.error('Error recording click:', err))
     }
 
     return NextResponse.json({ sid, session_id: sid })
