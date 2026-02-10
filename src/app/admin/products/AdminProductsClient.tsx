@@ -219,26 +219,35 @@ export default function AdminProductsClient() {
 
   // ===== FORM UI =====
   const renderForm = () => (
-    <div style={{ background: '#111', border: '1px solid #222', borderRadius: 12, padding: 24, marginBottom: 24 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 20 }}>
+    <div 
+      className="rounded-xl p-6 relative overflow-hidden mb-6"
+      style={{
+        background: 'rgba(26,26,46,0.8)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(6,182,212,0.2)',
+        boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+      }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+      <div className="relative z-10">
+      <h2 className="text-xl font-semibold text-white mb-6">
         {editing ? `Edit: ${editing.name}` : 'Create New Product'}
       </h2>
 
       {message && (
-        <div style={{
-          padding: '10px 16px',
-          borderRadius: 8,
-          marginBottom: 16,
-          background: message.startsWith('Error') ? '#2a1515' : '#0a1a0a',
-          border: message.startsWith('Error') ? '1px solid #5a2020' : '1px solid #1a4a1a',
-          color: message.startsWith('Error') ? '#ff6b6b' : '#4ade80',
-          fontSize: 14,
-        }}>
+        <div 
+          className="p-3 rounded-lg mb-4 text-sm"
+          style={{
+            background: message.startsWith('Error') ? 'rgba(90,32,32,0.3)' : 'rgba(10,50,10,0.3)',
+            border: message.startsWith('Error') ? '1px solid rgba(255,107,107,0.3)' : '1px solid rgba(74,222,128,0.3)',
+            color: message.startsWith('Error') ? '#ff6b6b' : '#4ade80',
+          }}
+        >
           {message}
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Name */}
         <div>
           <label style={labelStyle}>Product Name *</label>
@@ -267,7 +276,7 @@ export default function AdminProductsClient() {
             disabled={!!editing}
             placeholder="charisma"
           />
-          <p style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+          <p className="text-xs text-slate-400 mt-2">
             Sales page: /p/{form.slug || 'slug'}
           </p>
         </div>
@@ -289,7 +298,7 @@ export default function AdminProductsClient() {
             }}
             placeholder="4700"
           />
-          <p style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+          <p className="text-xs text-slate-400 mt-2">
             Display: {form.price_display}
           </p>
         </div>
@@ -334,7 +343,7 @@ export default function AdminProductsClient() {
       </div>
 
       {/* Sales Page Content */}
-      <h3 style={{ fontSize: 16, fontWeight: 600, marginTop: 24, marginBottom: 12, color: '#f5c542' }}>
+      <h3 className="text-base font-semibold mt-6 mb-4 text-cyan-400">
         Sales Page Content
       </h3>
 
@@ -348,7 +357,7 @@ export default function AdminProductsClient() {
         />
       </div>
 
-      <div style={{ marginTop: 12 }}>
+      <div className="mt-3">
         <label style={labelStyle}>Subheadline</label>
         <input
           style={inputStyle}
@@ -358,10 +367,10 @@ export default function AdminProductsClient() {
         />
       </div>
 
-      <div style={{ marginTop: 12 }}>
+      <div className="mt-3">
         <label style={labelStyle}>Bullets (one per line)</label>
         {form.bullets.map((bullet: string, i: number) => (
-          <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+          <div key={i} className="flex gap-2 mb-2">
             <input
               style={{ ...inputStyle, flex: 1 }}
               value={bullet}
@@ -378,7 +387,7 @@ export default function AdminProductsClient() {
                   const newBullets = form.bullets.filter((_: any, idx: number) => idx !== i)
                   setForm((f: any) => ({ ...f, bullets: newBullets }))
                 }}
-                style={{ background: '#2a1515', color: '#ff6b6b', border: '1px solid #5a2020', borderRadius: 6, padding: '0 12px', cursor: 'pointer' }}
+                className="px-3 py-2 rounded-lg text-red-400 border border-red-400/30 bg-red-400/10 hover:bg-red-400/20 transition-colors"
               >
                 ×
               </button>
@@ -387,13 +396,13 @@ export default function AdminProductsClient() {
         ))}
         <button
           onClick={() => setForm((f: any) => ({ ...f, bullets: [...f.bullets, ''] }))}
-          style={{ background: '#1a1a2e', color: '#f5c542', border: '1px solid #333', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}
+          className="px-3 py-1.5 rounded-lg text-cyan-400 border border-cyan-400/30 bg-cyan-400/10 hover:bg-cyan-400/20 transition-colors text-sm"
         >
           + Add Bullet
         </button>
       </div>
 
-      <div style={{ marginTop: 12 }}>
+      <div className="mt-3">
         <label style={labelStyle}>Short Description (for upsell shop card)</label>
         <input
           style={inputStyle}
@@ -403,7 +412,7 @@ export default function AdminProductsClient() {
         />
       </div>
 
-      <div style={{ marginTop: 12 }}>
+      <div className="mt-3">
         <label style={labelStyle}>Sales Body (HTML or markdown for long-form copy)</label>
         <textarea
           style={{ ...inputStyle, minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
@@ -413,7 +422,7 @@ export default function AdminProductsClient() {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 12 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
         <div>
           <label style={labelStyle}>CTA Button Text</label>
           <input
@@ -453,91 +462,93 @@ export default function AdminProductsClient() {
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+      <div className="flex gap-3 mt-6">
         <button
           onClick={editing ? handleUpdate : handleCreate}
           disabled={saving || !form.name || !form.slug || !form.price_cents}
+          className="px-8 py-3 rounded-lg font-bold text-base transition-all transform hover:scale-[1.02] relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
-            background: saving ? '#555' : 'linear-gradient(135deg, #f5c542 0%, #f0a500 100%)',
-            color: '#000',
-            border: 'none',
-            padding: '12px 32px',
-            fontSize: 16,
-            fontWeight: 700,
-            borderRadius: 8,
-            cursor: saving ? 'not-allowed' : 'pointer',
+            background: saving ? 'rgba(85,85,85,0.5)' : 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+            color: saving ? 'rgba(255,255,255,0.5)' : '#0f0f1a',
+            boxShadow: saving ? 'none' : '0 0 20px rgba(34,211,238,0.5), 0 4px 20px rgba(0,0,0,0.3)',
           }}
         >
-          {saving ? 'Saving...' : editing ? 'Update Product' : 'Create Product'}
+          <span className="relative z-10">
+            {saving ? 'Saving...' : editing ? 'Update Product' : 'Create Product'}
+          </span>
+          {!saving && (
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+          )}
         </button>
 
         <button
           onClick={() => { setEditing(null); setCreating(false); setForm(emptyProduct); setMessage('') }}
+          className="px-6 py-3 rounded-lg text-base border transition-colors"
           style={{
             background: 'transparent',
-            color: '#888',
-            border: '1px solid #333',
-            padding: '12px 24px',
-            fontSize: 16,
-            borderRadius: 8,
-            cursor: 'pointer',
+            color: 'rgba(255,255,255,0.6)',
+            borderColor: 'rgba(6,182,212,0.2)',
           }}
         >
           Cancel
         </button>
+      </div>
       </div>
     </div>
   )
 
   // ===== MAIN RENDER =====
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', padding: 24 }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+    <div className="mt-6">
+      {/* Header */}
+      <div 
+        className="rounded-xl p-6 relative overflow-hidden mb-6"
+        style={{
+          background: 'rgba(26,26,46,0.8)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(6,182,212,0.2)',
+          boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 8px 32px rgba(0,0,0,0.8)'
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+        <div className="relative z-10 flex justify-between items-center">
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700 }}>Product Manager</h1>
-            <p style={{ color: '#888', fontSize: 14 }}>
+            <h2 className="text-xl font-semibold text-white mb-1">Product Manager</h2>
+            <p className="text-sm text-slate-400">
               Create products here → sales pages, affiliate links, and upsell shop auto-populate
             </p>
           </div>
           {!creating && !editing && (
             <button
               onClick={startCreate}
+              className="px-6 py-2 rounded-lg font-bold text-sm transition-all transform hover:scale-[1.02] relative overflow-hidden group"
               style={{
-                background: 'linear-gradient(135deg, #f5c542 0%, #f0a500 100%)',
-                color: '#000',
-                border: 'none',
-                padding: '10px 24px',
-                fontSize: 14,
-                fontWeight: 700,
-                borderRadius: 8,
-                cursor: 'pointer',
+                background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                color: '#0f0f1a',
+                boxShadow: '0 0 20px rgba(34,211,238,0.5), 0 4px 20px rgba(0,0,0,0.3)',
               }}
             >
-              + New Product
+              <span className="relative z-10">+ New Product</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
             </button>
           )}
         </div>
+      </div>
 
         {/* Form */}
         {(creating || editing) && renderForm()}
 
         {/* Filter tabs */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <div className="flex gap-2 mb-4">
           {['all', 'active', 'draft', 'archived'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
+              className="px-4 py-1.5 rounded-lg text-sm capitalize transition-colors"
               style={{
-                background: filter === f ? '#222' : 'transparent',
-                color: filter === f ? '#fff' : '#888',
-                border: '1px solid #333',
-                padding: '6px 16px',
-                fontSize: 13,
-                borderRadius: 6,
-                cursor: 'pointer',
-                textTransform: 'capitalize',
+                background: filter === f ? 'rgba(6,182,212,0.2)' : 'transparent',
+                color: filter === f ? '#fff' : 'rgba(255,255,255,0.6)',
+                border: '1px solid rgba(6,182,212,0.2)',
               }}
             >
               {f} ({f === 'all' ? products.length : products.filter(p => p.status === f).length})
@@ -547,98 +558,116 @@ export default function AdminProductsClient() {
 
         {/* Products list */}
         {loading ? (
-          <p style={{ color: '#888' }}>Loading products...</p>
+          <div 
+            className="rounded-xl p-6 text-center"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(6,182,212,0.2)',
+            }}
+          >
+            <p className="text-slate-400">Loading products...</p>
+          </div>
         ) : filteredProducts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 60, color: '#888' }}>
-            <p style={{ fontSize: 18, marginBottom: 8 }}>No products yet</p>
-            <p style={{ fontSize: 14 }}>Create your first product to get started</p>
+          <div 
+            className="rounded-xl p-12 text-center"
+            style={{
+              background: 'rgba(26,26,46,0.8)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(6,182,212,0.2)',
+            }}
+          >
+            <p className="text-lg text-white mb-2">No products yet</p>
+            <p className="text-sm text-slate-400">Create your first product to get started</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="flex flex-col gap-3">
             {filteredProducts.map(product => (
               <div
                 key={product.id}
+                className="rounded-xl p-4 relative overflow-hidden flex items-center gap-4"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                  padding: 16,
-                  background: '#111',
-                  border: '1px solid #222',
-                  borderRadius: 10,
+                  background: 'rgba(26,26,46,0.8)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(6,182,212,0.2)',
+                  boxShadow: '0 0 20px rgba(6,182,212,0.1), 0 8px 32px rgba(0,0,0,0.8)'
                 }}
               >
-                {/* Status dot */}
-                <div style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  background: statusColor(product.status),
-                  flexShrink: 0,
-                }} />
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+                <div className="relative z-10 flex items-center gap-4 flex-1">
+                  {/* Status dot */}
+                  <div 
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ background: statusColor(product.status) }}
+                  />
 
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontWeight: 600 }}>{product.name}</span>
-                    <span style={{ fontSize: 12, color: '#888', background: '#1a1a1a', padding: '2px 8px', borderRadius: 4 }}>
-                      /p/{product.slug}
-                    </span>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-white">{product.name}</span>
+                      <span className="text-xs text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded">
+                        /p/{product.slug}
+                      </span>
+                    </div>
+                    <div className="text-sm text-slate-400 flex gap-4">
+                      <span>{product.price_display}</span>
+                      <span>{product.commission_percent}% commission</span>
+                      <span>Priority: {product.upsell_priority}</span>
+                      {product.stripe_price_id && <span className="text-green-400">✓ Stripe</span>}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 13, color: '#888', marginTop: 4, display: 'flex', gap: 16 }}>
-                    <span>{product.price_display}</span>
-                    <span>{product.commission_percent}% commission</span>
-                    <span>Priority: {product.upsell_priority}</span>
-                    {product.stripe_price_id && <span style={{ color: '#4ade80' }}>✓ Stripe</span>}
-                  </div>
-                </div>
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {product.status === 'draft' && (
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    {product.status === 'draft' && (
+                      <button
+                        onClick={() => handleStatusChange(product.id, 'active')}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                        style={{ background: 'rgba(10,50,10,0.3)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}
+                      >
+                        Activate
+                      </button>
+                    )}
+                    {product.status === 'active' && (
+                      <button
+                        onClick={() => handleStatusChange(product.id, 'draft')}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                        style={{ background: 'rgba(26,26,10,0.3)', color: '#f5c542', border: '1px solid rgba(245,197,66,0.3)' }}
+                      >
+                        Unpublish
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleStatusChange(product.id, 'active')}
-                      style={actionBtnStyle('#0a1a0a', '#1a4a1a', '#4ade80')}
+                      onClick={() => startEdit(product)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                      style={{ background: 'rgba(10,10,26,0.3)', color: '#6b9fff', border: '1px solid rgba(107,159,255,0.3)' }}
                     >
-                      Activate
+                      Edit
                     </button>
-                  )}
-                  {product.status === 'active' && (
-                    <button
-                      onClick={() => handleStatusChange(product.id, 'draft')}
-                      style={actionBtnStyle('#1a1a0a', '#4a4a1a', '#f5c542')}
-                    >
-                      Unpublish
-                    </button>
-                  )}
-                  <button
-                    onClick={() => startEdit(product)}
-                    style={actionBtnStyle('#0a0a1a', '#1a1a4a', '#6b9fff')}
-                  >
-                    Edit
-                  </button>
-                  {product.status !== 'archived' && (
-                    <button
-                      onClick={() => handleArchive(product.id)}
-                      style={actionBtnStyle('#1a0a0a', '#4a1a1a', '#ff6b6b')}
-                    >
-                      Archive
-                    </button>
-                  )}
-                  {product.status === 'archived' && (
-                    <button
-                      onClick={() => handleStatusChange(product.id, 'draft')}
-                      style={actionBtnStyle('#0a0a1a', '#1a1a4a', '#6b9fff')}
-                    >
-                      Restore
-                    </button>
-                  )}
+                    {product.status !== 'archived' && (
+                      <button
+                        onClick={() => handleArchive(product.id)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                        style={{ background: 'rgba(26,10,10,0.3)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.3)' }}
+                      >
+                        Archive
+                      </button>
+                    )}
+                    {product.status === 'archived' && (
+                      <button
+                        onClick={() => handleStatusChange(product.id, 'draft')}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                        style={{ background: 'rgba(10,10,26,0.3)', color: '#6b9fff', border: '1px solid rgba(107,159,255,0.3)' }}
+                      >
+                        Restore
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
     </div>
   )
 }
@@ -646,33 +675,21 @@ export default function AdminProductsClient() {
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: 13,
-  color: '#888',
-  marginBottom: 4,
+  color: 'rgba(255,255,255,0.6)',
+  marginBottom: 6,
   fontWeight: 500,
 }
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '10px 12px',
-  background: '#0a0a0a',
-  border: '1px solid #333',
+  background: 'rgba(15,15,26,0.6)',
+  border: '1px solid rgba(6,182,212,0.2)',
   borderRadius: 8,
   color: '#fff',
   fontSize: 14,
   outline: 'none',
+  transition: 'all 0.2s',
 }
 
-function actionBtnStyle(bg: string, border: string, color: string): React.CSSProperties {
-  return {
-    background: bg,
-    color,
-    border: `1px solid ${border}`,
-    padding: '6px 12px',
-    fontSize: 12,
-    fontWeight: 600,
-    borderRadius: 6,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  }
-}
 
