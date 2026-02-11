@@ -377,13 +377,49 @@ export default function AdminProductsClient() {
           />
         </div>
         <div>
-          <label style={labelStyle}>Thumbnail URL</label>
-          <input
-            style={inputStyle}
-            value={form.thumbnail_url}
-            onChange={(e) => setForm((f: any) => ({ ...f, thumbnail_url: e.target.value }))}
-            placeholder="https://..."
-          />
+          <label style={labelStyle}>Favicon/Thumbnail</label>
+          <div className="flex gap-2 items-end">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={async (e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+
+                const formData = new FormData()
+                formData.append('file', file)
+
+                try {
+                  const res = await fetch('/api/admin/products/upload-thumbnail', {
+                    method: 'POST',
+                    body: formData,
+                  })
+                  const data = await res.json()
+                  if (data.url) {
+                    setForm((f: any) => ({ ...f, thumbnail_url: data.url }))
+                  } else {
+                    alert(`Upload failed: ${data.error || 'Unknown error'}`)
+                  }
+                } catch (err: any) {
+                  alert(`Upload error: ${err.message}`)
+                }
+              }}
+              className="flex-1"
+              style={{
+                ...inputStyle,
+                padding: '8px',
+                cursor: 'pointer',
+              }}
+            />
+            {form.thumbnail_url && (
+              <img
+                src={form.thumbnail_url}
+                alt="Thumbnail preview"
+                className="w-8 h-8 rounded object-cover"
+                style={{ border: '1px solid rgba(6,182,212,0.2)' }}
+              />
+            )}
+          </div>
         </div>
         <div>
           <label style={labelStyle}>Delivery URL (where buyer goes after purchase)</label>
