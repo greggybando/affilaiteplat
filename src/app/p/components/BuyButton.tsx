@@ -286,19 +286,7 @@ export default function BuyButton({
             >
               <CheckoutForm product={product} slug={slug} email={email} />
             </Elements>
-          ) : (
-            <div style={{
-              padding: 24,
-              backgroundColor: '#1a1a2e',
-              borderRadius: 8,
-              textAlign: 'center',
-              color: '#6b7280',
-              fontSize: 14,
-              marginBottom: 24,
-            }}>
-              Enter your email above to continue
-            </div>
-          )}
+          ) : null}
 
           {error && (
             <p style={{ marginTop: 12, color: '#ef4444', fontSize: 14, textAlign: 'center' }}>{error}</p>
