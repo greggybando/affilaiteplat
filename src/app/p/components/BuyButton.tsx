@@ -17,44 +17,8 @@ export default function BuyButton({
   style,
   className,
 }: BuyButtonProps) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  const handleCheckout = async () => {
-    setLoading(true)
-    setError('')
-    try {
-      // Read FirstPromoter cookie
-      const cookies = document.cookie.split(';')
-      let fprTid = null
-      for (const cookie of cookies) {
-        const [name, value] = cookie.trim().split('=')
-        if (name === '_fprom_tid') {
-          fprTid = value
-          break
-        }
-      }
-
-      const res = await fetch('/api/checkout/product', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          product_slug: slug,
-          fpr_tid: fprTid || undefined,
-        }),
-      })
-      const data = await res.json()
-
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        setError(data.error || 'Failed to create checkout')
-        setLoading(false)
-      }
-    } catch (err) {
-      setError('Checkout error. Please try again.')
-      setLoading(false)
-    }
+  const handleClick = () => {
+    window.location.href = `/checkout/product?slug=${slug}`
   }
 
   const defaultStyle: React.CSSProperties = {
@@ -66,8 +30,7 @@ export default function BuyButton({
     backgroundColor: '#10b981',
     border: 'none',
     borderRadius: '12px',
-    cursor: loading ? 'wait' : 'pointer',
-    opacity: loading ? 0.7 : 1,
+    cursor: 'pointer',
     transition: 'all 0.2s ease',
     textAlign: 'center' as const,
     width: '100%',
@@ -77,18 +40,14 @@ export default function BuyButton({
   return (
     <div style={{ textAlign: 'center', margin: '32px 0' }}>
       <button
-        onClick={handleCheckout}
-        disabled={loading}
+        onClick={handleClick}
         style={style || defaultStyle}
         className={className}
       >
-        {loading ? 'Processing...' : text}
+        {text}
       </button>
       {price && (
         <p style={{ marginTop: 8, fontSize: 14, color: '#666' }}>{price}</p>
-      )}
-      {error && (
-        <p style={{ marginTop: 8, fontSize: 14, color: '#ef4444' }}>{error}</p>
       )}
     </div>
   )

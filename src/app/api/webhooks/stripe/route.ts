@@ -57,11 +57,38 @@ export async function POST(req: Request) {
         }
 
         case 'payment_intent.succeeded': {
-          // Handle one-click upsell payments (these don't go through checkout.session)
           const paymentIntent = event.data.object as Stripe.PaymentIntent
           const metadata = paymentIntent.metadata || {}
+          const productSlug = metadata.product_slug
+          const customerEmail = metadata.customer_email
+          const productId = metadata.product_id
 
-          if (metadata.purchase_type === 'upsell') {
+          // Handle embedded checkout product purchases
+          if (productSlug && customerEmail) {
+            // Check if purchase already exists
+            const { data: existing } = await (supabaseAdmin as any)
+              .from('purchases')
+              .select('id')
+              .eq('stripe_payment_intent_id', paymentIntent.id)
+              .single()
+
+            if (!existing) {
+              // Record purchase from embedded checkout
+              await (supabaseAdmin as any)
+                .from('purchases')
+                .insert({
+                  product_id: productId || null,
+                  product_slug: productSlug,
+                  customer_email: customerEmail,
+                  amount_cents: paymentIntent.amount,
+                  stripe_payment_intent_id: paymentIntent.id,
+                  status: 'completed',
+                })
+
+              console.log(`✅ Product purchase recorded: ${productSlug} for ${customerEmail}`)
+            }
+          } else if (metadata.purchase_type === 'upsell') {
+            // Handle one-click upsell payments (these don't go through checkout.session)
             // Upsell was already recorded in the /api/upsell/buy route
             // This is a safety net - check if purchase exists, if not, create it
             const { data: existing } = await (supabaseAdmin as any)
