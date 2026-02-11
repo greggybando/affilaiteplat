@@ -22,8 +22,6 @@ interface Product {
   sales_body: string | null
   short_description: string | null
   thumbnail_url: string | null
-  delivery_url: string | null
-  delivery_type: string
   cta_text: string
   product_type: string
   page_html: string | null
@@ -47,8 +45,6 @@ const emptyProduct = {
   sales_body: '',
   short_description: '',
   thumbnail_url: '',
-  delivery_url: '',
-  delivery_type: 'redirect',
   cta_text: 'Get Instant Access',
   product_type: 'one_time',
   page_html: '',
@@ -178,8 +174,6 @@ export default function AdminProductsClient() {
       sales_body: product.sales_body || '',
       short_description: product.short_description || '',
       thumbnail_url: product.thumbnail_url || '',
-      delivery_url: product.delivery_url || '',
-      delivery_type: product.delivery_type || 'redirect',
       cta_text: product.cta_text || 'Get Instant Access',
       product_type: product.product_type || 'one_time',
       page_html: product.page_html || '',
@@ -420,15 +414,6 @@ export default function AdminProductsClient() {
               />
             )}
           </div>
-        </div>
-        <div>
-          <label style={labelStyle}>Delivery URL (where buyer goes after purchase)</label>
-          <input
-            style={inputStyle}
-            value={form.delivery_url}
-            onChange={(e) => setForm((f: any) => ({ ...f, delivery_url: e.target.value }))}
-            placeholder="https://..."
-          />
         </div>
       </div>
 
