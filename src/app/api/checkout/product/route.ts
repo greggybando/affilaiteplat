@@ -4,11 +4,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-})
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,38 +56,50 @@ export async function POST(req: NextRequest) {
     const cancelUrl = `${baseUrl}/p/${product_slug}${sid ? `?sid=${sid}` : ''}`
 
     // Create Stripe checkout session
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const sessionParams = new URLSearchParams({
       mode: product.product_type === 'subscription' ? 'subscription' : 'payment',
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: product.stripe_price_id,
-          quantity: 1,
-        },
-      ],
+      'payment_method_types[0]': 'card',
+      'line_items[0][price]': product.stripe_price_id,
+      'line_items[0][quantity]': '1',
       success_url: successUrl,
       cancel_url: cancelUrl,
-      metadata: {
-        product_slug: product.slug,
-        product_id: product.id,
-        sid: sid || '',
-        affiliate_code: affiliateCode || '',
-        affiliate_id: affiliateId || '',
-        purchase_type: 'product',
-      },
-      payment_intent_data: product.product_type !== 'subscription' ? {
-        metadata: {
-          product_slug: product.slug,
-          product_id: product.id,
-          sid: sid || '',
-          affiliate_code: affiliateCode || '',
-          affiliate_id: affiliateId || '',
-          purchase_type: 'product',
-        },
-        // Enable saving the payment method for one-click upsells
-        setup_future_usage: 'off_session',
-      } : undefined,
+      'metadata[product_slug]': product.slug,
+      'metadata[product_id]': product.id,
+      'metadata[sid]': sid || '',
+      'metadata[affiliate_code]': affiliateCode || '',
+      'metadata[affiliate_id]': affiliateId || '',
+      'metadata[purchase_type]': 'product',
     })
+
+    // Add payment_intent_data for one-time payments (not subscriptions)
+    if (product.product_type !== 'subscription') {
+      sessionParams.append('payment_intent_data[metadata][product_slug]', product.slug)
+      sessionParams.append('payment_intent_data[metadata][product_id]', product.id)
+      sessionParams.append('payment_intent_data[metadata][sid]', sid || '')
+      sessionParams.append('payment_intent_data[metadata][affiliate_code]', affiliateCode || '')
+      sessionParams.append('payment_intent_data[metadata][affiliate_id]', affiliateId || '')
+      sessionParams.append('payment_intent_data[metadata][purchase_type]', 'product')
+      sessionParams.append('payment_intent_data[setup_future_usage]', 'off_session')
+    }
+
+    const sessionResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: sessionParams.toString(),
+    })
+
+    const checkoutSession = await sessionResponse.json()
+
+    if (!sessionResponse.ok || checkoutSession.error) {
+      console.error('Stripe checkout session creation error:', checkoutSession.error)
+      return NextResponse.json(
+        { error: checkoutSession.error?.message || 'Failed to create checkout session' },
+        { status: 500 }
+      )
+    }
 
     if (!checkoutSession.url) {
       return NextResponse.json({ error: 'Failed to create checkout URL' }, { status: 500 })
