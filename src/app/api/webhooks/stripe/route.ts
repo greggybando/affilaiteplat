@@ -66,12 +66,30 @@ export async function POST(req: Request) {
 
           // Get customer email from PaymentIntent or charge
           let email = customerEmail
-          if (!email && paymentIntent.charges?.data && paymentIntent.charges.data.length > 0) {
-            const charge = paymentIntent.charges.data[0]
-            email = charge.billing_details?.email || charge.receipt_email || null
-          }
+          
+          // Try receipt_email first
           if (!email && paymentIntent.receipt_email) {
             email = paymentIntent.receipt_email
+          }
+          
+          // If still no email, fetch the charge to get billing details
+          if (!email && paymentIntent.latest_charge) {
+            try {
+              const chargeResponse = await fetch(
+                `https://api.stripe.com/v1/charges/${paymentIntent.latest_charge}`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+                  },
+                }
+              )
+              const charge = await chargeResponse.json()
+              if (charge && !charge.error) {
+                email = charge.billing_details?.email || charge.receipt_email || null
+              }
+            } catch (chargeErr) {
+              console.error('Error fetching charge for email:', chargeErr)
+            }
           }
 
           // Handle embedded checkout product purchases
