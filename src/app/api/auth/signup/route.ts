@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { hashPassword, generateToken, generateTrackingCode } from '@/lib/auth'
-import { createConnectAccount, createConnectOnboardingLink } from '@/lib/stripe'
 import { strictRateLimit, getRateLimitHeaders } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
@@ -113,66 +112,18 @@ export async function POST(request: NextRequest) {
       email: affiliateData.email,
     })
 
-    // Create response object
-    let response: NextResponse
-
-    // If Stripe payout method, create Connect account and return onboarding URL
-    if (payout_method === 'stripe') {
-      try {
-        const connectAccount = await createConnectAccount(email, affiliateData.id)
-
-        // Update affiliate with Stripe account ID
-        await (supabaseAdmin
-          .from('affiliates') as any)
-          .update({ stripe_account_id: connectAccount.id })
-          .eq('id', affiliateData.id)
-
-        // Generate onboarding link
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-        const onboardingLink = await createConnectOnboardingLink(
-          connectAccount.id,
-          `${appUrl}/affiliate/payout-setup`,
-          `${appUrl}/onboarding`
-        )
-
-        response = NextResponse.json({
-          success: true,
-          affiliate: {
-            id: affiliateData.id,
-            name: affiliateData.name,
-            email: affiliateData.email,
-            status: affiliateData.status,
-            trial_ends_at: affiliateData.trial_ends_at,
-          },
-          stripeOnboardingUrl: onboardingLink.url,
-          token: token,
-        })
-      } catch (stripeError) {
-        console.error('Error creating Stripe Connect account:', stripeError)
-        response = NextResponse.json({
-          success: true,
-          affiliate: {
-            id: affiliateData.id,
-            name: affiliateData.name,
-            email: affiliateData.email,
-            status: affiliateData.status,
-            trial_ends_at: affiliateData.trial_ends_at,
-          },
-          token: token,
-        })
-      }
-    } else {
-      response = NextResponse.json({
-        success: true,
-        affiliate: {
-          id: affiliateData.id,
-          name: affiliateData.name,
-          email: affiliateData.email,
-          status: affiliateData.status,
-          trial_ends_at: affiliateData.trial_ends_at,
-        },
-      })
-    }
+    // Create response
+    const response = NextResponse.json({
+      success: true,
+      affiliate: {
+        id: affiliateData.id,
+        name: affiliateData.name,
+        email: affiliateData.email,
+        status: affiliateData.status,
+        trial_ends_at: affiliateData.trial_ends_at,
+      },
+      token: token,
+    })
     
     // Set cookie
     const isProduction = !!process.env.VERCEL || process.env.NODE_ENV === 'production'
