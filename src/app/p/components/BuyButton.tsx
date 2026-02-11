@@ -21,7 +21,17 @@ interface ProductInfo {
 }
 
 
-function CheckoutForm({ product, slug, email }: { product: ProductInfo; slug: string; email: string }) {
+function CheckoutForm({ 
+  product, 
+  slug, 
+  email, 
+  onEmailChange 
+}: { 
+  product: ProductInfo
+  slug: string
+  email: string
+  onEmailChange: (email: string) => void
+}) {
   const stripe = useStripe()
   const elements = useElements()
   const [loading, setLoading] = useState(false)
@@ -61,6 +71,26 @@ function CheckoutForm({ product, slug, email }: { product: ProductInfo; slug: st
 
   return (
     <form onSubmit={handleSubmit}>
+      <label style={{ display: 'block', color: '#d1d5db', fontSize: 14, marginBottom: 6 }}>
+        Email
+      </label>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => onEmailChange(e.target.value)}
+        placeholder="you@example.com"
+        style={{
+          width: '100%',
+          padding: 14,
+          borderRadius: 8,
+          border: '1px solid #374151',
+          backgroundColor: '#1a1a2e',
+          color: '#e5e7eb',
+          fontSize: 16,
+          marginBottom: 24,
+          boxSizing: 'border-box',
+        }}
+      />
       <PaymentElement />
       <button
         type="submit"
@@ -214,26 +244,6 @@ export default function BuyButton({
                   </p>
                 </>
               )}
-              <label style={{ display: 'block', color: '#d1d5db', fontSize: 14, marginBottom: 6 }}>
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                style={{
-                  width: '100%',
-                  padding: 14,
-                  borderRadius: 8,
-                  border: '1px solid #374151',
-                  backgroundColor: '#1a1a2e',
-                  color: '#e5e7eb',
-                  fontSize: 16,
-                  marginBottom: 24,
-                  boxSizing: 'border-box',
-                }}
-              />
               <Elements
                 stripe={stripePromise}
                 options={{
@@ -247,7 +257,12 @@ export default function BuyButton({
                   },
                 }}
               >
-                <CheckoutForm product={product} slug={slug} email={email} />
+                <CheckoutForm 
+                  product={product} 
+                  slug={slug} 
+                  email={email}
+                  onEmailChange={setEmail}
+                />
               </Elements>
             </>
           ) : null}
