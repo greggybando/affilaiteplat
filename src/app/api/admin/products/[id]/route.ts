@@ -4,7 +4,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getCurrentAffiliate, isAdmin } from '@/lib/auth'
-import { stripe } from '@/lib/stripe'
 
 // GET - Single product details
 export async function GET(
@@ -57,18 +56,41 @@ export async function PATCH(
   // If price changed, create new Stripe price (prices are immutable in Stripe)
   if (body.price_cents && body.price_cents !== currentProduct.price_cents && currentProduct.stripe_product_id) {
     try {
-      const newPrice = await stripe.prices.create({
+      const priceParams = new URLSearchParams({
         product: currentProduct.stripe_product_id,
-        unit_amount: body.price_cents,
+        'unit_amount': body.price_cents.toString(),
         currency: 'usd',
         ...(currentProduct.product_type === 'subscription'
-          ? { recurring: { interval: 'month' } }
+          ? { 'recurring[interval]': 'month' }
           : {}),
       })
 
+      const priceResponse = await fetch('https://api.stripe.com/v1/prices', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: priceParams.toString(),
+      })
+
+      const newPrice = await priceResponse.json()
+
+      if (!priceResponse.ok || newPrice.error) {
+        throw new Error(newPrice.error?.message || 'Failed to create Stripe price')
+      }
+
       // Deactivate old price
       if (currentProduct.stripe_price_id) {
-        await stripe.prices.update(currentProduct.stripe_price_id, { active: false })
+        const deactivateParams = new URLSearchParams({ active: 'false' })
+        await fetch(`https://api.stripe.com/v1/prices/${currentProduct.stripe_price_id}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: deactivateParams.toString(),
+        })
       }
 
       body.stripe_price_id = newPrice.id
@@ -82,7 +104,15 @@ export async function PATCH(
   // If name changed, update Stripe product
   if (body.name && body.name !== currentProduct.name && currentProduct.stripe_product_id) {
     try {
-      await stripe.products.update(currentProduct.stripe_product_id, { name: body.name })
+      const updateParams = new URLSearchParams({ name: body.name })
+      await fetch(`https://api.stripe.com/v1/products/${currentProduct.stripe_product_id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: updateParams.toString(),
+      })
     } catch (err: any) {
       console.error('Error updating Stripe product name:', err)
     }
@@ -141,7 +171,15 @@ export async function DELETE(
   // Deactivate in Stripe
   if (product.stripe_product_id) {
     try {
-      await stripe.products.update(product.stripe_product_id, { active: false })
+      const deactivateParams = new URLSearchParams({ active: 'false' })
+      await fetch(`https://api.stripe.com/v1/products/${product.stripe_product_id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: deactivateParams.toString(),
+      })
     } catch (err: any) {
       console.error('Error deactivating Stripe product:', err)
     }

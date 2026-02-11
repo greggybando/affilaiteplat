@@ -4,7 +4,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getCurrentAffiliate, isAdmin } from '@/lib/auth'
-import { stripe } from '@/lib/stripe'
 
 // GET - List all products (admin sees all, including drafts)
 export async function GET(req: NextRequest) {
@@ -110,11 +109,26 @@ export async function POST(req: NextRequest) {
     let stripePrice
 
     try {
-      stripeProduct = await stripe.products.create({
+      const productParams = new URLSearchParams({
         name,
-        description: short_description || description || undefined,
-        metadata: { slug },
+        ...(short_description || description ? { description: short_description || description } : {}),
+        [`metadata[slug]`]: slug,
       })
+
+      const productResponse = await fetch('https://api.stripe.com/v1/products', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: productParams.toString(),
+      })
+
+      stripeProduct = await productResponse.json()
+
+      if (!productResponse.ok || stripeProduct.error) {
+        throw new Error(stripeProduct.error?.message || 'Failed to create Stripe product')
+      }
     } catch (stripeErr: any) {
       console.error('Stripe product creation error:', stripeErr)
       return NextResponse.json(
@@ -124,19 +138,42 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      stripePrice = await stripe.prices.create({
+      const priceParams = new URLSearchParams({
         product: stripeProduct.id,
-        unit_amount: price_cents,
+        'unit_amount': price_cents.toString(),
         currency: 'usd',
         ...(product_type === 'subscription'
-          ? { recurring: { interval: 'month' } }
+          ? { 'recurring[interval]': 'month' }
           : {}),
       })
+
+      const priceResponse = await fetch('https://api.stripe.com/v1/prices', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: priceParams.toString(),
+      })
+
+      stripePrice = await priceResponse.json()
+
+      if (!priceResponse.ok || stripePrice.error) {
+        throw new Error(stripePrice.error?.message || 'Failed to create Stripe price')
+      }
     } catch (stripeErr: any) {
       console.error('Stripe price creation error:', stripeErr)
       // Clean up product if price creation fails
       try {
-        await stripe.products.update(stripeProduct.id, { active: false })
+        const cleanupParams = new URLSearchParams({ active: 'false' })
+        await fetch(`https://api.stripe.com/v1/products/${stripeProduct.id}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: cleanupParams.toString(),
+        })
       } catch (cleanupErr) {
         console.error('Failed to cleanup Stripe product:', cleanupErr)
       }
@@ -181,7 +218,19 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('Error creating product:', error)
       // Clean up Stripe if DB insert failed
-      await stripe.products.update(stripeProduct.id, { active: false })
+      try {
+        const cleanupParams = new URLSearchParams({ active: 'false' })
+        await fetch(`https://api.stripe.com/v1/products/${stripeProduct.id}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: cleanupParams.toString(),
+        })
+      } catch (cleanupErr) {
+        console.error('Failed to cleanup Stripe product:', cleanupErr)
+      }
       return NextResponse.json({ error: 'Failed to create product' }, { status: 500 })
     }
 
