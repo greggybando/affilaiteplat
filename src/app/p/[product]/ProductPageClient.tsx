@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
 import BuyButton from '../components/BuyButton'
 
 interface Product {
@@ -30,9 +29,6 @@ export default function ProductPageClient({ slug }: { slug: string }) {
 }
 
 function ProductPageInner({ slug }: { slug: string }) {
-  const searchParams = useSearchParams()
-  const sid = searchParams.get('sid')
-
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

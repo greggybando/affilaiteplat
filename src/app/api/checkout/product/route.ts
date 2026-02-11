@@ -1,6 +1,5 @@
 // src/app/api/checkout/product/route.ts
 // Creates a Stripe checkout session for a product purchase
-// Attaches attribution session data so the webhook can credit the affiliate
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
@@ -8,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { product_slug, sid } = body
+    const { product_slug } = body
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.millionairelifedesign.com'
 
     if (!product_slug) {
@@ -31,29 +30,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Product not configured for payment' }, { status: 500 })
     }
 
-    // Look up attribution session if sid provided
-    let affiliateCode = null
-    let affiliateId = null
-
-    if (sid) {
-      const { data: session } = await (supabaseAdmin as any)
-        .from('attribution_sessions')
-        .select('affiliate_id, affiliate_code')
-        .eq('sid', sid)
-        .single()
-
-      if (session) {
-        affiliateCode = session.affiliate_code
-        affiliateId = session.affiliate_id
-      }
-    }
-
     // Build success URL - redirect to upsell shop after purchase
-    const successUrl = sid
-      ? `${baseUrl}/upsell/shop?sid=${sid}&purchased=${product_slug}&session_id={CHECKOUT_SESSION_ID}`
-      : `${baseUrl}/upsell/shop?purchased=${product_slug}&session_id={CHECKOUT_SESSION_ID}`
-
-    const cancelUrl = `${baseUrl}/p/${product_slug}${sid ? `?sid=${sid}` : ''}`
+    const successUrl = `${baseUrl}/upsell/shop?purchased=${product_slug}&session_id={CHECKOUT_SESSION_ID}`
+    const cancelUrl = `${baseUrl}/p/${product_slug}`
 
     // Create Stripe checkout session
     const sessionParams = new URLSearchParams({
@@ -65,9 +44,6 @@ export async function POST(req: NextRequest) {
       cancel_url: cancelUrl,
       'metadata[product_slug]': product.slug,
       'metadata[product_id]': product.id,
-      'metadata[sid]': sid || '',
-      'metadata[affiliate_code]': affiliateCode || '',
-      'metadata[affiliate_id]': affiliateId || '',
       'metadata[purchase_type]': 'product',
     })
 
@@ -75,9 +51,6 @@ export async function POST(req: NextRequest) {
     if (product.product_type !== 'subscription') {
       sessionParams.append('payment_intent_data[metadata][product_slug]', product.slug)
       sessionParams.append('payment_intent_data[metadata][product_id]', product.id)
-      sessionParams.append('payment_intent_data[metadata][sid]', sid || '')
-      sessionParams.append('payment_intent_data[metadata][affiliate_code]', affiliateCode || '')
-      sessionParams.append('payment_intent_data[metadata][affiliate_id]', affiliateId || '')
       sessionParams.append('payment_intent_data[metadata][purchase_type]', 'product')
       sessionParams.append('payment_intent_data[setup_future_usage]', 'off_session')
     }

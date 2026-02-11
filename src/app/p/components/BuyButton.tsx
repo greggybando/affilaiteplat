@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 
 interface BuyButtonProps {
   slug: string
@@ -18,8 +17,6 @@ export default function BuyButton({
   style,
   className,
 }: BuyButtonProps) {
-  const searchParams = useSearchParams()
-  const sid = searchParams.get('sid')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -32,7 +29,6 @@ export default function BuyButton({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           product_slug: slug,
-          sid: sid || undefined,
         }),
       })
       const data = await res.json()
