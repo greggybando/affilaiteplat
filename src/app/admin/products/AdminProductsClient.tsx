@@ -547,7 +547,6 @@ export default function AdminProductsClient() {
                     <div className="text-sm text-slate-400 flex gap-4">
                       <span>{product.price_display}</span>
                       <span>{product.commission_percent}% commission</span>
-                      <span>Priority: {product.upsell_priority}</span>
                       {product.stripe_price_id && <span className="text-green-400">✓ Stripe</span>}
                     </div>
                   </div>
