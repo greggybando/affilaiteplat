@@ -16,8 +16,9 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <script dangerouslySetInnerHTML={{ __html: `
-(function(){var t=document.createElement("script");t.type="text/javascript";t.async=true;t.src="https://cdn.firstpromoter.com/fpr.js";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)})();
-fpr("init",{cid:"7k7myne5"});fpr("click");
+(function(w){w.fpr=w.fpr||function(){w.fpr.q=w.fpr.q||[];w.fpr.q[arguments[0]=='set'?'unshift':'push'](arguments)};var t=document.createElement("script");t.type="text/javascript";t.async=true;t.src="https://cdn.firstpromoter.com/fpr.js";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)})(window);
+fpr("init",{cid:"7k7myne5"});
+fpr("click");
 `}} />
       </head>
       <body className="min-h-screen bg-gray-950 text-white antialiased">
