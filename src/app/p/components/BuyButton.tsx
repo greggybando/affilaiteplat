@@ -21,7 +21,7 @@ interface ProductInfo {
 }
 
 
-function CheckoutForm({ product, slug }: { product: ProductInfo; slug: string }) {
+function CheckoutForm({ product, slug, email }: { product: ProductInfo; slug: string; email: string }) {
   const stripe = useStripe()
   const elements = useElements()
   const [loading, setLoading] = useState(false)
@@ -34,11 +34,22 @@ function CheckoutForm({ product, slug }: { product: ProductInfo; slug: string })
     setLoading(true)
     setError('')
 
+    const confirmParams: any = {
+      return_url: `${window.location.origin}/upsell/shop?purchased=${slug}`,
+    }
+
+    // Add email to billing details if provided
+    if (email) {
+      confirmParams.payment_method_data = {
+        billing_details: {
+          email: email,
+        },
+      }
+    }
+
     const { error: submitError } = await stripe.confirmPayment({
       elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/upsell/shop?purchased=${slug}`,
-      },
+      confirmParams,
     })
 
     if (submitError) {
@@ -85,6 +96,7 @@ export default function BuyButton({
   className,
 }: BuyButtonProps) {
   const [showCheckout, setShowCheckout] = useState(false)
+  const [email, setEmail] = useState('')
   const [clientSecret, setClientSecret] = useState('')
   const [product, setProduct] = useState<ProductInfo | null>(null)
   const [creatingIntent, setCreatingIntent] = useState(false)
@@ -106,6 +118,7 @@ export default function BuyButton({
       setShowCheckout(true)
       setCreatingIntent(true)
       setError('')
+      setEmail('')
 
       try {
         const res = await fetch('/api/checkout/create-intent', {
@@ -134,6 +147,7 @@ export default function BuyButton({
       setShowCheckout(false)
       setClientSecret('')
       setProduct(null)
+      setEmail('')
       setError('')
     }
   }
@@ -200,6 +214,26 @@ export default function BuyButton({
                   </p>
                 </>
               )}
+              <label style={{ display: 'block', color: '#d1d5db', fontSize: 14, marginBottom: 6 }}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                style={{
+                  width: '100%',
+                  padding: 14,
+                  borderRadius: 8,
+                  border: '1px solid #374151',
+                  backgroundColor: '#1a1a2e',
+                  color: '#e5e7eb',
+                  fontSize: 16,
+                  marginBottom: 24,
+                  boxSizing: 'border-box',
+                }}
+              />
               <Elements
                 stripe={stripePromise}
                 options={{
@@ -213,7 +247,7 @@ export default function BuyButton({
                   },
                 }}
               >
-                <CheckoutForm product={product} slug={slug} />
+                <CheckoutForm product={product} slug={slug} email={email} />
               </Elements>
             </>
           ) : null}
