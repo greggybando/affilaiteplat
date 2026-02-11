@@ -24,9 +24,7 @@ interface Product {
   thumbnail_url: string | null
   delivery_url: string | null
   delivery_type: string
-  upsell_priority: number
   cta_text: string
-  guarantee_text: string | null
   product_type: string
   page_html: string | null
   stripe_product_id: string | null
@@ -51,9 +49,7 @@ const emptyProduct = {
   thumbnail_url: '',
   delivery_url: '',
   delivery_type: 'redirect',
-  upsell_priority: 0,
   cta_text: 'Get Instant Access',
-  guarantee_text: '30-day money-back guarantee',
   product_type: 'one_time',
   page_html: '',
 }
@@ -184,9 +180,7 @@ export default function AdminProductsClient() {
       thumbnail_url: product.thumbnail_url || '',
       delivery_url: product.delivery_url || '',
       delivery_type: product.delivery_type || 'redirect',
-      upsell_priority: product.upsell_priority,
       cta_text: product.cta_text || 'Get Instant Access',
-      guarantee_text: product.guarantee_text || '',
       product_type: product.product_type || 'one_time',
       page_html: product.page_html || '',
     })
@@ -331,18 +325,6 @@ export default function AdminProductsClient() {
             <option value="archived">Archived (hidden)</option>
           </select>
         </div>
-
-        {/* Upsell Priority */}
-        <div>
-          <label style={labelStyle}>Upsell Priority (lower = shown first)</label>
-          <input
-            style={inputStyle}
-            type="number"
-            value={form.upsell_priority}
-            onChange={(e) => setForm((f: any) => ({ ...f, upsell_priority: parseInt(e.target.value) || 0 }))}
-            placeholder="0"
-          />
-        </div>
       </div>
 
       {/* Sales Page HTML */}
@@ -373,25 +355,14 @@ export default function AdminProductsClient() {
           }}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div>
-            <label style={labelStyle}>Button Text</label>
-            <input
-              value={form.cta_text}
-              onChange={(e) => setForm((f: any) => ({ ...f, cta_text: e.target.value }))}
-              placeholder="Get Instant Access"
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>Guarantee Text</label>
-            <input
-              value={form.guarantee_text}
-              onChange={(e) => setForm((f: any) => ({ ...f, guarantee_text: e.target.value }))}
-              placeholder="30-day money-back guarantee"
-              style={inputStyle}
-            />
-          </div>
+        <div className="mt-4">
+          <label style={labelStyle}>Button Text</label>
+          <input
+            value={form.cta_text}
+            onChange={(e) => setForm((f: any) => ({ ...f, cta_text: e.target.value }))}
+            placeholder="Get Instant Access"
+            style={inputStyle}
+          />
         </div>
       </div>
 
