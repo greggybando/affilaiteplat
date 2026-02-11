@@ -102,6 +102,7 @@ export async function POST(req: Request) {
             // Call FirstPromoter API if tracking ID exists
             if (fprTid && email && process.env.FIRSTPROMOTER_API_KEY) {
               try {
+                // Track signup
                 await fetch('https://firstpromoter.com/api/v1/track/signup', {
                   method: 'POST',
                   headers: {
@@ -113,7 +114,23 @@ export async function POST(req: Request) {
                     tid: fprTid,
                   }).toString(),
                 })
-                console.log(`✅ FirstPromoter signup tracked: ${email} with tid ${fprTid}`)
+                
+                // Track sale
+                await fetch('https://firstpromoter.com/api/v1/track/sale', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'x-api-key': process.env.FIRSTPROMOTER_API_KEY,
+                  },
+                  body: new URLSearchParams({
+                    email: email,
+                    tid: fprTid,
+                    amount: (paymentIntent.amount / 100).toString(), // Convert cents to dollars
+                    currency: 'usd',
+                  }).toString(),
+                })
+                
+                console.log(`✅ FirstPromoter signup + sale tracked: ${email} with tid ${fprTid}`)
               } catch (fprErr) {
                 console.error('FirstPromoter API error:', fprErr)
               }
