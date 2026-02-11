@@ -29,7 +29,7 @@ function CheckoutForm({ product, slug }: { product: ProductInfo; slug: string })
     const { error: submitError } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/upsell/shop?purchased=${slug}&session_id={CHECKOUT_SESSION_ID}`,
+        return_url: `${window.location.origin}/upsell/shop?purchased=${slug}`,
       },
     })
 
