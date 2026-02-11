@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
     }
 
-    // Validate file size (max 2MB for favicon/thumbnail)
-    if (file.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File must be less than 2MB' }, { status: 400 })
+    // Validate file size (max 5MB for favicon/thumbnail)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File must be less than 5MB' }, { status: 400 })
     }
 
     // Generate unique filename
