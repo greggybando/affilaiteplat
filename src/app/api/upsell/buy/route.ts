@@ -4,11 +4,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-})
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,9 +18,21 @@ export async function POST(req: NextRequest) {
     }
 
     // Get the original checkout session to retrieve payment method + customer
-    const originalSession = await stripe.checkout.sessions.retrieve(checkout_session_id, {
-      expand: ['payment_intent'],
+    const sessionResponse = await fetch(`https://api.stripe.com/v1/checkout/sessions/${checkout_session_id}?expand[]=payment_intent`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+      },
     })
+
+    const originalSession = await sessionResponse.json()
+
+    if (!sessionResponse.ok || originalSession.error) {
+      return NextResponse.json(
+        { error: originalSession.error?.message || 'Failed to retrieve checkout session' },
+        { status: 500 }
+      )
+    }
 
     if (!originalSession.customer || !originalSession.payment_intent) {
       return NextResponse.json(
@@ -35,7 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     const customerId = originalSession.customer as string
-    const paymentIntent = originalSession.payment_intent as Stripe.PaymentIntent
+    const paymentIntent = originalSession.payment_intent as any
     const paymentMethodId = paymentIntent.payment_method as string
     const customerEmail = originalSession.customer_details?.email || ''
 
@@ -89,23 +96,44 @@ export async function POST(req: NextRequest) {
     }
 
     // Charge the saved payment method
-    const upsellPaymentIntent = await stripe.paymentIntents.create({
-      amount: product.price_cents,
+    const paymentIntentParams = new URLSearchParams({
+      amount: product.price_cents.toString(),
       currency: 'usd',
       customer: customerId,
       payment_method: paymentMethodId,
-      off_session: true,
-      confirm: true,
-      metadata: {
-        product_slug: product.slug,
-        product_id: product.id,
-        sid: sid || '',
-        affiliate_code: affiliateCode || '',
-        affiliate_id: affiliateId || '',
-        purchase_type: 'upsell',
-        original_checkout_session: checkout_session_id,
-      },
+      off_session: 'true',
+      confirm: 'true',
+      'metadata[product_slug]': product.slug,
+      'metadata[product_id]': product.id,
+      'metadata[sid]': sid || '',
+      'metadata[affiliate_code]': affiliateCode || '',
+      'metadata[affiliate_id]': affiliateId || '',
+      'metadata[purchase_type]': 'upsell',
+      'metadata[original_checkout_session]': checkout_session_id,
     })
+
+    const paymentIntentResponse = await fetch('https://api.stripe.com/v1/payment_intents', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: paymentIntentParams.toString(),
+    })
+
+    const upsellPaymentIntent = await paymentIntentResponse.json()
+
+    if (!paymentIntentResponse.ok || upsellPaymentIntent.error) {
+      const errorMessage = upsellPaymentIntent.error?.message || 'Failed to create payment intent'
+      // Handle card declined or authentication required
+      if (upsellPaymentIntent.error?.code === 'authentication_required') {
+        return NextResponse.json(
+          { error: 'Card requires authentication - cannot process one-click', requires_action: true },
+          { status: 402 }
+        )
+      }
+      throw new Error(errorMessage)
+    }
 
     if (upsellPaymentIntent.status === 'succeeded') {
       // Record the purchase immediately (webhook will also handle this, but we want instant UI update)
@@ -168,14 +196,14 @@ export async function POST(req: NextRequest) {
     console.error('Upsell buy error:', err)
 
     // Handle card declined or authentication required
-    if (err.code === 'authentication_required') {
+    if (err.code === 'authentication_required' || err.message?.includes('authentication_required')) {
       return NextResponse.json(
         { error: 'Card requires authentication - cannot process one-click', requires_action: true },
         { status: 402 }
       )
     }
 
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return NextResponse.json({ error: err.message || 'Unknown error occurred' }, { status: 500 })
   }
 }
 

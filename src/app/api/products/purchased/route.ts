@@ -4,11 +4,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-})
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -20,7 +15,22 @@ export async function GET(req: NextRequest) {
 
   try {
     // Get customer email from Stripe session
-    const session = await stripe.checkout.sessions.retrieve(sessionId)
+    const sessionResponse = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+      },
+    })
+
+    const session = await sessionResponse.json()
+
+    if (!sessionResponse.ok || session.error) {
+      return NextResponse.json(
+        { error: session.error?.message || 'Failed to retrieve checkout session' },
+        { status: 500 }
+      )
+    }
+
     const email = session.customer_details?.email
 
     if (!email) {

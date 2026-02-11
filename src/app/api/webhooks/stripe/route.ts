@@ -104,8 +104,16 @@ export async function POST(req: Request) {
           // ===== EXISTING LOGIC (unchanged) =====
           const subscription = event.data.object as Stripe.Subscription
           const customerId = subscription.customer as string
-          const customer = await stripe.customers.retrieve(customerId)
-          const customerEmail = (customer as Stripe.Customer).email
+          
+          const customerResponse = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+            },
+          })
+          
+          const customer = await customerResponse.json()
+          const customerEmail = customer.email
 
           if (customerEmail) {
             const { data: affiliate } = await (supabaseAdmin as any)
@@ -141,8 +149,16 @@ export async function POST(req: Request) {
 
           if (subscription.status === 'canceled' || subscription.cancel_at_period_end) {
             const customerId = subscription.customer as string
-            const customer = await stripe.customers.retrieve(customerId)
-            const customerEmail = (customer as Stripe.Customer).email
+            
+            const customerResponse = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+              },
+            })
+            
+            const customer = await customerResponse.json()
+            const customerEmail = customer.email
 
             if (customerEmail && subscription.status === 'canceled') {
               const { data: affiliate } = await (supabaseAdmin as any)
@@ -210,7 +226,14 @@ async function handleProductPurchase(
   let paymentIntentId = null
 
   if (session.payment_intent) {
-    const pi = await stripe.paymentIntents.retrieve(session.payment_intent as string)
+    const piResponse = await fetch(`https://api.stripe.com/v1/payment_intents/${session.payment_intent}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+      },
+    })
+    
+    const pi = await piResponse.json()
     paymentMethodId = pi.payment_method as string
     paymentIntentId = pi.id
   }
@@ -421,8 +444,15 @@ async function recordProductPurchase(
   // Get customer email
   let customerEmail = ''
   if (paymentIntent.customer) {
-    const customer = await stripe.customers.retrieve(paymentIntent.customer as string)
-    customerEmail = (customer as Stripe.Customer).email || ''
+    const customerResponse = await fetch(`https://api.stripe.com/v1/customers/${paymentIntent.customer}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+      },
+    })
+    
+    const customer = await customerResponse.json()
+    customerEmail = customer.email || ''
   }
 
   await (supabaseAdmin as any)
