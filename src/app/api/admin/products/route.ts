@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
     guarantee_text,
     product_type = 'one_time',
     status = 'draft',
+    page_html,
   } = body
 
   // Validate required fields
@@ -139,10 +140,11 @@ export async function POST(req: NextRequest) {
         thumbnail_url,
         delivery_url,
         delivery_type,
-        upsell_priority,
-        cta_text,
-        guarantee_text,
-        product_type,
+    upsell_priority,
+    cta_text,
+    guarantee_text,
+    product_type,
+    page_html,
       })
       .select()
       .single()

@@ -28,6 +28,7 @@ interface Product {
   cta_text: string
   guarantee_text: string | null
   product_type: string
+  page_html: string | null
   stripe_product_id: string | null
   stripe_price_id: string | null
   created_at: string
@@ -54,6 +55,7 @@ const emptyProduct = {
   cta_text: 'Get Instant Access',
   guarantee_text: '30-day money-back guarantee',
   product_type: 'one_time',
+  page_html: '',
 }
 
 export default function AdminProductsClient() {
@@ -186,6 +188,7 @@ export default function AdminProductsClient() {
       cta_text: product.cta_text || 'Get Instant Access',
       guarantee_text: product.guarantee_text || '',
       product_type: product.product_type || 'one_time',
+      page_html: product.page_html || '',
     })
   }
 
@@ -342,103 +345,64 @@ export default function AdminProductsClient() {
         </div>
       </div>
 
-      {/* Sales Page Content */}
-      <h3 className="text-base font-semibold mt-6 mb-4 text-cyan-400">
-        Sales Page Content
-      </h3>
-
-      <div>
-        <label style={labelStyle}>Headline</label>
-        <input
-          style={inputStyle}
-          value={form.headline}
-          onChange={(e) => setForm((f: any) => ({ ...f, headline: e.target.value }))}
-          placeholder="The hidden psychology behind instant charisma..."
-        />
-      </div>
-
-      <div className="mt-3">
-        <label style={labelStyle}>Subheadline</label>
-        <input
-          style={inputStyle}
-          value={form.subheadline}
-          onChange={(e) => setForm((f: any) => ({ ...f, subheadline: e.target.value }))}
-          placeholder="Learn the exact frameworks that make people magnetic"
-        />
-      </div>
-
-      <div className="mt-3">
-        <label style={labelStyle}>Bullets (one per line)</label>
-        {form.bullets.map((bullet: string, i: number) => (
-          <div key={i} className="flex gap-2 mb-2">
-            <input
-              style={{ ...inputStyle, flex: 1 }}
-              value={bullet}
-              onChange={(e) => {
-                const newBullets = [...form.bullets]
-                newBullets[i] = e.target.value
-                setForm((f: any) => ({ ...f, bullets: newBullets }))
-              }}
-              placeholder={`Benefit ${i + 1}`}
-            />
-            {form.bullets.length > 1 && (
-              <button
-                onClick={() => {
-                  const newBullets = form.bullets.filter((_: any, idx: number) => idx !== i)
-                  setForm((f: any) => ({ ...f, bullets: newBullets }))
-                }}
-                className="px-3 py-2 rounded-lg text-red-400 border border-red-400/30 bg-red-400/10 hover:bg-red-400/20 transition-colors"
-              >
-                ×
-              </button>
-            )}
-          </div>
-        ))}
-        <button
-          onClick={() => setForm((f: any) => ({ ...f, bullets: [...f.bullets, ''] }))}
-          className="px-3 py-1.5 rounded-lg text-cyan-400 border border-cyan-400/30 bg-cyan-400/10 hover:bg-cyan-400/20 transition-colors text-sm"
-        >
-          + Add Bullet
-        </button>
-      </div>
-
-      <div className="mt-3">
-        <label style={labelStyle}>Short Description (for upsell shop card)</label>
-        <input
-          style={inputStyle}
-          value={form.short_description}
-          onChange={(e) => setForm((f: any) => ({ ...f, short_description: e.target.value }))}
-          placeholder="Master the art of instant connection and influence"
-        />
-      </div>
-
-      <div className="mt-3">
-        <label style={labelStyle}>Sales Body (HTML or markdown for long-form copy)</label>
+      {/* Sales Page HTML */}
+      <div className="mt-6" style={{ padding: 20, backgroundColor: 'rgba(15,15,26,0.6)', borderRadius: 12, border: '1px solid rgba(6,182,212,0.2)' }}>
+        <h3 className="text-base font-semibold mb-3 text-cyan-400">
+          Sales Page
+        </h3>
+        <p className="text-sm text-slate-400 mb-3">
+          Paste your complete sales page HTML below. Design it in Claude, copy the HTML, paste here.
+          Add <code className="px-1 py-0.5 bg-slate-800 rounded text-cyan-300">&lt;!-- BUY_BUTTON --&gt;</code> anywhere you want a buy button. One is always added at the bottom automatically.
+        </p>
         <textarea
-          style={{ ...inputStyle, minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
-          value={form.sales_body}
-          onChange={(e) => setForm((f: any) => ({ ...f, sales_body: e.target.value }))}
-          placeholder="<p>Your long-form sales copy goes here...</p>"
+          value={form.page_html}
+          onChange={(e) => setForm((f: any) => ({ ...f, page_html: e.target.value }))}
+          placeholder="<div style='max-width: 720px; margin: 0 auto; padding: 60px 20px;'>&#10;  <h1>Your headline here</h1>&#10;  <p>Your sales copy...</p>&#10;  <!-- BUY_BUTTON -->&#10;  <p>More copy...</p>&#10;</div>"
+          style={{
+            width: '100%',
+            minHeight: 400,
+            padding: 12,
+            borderRadius: 8,
+            border: '1px solid rgba(6,182,212,0.2)',
+            backgroundColor: 'rgba(15,15,26,0.8)',
+            color: '#e0e0e0',
+            fontFamily: 'monospace',
+            fontSize: 13,
+            lineHeight: 1.5,
+            resize: 'vertical',
+          }}
         />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label style={labelStyle}>Button Text</label>
+            <input
+              value={form.cta_text}
+              onChange={(e) => setForm((f: any) => ({ ...f, cta_text: e.target.value }))}
+              placeholder="Get Instant Access"
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Guarantee Text</label>
+            <input
+              value={form.guarantee_text}
+              onChange={(e) => setForm((f: any) => ({ ...f, guarantee_text: e.target.value }))}
+              placeholder="30-day money-back guarantee"
+              style={inputStyle}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
         <div>
-          <label style={labelStyle}>CTA Button Text</label>
+          <label style={labelStyle}>Short Description (for upsell shop card)</label>
           <input
             style={inputStyle}
-            value={form.cta_text}
-            onChange={(e) => setForm((f: any) => ({ ...f, cta_text: e.target.value }))}
-            placeholder="Get Instant Access"
-          />
-        </div>
-        <div>
-          <label style={labelStyle}>Guarantee Text</label>
-          <input
-            style={inputStyle}
-            value={form.guarantee_text}
-            onChange={(e) => setForm((f: any) => ({ ...f, guarantee_text: e.target.value }))}
-            placeholder="30-day money-back guarantee"
+            value={form.short_description}
+            onChange={(e) => setForm((f: any) => ({ ...f, short_description: e.target.value }))}
+            placeholder="Master the art of instant connection and influence"
           />
         </div>
         <div>

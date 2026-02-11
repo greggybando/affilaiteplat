@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     // Get single product by slug (for sales page)
     const { data: product, error } = await (supabaseAdmin as any)
       .from('products')
-      .select('id, name, slug, headline, subheadline, bullets, sales_body, short_description, thumbnail_url, price_cents, price_display, cta_text, guarantee_text, product_type, status')
+      .select('id, name, slug, headline, subheadline, bullets, sales_body, short_description, thumbnail_url, price_cents, price_display, cta_text, guarantee_text, product_type, status, page_html')
       .eq('slug', slug)
       .eq('status', 'active')
       .single()
