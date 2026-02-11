@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { priceId } = body
+    const { priceId, fpr_tid } = body
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.millionairelifedesign.com'
 
@@ -32,6 +32,11 @@ export async function POST(req: NextRequest) {
       'cancel_url': `${baseUrl}/checkout?cancelled=true`,
       'metadata[affiliate_id]': affiliate.id,
       'subscription_data[metadata][affiliate_id]': affiliate.id,
+    }
+
+    // Add FirstPromoter tracking ID as client_reference_id if present
+    if (fpr_tid) {
+      params['client_reference_id'] = fpr_tid
     }
 
     const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {

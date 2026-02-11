@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { product_slug } = body
+    const { product_slug, fpr_tid } = body
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.millionairelifedesign.com'
 
     if (!product_slug) {
@@ -46,6 +46,11 @@ export async function POST(req: NextRequest) {
       'metadata[product_id]': product.id,
       'metadata[purchase_type]': 'product',
     })
+
+    // Add FirstPromoter tracking ID as client_reference_id if present
+    if (fpr_tid) {
+      sessionParams.append('client_reference_id', fpr_tid)
+    }
 
     // Add payment_intent_data for one-time payments (not subscriptions)
     if (product.product_type !== 'subscription') {

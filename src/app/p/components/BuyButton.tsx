@@ -24,11 +24,23 @@ export default function BuyButton({
     setLoading(true)
     setError('')
     try {
+      // Read FirstPromoter cookie
+      const cookies = document.cookie.split(';')
+      let fprTid = null
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=')
+        if (name === '_fprom_tid') {
+          fprTid = value
+          break
+        }
+      }
+
       const res = await fetch('/api/checkout/product', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           product_slug: slug,
+          fpr_tid: fprTid || undefined,
         }),
       })
       const data = await res.json()
