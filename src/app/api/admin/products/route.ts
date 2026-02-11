@@ -4,11 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getCurrentAffiliate, isAdmin } from '@/lib/auth'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-})
+import { stripe } from '@/lib/stripe'
 
 // GET - List all products (admin sees all, including drafts)
 export async function GET(req: NextRequest) {
