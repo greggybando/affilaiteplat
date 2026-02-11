@@ -101,21 +101,54 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Create Stripe product and price
-    const stripeProduct = await stripe.products.create({
-      name,
-      description: short_description || description || undefined,
-      metadata: { slug },
-    })
+    // Validate Stripe key is configured
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.' },
+        { status: 500 }
+      )
+    }
 
-    const stripePrice = await stripe.prices.create({
-      product: stripeProduct.id,
-      unit_amount: price_cents,
-      currency: 'usd',
-      ...(product_type === 'subscription'
-        ? { recurring: { interval: 'month' } }
-        : {}),
-    })
+    // Create Stripe product and price
+    let stripeProduct
+    let stripePrice
+
+    try {
+      stripeProduct = await stripe.products.create({
+        name,
+        description: short_description || description || undefined,
+        metadata: { slug },
+      })
+    } catch (stripeErr: any) {
+      console.error('Stripe product creation error:', stripeErr)
+      return NextResponse.json(
+        { error: `Failed to create Stripe product: ${stripeErr.message || 'Unknown error'}` },
+        { status: 500 }
+      )
+    }
+
+    try {
+      stripePrice = await stripe.prices.create({
+        product: stripeProduct.id,
+        unit_amount: price_cents,
+        currency: 'usd',
+        ...(product_type === 'subscription'
+          ? { recurring: { interval: 'month' } }
+          : {}),
+      })
+    } catch (stripeErr: any) {
+      console.error('Stripe price creation error:', stripeErr)
+      // Clean up product if price creation fails
+      try {
+        await stripe.products.update(stripeProduct.id, { active: false })
+      } catch (cleanupErr) {
+        console.error('Failed to cleanup Stripe product:', cleanupErr)
+      }
+      return NextResponse.json(
+        { error: `Failed to create Stripe price: ${stripeErr.message || 'Unknown error'}` },
+        { status: 500 }
+      )
+    }
 
     // Insert into database
     const { data: product, error } = await (supabaseAdmin as any)
@@ -159,7 +192,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ product }, { status: 201 })
   } catch (err: any) {
     console.error('Error in product creation:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    
+    // Provide more helpful error messages
+    let errorMessage = err.message || 'Unknown error occurred'
+    
+    if (err.type === 'StripeConnectionError' || err.type === 'StripeAPIError') {
+      errorMessage = `Stripe API error: ${err.message || 'Connection failed. Please check your Stripe API key and try again.'}`
+    } else if (err.message?.includes('No API key provided')) {
+      errorMessage = 'Stripe API key is missing. Please configure STRIPE_SECRET_KEY environment variable.'
+    }
+    
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
