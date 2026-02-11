@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
@@ -20,11 +20,8 @@ interface ProductInfo {
   price_cents: number
 }
 
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-}
 
-function CheckoutForm({ product, slug, email }: { product: ProductInfo; slug: string; email: string }) {
+function CheckoutForm({ product, slug }: { product: ProductInfo; slug: string }) {
   const stripe = useStripe()
   const elements = useElements()
   const [loading, setLoading] = useState(false)
@@ -32,7 +29,7 @@ function CheckoutForm({ product, slug, email }: { product: ProductInfo; slug: st
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!stripe || !elements || !email) return
+    if (!stripe || !elements) return
 
     setLoading(true)
     setError('')
@@ -56,7 +53,7 @@ function CheckoutForm({ product, slug, email }: { product: ProductInfo; slug: st
       <PaymentElement />
       <button
         type="submit"
-        disabled={!stripe || loading || !email}
+        disabled={!stripe || loading}
         style={{
           width: '100%',
           marginTop: 24,
@@ -64,10 +61,10 @@ function CheckoutForm({ product, slug, email }: { product: ProductInfo; slug: st
           fontSize: 18,
           fontWeight: 700,
           color: '#fff',
-          backgroundColor: loading || !email ? '#6b7280' : '#10b981',
+          backgroundColor: loading ? '#6b7280' : '#10b981',
           border: 'none',
           borderRadius: 12,
-          cursor: loading || !email ? 'not-allowed' : 'pointer',
+          cursor: loading ? 'not-allowed' : 'pointer',
           transition: 'all 0.2s ease',
         }}
       >
@@ -88,97 +85,53 @@ export default function BuyButton({
   className,
 }: BuyButtonProps) {
   const [showCheckout, setShowCheckout] = useState(false)
-  const [email, setEmail] = useState('')
   const [clientSecret, setClientSecret] = useState('')
   const [product, setProduct] = useState<ProductInfo | null>(null)
   const [creatingIntent, setCreatingIntent] = useState(false)
   const [error, setError] = useState('')
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
 
-  useEffect(() => {
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current)
-      }
-    }
-  }, [])
-
-  const createPaymentIntent = async (emailValue: string) => {
-    if (!emailValue || !slug || !isValidEmail(emailValue)) return
-
-    setCreatingIntent(true)
-    setError('')
-
-    try {
-      // Register with FirstPromoter (cookie is still active on this domain)
-      try {
-        if (typeof window !== 'undefined' && (window as any).fpr) {
-          (window as any).fpr('referral', { email: emailValue })
-        }
-      } catch (fprErr) {
-        console.error('FirstPromoter referral tracking error:', fprErr)
-      }
-
-      const res = await fetch('/api/checkout/create-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_slug: slug, email: emailValue }),
-      })
-      const data = await res.json()
-
-      if (data.error) {
-        setError(data.error)
-        setCreatingIntent(false)
-      } else {
-        setClientSecret(data.clientSecret)
-        setProduct(data.product)
-        setCreatingIntent(false)
-      }
-    } catch (err) {
-      setError('Failed to start checkout')
-      setCreatingIntent(false)
-    }
-  }
-
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setEmail(value)
-
-    // Clear existing timer
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current)
-    }
-
-    // Reset client secret if email changes
-    if (clientSecret) {
-      setClientSecret('')
-      setProduct(null)
-    }
-
-    // Debounce: wait 500ms after user stops typing
-    debounceTimer.current = setTimeout(() => {
-      if (isValidEmail(value)) {
-        createPaymentIntent(value)
-      }
-    }, 500)
-  }
-
-  const handleEmailBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    // Clear debounce timer and create intent immediately on blur if email is valid
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current)
-      debounceTimer.current = null
-    }
-    if (isValidEmail(value) && !clientSecret) {
-      createPaymentIntent(value)
-    }
-  }
-
-  const handleClick = () => {
-    setShowCheckout(!showCheckout)
+  const handleClick = async () => {
     if (!showCheckout) {
-      setEmail('')
+      // Read FirstPromoter cookie
+      const cookies = document.cookie.split(';')
+      let fprTid = null
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=')
+        if (name === '_fprom_tid') {
+          fprTid = value
+          break
+        }
+      }
+
+      setShowCheckout(true)
+      setCreatingIntent(true)
+      setError('')
+
+      try {
+        const res = await fetch('/api/checkout/create-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            product_slug: slug,
+            fpr_tid: fprTid || undefined,
+          }),
+        })
+        const data = await res.json()
+
+        if (data.error) {
+          setError(data.error)
+          setCreatingIntent(false)
+        } else {
+          setClientSecret(data.clientSecret)
+          setProduct(data.product)
+          setCreatingIntent(false)
+        }
+      } catch (err) {
+        setError('Failed to start checkout')
+        setCreatingIntent(false)
+      }
+    } else {
+      setShowCheckout(false)
       setClientSecret('')
       setProduct(null)
       setError('')
@@ -224,40 +177,6 @@ export default function BuyButton({
           maxWidth: 600,
           margin: '24px auto 0',
         }}>
-          {product && (
-            <>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 4, textAlign: 'center' }}>
-                {product.name}
-              </h2>
-              <p style={{ color: '#10b981', fontSize: 24, fontWeight: 800, textAlign: 'center', marginBottom: 24 }}>
-                {product.price_display}
-              </p>
-            </>
-          )}
-          
-          <label style={{ display: 'block', color: '#d1d5db', fontSize: 14, marginBottom: 6 }}>
-            Email
-          </label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={handleEmailChange}
-            onBlur={handleEmailBlur}
-            placeholder="you@example.com"
-            style={{
-              width: '100%',
-              padding: 14,
-              borderRadius: 8,
-              border: '1px solid #374151',
-              backgroundColor: '#1a1a2e',
-              color: '#e5e7eb',
-              fontSize: 16,
-              marginBottom: 24,
-              boxSizing: 'border-box',
-            }}
-          />
-
           {creatingIntent ? (
             <div style={{
               padding: 24,
@@ -266,26 +185,37 @@ export default function BuyButton({
               textAlign: 'center',
               color: '#9ca3af',
               fontSize: 14,
-              marginBottom: 24,
             }}>
               Loading payment form...
             </div>
           ) : clientSecret && product ? (
-            <Elements
-              stripe={stripePromise}
-              options={{
-                clientSecret,
-                appearance: {
-                  theme: 'night',
-                  variables: {
-                    colorPrimary: '#10b981',
-                    borderRadius: '8px',
+            <>
+              {product && (
+                <>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 4, textAlign: 'center' }}>
+                    {product.name}
+                  </h2>
+                  <p style={{ color: '#10b981', fontSize: 24, fontWeight: 800, textAlign: 'center', marginBottom: 24 }}>
+                    {product.price_display}
+                  </p>
+                </>
+              )}
+              <Elements
+                stripe={stripePromise}
+                options={{
+                  clientSecret,
+                  appearance: {
+                    theme: 'night',
+                    variables: {
+                      colorPrimary: '#10b981',
+                      borderRadius: '8px',
+                    },
                   },
-                },
-              }}
-            >
-              <CheckoutForm product={product} slug={slug} email={email} />
-            </Elements>
+                }}
+              >
+                <CheckoutForm product={product} slug={slug} />
+              </Elements>
+            </>
           ) : null}
 
           {error && (

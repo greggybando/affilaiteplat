@@ -62,9 +62,20 @@ export async function POST(req: Request) {
           const productSlug = metadata.product_slug
           const customerEmail = metadata.customer_email
           const productId = metadata.product_id
+          const fprTid = metadata.fpr_tid
+
+          // Get customer email from PaymentIntent or charge
+          let email = customerEmail
+          if (!email && paymentIntent.charges?.data && paymentIntent.charges.data.length > 0) {
+            const charge = paymentIntent.charges.data[0]
+            email = charge.billing_details?.email || charge.receipt_email || null
+          }
+          if (!email && paymentIntent.receipt_email) {
+            email = paymentIntent.receipt_email
+          }
 
           // Handle embedded checkout product purchases
-          if (productSlug && customerEmail) {
+          if (productSlug && email) {
             // Check if purchase already exists
             const { data: existing } = await (supabaseAdmin as any)
               .from('purchases')
@@ -79,13 +90,33 @@ export async function POST(req: Request) {
                 .insert({
                   product_id: productId || null,
                   product_slug: productSlug,
-                  customer_email: customerEmail,
+                  customer_email: email,
                   amount_cents: paymentIntent.amount,
                   stripe_payment_intent_id: paymentIntent.id,
                   status: 'completed',
                 })
 
-              console.log(`✅ Product purchase recorded: ${productSlug} for ${customerEmail}`)
+              console.log(`✅ Product purchase recorded: ${productSlug} for ${email}`)
+            }
+
+            // Call FirstPromoter API if tracking ID exists
+            if (fprTid && email && process.env.FIRSTPROMOTER_API_KEY) {
+              try {
+                await fetch('https://firstpromoter.com/api/v1/track/signup', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'x-api-key': process.env.FIRSTPROMOTER_API_KEY,
+                  },
+                  body: new URLSearchParams({
+                    email: email,
+                    tid: fprTid,
+                  }).toString(),
+                })
+                console.log(`✅ FirstPromoter signup tracked: ${email} with tid ${fprTid}`)
+              } catch (fprErr) {
+                console.error('FirstPromoter API error:', fprErr)
+              }
             }
           } else if (metadata.purchase_type === 'upsell') {
             // Handle one-click upsell payments (these don't go through checkout.session)

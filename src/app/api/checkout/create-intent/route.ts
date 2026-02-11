@@ -3,10 +3,10 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
   try {
-    const { product_slug, email } = await req.json()
+    const { product_slug, email, fpr_tid } = await req.json()
 
-    if (!product_slug || !email) {
-      return NextResponse.json({ error: 'product_slug and email are required' }, { status: 400 })
+    if (!product_slug) {
+      return NextResponse.json({ error: 'product_slug is required' }, { status: 400 })
     }
 
     // Look up the product
@@ -21,49 +21,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
-    // Create or retrieve Stripe customer by email
-    const customerSearch = await fetch(
-      `https://api.stripe.com/v1/customers/search?query=email:'${encodeURIComponent(email)}'`,
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-        },
-      }
-    )
-    const customerResult = await customerSearch.json()
-
-    let customerId: string
-
-    if (customerResult.data && customerResult.data.length > 0) {
-      customerId = customerResult.data[0].id
-    } else {
-      const createCustomer = await fetch('https://api.stripe.com/v1/customers', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          email: email,
-        }).toString(),
-      })
-      const newCustomer = await createCustomer.json()
-      if (newCustomer.error) {
-        return NextResponse.json({ error: newCustomer.error.message }, { status: 500 })
-      }
-      customerId = newCustomer.id
-    }
-
-    // Create PaymentIntent
+    // Create PaymentIntent params
     const params = new URLSearchParams({
       'amount': product.price_cents.toString(),
       'currency': 'usd',
-      'customer': customerId,
       'metadata[product_slug]': product_slug,
       'metadata[product_id]': product.id,
-      'metadata[customer_email]': email,
       'automatic_payment_methods[enabled]': 'true',
     })
+
+    // Add customer if email provided (optional)
+    if (email) {
+      // Create or retrieve Stripe customer by email
+      const customerSearch = await fetch(
+        `https://api.stripe.com/v1/customers/search?query=email:'${encodeURIComponent(email)}'`,
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          },
+        }
+      )
+      const customerResult = await customerSearch.json()
+
+      let customerId: string
+
+      if (customerResult.data && customerResult.data.length > 0) {
+        customerId = customerResult.data[0].id
+      } else {
+        const createCustomer = await fetch('https://api.stripe.com/v1/customers', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            email: email,
+          }).toString(),
+        })
+        const newCustomer = await createCustomer.json()
+        if (newCustomer.error) {
+          return NextResponse.json({ error: newCustomer.error.message }, { status: 500 })
+        }
+        customerId = newCustomer.id
+      }
+
+      params.append('customer', customerId)
+      params.append('metadata[customer_email]', email)
+    }
+
+    // Add FirstPromoter tracking ID to metadata
+    if (fpr_tid) {
+      params.append('metadata[fpr_tid]', fpr_tid)
+    }
 
     const piResponse = await fetch('https://api.stripe.com/v1/payment_intents', {
       method: 'POST',
