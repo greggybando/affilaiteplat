@@ -87,6 +87,28 @@ export default async function PortalPage() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-1">
+        {/* Get Your Affiliate Links Button */}
+        <section className="mb-6">
+          <a
+            href={process.env.NEXT_PUBLIC_FIRSTPROMOTER_PORTAL_URL || 'https://app.firstpromoter.com'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+            style={{
+              background: 'linear-gradient(135deg, #06b6d4 0%, #2563eb 100%)',
+              boxShadow: '0 4px 15px rgba(6, 182, 212, 0.4)',
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            Get Your Affiliate Links
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </section>
+
         {/* Tutorial Video Banner */}
         <section className="mb-6">
           <VideoBanner
