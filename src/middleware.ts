@@ -19,7 +19,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/go/') ||
     pathname.startsWith('/subscribe') ||
     pathname.startsWith('/upsell') ||
-    pathname.startsWith('/resubscribe')
+    pathname.startsWith('/resubscribe') ||
+    pathname.startsWith('/test')
   ) {
     return NextResponse.next()
   }
