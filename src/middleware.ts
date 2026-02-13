@@ -20,7 +20,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/subscribe') ||
     pathname.startsWith('/upsell') ||
     pathname.startsWith('/resubscribe') ||
-    pathname.startsWith('/test')
+    pathname.startsWith('/test') ||
+    pathname.startsWith('/adhd')
   ) {
     return NextResponse.next()
   }
