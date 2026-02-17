@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { StatsCards } from './components/StatsCards'
 import { FirstPromoterProductList } from './components/FirstPromoterProductList'
+import { HardcodedProductLinks } from './components/HardcodedProductLinks'
 
 type FirstPromoterData = {
   clicks?: number
@@ -111,8 +112,10 @@ export function FirstPromoterDashboardClient({ affiliate }: { affiliate: any }) 
         <h2 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-cyan-300 mb-4" style={{ textShadow: '0 0 20px rgba(34, 211, 238, 0.5)' }}>
           Available Products
         </h2>
-        {campaigns.length > 0 ? (
-          <FirstPromoterProductList campaigns={campaigns} refId={refId} />
+        
+        {/* Show hardcoded product links with fp_ref_id */}
+        {refId ? (
+          <HardcodedProductLinks refId={refId} />
         ) : (
           <div 
             className="rounded-xl overflow-hidden border p-8 text-center"
@@ -122,38 +125,19 @@ export function FirstPromoterDashboardClient({ affiliate }: { affiliate: any }) 
               borderColor: 'rgba(255,255,255,0.1)'
             }}
           >
-            <p className="text-[rgba(255,255,255,0.6)] mb-4">
-              No campaigns found. Showing default referral link.
+            <p className="text-[rgba(255,255,255,0.6)]">
+              Your affiliate links will appear here once your account is set up.
             </p>
-            {refId && (
-              <div className="max-w-2xl mx-auto">
-                <p className="text-sm text-[rgba(255,255,255,0.5)] mb-2">Your default referral link:</p>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={`https://www.millionairelifedesign.com?fpr=${refId}`}
-                    readOnly
-                    className="flex-1 px-3 py-2 rounded-lg text-white text-xs font-mono"
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.2)'
-                    }}
-                  />
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(`https://www.millionairelifedesign.com?fpr=${refId}`)
-                    }}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:scale-105"
-                    style={{
-                      background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
-                      color: '#0f0f1a',
-                    }}
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-            )}
+          </div>
+        )}
+
+        {/* Also show FirstPromoter campaigns if available (for reference/debugging) */}
+        {campaigns.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-cyan-300 mb-4" style={{ textShadow: '0 0 20px rgba(34, 211, 238, 0.5)' }}>
+              FirstPromoter Campaigns
+            </h3>
+            <FirstPromoterProductList campaigns={campaigns} refId={refId} />
           </div>
         )}
       </section>
