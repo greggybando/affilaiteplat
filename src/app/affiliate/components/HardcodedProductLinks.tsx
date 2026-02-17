@@ -10,13 +10,15 @@ type Product = {
   image: string
   commissionPercent?: number
   earningsPerSale?: string
+  isRecurring?: boolean
+  recurringExample?: string
 }
 
 const PRODUCTS: Product[] = [
-  { name: 'Lifedesign Affiliate', price: '$39', slug: '', image: '/products/platform.png', commissionPercent: 50, earningsPerSale: '$19.50' },
-  { name: 'Psychology of Disrespect', price: '$9', slug: 'disrespect', image: '/products/disrespect.png' },
+  { name: 'Lifedesign Affiliate', price: '$39', slug: '', image: '/products/platform.png', commissionPercent: 50, earningsPerSale: '$19.50', isRecurring: true, recurringExample: '103 sales = $2,008/mo' },
+  { name: 'Psychology of Disrespect', price: '$9', slug: 'disrespect', image: '/products/disrespect.png', commissionPercent: 50, earningsPerSale: '$4.50' },
   { name: 'Psychology of the Super-Charismatic', price: '$9', slug: 'charisma', image: '/products/charisma.png', commissionPercent: 50, earningsPerSale: '$4.50' },
-  { name: 'ADHD Productivity Course', price: '$19', slug: 'adhd', image: '/products/adhd.png' },
+  { name: 'ADHD Productivity Course', price: '$19', slug: 'adhd', image: '/products/adhd.png', commissionPercent: 50, earningsPerSale: '$9.50' },
 ]
 
 export function HardcodedProductLinks({ refId }: { refId: string | null }) {
@@ -92,13 +94,21 @@ export function HardcodedProductLinks({ refId }: { refId: string | null }) {
                     <div className="flex-1">
                       <h3 className="text-base font-semibold text-white">{product.name}</h3>
                       {product.commissionPercent && product.earningsPerSale && (
-                        <div className="mt-1.5 flex items-center gap-3 text-sm">
-                          <span className="text-green-400 font-semibold">
-                            {product.commissionPercent}% commission
-                          </span>
-                          <span className="text-[rgba(255,255,255,0.6)]">
-                            {product.earningsPerSale} per sale
-                          </span>
+                        <div className="mt-1.5 space-y-1">
+                          <div className="flex items-center gap-3 text-sm">
+                            <span className="text-green-400 font-semibold">
+                              {product.commissionPercent}% commission
+                            </span>
+                            <span className="text-[rgba(255,255,255,0.6)]">
+                              {product.earningsPerSale} {product.isRecurring ? 'per month' : 'per sale'}
+                              {product.isRecurring && <span className="text-[rgba(255,255,255,0.5)]"> recurring until user cancels</span>}
+                            </span>
+                          </div>
+                          {product.recurringExample && (
+                            <div className="text-xs text-[rgba(255,255,255,0.5)]">
+                              {product.recurringExample}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
