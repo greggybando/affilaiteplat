@@ -80,7 +80,7 @@ export function FirstPromoterDashboardClient({ affiliate }: { affiliate: any }) 
   ) : []
 
   // Get ref_id from response or affiliate record
-  const refId = fpData?.default_ref_id || fpData?.ref_id || affiliate.fp_ref_id || null
+  const refId = fpData?.default_ref_id || fpData?.ref_id || (affiliate as any).fp_ref_id || null
 
   if (loading) {
     return (
