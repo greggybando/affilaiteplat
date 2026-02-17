@@ -85,6 +85,7 @@ export function ProductList({
               (link) => link.landing_page?.product?.id === product.id
             )}
             affiliateId={affiliateId}
+            refId={refId}
           />
         ))}
       </div>
@@ -96,10 +97,12 @@ function ProductRow({
   product,
   affiliateLinks,
   affiliateId,
+  refId,
 }: {
   product: Product
   affiliateLinks: AffiliateLink[]
   affiliateId: string
+  refId?: string | null
 }) {
   const activePages = product.landing_pages.filter((p) => p.is_active)
   const icon = getProductIcon(product.slug)
