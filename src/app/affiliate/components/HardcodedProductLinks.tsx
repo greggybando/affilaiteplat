@@ -7,13 +7,14 @@ type Product = {
   name: string
   price: string
   slug: string
+  image: string
 }
 
 const PRODUCTS: Product[] = [
-  { name: 'Platform Subscription', price: 'Recurring', slug: '' },
-  { name: 'Psychology of Disrespect', price: '$9', slug: 'disrespect' },
-  { name: 'Psychology of Charisma', price: '$9', slug: 'charisma' },
-  { name: 'ADHD Productivity Course', price: '$19', slug: 'adhd' },
+  { name: 'Platform Subscription', price: 'Recurring', slug: '', image: '/products/platform.png' },
+  { name: 'Psychology of Disrespect', price: '$9', slug: 'disrespect', image: '/products/disrespect.png' },
+  { name: 'Psychology of Charisma', price: '$9', slug: 'charisma', image: '/products/charisma.png' },
+  { name: 'ADHD Productivity Course', price: '$19', slug: 'adhd', image: '/products/adhd.png' },
 ]
 
 export function HardcodedProductLinks({ refId }: { refId: string | null }) {
@@ -58,16 +59,29 @@ export function HardcodedProductLinks({ refId }: { refId: string | null }) {
           return (
             <div key={index} className="p-5 hover:bg-[rgba(255,255,255,0.02)] transition-colors">
               <div className="flex items-start gap-4">
-                {/* Product Icon */}
+                {/* Product Image */}
                 <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0 border"
+                  className="w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden border"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(34,211,238,0.2), rgba(59,130,246,0.2))',
-                    borderColor: 'rgba(34,211,238,0.3)',
-                    boxShadow: '0 0 15px rgba(34,211,238,0.2)'
+                    background: 'rgba(0,0,0,0.3)',
+                    borderColor: 'rgba(255,255,255,0.1)',
                   }}
                 >
-                  {product.slug === '' ? '💰' : '📦'}
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to emoji if image fails to load
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                      const parent = target.parentElement
+                      if (parent) {
+                        parent.innerHTML = product.slug === '' ? '💰' : '📦'
+                        parent.style.fontSize = '1.5rem'
+                      }
+                    }}
+                  />
                 </div>
 
                 {/* Product Info */}
