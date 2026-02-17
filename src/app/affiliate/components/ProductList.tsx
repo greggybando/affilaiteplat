@@ -46,10 +46,12 @@ export function ProductList({
   products,
   affiliateLinks,
   affiliateId,
+  refId,
 }: {
   products: Product[]
   affiliateLinks: AffiliateLink[]
   affiliateId: string
+  refId?: string | null
 }) {
   // Create platform subscription as a product-like item
   const platformSubscriptionProduct = {
@@ -146,7 +148,7 @@ function ProductRow({
           {/* Links Section */}
           {product.id === 'platform-subscription' ? (
             <div className="mt-3">
-              <SimpleReferralLink />
+              <SimpleReferralLink refId={refId || null} />
             </div>
           ) : (
             <div className="mt-3 space-y-2">

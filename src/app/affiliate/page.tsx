@@ -7,14 +7,72 @@ import { StatsCards } from './components/StatsCards'
 import { ProductList } from './components/ProductList'
 import { VideoBanner } from './components/VideoBanner'
 
-async function getAffiliateStats(affiliateId: string) {
-  const { data: stats } = await supabaseAdmin
-    .from('affiliate_stats')
-    .select('*')
-    .eq('affiliate_id', affiliateId)
-    .single()
+async function getAffiliateStats(affiliateId: string, fpPromoterId: string | null) {
+  // Fetch stats from FirstPromoter API using promoter_id
+  if (!process.env.FIRSTPROMOTER_API_KEY || !fpPromoterId) {
+    console.warn('FirstPromoter API key or promoter ID not configured, returning empty stats')
+    return {
+      total_clicks: 0,
+      total_conversions: 0,
+      pending_cents: 0,
+      approved_cents: 0,
+      paid_cents: 0,
+    }
+  }
 
-  return stats
+  try {
+    // FirstPromoter API endpoint - get promoter stats by ID
+    const response = await fetch(
+      `https://firstpromoter.com/api/v1/promoters/show?id=${encodeURIComponent(fpPromoterId)}`,
+      {
+        method: 'GET',
+        headers: {
+          'x-api-key': process.env.FIRSTPROMOTER_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+      }
+    )
+
+    if (!response.ok) {
+      // If affiliate not found in FirstPromoter yet, return empty stats
+      if (response.status === 404) {
+        return {
+          total_clicks: 0,
+          total_conversions: 0,
+          pending_cents: 0,
+          approved_cents: 0,
+          paid_cents: 0,
+        }
+      }
+      
+      const errorText = await response.text()
+      console.error('FirstPromoter API error:', response.status, errorText)
+      throw new Error(`FirstPromoter API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    // Map FirstPromoter stats to our format
+    // Adjust these field names based on FirstPromoter's actual API response structure
+    return {
+      total_clicks: data.clicks || data.total_clicks || data.visits || 0,
+      total_conversions: data.conversions || data.total_conversions || data.sales || 0,
+      pending_cents: Math.round((data.pending || data.pending_amount || 0) * 100),
+      approved_cents: Math.round((data.approved || data.approved_amount || data.available || 0) * 100),
+      paid_cents: Math.round((data.paid || data.paid_amount || data.total_earned || data.total_paid || 0) * 100),
+    }
+  } catch (error: any) {
+    console.error('Error fetching FirstPromoter stats:', error)
+    // Return empty stats on error
+    return {
+      total_clicks: 0,
+      total_conversions: 0,
+      pending_cents: 0,
+      approved_cents: 0,
+      paid_cents: 0,
+    }
+  }
 }
 
 async function getProducts() {
@@ -74,13 +132,13 @@ export default async function PortalPage() {
 
   // If expired, show paywall
   if (isExpired) {
-    const stats = await getAffiliateStats(affiliate.id)
+    const stats = await getAffiliateStats(affiliate.id, (affiliate as any).fp_promoter_id)
     return <SubscriptionPaywall affiliate={affiliate} stats={stats} />
   }
 
   // Get data
   const [stats, products, affiliateLinks] = await Promise.all([
-    getAffiliateStats(affiliate.id),
+    getAffiliateStats(affiliate.id, (affiliate as any).fp_promoter_id),
     getProducts(),
     getAffiliateLinks(affiliate.id),
   ])
@@ -127,6 +185,7 @@ export default async function PortalPage() {
             products={products}
             affiliateLinks={affiliateLinks}
             affiliateId={affiliate.id}
+            refId={(affiliate as any).fp_ref_id}
           />
         </section>
     </main>

@@ -6,7 +6,7 @@ import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-
+  
   // =============================================
   // PUBLIC ROUTES: Allow without auth
   // =============================================
@@ -27,7 +27,7 @@ export function middleware(request: NextRequest) {
   ) {
     return NextResponse.next()
   }
-
+  
   // =============================================
   // PROTECTED ROUTES: Check for auth cookie
   // =============================================
@@ -41,9 +41,9 @@ export function middleware(request: NextRequest) {
     '/community',
     '/courses',
   ]
-
+  
   const isProtected = protectedRoutes.some(route => pathname.startsWith(route))
-
+  
   if (!isProtected) {
     return NextResponse.next()
   }
@@ -51,7 +51,7 @@ export function middleware(request: NextRequest) {
   // Check if affiliate_token cookie exists
   // Don't verify JWT here - that happens in server components (Node.js runtime)
   const cookieToken = request.cookies.get('affiliate_token')?.value
-
+  
   if (!cookieToken) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)

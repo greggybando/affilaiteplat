@@ -1408,12 +1408,12 @@ export function SkillBankCourseView({
                 />
               ) : (
                 <h4 
-                  className="text-xs font-semibold uppercase tracking-widest"
-                  style={{
-                    color: 'rgba(34,211,238,0.9)',
-                    textShadow: '0 0 8px rgba(34,211,238,0.4)'
-                  }}
-                >
+              className="text-xs font-semibold uppercase tracking-widest"
+              style={{
+                color: 'rgba(34,211,238,0.9)',
+                textShadow: '0 0 8px rgba(34,211,238,0.4)'
+              }}
+            >
                   {courseTitle.toUpperCase()}
                 </h4>
               )}

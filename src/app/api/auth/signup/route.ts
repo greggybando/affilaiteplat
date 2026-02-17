@@ -53,6 +53,46 @@ export async function POST(request: NextRequest) {
     const trialEndsAt = new Date()
     trialEndsAt.setDate(trialEndsAt.getDate() + 7)
 
+    // Create FirstPromoter affiliate account
+    let fpPromoterId: string | null = null
+    let fpRefId: string | null = null
+    
+    if (process.env.FIRSTPROMOTER_API_KEY) {
+      try {
+        // Split name into first and last name
+        const nameParts = (name as string).trim().split(' ')
+        const firstName = nameParts[0] || ''
+        const lastName = nameParts.slice(1).join(' ') || ''
+        
+        const fpResponse = await fetch('https://firstpromoter.com/api/v1/promoters/create', {
+          method: 'POST',
+          headers: {
+            'x-api-key': process.env.FIRSTPROMOTER_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: (email as string).toLowerCase(),
+            first_name: firstName,
+            last_name: lastName,
+          }),
+        })
+
+        if (fpResponse.ok) {
+          const fpData = await fpResponse.json()
+          fpPromoterId = fpData.id || fpData.promoter_id || null
+          fpRefId = fpData.ref_id || fpData.ref_code || null
+          console.log(`✅ FirstPromoter account created: ${fpPromoterId}, ref_id: ${fpRefId}`)
+        } else {
+          const errorText = await fpResponse.text()
+          console.error('FirstPromoter account creation failed:', fpResponse.status, errorText)
+          // Continue with signup even if FirstPromoter fails
+        }
+      } catch (fpError) {
+        console.error('Error creating FirstPromoter account:', fpError)
+        // Continue with signup even if FirstPromoter fails
+      }
+    }
+
     // Create affiliate record
     const { data: affiliate, error: insertError } = await supabaseAdmin
       .from('affiliates')
@@ -64,6 +104,8 @@ export async function POST(request: NextRequest) {
         paypal_email: payout_method === 'paypal' ? (paypal_email as string) : null,
         status: 'trial' as const,
         trial_ends_at: trialEndsAt.toISOString(),
+        fp_promoter_id: fpPromoterId,
+        fp_ref_id: fpRefId,
       } as any)
       .select()
       .single()
@@ -114,16 +156,16 @@ export async function POST(request: NextRequest) {
 
     // Create response
     const response = NextResponse.json({
-      success: true,
-      affiliate: {
-        id: affiliateData.id,
-        name: affiliateData.name,
-        email: affiliateData.email,
-        status: affiliateData.status,
-        trial_ends_at: affiliateData.trial_ends_at,
-      },
-      token: token,
-    })
+          success: true,
+          affiliate: {
+            id: affiliateData.id,
+            name: affiliateData.name,
+            email: affiliateData.email,
+            status: affiliateData.status,
+            trial_ends_at: affiliateData.trial_ends_at,
+          },
+          token: token,
+        })
     
     // Set cookie
     const isProduction = !!process.env.VERCEL || process.env.NODE_ENV === 'production'

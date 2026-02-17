@@ -34,7 +34,7 @@ export function EditableTitle({
       setIsEditing(true)
     }
   }, [forceEditing])
-  
+
   useEffect(() => {
     if (onEditingChange) {
       onEditingChange(isEditing)

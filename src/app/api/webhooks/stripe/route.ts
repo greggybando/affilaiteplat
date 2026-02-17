@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const body = await req.text()
   const sig = req.headers.get('stripe-signature') as string
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
-
+  
   let event: Stripe.Event
 
   try {
@@ -201,14 +201,14 @@ export async function POST(req: Request) {
           
           const customer = await customerResponse.json()
           const customerEmail = customer.email
-
+          
           if (customerEmail) {
             const { data: affiliate } = await (supabaseAdmin as any)
               .from('affiliates')
               .select('id, name, email, subscription_started_at')
               .eq('email', customerEmail)
               .single()
-
+            
             await (supabaseAdmin as any)
               .from('affiliates')
               .update({ status: 'cancelled' })
@@ -233,7 +233,7 @@ export async function POST(req: Request) {
         case 'customer.subscription.updated': {
           // ===== EXISTING LOGIC (unchanged) =====
           const subscription = event.data.object as Stripe.Subscription
-
+          
           if (subscription.status === 'canceled' || subscription.cancel_at_period_end) {
             const customerId = subscription.customer as string
             
@@ -246,19 +246,19 @@ export async function POST(req: Request) {
             
             const customer = await customerResponse.json()
             const customerEmail = customer.email
-
+            
             if (customerEmail && subscription.status === 'canceled') {
               const { data: affiliate } = await (supabaseAdmin as any)
                 .from('affiliates')
                 .select('id, name, email, subscription_started_at')
                 .eq('email', customerEmail)
                 .single()
-
+              
               await (supabaseAdmin as any)
                 .from('affiliates')
                 .update({ status: 'cancelled' })
                 .eq('email', customerEmail)
-
+              
               if (affiliate) {
                 await (supabaseAdmin as any)
                   .from('cancellations')
@@ -270,7 +270,7 @@ export async function POST(req: Request) {
                     subscription_start_date: affiliate.subscription_started_at,
                   })
               }
-
+              
               console.log(`✅ Subscription updated to cancelled for ${customerEmail}`)
             }
           }
