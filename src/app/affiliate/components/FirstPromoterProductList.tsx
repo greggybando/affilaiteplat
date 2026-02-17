@@ -4,17 +4,20 @@ import { useState } from 'react'
 import { Copy, Check, ExternalLink } from 'lucide-react'
 
 type FirstPromoterCampaign = {
-  id?: string
+  id?: string | number
   name?: string
   campaign_name?: string
   offer_name?: string
+  title?: string
   landing_page_url?: string
   url?: string
   referral_link?: string
   affiliate_link?: string
+  link?: string
   commission_rate?: number
   commission_percent?: number
   commission?: number
+  commission_type?: string
   clicks?: number
   conversions?: number
   sales?: number
@@ -23,6 +26,7 @@ type FirstPromoterCampaign = {
   pending?: number
   approved?: number
   paid?: number
+  [key: string]: any // Allow any other fields from FirstPromoter
 }
 
 export function FirstPromoterProductList({
@@ -81,16 +85,23 @@ function CampaignRow({
   const [copied, setCopied] = useState(false)
 
   // Extract campaign data (handle different field names from FirstPromoter API)
-  const campaignName = campaign.name || campaign.campaign_name || campaign.offer_name || 'Unnamed Campaign'
-  const landingUrl = campaign.landing_page_url || campaign.url || ''
-  const referralLink = campaign.referral_link || campaign.affiliate_link || ''
+  const campaignName = campaign.name || campaign.campaign_name || campaign.offer_name || campaign.title || 'Unnamed Campaign'
+  const landingUrl = campaign.landing_page_url || campaign.url || campaign.link || ''
+  const referralLink = campaign.referral_link || campaign.affiliate_link || campaign.link || ''
   const commissionRate = campaign.commission_rate || campaign.commission_percent || campaign.commission || 0
   const clicks = campaign.clicks || 0
   const conversions = campaign.conversions || campaign.sales || 0
   const earnings = campaign.earnings || campaign.revenue || campaign.paid || 0
 
-  // Build the affiliate link - use referral_link if available, otherwise build from refId
-  const affiliateLink = referralLink || (refId && landingUrl ? `${landingUrl}${landingUrl.includes('?') ? '&' : '?'}fpr=${refId}` : '')
+  // Build the affiliate link - prioritize referral_link from FP, then build from refId + landingUrl
+  let affiliateLink = referralLink
+  if (!affiliateLink && refId && landingUrl) {
+    affiliateLink = `${landingUrl}${landingUrl.includes('?') ? '&' : '?'}fpr=${refId}`
+  }
+  // Fallback to default link if no campaign-specific link
+  if (!affiliateLink && refId) {
+    affiliateLink = `https://www.millionairelifedesign.com?fpr=${refId}`
+  }
 
   const copyToClipboard = async () => {
     if (affiliateLink) {
