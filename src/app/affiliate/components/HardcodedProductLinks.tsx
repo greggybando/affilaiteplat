@@ -8,12 +8,14 @@ type Product = {
   price: string
   slug: string
   image: string
+  commissionPercent?: number
+  earningsPerSale?: string
 }
 
 const PRODUCTS: Product[] = [
-  { name: 'Platform Subscription', price: 'Recurring', slug: '', image: '/products/platform.png' },
+  { name: 'Lifedesign Affiliate', price: '$39', slug: '', image: '/products/platform.png', commissionPercent: 50, earningsPerSale: '$19.50' },
   { name: 'Psychology of Disrespect', price: '$9', slug: 'disrespect', image: '/products/disrespect.png' },
-  { name: 'Psychology of Charisma', price: '$9', slug: 'charisma', image: '/products/charisma.png' },
+  { name: 'Psychology of the Super-Charismatic', price: '$9', slug: 'charisma', image: '/products/charisma.png', commissionPercent: 50, earningsPerSale: '$4.50' },
   { name: 'ADHD Productivity Course', price: '$19', slug: 'adhd', image: '/products/adhd.png' },
 ]
 
@@ -89,6 +91,16 @@ export function HardcodedProductLinks({ refId }: { refId: string | null }) {
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div className="flex-1">
                       <h3 className="text-base font-semibold text-white">{product.name}</h3>
+                      {product.commissionPercent && product.earningsPerSale && (
+                        <div className="mt-1.5 flex items-center gap-3 text-sm">
+                          <span className="text-green-400 font-semibold">
+                            {product.commissionPercent}% commission
+                          </span>
+                          <span className="text-[rgba(255,255,255,0.6)]">
+                            {product.earningsPerSale} per sale
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="text-cyan-400 font-bold text-base">
