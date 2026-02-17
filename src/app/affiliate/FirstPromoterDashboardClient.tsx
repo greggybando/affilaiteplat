@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { StatsCards } from './components/StatsCards'
-import { FirstPromoterProductList } from './components/FirstPromoterProductList'
 import { HardcodedProductLinks } from './components/HardcodedProductLinks'
 
 type FirstPromoterData = {
@@ -131,15 +130,6 @@ export function FirstPromoterDashboardClient({ affiliate }: { affiliate: any }) 
           </div>
         )}
 
-        {/* Also show FirstPromoter campaigns if available (for reference/debugging) */}
-        {campaigns.length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-cyan-300 mb-4" style={{ textShadow: '0 0 20px rgba(34, 211, 238, 0.5)' }}>
-              FirstPromoter Campaigns
-            </h3>
-            <FirstPromoterProductList campaigns={campaigns} refId={refId} />
-          </div>
-        )}
       </section>
     </>
   )
