@@ -3,17 +3,26 @@ import { getCurrentAffiliate } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { ResubscribeClient } from './ResubscribeClient'
 
-async function getAffiliateStats(affiliateId: string, fpPromoterId: string | null) {
+async function getAffiliateStats(affiliateId: string, fpPromoterId: string | null, affiliate: any) {
   // Fetch stats from FirstPromoter API using promoter_id
+  const baseStats = {
+    affiliate_id: affiliateId,
+    email: affiliate.email,
+    name: affiliate.name,
+    subscription_status: affiliate.status,
+    trial_ends_at: affiliate.trial_ends_at || '',
+    total_links: 0,
+    total_clicks: 0,
+    total_conversions: 0,
+    pending_cents: 0,
+    approved_cents: 0,
+    locked_cents: 0,
+    paid_cents: 0,
+  }
+
   if (!process.env.FIRSTPROMOTER_API_KEY || !fpPromoterId) {
     console.warn('FirstPromoter API key or promoter ID not configured, returning empty stats')
-    return {
-      total_clicks: 0,
-      total_conversions: 0,
-      pending_cents: 0,
-      approved_cents: 0,
-      paid_cents: 0,
-    }
+    return baseStats
   }
 
   try {
@@ -31,23 +40,18 @@ async function getAffiliateStats(affiliateId: string, fpPromoterId: string | nul
 
     if (!response.ok) {
       if (response.status === 404) {
-        return {
-          total_clicks: 0,
-          total_conversions: 0,
-          pending_cents: 0,
-          approved_cents: 0,
-          paid_cents: 0,
-        }
+        return baseStats
       }
       
       const errorText = await response.text()
       console.error('FirstPromoter API error:', response.status, errorText)
-      throw new Error(`FirstPromoter API error: ${response.status}`)
+      return baseStats
     }
 
     const data = await response.json()
 
     return {
+      ...baseStats,
       total_clicks: data.clicks || data.total_clicks || data.visits || 0,
       total_conversions: data.conversions || data.total_conversions || data.sales || 0,
       pending_cents: Math.round((data.pending || data.pending_amount || 0) * 100),
@@ -56,13 +60,7 @@ async function getAffiliateStats(affiliateId: string, fpPromoterId: string | nul
     }
   } catch (error: any) {
     console.error('Error fetching FirstPromoter stats:', error)
-    return {
-      total_clicks: 0,
-      total_conversions: 0,
-      pending_cents: 0,
-      approved_cents: 0,
-      paid_cents: 0,
-    }
+    return baseStats
   }
 }
 
@@ -79,7 +77,7 @@ export default async function ResubscribePage() {
   }
 
   // Get frozen stats
-  const stats = await getAffiliateStats(affiliate.id, (affiliate as any).fp_promoter_id)
+  const stats = await getAffiliateStats(affiliate.id, (affiliate as any).fp_promoter_id, affiliate)
 
   return (
     <ResubscribeClient affiliate={affiliate} stats={stats} />
