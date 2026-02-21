@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const modules = [
   { id: 1, title: "Delete your perceived charisma mountain", loomId: "05f01863f0d544b99fa0e6942d921a52" },
@@ -19,8 +19,29 @@ const modules = [
 export default function CharismaCoursePage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [email, setEmail] = useState('')
+  const [isGated, setIsGated] = useState(true)
+  const [emailInput, setEmailInput] = useState('')
 
   const currentModule = modules[currentIndex]
+
+  useEffect(() => {
+    // Check localStorage for saved email
+    const savedEmail = localStorage.getItem('charisma_course_email')
+    if (savedEmail) {
+      setEmail(savedEmail)
+      setIsGated(false)
+    }
+  }, [])
+
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (emailInput.trim()) {
+      localStorage.setItem('charisma_course_email', emailInput.trim())
+      setEmail(emailInput.trim())
+      setIsGated(false)
+    }
+  }
 
   const loadModule = (index: number) => {
     setCurrentIndex(index)
@@ -40,6 +61,160 @@ export default function CharismaCoursePage() {
 
   const closeSidebar = () => {
     setSidebarOpen(false)
+  }
+
+  // Show email gate if not authenticated
+  if (isGated) {
+    return (
+      <>
+        <style jsx global>{`
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+
+          :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface-hover: #1a1a25;
+            --border: rgba(255,255,255,0.06);
+            --text: #e8e4df;
+            --text-dim: #8a8680;
+            --gold: #d4a853;
+            --gold-dim: rgba(212,168,83,0.15);
+            --burgundy: #8b2040;
+            --burgundy-dim: rgba(139,32,64,0.2);
+          }
+
+          body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+          }
+
+          .ambient {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+              radial-gradient(ellipse 600px 400px at 20% 20%, rgba(139,32,64,0.08), transparent),
+              radial-gradient(ellipse 500px 500px at 80% 80%, rgba(212,168,83,0.05), transparent);
+          }
+
+          .gate-container {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+          }
+
+          .gate-card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+          }
+
+          .gate-headline {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 8px;
+            text-align: center;
+          }
+
+          .gate-subtitle {
+            font-size: 14px;
+            color: var(--text-dim);
+            text-align: center;
+            margin-bottom: 32px;
+            line-height: 1.5;
+          }
+
+          .gate-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+          }
+
+          .gate-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+          }
+
+          .gate-input:focus {
+            outline: none;
+            border-color: var(--gold);
+            background: rgba(255,255,255,0.08);
+          }
+
+          .gate-input::placeholder {
+            color: var(--text-dim);
+          }
+
+          .gate-button {
+            width: 100%;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, var(--burgundy), #a02850);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+
+          .gate-button:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+          }
+
+          .gate-button:active {
+            transform: translateY(0);
+          }
+        `}</style>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+        <div className="ambient"></div>
+        <div className="gate-container">
+          <div className="gate-card">
+            <h1 className="gate-headline">Welcome Back</h1>
+            <p className="gate-subtitle">Enter the email you purchased with to access your course.</p>
+            <form className="gate-form" onSubmit={handleEmailSubmit}>
+              <input
+                type="email"
+                className="gate-input"
+                placeholder="your@email.com"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                required
+              />
+              <button type="submit" className="gate-button">
+                Access My Course
+              </button>
+            </form>
+          </div>
+        </div>
+      </>
+    )
   }
 
   return (
