@@ -50,7 +50,7 @@ export function StatsCards({ stats, affiliate }: { stats: any; affiliate?: any }
         label="Commissions Earned"
         value={`$${commissions.toFixed(2)}`}
         sublabel="Paid out after 30 days"
-        color="green"
+        color="cyan"
       />
       <StatCard
         label="Paid Out"
