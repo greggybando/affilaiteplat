@@ -1,24 +1,25 @@
-import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from '@/components/Providers'
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Affiliate Platform',
   description: 'Your affiliate marketing hub',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <script src="https://cdn.firstpromoter.com/fpr.js" defer></script>
         <script dangerouslySetInnerHTML={{ __html: `
-          (function(w){w.fpr=w.fpr||function(){w.fpr.q=w.fpr.q||[];w.fpr.q[arguments[0]=='set'?'unshift':'push'](arguments);};})(window);
-          fpr("init", {cid:"7k7myne5"}); fpr("click");
+          (function(){
+            var s = document.createElement('script');
+            s.src = 'https://cdn.firstpromoter.com/fpr.js';
+            s.onload = function(){
+              fpr("init", {cid:"7k7myne5"});
+              fpr("click");
+            };
+            document.head.appendChild(s);
+          })();
         `}} />
       </head>
       <body className="min-h-screen bg-gray-950 text-white antialiased">
