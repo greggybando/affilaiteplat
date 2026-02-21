@@ -4,7 +4,8 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { PayoutRequestButton } from './PayoutRequestButton'
 
 async function getAffiliateStats(affiliateId: string, fpPromoterId: string | null, affiliate: any) {
-  // Fetch stats from FirstPromoter API using promoter_id
+  // Calculate stats from database using commission_cents (not revenue)
+  // This ensures payout amounts match earnings amounts
   const baseStats = {
     affiliate_id: affiliateId,
     email: affiliate.email,
@@ -20,47 +21,27 @@ async function getAffiliateStats(affiliateId: string, fpPromoterId: string | nul
     paid_cents: 0,
   }
 
-  if (!process.env.FIRSTPROMOTER_API_KEY || !fpPromoterId) {
-    console.warn('FirstPromoter API key or promoter ID not configured, returning empty stats')
+  // Query affiliate_stats view which correctly calculates from commission_cents
+  const { data: stats, error } = await supabaseAdmin
+    .from('affiliate_stats')
+    .select('*')
+    .eq('affiliate_id', affiliateId)
+    .single()
+
+  if (error || !stats) {
+    console.warn('Could not fetch affiliate stats from database:', error)
     return baseStats
   }
 
-  try {
-    const response = await fetch(
-      `https://firstpromoter.com/api/v1/promoters/show?id=${encodeURIComponent(fpPromoterId)}`,
-      {
-        method: 'GET',
-        headers: {
-          'x-api-key': process.env.FIRSTPROMOTER_API_KEY,
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
-      }
-    )
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        return baseStats
-      }
-      
-      const errorText = await response.text()
-      console.error('FirstPromoter API error:', response.status, errorText)
-      return baseStats
-    }
-
-    const data = await response.json()
-
-    return {
-      ...baseStats,
-      total_clicks: data.clicks || data.total_clicks || data.visits || 0,
-      total_conversions: data.conversions || data.total_conversions || data.sales || 0,
-      pending_cents: Math.round((data.pending || data.pending_amount || 0) * 100),
-      approved_cents: Math.round((data.approved || data.approved_amount || data.available || 0) * 100),
-      paid_cents: Math.round((data.paid || data.paid_amount || data.total_earned || data.total_paid || 0) * 100),
-    }
-  } catch (error: any) {
-    console.error('Error fetching FirstPromoter stats:', error)
-    return baseStats
+  return {
+    ...baseStats,
+    total_links: stats.total_links || 0,
+    total_clicks: stats.total_clicks || 0,
+    total_conversions: stats.total_conversions || 0,
+    pending_cents: stats.pending_cents || 0,
+    approved_cents: stats.approved_cents || 0,
+    locked_cents: stats.locked_cents || 0,
+    paid_cents: stats.paid_cents || 0,
   }
 }
 

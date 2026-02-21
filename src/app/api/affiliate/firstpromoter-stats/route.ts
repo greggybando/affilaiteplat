@@ -196,9 +196,23 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Step 4: Return full response
+    // Step 4: Fetch database stats (commission-based, not revenue-based)
+    const { data: dbStats, error: dbStatsError } = await supabaseAdmin
+      .from('affiliate_stats')
+      .select('*')
+      .eq('affiliate_id', affiliate.id)
+      .single()
+
+    if (dbStatsError) {
+      console.warn('⚠️ Could not fetch database stats:', dbStatsError)
+    }
+
+    // Step 5: Return FirstPromoter data + database stats
     console.log('✅ Successfully fetched FirstPromoter data')
-    return NextResponse.json({ data })
+    return NextResponse.json({ 
+      data,
+      dbStats: dbStats || null // Commission-based stats from database
+    })
   } catch (error: any) {
     console.error('❌ Error in firstpromoter-stats route:', {
       error: error.message,
