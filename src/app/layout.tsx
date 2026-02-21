@@ -19,6 +19,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-gray-950 text-white antialiased">
         <Providers>{children}</Providers>
+        <script dangerouslySetInnerHTML={{ __html: `
+          document.addEventListener('DOMContentLoaded', function() {
+            var tid = (document.cookie.match(/_fprom_tid=([^;]+)/) || [])[1];
+            if (tid) {
+              document.querySelectorAll('a[href*="buy.stripe.com"]').forEach(function(a) {
+                var url = new URL(a.href);
+                url.searchParams.set('client_reference_id', tid);
+                a.href = url.toString();
+              });
+            }
+          });
+        `}} />
       </body>
     </html>
   )
