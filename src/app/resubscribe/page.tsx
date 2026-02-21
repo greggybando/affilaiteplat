@@ -35,13 +35,13 @@ async function getAffiliateStats(affiliateId: string, fpPromoterId: string | nul
 
   return {
     ...baseStats,
-    total_links: stats.total_links || 0,
-    total_clicks: stats.total_clicks || 0,
-    total_conversions: stats.total_conversions || 0,
-    pending_cents: stats.pending_cents || 0,
-    approved_cents: stats.approved_cents || 0,
-    locked_cents: stats.locked_cents || 0,
-    paid_cents: stats.paid_cents || 0,
+    total_links: (stats as any).total_links || 0,
+    total_clicks: (stats as any).total_clicks || 0,
+    total_conversions: (stats as any).total_conversions || 0,
+    pending_cents: (stats as any).pending_cents || 0,
+    approved_cents: (stats as any).approved_cents || 0,
+    locked_cents: (stats as any).locked_cents || 0,
+    paid_cents: (stats as any).paid_cents || 0,
   }
 }
 
