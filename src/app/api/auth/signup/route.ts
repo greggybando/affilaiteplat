@@ -64,31 +64,82 @@ export async function POST(request: NextRequest) {
         const firstName = nameParts[0] || ''
         const lastName = nameParts.slice(1).join(' ') || ''
         
-        const fpResponse = await fetch('https://firstpromoter.com/api/v1/promoters/create', {
-          method: 'POST',
-          headers: {
-            'x-api-key': process.env.FIRSTPROMOTER_API_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: (email as string).toLowerCase(),
-            first_name: firstName,
-            last_name: lastName,
-          }),
+        console.log('📤 Creating FirstPromoter account:', {
+          email: (email as string).toLowerCase(),
+          firstName,
+          lastName,
+        })
+        
+        const createResponse = await fetch(
+          'https://firstpromoter.com/api/v1/promoters/create.json',
+          {
+            method: 'POST',
+            headers: {
+              'x-api-key': process.env.FIRSTPROMOTER_API_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: (email as string).toLowerCase(),
+              first_name: firstName,
+              last_name: lastName,
+            }),
+          }
+        )
+
+        const createData = await createResponse.json()
+        console.log('📥 FirstPromoter create response:', {
+          status: createResponse.status,
+          statusText: createResponse.statusText,
+          data: JSON.stringify(createData, null, 2),
         })
 
-        if (fpResponse.ok) {
-          const fpData = await fpResponse.json()
-          fpPromoterId = fpData.id || fpData.promoter_id || null
-          fpRefId = fpData.ref_id || fpData.ref_code || null
+        if (createResponse.ok && createData.id) {
+          fpPromoterId = createData.id.toString()
+          fpRefId = createData.default_ref_id || createData.ref_id || null
           console.log(`✅ FirstPromoter account created: ${fpPromoterId}, ref_id: ${fpRefId}`)
+        } else if (createData.error && createData.error.includes('already exists')) {
+          // Account already exists, find it by email
+          console.log('⚠️ Account already exists, fetching by email...')
+          
+          const findResponse = await fetch(
+            `https://firstpromoter.com/api/v1/promoters/show.json?email=${encodeURIComponent((email as string).toLowerCase())}`,
+            {
+              method: 'GET',
+              headers: {
+                'x-api-key': process.env.FIRSTPROMOTER_API_KEY,
+                'Content-Type': 'application/json',
+              },
+            }
+          )
+
+          const findData = await findResponse.json()
+          console.log('📥 FirstPromoter find by email response:', {
+            status: findResponse.status,
+            statusText: findResponse.statusText,
+            data: JSON.stringify(findData, null, 2),
+          })
+
+          if (findResponse.ok && findData.id) {
+            fpPromoterId = findData.id.toString()
+            fpRefId = findData.default_ref_id || findData.ref_id || null
+            console.log(`✅ Found existing FirstPromoter account: ${fpPromoterId}, ref_id: ${fpRefId}`)
+          } else {
+            console.error('❌ Failed to find existing FirstPromoter account:', findData)
+          }
         } else {
-          const errorText = await fpResponse.text()
-          console.error('FirstPromoter account creation failed:', fpResponse.status, errorText)
+          console.error('❌ FirstPromoter account creation failed:', {
+            status: createResponse.status,
+            error: createData.error || createData.message || 'Unknown error',
+            fullResponse: JSON.stringify(createData, null, 2),
+          })
           // Continue with signup even if FirstPromoter fails
         }
-      } catch (fpError) {
-        console.error('Error creating FirstPromoter account:', fpError)
+      } catch (fpError: any) {
+        console.error('❌ Error creating/finding FirstPromoter account:', {
+          error: fpError.message,
+          stack: fpError.stack,
+          name: fpError.name,
+        })
         // Continue with signup even if FirstPromoter fails
       }
     }
