@@ -5,15 +5,18 @@ import { StatsCards } from './components/StatsCards'
 import { HardcodedProductLinks } from './components/HardcodedProductLinks'
 
 type FirstPromoterData = {
-  clicks?: number
-  sales?: number
-  conversions?: number
-  pending_revenue?: number
-  approved_revenue?: number
-  paid_revenue?: number
-  campaigns?: any[]
-  offers?: any[]
-  promotions?: any[]
+  promotions?: Array<{
+    visitors_count?: number
+    leads_count?: number
+    customers_count?: number
+    sales_count?: number
+    sales_total?: number // in cents
+    [key: string]: any
+  }>
+  earnings_balance?: {
+    cash?: number // in cents
+    [key: string]: any
+  }
   default_ref_id?: string
   ref_id?: string
   [key: string]: any
@@ -55,6 +58,9 @@ export function FirstPromoterDashboardClient({ affiliate }: { affiliate: any }) 
   }, [])
 
   // Map FirstPromoter data to AffiliateStats format
+  // Use promotions[0] for stats, or fallback to 0 if promotions array is empty
+  const promotion = fpData?.promotions && fpData.promotions.length > 0 ? fpData.promotions[0] : null
+  
   const stats = fpData ? {
     affiliate_id: affiliate.id,
     email: affiliate.email,
@@ -62,21 +68,16 @@ export function FirstPromoterDashboardClient({ affiliate }: { affiliate: any }) 
     subscription_status: affiliate.status,
     trial_ends_at: affiliate.trial_ends_at || '',
     total_links: 0,
-    total_clicks: fpData.clicks || 0,
-    total_conversions: fpData.sales || fpData.conversions || 0,
-    pending_cents: Math.round((fpData.pending_revenue || 0) * 100),
-    approved_cents: Math.round((fpData.approved_revenue || 0) * 100),
+    total_clicks: promotion?.visitors_count || 0,
+    total_conversions: promotion?.sales_count || 0,
+    pending_cents: Math.round((fpData.earnings_balance?.cash || 0)),
+    approved_cents: Math.round((promotion?.sales_total || 0)),
     locked_cents: 0,
-    paid_cents: Math.round((fpData.paid_revenue || 0) * 100),
+    paid_cents: Math.round((promotion?.sales_total || 0)),
   } : null
 
   // Extract campaigns from response
-  const campaigns = fpData ? (
-    fpData.campaigns || 
-    fpData.offers || 
-    fpData.promotions || 
-    []
-  ) : []
+  const campaigns = fpData?.promotions || []
 
   // Get ref_id from response or affiliate record
   const refId = fpData?.default_ref_id || fpData?.ref_id || (affiliate as any).fp_ref_id || null
