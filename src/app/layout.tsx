@@ -11,39 +11,41 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <script dangerouslySetInnerHTML={{ __html: `
-          (function(){
-            var s = document.createElement('script');
-            s.src = 'https://cdn.firstpromoter.com/fpr.js';
-            s.onload = function(){
-              fpr("init", {cid:"7k7myne5"});
-              fpr("click");
-            };
-            document.head.appendChild(s);
-          })();
-          
-          document.addEventListener('DOMContentLoaded', function() {
-            var tid = (document.cookie.match(/_fprom_tid=([^;]+)/) || [])[1];
-            if (tid) {
-              document.querySelectorAll('a[href*="buy.stripe.com"]').forEach(function(a) {
-                var url = new URL(a.href);
-                url.searchParams.set('client_reference_id', 'fprom_' + tid);
-                a.href = url.toString();
+          (function(w){w.fpr=w.fpr||function(){w.fpr.q = w.fpr.q||[];w.fpr.q[arguments[0]=='set'?'unshift':'push'](arguments);};})(window);
+          fpr("init", {cid:"7k7myne5"}); 
+          fpr("click");
+        `}} />
+        <script src="https://cdn.firstpromoter.com/fpr.js" async></script>
+        <script dangerouslySetInnerHTML={{ __html: `
+          function getFPTid() {
+            return window.FPROM && window.FPROM.data.tid;
+          }
+          function initializeFPRPaymentLinks() {
+            console.log("initialized fpr on payment links");
+            setTimeout(function () {
+              var stripePaymentLinks = document.querySelectorAll(
+                'a[href^="https://buy.stripe.com/"]'
+              );
+              stripePaymentLinks.forEach(function (link) {
+                var oldStripePaymentUrl = link.getAttribute("href"); 
+                var tid = getFPTid();
+                if (tid) {
+                  var url = new URL(oldStripePaymentUrl);
+                  url.searchParams.set('client_reference_id', tid);
+                  link.setAttribute("href", url.toString());
+                }
               });
-            }
-          });
+            }, 800);
+          }
+          if (window.attachEvent) {
+            window.attachEvent("onload", initializeFPRPaymentLinks);
+          } else {
+            window.addEventListener("load", initializeFPRPaymentLinks, false);
+          }
         `}} />
       </head>
       <body className="min-h-screen bg-gray-950 text-white antialiased">
         <Providers>{children}</Providers>
-        <script dangerouslySetInnerHTML={{ __html: `
-          document.addEventListener('DOMContentLoaded', function() {
-            var tid = (document.cookie.match(/_fprom_tid=([^;]+)/) || [])[1];
-            if (tid && typeof fpr !== 'undefined') {
-              // Register visitor as a lead in FirstPromoter
-              fpr("referral", {email: null, uid: tid});
-            }
-          });
-        `}} />
       </body>
     </html>
   )
