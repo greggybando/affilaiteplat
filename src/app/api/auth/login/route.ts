@@ -39,6 +39,13 @@ export async function POST(request: NextRequest) {
       }, { status: 403 })
     }
 
+    // Block pending_payment accounts - they must complete payment first
+    if ((affiliate as any).status === 'pending_payment') {
+      return NextResponse.json({ 
+        error: 'Please complete your payment to activate your account. Check your email for the payment link.' 
+      }, { status: 403 })
+    }
+
     const token = jwt.sign(
       { affiliateId: affiliate.id, email: affiliate.email },
       process.env.JWT_SECRET!,

@@ -12,6 +12,7 @@ function SignupForm() {
   const [error, setError] = useState('')
   const [payoutMethod, setPayoutMethod] = useState<'paypal' | 'stripe'>('paypal')
   const [referralCode, setReferralCode] = useState<string>('')
+  const [discountCode, setDiscountCode] = useState<string>('')
 
   useEffect(() => {
     const ref = searchParams.get('ref')
@@ -33,6 +34,7 @@ function SignupForm() {
       payout_method: payoutMethod,
       paypal_email: payoutMethod === 'paypal' ? formData.get('paypal_email') as string : null,
       referral_code: referralCode || null,
+      discount_code: discountCode.trim() || null,
     }
 
     try {
@@ -51,6 +53,12 @@ function SignupForm() {
       // Save token to localStorage as backup
       if (result.token) {
         localStorage.setItem('affiliate_token', result.token)
+      }
+
+      // If checkout URL returned, redirect to Stripe checkout
+      if (result.checkoutUrl) {
+        window.location.href = result.checkoutUrl
+        return
       }
 
       // If they chose Stripe, redirect to connect onboarding
@@ -260,6 +268,27 @@ function SignupForm() {
                 After signing up, you'll be redirected to Stripe to connect your bank account.
               </p>
             )}
+
+            {/* Discount Code */}
+            <div className="relative z-10">
+              <label htmlFor="discount_code" className="block text-sm font-medium text-white mb-2">
+                Have a code?
+              </label>
+              <input
+                type="text"
+                id="discount_code"
+                name="discount_code"
+                value={discountCode}
+                onChange={(e) => setDiscountCode(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg text-white placeholder-[rgba(255,255,255,0.5)] focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)'
+                }}
+                placeholder="Enter discount code"
+              />
+            </div>
           </div>
 
           {/* Error Message */}

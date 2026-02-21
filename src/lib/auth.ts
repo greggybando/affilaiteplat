@@ -100,6 +100,11 @@ export async function getCurrentAffiliate() {
       .eq('id', payload.affiliateId)
       .single()
 
+    // Block pending_payment accounts from accessing the platform
+    if (affiliate && affiliate.status === 'pending_payment') {
+      return null
+    }
+
     if (error || !affiliate) {
       return null
     }

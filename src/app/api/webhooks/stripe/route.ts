@@ -355,7 +355,34 @@ async function handleSubscriptionCheckout(
 ) {
   if (!customerEmail) return
 
-  // Activate user subscription
+  // Check if this is a platform subscription signup (from metadata)
+  const affiliateId = session.metadata?.affiliate_id
+  const signupType = session.metadata?.signup_type
+
+  // Calculate trial end date (7 days from now)
+  const trialEndsAt = new Date()
+  trialEndsAt.setDate(trialEndsAt.getDate() + 7)
+
+  // If this is a platform subscription signup, activate account with trial status
+  if (signupType === 'platform_subscription' && affiliateId) {
+    const { error } = await (supabaseAdmin as any)
+      .from('affiliates')
+      .update({
+        status: 'trial',
+        trial_ends_at: trialEndsAt.toISOString(),
+        subscription_started_at: new Date().toISOString(),
+      })
+      .eq('id', affiliateId)
+
+    if (error) {
+      console.log(`❌ Error activating platform subscription for ${affiliateId}:`, error)
+    } else {
+      console.log(`✅ Platform subscription activated for ${affiliateId}`)
+    }
+    return
+  }
+
+  // Otherwise, activate existing user subscription (for resubscriptions)
   const { error } = await (supabaseAdmin as any)
     .from('affiliates')
     .update({

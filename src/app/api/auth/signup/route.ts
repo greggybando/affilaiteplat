@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, email, password, payout_method, paypal_email, referral_code } = body
+    const { name, email, password, payout_method, paypal_email, referral_code, discount_code } = body
 
     // Validate input
     if (!name || !email || !password) {
@@ -46,6 +46,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check discount code (case-insensitive)
+    const validCodes = (process.env.FREE_ACCESS_CODES || '').split(',').map(c => c.trim().toLowerCase()).filter(Boolean)
+    const hasValidCode = discount_code && validCodes.includes(discount_code.trim().toLowerCase())
+    
     // Hash password
     const passwordHash = await hashPassword(password)
 
@@ -145,6 +149,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create affiliate record
+    // If valid discount code, create with 'trial' status, otherwise 'pending_payment'
+    const accountStatus = hasValidCode ? 'trial' : 'pending_payment'
+    
     const { data: affiliate, error: insertError } = await supabaseAdmin
       .from('affiliates')
       .insert({
@@ -153,8 +160,8 @@ export async function POST(request: NextRequest) {
         password_hash: passwordHash,
         payout_method: payout_method as string || null,
         paypal_email: payout_method === 'paypal' ? (paypal_email as string) : null,
-        status: 'trial' as const,
-        trial_ends_at: trialEndsAt.toISOString(),
+        status: accountStatus,
+        trial_ends_at: accountStatus === 'trial' ? trialEndsAt.toISOString() : null,
         fp_promoter_id: fpPromoterId,
         fp_ref_id: fpRefId,
       } as any)
@@ -199,38 +206,99 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate auth token
-    const token = generateToken({
-      affiliateId: affiliateData.id,
-      email: affiliateData.email,
+    // If valid discount code, proceed with normal signup flow
+    if (hasValidCode) {
+      // Generate auth token
+      const token = generateToken({
+        affiliateId: affiliateData.id,
+        email: affiliateData.email,
+      })
+
+      // Create response
+      const response = NextResponse.json({
+        success: true,
+        affiliate: {
+          id: affiliateData.id,
+          name: affiliateData.name,
+          email: affiliateData.email,
+          status: affiliateData.status,
+          trial_ends_at: affiliateData.trial_ends_at,
+        },
+        token: token,
+      })
+      
+      // Set cookie
+      const isProduction = !!process.env.VERCEL || process.env.NODE_ENV === 'production'
+      const secure = isProduction
+      
+      response.cookies.set('affiliate_token', token, {
+        path: '/',
+        maxAge: 60 * 60 * 24,
+        httpOnly: false,
+        secure: secure,
+        sameSite: 'lax',
+      })
+      
+      return response
+    }
+
+    // No valid discount code - create Stripe checkout session
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.millionairelifedesign.com'
+    const priceId = (process.env.STRIPE_AFFILIATE_PRICE_ID || process.env.STRIPE_MONTHLY_PRICE_ID)?.trim()
+    
+    if (!priceId) {
+      return NextResponse.json(
+        { error: 'Payment system not configured' },
+        { status: 500 }
+      )
+    }
+
+    // Create Stripe checkout session
+    const checkoutParams = new URLSearchParams({
+      'customer_email': (email as string).toLowerCase(),
+      'mode': 'subscription',
+      'payment_method_types[0]': 'card',
+      'line_items[0][price]': priceId,
+      'line_items[0][quantity]': '1',
+      'success_url': `${baseUrl}/onboarding?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      'cancel_url': `${baseUrl}/signup?cancelled=true`,
+      'metadata[affiliate_id]': affiliateData.id,
+      'metadata[signup_type]': 'platform_subscription',
+      'subscription_data[metadata][affiliate_id]': affiliateData.id,
     })
 
-    // Create response
-    const response = NextResponse.json({
-          success: true,
-          affiliate: {
-            id: affiliateData.id,
-            name: affiliateData.name,
-            email: affiliateData.email,
-            status: affiliateData.status,
-            trial_ends_at: affiliateData.trial_ends_at,
-          },
-          token: token,
-        })
-    
-    // Set cookie
-    const isProduction = !!process.env.VERCEL || process.env.NODE_ENV === 'production'
-    const secure = isProduction
-    
-    response.cookies.set('affiliate_token', token, {
-      path: '/',
-      maxAge: 60 * 60 * 24,
-      httpOnly: false,
-      secure: secure,
-      sameSite: 'lax',
+    const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: checkoutParams.toString(),
     })
-    
-    return response
+
+    const checkoutSession = await stripeResponse.json()
+
+    if (!stripeResponse.ok || checkoutSession.error) {
+      console.error('Stripe checkout error:', checkoutSession.error)
+      return NextResponse.json(
+        { error: checkoutSession.error?.message || 'Failed to create checkout session' },
+        { status: 500 }
+      )
+    }
+
+    if (!checkoutSession.url) {
+      return NextResponse.json(
+        { error: 'Failed to create checkout URL' },
+        { status: 500 }
+      )
+    }
+
+    // Return checkout URL - user will complete payment before account activation
+    return NextResponse.json({
+      success: true,
+      checkoutUrl: checkoutSession.url,
+      message: 'Please complete payment to activate your account',
+    })
   } catch (error) {
     console.error('Signup error:', error)
     return NextResponse.json(
