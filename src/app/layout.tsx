@@ -11,16 +11,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <script dangerouslySetInnerHTML={{ __html: `
-          (function(){
-            var s = document.createElement('script');
-            s.src = 'https://cdn.firstpromoter.com/fpr.js';
-            s.onload = function(){
-              fpr("init", {cid:"7k7myne5"});
-              fpr("click");
-            };
-            document.head.appendChild(s);
-          })();
+          (function(w){w.fpr=w.fpr||function(){w.fpr.q=w.fpr.q||[];w.fpr.q[arguments[0]=='set'?'unshift':'push'](arguments);};})(window);
+          fpr("init", {cid:"7k7myne5"});
+          fpr("click");
         `}} />
+        <script src="https://cdn.firstpromoter.com/fpr.js" async></script>
       </head>
       <body className="min-h-screen bg-gray-950 text-white antialiased">
         <Providers>{children}</Providers>
