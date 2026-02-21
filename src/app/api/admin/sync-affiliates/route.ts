@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     // For now, we'll sync based on existing Supabase affiliates that have emails
     
     // Get all affiliates from Supabase that don't have fp_promoter_id
-    const { data: affiliatesWithoutFp, error: fetchError } = await supabaseAdmin
+    const { data: affiliatesWithoutFp, error: fetchError } = await (supabaseAdmin as any)
       .from('affiliates')
       .select('id, email, name, fp_promoter_id, fp_ref_id')
       .is('fp_promoter_id', null)
