@@ -179,12 +179,15 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center mt-6 text-[rgba(255,255,255,0.6)]">
-          Don't have an account?{' '}
-          <Link href="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
-            Start free trial
-          </Link>
-        </p>
+        {/* Temporarily hidden */}
+        {false && (
+          <p className="text-center mt-6 text-[rgba(255,255,255,0.6)]">
+            Don't have an account?{' '}
+            <Link href="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
+              Start free trial
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   )
