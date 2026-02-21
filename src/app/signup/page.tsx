@@ -22,9 +22,8 @@ function SignupForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    // Temporarily disabled
-    setError('Signup is temporarily disabled for testing.')
-    return
+    setIsLoading(true)
+    setError('')
 
     const formData = new FormData(e.currentTarget)
     const data = {
@@ -277,24 +276,20 @@ function SignupForm() {
             </div>
           )}
 
-          {/* Submit - Temporarily Disabled */}
-          <div 
-            className="w-full py-4 px-6 font-semibold rounded-xl text-center relative overflow-hidden"
-            style={{
-              background: 'rgba(107,114,128,0.3)',
-              color: 'rgba(255,255,255,0.5)',
-              cursor: 'not-allowed'
-            }}
-          >
-            <span className="relative z-10 font-bold">Signup Temporarily Disabled</span>
-          </div>
-          
-          {/* Hidden disabled button to prevent form submission */}
+          {/* Submit */}
           <button
             type="submit"
-            disabled={true}
-            style={{ display: 'none' }}
-          />
+            disabled={isLoading}
+            className="w-full py-4 px-6 font-semibold rounded-xl transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 relative overflow-hidden group"
+            style={{
+              background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+              boxShadow: '0 0 20px rgba(34,211,238,0.5), 0 4px 20px rgba(0,0,0,0.3)',
+              color: '#0f0f1a'
+            }}
+          >
+            <span className="relative z-10 font-bold">{isLoading ? 'Creating account...' : 'Start Free Trial'}</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+          </button>
 
           {/* Terms */}
           <p className="text-xs text-[rgba(255,255,255,0.5)] text-center">
