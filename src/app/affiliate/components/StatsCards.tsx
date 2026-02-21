@@ -47,16 +47,16 @@ export function StatsCards({ stats, affiliate }: { stats: any; affiliate?: any }
         color="gray"
       />
       <StatCard
-        label="Revenue Generated"
+        label="Total Revenue Generated"
         value={`$${revenue.toFixed(2)}`}
-        sublabel="From your referrals"
+        sublabel="Total sales x price of sale"
         color="cyan"
       />
       <StatCard
         label="Commissions Earned"
         value={`$${commissions.toFixed(2)}`}
         sublabel="Paid out after 30 days"
-        color="yellow"
+        color="green"
       />
       <StatCard
         label="Paid Out"
@@ -78,7 +78,7 @@ function StatCard({
   label: string
   value: string
   sublabel?: string
-  color?: 'gray' | 'yellow' | 'cyan'
+  color?: 'gray' | 'yellow' | 'cyan' | 'green'
 }) {
   const colorStyles = {
     gray: {
@@ -98,6 +98,12 @@ function StatCard({
       borderColor: 'rgba(34,211,238,0.3)',
       textColor: 'text-cyan-400',
       glow: '0 0 15px rgba(34,211,238,0.3)'
+    },
+    green: {
+      background: 'rgba(34,197,94,0.1)',
+      borderColor: 'rgba(34,197,94,0.3)',
+      textColor: 'text-green-400',
+      glow: '0 0 15px rgba(34,197,94,0.3)'
     },
   }
 
