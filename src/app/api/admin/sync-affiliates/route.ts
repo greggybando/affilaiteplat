@@ -137,12 +137,12 @@ export async function POST(req: NextRequest) {
 
         // Update Supabase with FirstPromoter data
         if (fpPromoterId) {
-          const { error: updateError } = await supabaseAdmin
+          const { error: updateError } = await (supabaseAdmin as any)
             .from('affiliates')
             .update({
               fp_promoter_id: fpPromoterId,
               fp_ref_id: fpRefId,
-            })
+            } as any)
             .eq('id', affiliate.id)
 
           if (updateError) {
