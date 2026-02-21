@@ -47,12 +47,6 @@ export function StatsCards({ stats, affiliate }: { stats: any; affiliate?: any }
         color="gray"
       />
       <StatCard
-        label="Total Revenue Generated"
-        value={`$${revenue.toFixed(2)}`}
-        sublabel="Total sales x price of sale"
-        color="cyan"
-      />
-      <StatCard
         label="Commissions Earned"
         value={`$${commissions.toFixed(2)}`}
         sublabel="Paid out after 30 days"
@@ -62,6 +56,12 @@ export function StatsCards({ stats, affiliate }: { stats: any; affiliate?: any }
         label="Paid Out"
         value={`$${paidOut.toFixed(2)}`}
         sublabel="Lifetime payouts"
+        color="cyan"
+      />
+      <StatCard
+        label="Total Revenue Generated"
+        value={`$${revenue.toFixed(2)}`}
+        sublabel="Total sales x price of sale"
         color="cyan"
       />
     </div>
