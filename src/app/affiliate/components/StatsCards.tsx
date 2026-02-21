@@ -1,12 +1,11 @@
-import type { AffiliateStats } from '@/lib/supabase'
-
-export function StatsCards({ stats, affiliate }: { stats: AffiliateStats | null; affiliate?: any }) {
+export function StatsCards({ stats, affiliate }: { stats: any; affiliate?: any }) {
+  // Extract stats from FirstPromoter API (all values in cents)
   const clicks = stats?.total_clicks || 0
-  const conversions = stats?.total_conversions || 0
-  const conversionRate = clicks > 0 ? ((conversions / clicks) * 100).toFixed(1) : '0.0'
-  const pending = (stats?.pending_cents || 0) / 100
-  const approved = (stats?.approved_cents || 0) / 100
-  const paid = (stats?.paid_cents || 0) / 100
+  const sales = stats?.sales_count || 0
+  const conversionRate = clicks > 0 ? ((sales / clicks) * 100).toFixed(1) : '0.0'
+  const revenue = (stats?.revenue_cents || 0) / 100
+  const commissions = (stats?.commissions_cents || 0) / 100
+  const paidOut = (stats?.paid_cents || 0) / 100
 
   // Check for active commission boost
   const boostPercent = affiliate?.commission_boost_percent || 0
@@ -42,27 +41,27 @@ export function StatsCards({ stats, affiliate }: { stats: AffiliateStats | null;
         color="gray"
       />
       <StatCard
-        label="Conversions"
-        value={conversions.toLocaleString()}
+        label="Sales"
+        value={sales.toLocaleString()}
         sublabel={`${conversionRate}% rate`}
         color="gray"
       />
       <StatCard
-        label="Pending"
-        value={`$${pending.toFixed(2)}`}
-        sublabel="Awaiting approval"
-        color="yellow"
-      />
-      <StatCard
-        label="Ready to Pay"
-        value={`$${approved.toFixed(2)}`}
-        sublabel="Available for payout"
+        label="Revenue Generated"
+        value={`$${revenue.toFixed(2)}`}
+        sublabel="From your referrals"
         color="cyan"
       />
       <StatCard
-        label="Total Earned"
-        value={`$${paid.toFixed(2)}`}
-        sublabel="Lifetime earnings"
+        label="Commissions Earned"
+        value={`$${commissions.toFixed(2)}`}
+        sublabel="Paid out after 30 days"
+        color="yellow"
+      />
+      <StatCard
+        label="Paid Out"
+        value={`$${paidOut.toFixed(2)}`}
+        sublabel="Lifetime payouts"
         color="cyan"
       />
     </div>

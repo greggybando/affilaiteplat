@@ -17,6 +17,10 @@ type FirstPromoterData = {
     cash?: number // in cents
     [key: string]: any
   }
+  paid_balance?: {
+    cash?: number // in cents
+    [key: string]: any
+  }
   default_ref_id?: string
   ref_id?: string
   [key: string]: any
@@ -24,7 +28,6 @@ type FirstPromoterData = {
 
 export function FirstPromoterDashboardClient({ affiliate }: { affiliate: any }) {
   const [fpData, setFpData] = useState<FirstPromoterData | null>(null)
-  const [dbStats, setDbStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,18 +44,15 @@ export function FirstPromoterDashboardClient({ affiliate }: { affiliate: any }) 
           console.error('❌ API error:', result)
           setError(result.error || 'Failed to fetch data')
           setFpData(null)
-          setDbStats(null)
           return
         }
 
         console.log('✅ Received FirstPromoter data:', result.data)
         setFpData(result.data || {})
-        setDbStats(result.dbStats || null)
       } catch (err: any) {
         console.error('❌ Error fetching FirstPromoter data:', err)
         setError(err.message || 'Failed to fetch data')
         setFpData(null)
-        setDbStats(null)
       } finally {
         setLoading(false)
       }
@@ -61,12 +61,9 @@ export function FirstPromoterDashboardClient({ affiliate }: { affiliate: any }) 
     fetchData()
   }, [])
 
-  // Map FirstPromoter data to AffiliateStats format
-  // Use promotions[0] for stats, or fallback to 0 if promotions array is empty
+  // Map FirstPromoter data to stats format
+  // All values from FirstPromoter API are in cents, divide by 100 for display
   const promotion = fpData?.promotions && fpData.promotions.length > 0 ? fpData.promotions[0] : null
-  
-  // Use database stats for commission amounts (not revenue)
-  // This ensures "Ready to Pay" and "Total Earned" match actual payout amounts
   
   const stats = fpData ? {
     affiliate_id: affiliate.id,
@@ -74,13 +71,11 @@ export function FirstPromoterDashboardClient({ affiliate }: { affiliate: any }) 
     name: affiliate.name,
     subscription_status: affiliate.status,
     trial_ends_at: affiliate.trial_ends_at || '',
-    total_links: dbStats?.total_links || 0,
-    total_clicks: promotion?.visitors_count || dbStats?.total_clicks || 0,
-    total_conversions: promotion?.sales_count || dbStats?.total_conversions || 0,
-    pending_cents: dbStats?.pending_cents || 0,
-    approved_cents: dbStats?.approved_cents || 0, // Commission-based, not revenue
-    locked_cents: dbStats?.locked_cents || 0,
-    paid_cents: dbStats?.paid_cents || 0, // Commission-based, not revenue
+    total_clicks: promotion?.visitors_count || 0,
+    sales_count: promotion?.sales_count || 0,
+    revenue_cents: promotion?.sales_total || 0,
+    commissions_cents: fpData.earnings_balance?.cash || 0,
+    paid_cents: fpData.paid_balance?.cash || 0,
   } : null
 
   // Extract campaigns from response
