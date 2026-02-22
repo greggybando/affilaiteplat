@@ -10,6 +10,7 @@ interface CourseEmailGateProps {
 export function CourseEmailGate({ product, children }: CourseEmailGateProps) {
   const [email, setEmail] = useState('')
   const [isGated, setIsGated] = useState(true)
+  const [isChecking, setIsChecking] = useState(true)
   const [emailInput, setEmailInput] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -20,7 +21,10 @@ export function CourseEmailGate({ product, children }: CourseEmailGateProps) {
     if (savedEmail) {
       setEmail(savedEmail)
       setIsGated(false)
+    } else {
+      setIsGated(true)
     }
+    setIsChecking(false)
   }, [product])
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -62,6 +66,23 @@ export function CourseEmailGate({ product, children }: CourseEmailGateProps) {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Show loading state while checking localStorage
+  if (isChecking) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#0a0a0f',
+        color: '#e8e4df',
+        fontFamily: 'Inter, sans-serif'
+      }}>
+        Loading...
+      </div>
+    )
   }
 
   // Show email gate if not authenticated
