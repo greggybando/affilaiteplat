@@ -16,15 +16,28 @@ export function CourseEmailGate({ product, children }: CourseEmailGateProps) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    // Check localStorage for saved email
-    const savedEmail = localStorage.getItem(`${product}_course_email`)
-    if (savedEmail) {
-      setEmail(savedEmail)
-      setIsGated(false)
-    } else {
+    // Only check localStorage on client side
+    if (typeof window === 'undefined') {
+      setIsChecking(false)
       setIsGated(true)
+      return
     }
-    setIsChecking(false)
+
+    // Check localStorage for saved email
+    try {
+      const savedEmail = localStorage.getItem(`${product}_course_email`)
+      if (savedEmail && savedEmail.trim()) {
+        setEmail(savedEmail.trim())
+        setIsGated(false)
+      } else {
+        setIsGated(true)
+      }
+    } catch (error) {
+      console.error('Error accessing localStorage:', error)
+      setIsGated(true)
+    } finally {
+      setIsChecking(false)
+    }
   }, [product])
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -86,6 +99,7 @@ export function CourseEmailGate({ product, children }: CourseEmailGateProps) {
   }
 
   // Show email gate if not authenticated
+  // NEVER render children unless explicitly unlocked
   if (isGated) {
     return (
       <>
@@ -124,13 +138,18 @@ export function CourseEmailGate({ product, children }: CourseEmailGateProps) {
           }
 
           .gate-container {
-            position: relative;
-            z-index: 1;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 40px 20px;
+            background: var(--bg);
           }
 
           .gate-card {
@@ -258,6 +277,24 @@ export function CourseEmailGate({ product, children }: CourseEmailGateProps) {
   }
 
   // Show course content when unlocked
-  return <>{children}</>
+  // Only render children if isGated is false AND isChecking is false
+  if (!isGated && !isChecking) {
+    return <>{children}</>
+  }
+
+  // Fallback: should never reach here, but show gate just in case
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#0a0a0f',
+      color: '#e8e4df',
+      fontFamily: 'Inter, sans-serif'
+    }}>
+      Loading...
+    </div>
+  )
 }
 
