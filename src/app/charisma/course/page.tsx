@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 const modules = [
   { id: 1, title: "Delete your perceived charisma mountain", loomId: "05f01863f0d544b99fa0e6942d921a52" },
@@ -16,23 +17,61 @@ const modules = [
   { id: 11, title: '"Rise all boats" frame', loomId: "1361826084b94318bf39029f31a9c932" }
 ]
 
-export default function CharismaCoursePage() {
+function CharismaCoursePageContent() {
+  const searchParams = useSearchParams()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [isGated, setIsGated] = useState(true)
   const [emailInput, setEmailInput] = useState('')
+  const [isLoadingSession, setIsLoadingSession] = useState(false)
 
   const currentModule = modules[currentIndex]
 
   useEffect(() => {
-    // Check localStorage for saved email
-    const savedEmail = localStorage.getItem('charisma_course_email')
-    if (savedEmail) {
-      setEmail(savedEmail)
-      setIsGated(false)
+    const checkAccess = async () => {
+      // Check localStorage first
+      const savedEmail = localStorage.getItem('charisma_course_email')
+      if (savedEmail) {
+        setEmail(savedEmail)
+        setIsGated(false)
+        return
+      }
+
+      // Check for session_id in URL params
+      const sessionId = searchParams.get('session_id')
+      if (sessionId) {
+        setIsLoadingSession(true)
+        try {
+          const response = await fetch(
+            `/api/stripe/session?session_id=${encodeURIComponent(sessionId)}&product=charisma`
+          )
+          const data = await response.json()
+
+          if (response.ok && data.email) {
+            // Store email in localStorage
+            localStorage.setItem('charisma_course_email', data.email)
+            setEmail(data.email)
+            setIsGated(false)
+          } else {
+            // If API call fails, show email gate as fallback
+            setIsGated(true)
+          }
+        } catch (error) {
+          console.error('Error fetching session:', error)
+          // Show email gate as fallback
+          setIsGated(true)
+        } finally {
+          setIsLoadingSession(false)
+        }
+      } else {
+        // No session_id and no saved email - show gate
+        setIsGated(true)
+      }
     }
-  }, [])
+
+    checkAccess()
+  }, [searchParams])
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -198,19 +237,25 @@ export default function CharismaCoursePage() {
           <div className="gate-card">
             <h1 className="gate-headline">Welcome Back</h1>
             <p className="gate-subtitle">Enter the email you purchased with to access your course.</p>
-            <form className="gate-form" onSubmit={handleEmailSubmit}>
-              <input
-                type="email"
-                className="gate-input"
-                placeholder="your@email.com"
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                required
-              />
-              <button type="submit" className="gate-button">
-                Access My Course
-              </button>
-            </form>
+            {isLoadingSession ? (
+              <div style={{ textAlign: 'center', color: 'var(--text-dim)', padding: '20px 0' }}>
+                Verifying purchase...
+              </div>
+            ) : (
+              <form className="gate-form" onSubmit={handleEmailSubmit}>
+                <input
+                  type="email"
+                  className="gate-input"
+                  placeholder="your@email.com"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  required
+                />
+                <button type="submit" className="gate-button">
+                  Access My Course
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </>
@@ -539,6 +584,26 @@ export default function CharismaCoursePage() {
 
       <button className="mobile-toggle" onClick={toggleSidebar}>☰</button>
     </>
+  )
+}
+
+export default function CharismaCoursePage() {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: '#0a0a0f',
+        color: '#e8e4df',
+        fontFamily: 'Inter, sans-serif'
+      }}>
+        Loading...
+      </div>
+    }>
+      <CharismaCoursePageContent />
+    </Suspense>
   )
 }
 
