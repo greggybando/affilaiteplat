@@ -118,7 +118,7 @@ function ADHDCourseContent() {
     try {
       localStorage.setItem('adhd-course-v2', JSON.stringify({
         currentIndex,
-        completed: [...completed]
+        completed: Array.from(completed)
       }))
     } catch (e) {
       console.error('Error saving state:', e)
