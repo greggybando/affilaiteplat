@@ -12,7 +12,6 @@ export function CourseEmailGate({ product, children }: CourseEmailGateProps) {
   const [isGated, setIsGated] = useState(true)
   const [isChecking, setIsChecking] = useState(true)
   const [emailInput, setEmailInput] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -40,7 +39,7 @@ export function CourseEmailGate({ product, children }: CourseEmailGateProps) {
     }
   }, [product])
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     
@@ -49,35 +48,14 @@ export function CourseEmailGate({ product, children }: CourseEmailGateProps) {
       return
     }
 
-    setIsSubmitting(true)
-
     try {
-      const response = await fetch('/api/ac/add-contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: emailInput.trim(),
-          product,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        // Store email in localStorage
-        localStorage.setItem(`${product}_course_email`, emailInput.trim().toLowerCase())
-        setEmail(emailInput.trim().toLowerCase())
-        setIsGated(false)
-      } else {
-        setError(data.error || 'Failed to verify email. Please try again.')
-      }
+      // Store email in localStorage and unlock content
+      localStorage.setItem(`${product}_course_email`, emailInput.trim().toLowerCase())
+      setEmail(emailInput.trim().toLowerCase())
+      setIsGated(false)
     } catch (err: any) {
-      console.error('Error submitting email:', err)
+      console.error('Error saving email:', err)
       setError('An error occurred. Please try again.')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -258,16 +236,14 @@ export function CourseEmailGate({ product, children }: CourseEmailGateProps) {
                 placeholder="your@email.com"
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
-                disabled={isSubmitting}
                 required
               />
               {error && <div className="gate-error">{error}</div>}
               <button 
                 type="submit" 
                 className="gate-button"
-                disabled={isSubmitting}
               >
-                {isSubmitting ? 'Verifying...' : 'Access My Course'}
+                Access My Course
               </button>
             </form>
           </div>
