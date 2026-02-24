@@ -62,7 +62,7 @@ const modules: Module[] = [
   {
     title: "Personality Awareness",
     lessons: [
-      { title: "Maker's vs Manager's Schedule", type: "loom", id: "1e420a5bfe05486bb0facfe7795df30" },
+      { title: "Maker's vs Manager's Schedule", type: "youtube", id: "QMdi0vh5GyU" },
       { title: '2 Most Common Work "Types"', type: "loom", id: "c22269430def4212a3a01f69674252c0" },
       { title: "Beginning to Understand Your Wiring", type: "youtube", id: "Zvplf8vm3Hs" }
     ]
