@@ -22,8 +22,8 @@ const modules: Module[] = [
     title: "Intro / What ADHD Actually Is",
     lessons: [
       { title: "Introduction", type: "loom", id: "bbd91163787b4b659c737b768fb81068" },
-      { title: 'What Actually Is "ADHD"', type: "loom", id: "64a9669f9674431facda897283992f37" },
-      { title: 'Re-Framing the Word "Productivity"', type: "loom", id: "3d9aac31dcee47e7a61e654290c0b04b" },
+      { title: 'What Actually Is "ADHD"', type: "youtube", id: "hbdegn16O3k" },
+      { title: 'Re-Framing the Word "Productivity"', type: "youtube", id: "mB24rikMvBk" },
       { title: "Choosing What to Believe About Yourself", type: "loom", id: "1042d330524b4dc398391b03a5ce29f6" }
     ]
   },
@@ -39,7 +39,7 @@ const modules: Module[] = [
   {
     title: "Fix 99% of Procrastination",
     lessons: [
-      { title: "Fix Procrastination: No Clarity", type: "youtube", id: "8yKGMwvNrQo" },
+      { title: "Fix Procrastination: No Clarity", type: "youtube", id: "7HADn8JCX2E" },
       { title: "Fix Procrastination: No Conviction", type: "loom", id: "f7e509b7fe9e43d58d34b67bbb149f28" },
       { title: "What If I Don't Know What to Do", type: "youtube", id: "M6g_JZdKoas" }
     ]
@@ -55,8 +55,8 @@ const modules: Module[] = [
   {
     title: "Designing Your Focus System",
     lessons: [
-      { title: 'What "Focus" Actually Is', type: "loom", id: "b8b248a0ac1d468bbb3199704596a067" },
-      { title: 'Train Your "Ability to Catch & Remove"', type: "loom", id: "649511d0eb3942deb7c3903f94e87c7e" }
+      { title: 'What "Focus" Actually Is', type: "youtube", id: "fFvfUfWfFco" },
+      { title: 'Train Your "Ability to Catch & Remove"', type: "youtube", id: "5DBy7bBoLYM" }
     ]
   },
   {
@@ -791,6 +791,93 @@ function ADHDCourseContent() {
           .lesson-actions { flex-direction: column; }
           .lesson-actions > * { width: 100%; justify-content: center; }
         }
+
+        .other-courses {
+          margin-top: 60px;
+          padding: 40px 0;
+          border-top: 1px solid rgba(0,255,136,0.15);
+        }
+
+        .other-courses-title {
+          font-family: 'Press Start 2P', monospace;
+          font-size: 11px;
+          color: #00ff88;
+          letter-spacing: 2px;
+          margin-bottom: 24px;
+          text-shadow: 0 0 10px rgba(0,255,136,0.4);
+        }
+
+        .other-courses-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+
+        .course-card {
+          display: block;
+          text-decoration: none;
+          background: linear-gradient(135deg, rgba(255,0,170,0.08), rgba(0,212,255,0.08));
+          border: 1px solid rgba(255,0,170,0.3);
+          border-radius: 12px;
+          padding: 28px;
+          transition: all 0.3s;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .course-card:hover {
+          border-color: #ff00aa;
+          transform: translateY(-3px);
+          box-shadow: 0 8px 30px rgba(255,0,170,0.2);
+        }
+
+        .course-card.disrespect {
+          background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(0,255,136,0.08));
+          border-color: rgba(0,212,255,0.3);
+        }
+
+        .course-card.disrespect:hover {
+          border-color: #00d4ff;
+          box-shadow: 0 8px 30px rgba(0,212,255,0.2);
+        }
+
+        .course-card-badge {
+          font-family: 'Press Start 2P', monospace;
+          font-size: 8px;
+          color: #ff00aa;
+          letter-spacing: 2px;
+          margin-bottom: 12px;
+        }
+
+        .course-card.disrespect .course-card-badge {
+          color: #00d4ff;
+        }
+
+        .course-card-name {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 18px;
+          color: #e0e0e0;
+          font-weight: 700;
+          margin-bottom: 16px;
+          line-height: 1.3;
+        }
+
+        .course-card-cta {
+          font-family: 'Press Start 2P', monospace;
+          font-size: 9px;
+          color: #ff00aa;
+          letter-spacing: 1px;
+        }
+
+        .course-card.disrespect .course-card-cta {
+          color: #00d4ff;
+        }
+
+        @media (max-width: 700px) {
+          .other-courses-grid {
+            grid-template-columns: 1fr;
+          }
+        }
       `}</style>
 
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -902,6 +989,22 @@ function ADHDCourseContent() {
                 <span className="arrow">→</span>
               </button>
             )}
+          </div>
+        </div>
+
+        <div className="other-courses">
+          <div className="other-courses-title">► BUY OTHER COURSES</div>
+          <div className="other-courses-grid">
+            <a href="https://www.millionairelifedesign.com/charisma" target="_blank" rel="noopener noreferrer" className="course-card">
+              <div className="course-card-badge">COURSE</div>
+              <div className="course-card-name">Psychology of the Super-Charismatic — $9</div>
+              <div className="course-card-cta">VIEW COURSE →</div>
+            </a>
+            <a href="https://www.millionairelifedesign.com/disrespect" target="_blank" rel="noopener noreferrer" className="course-card disrespect">
+              <div className="course-card-badge">COURSE</div>
+              <div className="course-card-name">Psychology of Disrespect — $9</div>
+              <div className="course-card-cta">VIEW COURSE →</div>
+            </a>
           </div>
         </div>
       </main>
