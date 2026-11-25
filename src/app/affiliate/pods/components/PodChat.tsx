@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Send, User } from 'lucide-react'
+import { useSocket } from '@/hooks/useSocket'
 
 type Message = {
   id: string
@@ -10,6 +11,7 @@ type Message = {
   affiliateId: string
   avatarName: string
   avatarUrl: string | null
+  client_message_id?: string
 }
 
 interface PodChatProps {
@@ -24,36 +26,93 @@ export function PodChat({ podId, currentAffiliateId }: PodChatProps) {
   const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const socket = useSocket({ userId: currentAffiliateId, enabled: true })
+  const useWs = socket.isSocketEnabled && socket.connected
 
   useEffect(() => {
     fetchMessages()
-    
-    // Auto-refresh every 5 seconds
-    const interval = setInterval(fetchMessages, 5000)
-    
-    return () => clearInterval(interval)
   }, [podId])
 
+  // Live path when socket connected; poll only as fallback
   useEffect(() => {
-    // Only scroll to bottom if user is near the bottom (within 100px)
-    // This prevents interrupting users who are reading older messages
+    if (useWs) {
+      socket.joinPod(podId)
+      return () => {
+        socket.leavePod(podId)
+      }
+    }
+    const interval = setInterval(fetchMessages, 5000)
+    return () => clearInterval(interval)
+  }, [podId, useWs, socket])
+
+  useEffect(() => {
+    if (!useWs) return
+
+    socket.onPodMessage((msg) => {
+      if (msg.pod_id !== podId) return
+      setMessages((prev) => {
+        const clientId = msg.client_message_id
+        const row: Message = {
+          id: msg.id,
+          message: msg.message,
+          createdAt: msg.created_at,
+          affiliateId: msg.affiliate_id,
+          avatarName: msg.avatarName || 'Unknown',
+          avatarUrl: msg.avatarUrl || null,
+          client_message_id: clientId,
+        }
+        if (clientId) {
+          const idx = prev.findIndex(
+            (m) => m.id === clientId || m.client_message_id === clientId || m.id === msg.id
+          )
+          if (idx >= 0) {
+            const next = [...prev]
+            next[idx] = row
+            return next
+          }
+        }
+        if (prev.some((m) => m.id === msg.id)) return prev
+        return [...prev, row]
+      })
+    })
+
+    socket.onPodAck((msg) => {
+      if (msg.pod_id !== podId) return
+      setMessages((prev) => {
+        const clientId = msg.client_message_id
+        const row: Message = {
+          id: msg.id,
+          message: msg.message,
+          createdAt: msg.created_at,
+          affiliateId: msg.affiliate_id,
+          avatarName: msg.avatarName || 'Unknown',
+          avatarUrl: msg.avatarUrl || null,
+          client_message_id: clientId,
+        }
+        const idx = prev.findIndex(
+          (m) => m.id === clientId || m.client_message_id === clientId || m.id === msg.id
+        )
+        if (idx >= 0) {
+          const next = [...prev]
+          next[idx] = row
+          return next
+        }
+        if (prev.some((m) => m.id === msg.id)) return prev
+        return [...prev, row]
+      })
+    })
+  }, [useWs, podId, socket])
+
+  useEffect(() => {
     if (messagesContainerRef.current) {
       const container = messagesContainerRef.current
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
-      
+      const isNearBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight < 100
       if (isNearBottom || messages.length === 0) {
-        scrollToBottom()
+        container.scrollTop = container.scrollHeight
       }
     }
   }, [messages])
-
-  function scrollToBottom() {
-    // Only scroll within the chat container, not the entire page
-    if (messagesContainerRef.current) {
-      const container = messagesContainerRef.current
-      container.scrollTop = container.scrollHeight
-    }
-  }
 
   async function fetchMessages() {
     try {
@@ -72,34 +131,47 @@ export function PodChat({ podId, currentAffiliateId }: PodChatProps) {
   async function sendMessage() {
     if (!newMessage.trim() || newMessage.length > 500 || sending) return
 
+    const text = newMessage.trim()
     setSending(true)
+
+    if (useWs) {
+      const clientId = socket.newClientId()
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: clientId,
+          message: text,
+          createdAt: new Date().toISOString(),
+          affiliateId: currentAffiliateId,
+          avatarName: 'You',
+          avatarUrl: null,
+          client_message_id: clientId,
+        },
+      ])
+      setNewMessage('')
+      const sent = socket.sendPod(podId, text, clientId)
+      setSending(false)
+      if (sent) return
+      setMessages((prev) => prev.filter((m) => m.id !== clientId))
+    }
+
     try {
       const res = await fetch(`/api/pods/${podId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: newMessage.trim() }),
+        body: JSON.stringify({ message: text }),
       })
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Send message error response:', errorData)
-        const errorMsg = errorData.details || errorData.error || 'Failed to send message'
-        alert(errorMsg)
+        alert(errorData.details || errorData.error || 'Failed to send message')
         return
       }
 
       const data = await res.json()
       if (data.message) {
-        setMessages([...messages, data.message])
+        setMessages((prev) => [...prev, data.message])
         setNewMessage('')
-        // Scroll to bottom after sending (only within chat container)
-        setTimeout(() => {
-          if (messagesContainerRef.current) {
-            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
-          }
-        }, 100)
-        // Refresh to get latest messages
-        setTimeout(fetchMessages, 500)
       } else {
         alert(data.error || 'Failed to send message')
       }
@@ -119,74 +191,54 @@ export function PodChat({ podId, currentAffiliateId }: PodChatProps) {
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return 'Just now'
+    if (diffMins < 1) return 'just now'
     if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) {
-      const hours = date.getHours()
-      const mins = date.getMinutes()
-      const ampm = hours >= 12 ? 'PM' : 'AM'
-      const hour12 = hours % 12 || 12
-      return `Today ${hour12}:${mins.toString().padStart(2, '0')} ${ampm}`
-    }
-    if (diffDays === 1) {
-      const hours = date.getHours()
-      const mins = date.getMinutes()
-      const ampm = hours >= 12 ? 'PM' : 'AM'
-      const hour12 = hours % 12 || 12
-      return `Yesterday ${hour12}:${mins.toString().padStart(2, '0')} ${ampm}`
-    }
-    if (diffDays < 7) {
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-      const hours = date.getHours()
-      const mins = date.getMinutes()
-      const ampm = hours >= 12 ? 'PM' : 'AM'
-      const hour12 = hours % 12 || 12
-      return `${days[date.getDay()]} ${hour12}:${mins.toString().padStart(2, '0')} ${ampm}`
-    }
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
   }
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg mt-4 overflow-hidden flex flex-col" style={{ maxHeight: '600px' }}>
-      <div className="px-4 pt-4 pb-2 border-b border-gray-700">
-        <h3 className="text-base font-semibold text-white flex items-center gap-2">
-          <span>💬</span>
-          POD CHAT
-        </h3>
+    <div className="flex flex-col h-full min-h-[320px] rounded-xl border border-white/10 bg-black/40 overflow-hidden">
+      <div className="px-4 py-3 border-b border-white/10 text-sm font-medium text-white/80">
+        Pod chat {useWs ? '· live' : '· polling'}
       </div>
 
-      {/* Messages - seamless with input */}
-      <div
-        ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-3"
-      >
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3">
         {loading ? (
-          <div className="text-center text-gray-400 py-4">Loading messages...</div>
+          <div className="text-sm text-white/40">Loading…</div>
         ) : messages.length === 0 ? (
-          <div className="text-center text-gray-400 py-4">
-            No messages yet. Start the conversation!
-          </div>
+          <div className="text-sm text-white/40">No messages yet</div>
         ) : (
           messages.map((msg) => (
-            <div key={msg.id} className="flex items-start gap-3">
-              {msg.avatarUrl ? (
-                <img
-                  src={msg.avatarUrl}
-                  alt={msg.avatarName}
-                  className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
-                  <User className="w-4 h-4 text-gray-400" />
+            <div
+              key={msg.id}
+              className={`flex gap-2 ${
+                msg.affiliateId === currentAffiliateId ? 'justify-end' : 'justify-start'
+              }`}
+            >
+              {msg.affiliateId !== currentAffiliateId && (
+                <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                  {msg.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={msg.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  ) : (
+                    <User className="w-3.5 h-3.5 text-white/50" />
+                  )}
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-white font-medium text-sm">{msg.avatarName}</span>
-                  <span className="text-gray-400 text-xs">:</span>
-                  <span className="text-white text-sm break-words">{msg.message}</span>
-                </div>
-                <p className="text-gray-500 text-xs">{formatTimestamp(msg.createdAt)}</p>
+              <div
+                className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
+                  msg.affiliateId === currentAffiliateId
+                    ? 'bg-cyan-600/80 text-white'
+                    : 'bg-white/10 text-white/90'
+                }`}
+              >
+                {msg.affiliateId !== currentAffiliateId && (
+                  <div className="text-[10px] text-white/50 mb-0.5">{msg.avatarName}</div>
+                )}
+                <div>{msg.message}</div>
+                <div className="text-[10px] opacity-60 mt-1">{formatTimestamp(msg.createdAt)}</div>
               </div>
             </div>
           ))
@@ -194,44 +246,28 @@ export function PodChat({ podId, currentAffiliateId }: PodChatProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input - seamless at bottom */}
-      <div className="px-4 pb-4 pt-3 border-t border-gray-700 bg-gray-800">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => {
-              if (e.target.value.length <= 500) {
-                setNewMessage(e.target.value)
-              }
-            }}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                sendMessage()
-              }
-            }}
-            placeholder="Type message..."
-            maxLength={500}
-            className="flex-1 px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-            disabled={sending}
-          />
-          <button
-            onClick={sendMessage}
-            disabled={!newMessage.trim() || sending || newMessage.length > 500}
-            className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
-          >
-            <Send className="w-4 h-4" />
-            Send
-          </button>
-        </div>
-        {newMessage.length > 0 && (
-          <p className="text-xs text-gray-500 mt-1 text-right">
-            {newMessage.length}/500
-          </p>
-        )}
+      <div className="p-3 border-t border-white/10 flex gap-2">
+        <input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value.slice(0, 500))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              sendMessage()
+            }
+          }}
+          placeholder="Message the pod…"
+          className="flex-1 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500/40"
+        />
+        <button
+          type="button"
+          onClick={sendMessage}
+          disabled={sending || !newMessage.trim()}
+          className="rounded-xl px-3 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white"
+        >
+          <Send className="w-4 h-4" />
+        </button>
       </div>
     </div>
   )
 }
-

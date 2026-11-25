@@ -1,32 +1,31 @@
-# WebSocket Server for Real-Time Chat
+# WebSocket server (realtime chat)
 
-This is a Socket.io server designed to handle real-time chat for 10,000+ concurrent users.
+Socket.io server for group chat, DMs, and pods.
 
-## Deploy to Railway
+## Architecture
 
-1. **Create new project on Railway**
-   - Go to https://railway.app
-   - Click "New Project" → "Deploy from GitHub repo"
-   - Select this repo and set the root directory to `websocket-server`
+- **Hot path:** broadcast on socket first → persist to Supabase async → `message_ack`
+- **Auth:** JWT (`affiliate_token` / `JWT_SECRET`) required on connect
+- **Scale:** set `REDIS_URL` for `@socket.io/redis-adapter` + shared presence
 
-2. **Set environment variables on Railway:**
-   ```
-   PORT=3001
-   FRONTEND_URL=https://affiliate-platform-three.vercel.app
-   SUPABASE_URL=<your_supabase_url>
-   SUPABASE_SERVICE_ROLE_KEY=<your_service_role_key>
-   ```
+## Env
 
-3. **Get the Railway URL**
-   - After deploy, Railway will give you a URL like: `https://your-app.railway.app`
-   - Copy this URL
+```
+PORT=3001
+FRONTEND_URL=https://www.millionairelifedesign.com
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+JWT_SECRET=...                 # same as Next.js app
+REDIS_URL=redis://...          # optional but required for multi-instance
+```
 
-4. **Update Vercel environment variable:**
-   ```
-   NEXT_PUBLIC_WEBSOCKET_URL=https://your-app.railway.app
-   ```
+## Railway
 
-## Local Development
+1. Deploy this folder as a service
+2. Add env vars above (include `JWT_SECRET` + ideally Redis)
+3. Set Next.js `NEXT_PUBLIC_WEBSOCKET_URL` to the Railway URL
+
+## Local
 
 ```bash
 cd websocket-server
@@ -34,20 +33,4 @@ npm install
 npm run dev
 ```
 
-Then set `NEXT_PUBLIC_WEBSOCKET_URL=http://localhost:3001` in your Next.js app.
-
-## Architecture
-
-- **Vercel**: Next.js frontend + REST API (auth, data persistence)
-- **Railway**: Socket.io WebSocket server (real-time messaging)
-- **Supabase**: Database (messages stored here)
-
-Messages are saved to Supabase and broadcast via WebSocket in real-time.
-
-## Scaling
-
-Railway auto-scales. For 10k users:
-- Estimated: ~$20-50/month on Railway
-- Compare to: $500+/month for Vercel WebSockets at this scale
-
-
+Set `NEXT_PUBLIC_WEBSOCKET_URL=http://localhost:3001` in the Next app.

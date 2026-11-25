@@ -63,37 +63,43 @@ export function GroupChatModal({ isOpen, onClose, currentUserId, currentUserName
   const socket = useSocket({ userId: currentUserId, enabled: isOpen })
   const useWebSocket = socket.isSocketEnabled && socket.connected
 
-  // Register message handlers when socket is ready
   useEffect(() => {
-    if (socket.connected) {
-      socket.onMessage((msg) => {
-        // Only add if it's for the current chat
-        if (msg.chat_id === selectedChatId) {
-          setMessages(prev => {
-            // Avoid duplicates (in case of optimistic update)
-            const exists = prev.some(m => m.id === msg.id || (m.id.startsWith('temp-') && m.message === msg.message))
-            if (exists) {
-              // Replace temp message with real one
-              return prev.map(m => 
-                m.id.startsWith('temp-') && m.message === msg.message ? {
-                  ...msg,
-                  user_avatar: msg.user_avatar || null
-                } : m
-              )
-            }
-            return [...prev, {
-              ...msg,
-              user_avatar: msg.user_avatar || null
-            }]
-          })
+    if (!socket.connected) return
+
+    const mergeByClientId = (prev: GroupChatMessage[], msg: any) => {
+      if (msg.chat_id && msg.chat_id !== selectedChatId) return prev
+      const clientId = msg.client_message_id
+      const confirmed = {
+        id: msg.id,
+        user_id: msg.user_id,
+        user_name: msg.user_name,
+        user_avatar: msg.user_avatar || null,
+        message: msg.message,
+        created_at: msg.created_at,
+      }
+      if (clientId) {
+        const idx = prev.findIndex(
+          (m) => m.id === clientId || m.id === msg.id
+        )
+        if (idx >= 0) {
+          const next = [...prev]
+          next[idx] = confirmed
+          return next
         }
-      })
-      
-      socket.onMessageDeleted(({ messageId }) => {
-        setMessages(prev => prev.filter(m => m.id !== messageId))
-      })
+      }
+      if (prev.some((m) => m.id === msg.id)) return prev
+      return [...prev, confirmed]
     }
-  }, [socket.connected, selectedChatId])
+
+    socket.onMessage((msg) => setMessages((prev) => mergeByClientId(prev, msg)))
+    socket.onMessageAck((msg) => setMessages((prev) => mergeByClientId(prev, msg)))
+    socket.onMessageFailed(({ client_message_id }) => {
+      setMessages((prev) => prev.filter((m) => m.id !== client_message_id))
+    })
+    socket.onMessageDeleted(({ messageId }) => {
+      setMessages((prev) => prev.filter((m) => m.id !== messageId))
+    })
+  }, [socket, socket.connected, selectedChatId])
 
   useEffect(() => {
     if (isOpen) {
@@ -330,23 +336,25 @@ export function GroupChatModal({ isOpen, onClose, currentUserId, currentUserName
       socket.stopTyping(selectedChatId)
     }
 
-    // Try WebSocket first
     if (useWebSocket) {
-      const sent = socket.sendMessage(selectedChatId, messageText)
-      if (sent) {
-        // Optimistic update
-        const tempMessage: GroupChatMessage = {
-          id: `temp-${Date.now()}`,
+      const clientMessageId = socket.newClientId()
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: clientMessageId,
           user_id: currentUserId,
           user_name: currentUserName,
           user_avatar: currentUserAvatar,
           message: messageText,
-          created_at: new Date().toISOString()
-        }
-        setMessages(prev => [...prev, tempMessage])
+          created_at: new Date().toISOString(),
+        },
+      ])
+      const sent = socket.sendMessage(selectedChatId, messageText, undefined, clientMessageId)
+      if (sent) {
         setIsLoading(false)
         return
       }
+      setMessages((prev) => prev.filter((m) => m.id !== clientMessageId))
     }
 
     // Fallback to HTTP

@@ -83,34 +83,100 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
   // Get main chat ID
   const mainChatId = chats.length > 0 ? getMainChatId(chats) : null
 
-  // Handle incoming WebSocket messages
+  // Live delivery: append or merge by client_message_id (optimistic reconcile)
   const handleSocketMessage = useCallback((msg: any) => {
-    setMessages(prev => {
-      // Avoid duplicates
-      if (prev.some(m => m.id === msg.id)) return prev
-      return [...prev, {
+    setMessages((prev) => {
+      const clientId = msg.client_message_id
+      if (clientId) {
+        const idx = prev.findIndex(
+          (m) => m.id === clientId || (m as any).client_message_id === clientId
+        )
+        if (idx >= 0) {
+          const next = [...prev]
+          next[idx] = {
+            id: msg.id,
+            user_id: msg.user_id,
+            user_name: msg.user_name,
+            user_avatar: msg.user_avatar,
+            message: msg.message,
+            created_at: msg.created_at,
+            client_message_id: clientId,
+          } as any
+          return next
+        }
+      }
+      if (prev.some((m) => m.id === msg.id)) return prev
+      return [
+        ...prev,
+        {
+          id: msg.id,
+          user_id: msg.user_id,
+          user_name: msg.user_name,
+          user_avatar: msg.user_avatar,
+          message: msg.message,
+          created_at: msg.created_at,
+          client_message_id: msg.client_message_id,
+        } as any,
+      ]
+    })
+  }, [])
+
+  const handleSocketAck = useCallback((msg: any) => {
+    setMessages((prev) => {
+      const clientId = msg.client_message_id
+      const idx = prev.findIndex(
+        (m) =>
+          m.id === clientId ||
+          (m as any).client_message_id === clientId ||
+          m.id === msg.id
+      )
+      const confirmed = {
         id: msg.id,
         user_id: msg.user_id,
         user_name: msg.user_name,
         user_avatar: msg.user_avatar,
         message: msg.message,
-        created_at: msg.created_at
-      }]
+        created_at: msg.created_at,
+        client_message_id: clientId,
+      } as any
+      if (idx >= 0) {
+        const next = [...prev]
+        next[idx] = confirmed
+        return next
+      }
+      if (prev.some((m) => m.id === msg.id)) return prev
+      return [...prev, confirmed]
     })
   }, [])
 
-  // Handle message deletion via WebSocket
-  const handleSocketDelete = useCallback((data: { messageId: string }) => {
-    setMessages(prev => prev.filter(m => m.id !== data.messageId))
+  const handleSocketFailed = useCallback((data: { client_message_id: string }) => {
+    setMessages((prev) =>
+      prev.filter(
+        (m) =>
+          m.id !== data.client_message_id &&
+          (m as any).client_message_id !== data.client_message_id
+      )
+    )
   }, [])
 
-  // Register socket handlers
+  const handleSocketDelete = useCallback((data: { messageId: string }) => {
+    setMessages((prev) => prev.filter((m) => m.id !== data.messageId))
+  }, [])
+
   useEffect(() => {
-    if (useWebSocket) {
-      socket.onMessage(handleSocketMessage)
-      socket.onMessageDeleted(handleSocketDelete)
-    }
-  }, [useWebSocket, socket, handleSocketMessage, handleSocketDelete])
+    if (!useWebSocket) return
+    socket.onMessage(handleSocketMessage)
+    socket.onMessageAck(handleSocketAck)
+    socket.onMessageFailed(handleSocketFailed)
+    socket.onMessageDeleted(handleSocketDelete)
+  }, [
+    useWebSocket,
+    socket,
+    handleSocketMessage,
+    handleSocketAck,
+    handleSocketFailed,
+    handleSocketDelete,
+  ])
 
   // Update online count from socket
   useEffect(() => {
@@ -253,21 +319,30 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
     const messageToSend = newMessage
     setNewMessage('')
     
-    // Use WebSocket if connected (message will come back via socket event)
+    // Optimistic + socket hot path
     if (useWebSocket && selectedChatId) {
-      console.log('[Chat] Attempting WebSocket send:', { selectedChatId, messageLength: messageToSend.length, connected: socket.connected })
-      const sent = socket.sendMessage(selectedChatId!, messageToSend)
-      if (!sent) {
-        // Fallback to HTTP if socket send fails
-        console.log('[Chat] WebSocket send failed, falling back to HTTP')
-      } else {
-        console.log('[Chat] WebSocket send succeeded, waiting for message event')
-        // Stop typing indicator
-        socket.stopTyping(selectedChatId!)
-        return // Message will arrive via WebSocket event
+      const clientMessageId = socket.newClientId()
+      const optimisticMessage: GroupChatMessage = {
+        id: clientMessageId,
+        user_id: affiliate.id,
+        user_name: affiliate.avatar_name || affiliate.name,
+        user_avatar: affiliate.avatar_url,
+        message: messageToSend,
+        created_at: new Date().toISOString(),
       }
-    } else {
-      console.log('[Chat] WebSocket not available, using HTTP fallback')
+      setMessages((prev) => [...prev, { ...optimisticMessage, client_message_id: clientMessageId } as any])
+      const sent = socket.sendMessage(
+        selectedChatId!,
+        messageToSend,
+        undefined,
+        clientMessageId
+      )
+      if (sent) {
+        socket.stopTyping(selectedChatId!)
+        return
+      }
+      // Socket emit failed — drop optimistic and fall through to HTTP
+      setMessages((prev) => prev.filter((m) => m.id !== clientMessageId))
     }
     
     // HTTP fallback (or if WebSocket is not available)

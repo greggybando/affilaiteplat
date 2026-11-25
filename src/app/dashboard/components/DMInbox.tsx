@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ProfileHoverCard } from '@/app/components/ProfileHoverCard'
 import { formatDistanceToNow } from 'date-fns'
 import { createPortal } from 'react-dom'
+import { useSocket } from '@/hooks/useSocket'
 
 interface Conversation {
   id: string
@@ -38,9 +39,12 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
   const [openUserId, setOpenUserId] = useState<string | 'inbox' | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [messages, setMessages] = useState<Message[]>([])
+  const [conversationId, setConversationId] = useState<string | null>(null)
   const [newMessage, setNewMessage] = useState('')
   const [unreadTotal, setUnreadTotal] = useState(0)
   const [loading, setLoading] = useState(false)
+  const socket = useSocket({ userId: currentUserId, enabled: true })
+  const useWs = socket.isSocketEnabled && socket.connected
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -253,12 +257,83 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
     return groups
   }, [messagesKey])
 
-  // Poll for unread count
+  useEffect(() => {
+    if (!openUserId || openUserId === 'inbox') {
+      setConversationId(null)
+      setMessages([])
+    }
+  }, [openUserId])
+
+  // Unread badge: socket notifications + light poll fallback
   useEffect(() => {
     fetchUnreadCount()
-    const interval = setInterval(fetchUnreadCount, 30000)
+    const interval = setInterval(fetchUnreadCount, useWs ? 120000 : 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [useWs])
+
+  useEffect(() => {
+    socket.onDm((msg) => {
+      if (!conversationId || msg.conversation_id !== conversationId) {
+        setUnreadTotal((n) => n + 1)
+        return
+      }
+      setMessages((prev) => {
+        const clientId = msg.client_message_id
+        if (clientId) {
+          const idx = prev.findIndex((m) => m.id === clientId || m.id === msg.id)
+          if (idx >= 0) {
+            const next = [...prev]
+            next[idx] = {
+              id: msg.id,
+              sender_id: msg.sender_id,
+              content: msg.content,
+              created_at: msg.created_at,
+            }
+            return next
+          }
+        }
+        if (prev.some((m) => m.id === msg.id)) return prev
+        return [
+          ...prev,
+          {
+            id: msg.id,
+            sender_id: msg.sender_id,
+            content: msg.content,
+            created_at: msg.created_at,
+          },
+        ]
+      })
+    })
+    socket.onDmAck((msg) => {
+      if (!conversationId || msg.conversation_id !== conversationId) return
+      setMessages((prev) => {
+        const clientId = msg.client_message_id
+        const idx = prev.findIndex((m) => m.id === clientId || m.id === msg.id)
+        const confirmed = {
+          id: msg.id,
+          sender_id: msg.sender_id,
+          content: msg.content,
+          created_at: msg.created_at,
+        }
+        if (idx >= 0) {
+          const next = [...prev]
+          next[idx] = confirmed
+          return next
+        }
+        if (prev.some((m) => m.id === msg.id)) return prev
+        return [...prev, confirmed]
+      })
+    })
+  }, [socket, conversationId])
+
+  useEffect(() => {
+    if (conversationId && useWs) {
+      socket.joinDm(conversationId)
+      return () => {
+        socket.leaveDm(conversationId)
+      }
+    }
+  }, [conversationId, useWs, socket])
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -312,8 +387,8 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       const res = await fetch(`/api/messages/${partnerId}`)
       if (res.ok) {
         const data = await res.json()
-        // Ensure messages are sorted by created_at
-        const sortedMessages = (data.messages || []).sort((a: Message, b: Message) => 
+        if (data.conversationId) setConversationId(data.conversationId)
+        const sortedMessages = (data.messages || []).sort((a: Message, b: Message) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         )
         setMessages(sortedMessages)
@@ -396,65 +471,58 @@ export function DMInbox({ currentUserId, forceOpen, initialUserId, onOpenComplet
       )
     })
     
-    // Scroll to bottom after adding optimistic message
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, 50)
+
+    // Prefer socket hot path when we have a conversation id
+    if (useWs && conversationId && !content.includes('<img ')) {
+      const clientId = tempId
+      const sent = socket.sendDm(conversationId, content, clientId)
+      if (sent) return
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempId))
+    }
 
     try {
       const res = await fetch(`/api/messages/${openUserId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content }),
       })
       if (res.ok) {
         const data = await res.json()
-        // Replace temp message with real message from server
+        if (data.conversationId) setConversationId(data.conversationId)
         if (data.message) {
-          setMessages(prev => {
-            // Find the temp message to replace
-            const tempIndex = prev.findIndex(msg => msg.id === tempId)
-            if (tempIndex === -1) {
-              // Temp message not found, add real message and sort
-              const updated = [...prev, {
-                id: data.message.id,
-                sender_id: data.message.sender_id,
-                content: data.message.content,
-                created_at: data.message.created_at
-              }]
-              return updated.sort((a, b) => 
-                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-              )
-            }
-            
-            // Replace temp message with real one using server timestamp
-            const updated = [...prev]
-            updated[tempIndex] = {
+          setMessages((prev) => {
+            const tempIndex = prev.findIndex((msg) => msg.id === tempId)
+            const real = {
               id: data.message.id,
               sender_id: data.message.sender_id,
               content: data.message.content,
-              created_at: data.message.created_at // Use real server timestamp
+              created_at: data.message.created_at,
             }
-            
-            // Sort to ensure proper order
-            return updated.sort((a, b) => 
-              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            if (tempIndex === -1) {
+              return [...prev, real].sort(
+                (a, b) =>
+                  new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              )
+            }
+            const updated = [...prev]
+            updated[tempIndex] = real
+            return updated.sort(
+              (a, b) =>
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             )
           })
         } else {
-          // Fallback: refetch after a delay if response doesn't include message
-          setTimeout(() => {
-            fetchMessages(openUserId)
-          }, 1000)
+          setTimeout(() => fetchMessages(openUserId), 1000)
         }
       } else {
-        // Remove temp message on error
-        setMessages(prev => prev.filter(msg => msg.id !== tempId))
+        setMessages((prev) => prev.filter((msg) => msg.id !== tempId))
       }
     } catch (e) {
       console.error('Failed to send message:', e)
-      // Remove temp message on error
-      setMessages(prev => prev.filter(msg => msg.id !== tempId))
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempId))
     }
   }
 
