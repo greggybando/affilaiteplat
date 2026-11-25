@@ -90,54 +90,10 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
   // Get main chat ID
   const mainChatId = chats.length > 0 ? getMainChatId(chats) : null
 
-  // Live delivery: append or merge by client_message_id (optimistic reconcile)
-  const handleSocketMessage = useCallback((msg: any) => {
+  const upsertSocketMessage = useCallback((msg: any, pending = false) => {
     setMessages((prev) => {
-      const clientId = msg.client_message_id
-      if (clientId) {
-        const idx = prev.findIndex(
-          (m) => m.id === clientId || (m as any).client_message_id === clientId
-        )
-        if (idx >= 0) {
-          const next = [...prev]
-          next[idx] = {
-            id: msg.id,
-            user_id: msg.user_id,
-            user_name: msg.user_name,
-            user_avatar: msg.user_avatar,
-            message: msg.message,
-            created_at: msg.created_at,
-            client_message_id: clientId,
-          } as any
-          return next
-        }
-      }
-      if (prev.some((m) => m.id === msg.id)) return prev
-      return [
-        ...prev,
-        {
-          id: msg.id,
-          user_id: msg.user_id,
-          user_name: msg.user_name,
-          user_avatar: msg.user_avatar,
-          message: msg.message,
-          created_at: msg.created_at,
-          client_message_id: msg.client_message_id,
-        } as any,
-      ]
-    })
-  }, [])
-
-  const handleSocketAck = useCallback((msg: any) => {
-    setMessages((prev) => {
-      const clientId = msg.client_message_id
-      const idx = prev.findIndex(
-        (m) =>
-          m.id === clientId ||
-          (m as any).client_message_id === clientId ||
-          m.id === msg.id
-      )
-      const confirmed = {
+      const clientId = msg.client_message_id as string | undefined
+      const row = {
         id: msg.id,
         user_id: msg.user_id,
         user_name: msg.user_name,
@@ -145,16 +101,35 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
         message: msg.message,
         created_at: msg.created_at,
         client_message_id: clientId,
+        pending,
       } as any
+
+      const idx = prev.findIndex(
+        (m) =>
+          m.id === msg.id ||
+          (clientId &&
+            (m.id === clientId || (m as any).client_message_id === clientId))
+      )
       if (idx >= 0) {
         const next = [...prev]
-        next[idx] = confirmed
+        // Don't regress a confirmed row back to provisional
+        if ((next[idx] as any).pending === false && pending) return prev
+        next[idx] = { ...next[idx], ...row, pending: pending || false }
         return next
       }
-      if (prev.some((m) => m.id === msg.id)) return prev
-      return [...prev, confirmed]
+      return [...prev, row]
     })
   }, [])
+
+  const handleSocketMessage = useCallback(
+    (msg: any) => upsertSocketMessage(msg, Boolean(msg.pending)),
+    [upsertSocketMessage]
+  )
+
+  const handleSocketAck = useCallback(
+    (msg: any) => upsertSocketMessage({ ...msg, pending: false }, false),
+    [upsertSocketMessage]
+  )
 
   const handleSocketFailed = useCallback((data: { client_message_id: string }) => {
     setMessages((prev) =>
@@ -331,13 +306,26 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
       // Ignore stale responses after fast chat switches
       if (controller.signal.aborted) return
 
-      const nextMessages = data.messages || []
-      messageCacheRef.current.set(id, nextMessages)
+      const nextMessages: GroupChatMessage[] = data.messages || []
       if (id === selectedChatIdRef.current) {
-        setMessages(nextMessages)
+        setMessages((prev) => {
+          const serverIds = new Set(nextMessages.map((m) => m.id))
+          // Keep optimistic/provisional rows until they land in history
+          const inFlight = prev.filter((m) => {
+            const clientId = (m as any).client_message_id as string | undefined
+            if (serverIds.has(m.id)) return false
+            if (clientId && nextMessages.some((n) => n.id === clientId)) return false
+            return Boolean(clientId) || (m as any).pending === true
+          })
+          const merged = [...nextMessages, ...inFlight]
+          messageCacheRef.current.set(id, merged)
+          return merged
+        })
         if (typeof data.participants === 'number') {
           setParticipants(data.participants)
         }
+      } else {
+        messageCacheRef.current.set(id, nextMessages)
       }
     } catch (error: any) {
       if (error?.name === 'AbortError') return
@@ -362,7 +350,14 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
         message: messageToSend,
         created_at: new Date().toISOString(),
       }
-      setMessages((prev) => [...prev, { ...optimisticMessage, client_message_id: clientMessageId } as any])
+      setMessages((prev) => [
+        ...prev,
+        {
+          ...optimisticMessage,
+          client_message_id: clientMessageId,
+          pending: true,
+        } as any,
+      ])
       const sent = socket.sendMessage(
         selectedChatId!,
         messageToSend,
