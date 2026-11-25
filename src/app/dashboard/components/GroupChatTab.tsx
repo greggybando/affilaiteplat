@@ -75,10 +75,17 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const messageCacheRef = useRef<Map<string, GroupChatMessage[]>>(new Map())
+  const fetchAbortRef = useRef<AbortController | null>(null)
+  const selectedChatIdRef = useRef<string | null>(null)
 
   // WebSocket connection
   const socket = useSocket({ userId: affiliate.id })
   const useWebSocket = socket.isSocketEnabled && socket.connected
+
+  useEffect(() => {
+    selectedChatIdRef.current = selectedChatId
+  }, [selectedChatId])
 
   // Get main chat ID
   const mainChatId = chats.length > 0 ? getMainChatId(chats) : null
@@ -216,35 +223,43 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
     }
   }, [mainChatId])
 
+  // Keep cache warm with live messages for the open chat
+  useEffect(() => {
+    if (!selectedChatId || messages.length === 0) return
+    messageCacheRef.current.set(selectedChatId, messages)
+  }, [messages, selectedChatId])
+
   // Handle chat selection and message fetching
   useEffect(() => {
-    if (selectedChatId) {
-      // Clear messages when switching chats
+    if (!selectedChatId) {
       setMessages([])
       setNewMessage('')
-      
-      // Join WebSocket room if connected
-      if (useWebSocket) {
-        socket.joinChat(selectedChatId)
-      }
-      
-      // Fetch initial messages
-      fetchMessages()
-      
-      // Only use polling if WebSocket is not connected
-      if (!useWebSocket) {
-        const interval = setInterval(fetchMessages, 2000)
-        return () => clearInterval(interval)
-      }
-    } else {
-      // Clear messages if no chat is selected
-      setMessages([])
-      setNewMessage('')
+      return
     }
-    
-    // Cleanup: leave chat room when switching
+
+    setNewMessage('')
+    const cached = messageCacheRef.current.get(selectedChatId)
+    if (cached?.length) {
+      setMessages(cached)
+    } else {
+      setMessages([])
+    }
+
+    if (useWebSocket) {
+      socket.joinChat(selectedChatId)
+    }
+
+    fetchMessages(selectedChatId)
+
+    let interval: ReturnType<typeof setInterval> | undefined
+    if (!useWebSocket) {
+      interval = setInterval(() => fetchMessages(selectedChatId), 2000)
+    }
+
     return () => {
-      if (selectedChatId && useWebSocket) {
+      if (interval) clearInterval(interval)
+      fetchAbortRef.current?.abort()
+      if (useWebSocket) {
         socket.leaveChat(selectedChatId)
       }
     }
@@ -299,16 +314,33 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
     }
   }
 
-  const fetchMessages = async () => {
-    if (!selectedChatId) return
+  const fetchMessages = async (chatId?: string) => {
+    const id = chatId || selectedChatId
+    if (!id) return
+
+    fetchAbortRef.current?.abort()
+    const controller = new AbortController()
+    fetchAbortRef.current = controller
+
     try {
-      const res = await fetch(`/api/group-chat/messages?chatId=${selectedChatId}`)
+      const res = await fetch(`/api/group-chat/messages?chatId=${id}`, {
+        signal: controller.signal,
+      })
       const data = await res.json()
-      if (res.ok) {
-        setMessages(data.messages || [])
-        setParticipants(data.participants || 0)
+      if (!res.ok) return
+      // Ignore stale responses after fast chat switches
+      if (controller.signal.aborted) return
+
+      const nextMessages = data.messages || []
+      messageCacheRef.current.set(id, nextMessages)
+      if (id === selectedChatIdRef.current) {
+        setMessages(nextMessages)
+        if (typeof data.participants === 'number') {
+          setParticipants(data.participants)
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.name === 'AbortError') return
       console.error('Error fetching messages:', error)
     }
   }
