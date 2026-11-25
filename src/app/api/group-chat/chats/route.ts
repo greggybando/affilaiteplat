@@ -32,36 +32,69 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch chats' }, { status: 500 })
     }
 
-    // Get participant counts and last message for each chat
+    // Participant previews + last message per chat
     const chatsWithDetails = await Promise.all(
       (participants || []).map(async (participant: any) => {
         const chatId = participant.group_chat_id
 
-        // Get participant count
-        const { count } = await supabaseAdmin
-          .from('group_chat_participants')
-          .select('*', { count: 'exact', head: true })
-          .eq('group_chat_id', chatId)
+        const [membersResult, countResult, lastMessageResult] = await Promise.all([
+          supabaseAdmin
+            .from('group_chat_participants')
+            .select(
+              `
+              affiliate_id,
+              affiliate:affiliates!group_chat_participants_affiliate_id_fkey(
+                id,
+                avatar_name,
+                avatar_url,
+                name
+              )
+            `
+            )
+            .eq('group_chat_id', chatId)
+            .limit(3),
+          supabaseAdmin
+            .from('group_chat_participants')
+            .select('*', { count: 'exact', head: true })
+            .eq('group_chat_id', chatId),
+          supabaseAdmin
+            .from('group_chat_messages')
+            .select(
+              'created_at, message, affiliate:affiliates!group_chat_messages_affiliate_id_fkey(avatar_name)'
+            )
+            .eq('group_chat_id', chatId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ])
 
-        // Get last message
-        const { data: lastMessage } = await supabaseAdmin
-          .from('group_chat_messages')
-          .select('created_at, message, affiliate:affiliates!group_chat_messages_affiliate_id_fkey(avatar_name)')
-          .eq('group_chat_id', chatId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single() as { data: { message: string, created_at: string, affiliate: { avatar_name: string | null } | null } | null }
+        const memberPreview = (membersResult.data || []).map((row: any) => ({
+          id: row.affiliate?.id || row.affiliate_id,
+          name: row.affiliate?.avatar_name || row.affiliate?.name || 'Member',
+          avatarUrl: row.affiliate?.avatar_url || null,
+        }))
+
+        const lastMessage = lastMessageResult.data as
+          | {
+              message: string
+              created_at: string
+              affiliate: { avatar_name: string | null } | null
+            }
+          | null
 
         return {
           id: chatId,
           name: participant.group_chat?.name || 'Unknown',
           muted: participant.muted,
-          participantCount: count || 0,
-          lastMessage: lastMessage ? {
-            text: lastMessage.message,
-            author: lastMessage.affiliate?.avatar_name || 'Unknown',
-            time: lastMessage.created_at
-          } : null
+          participantCount: countResult.count || memberPreview.length,
+          memberPreview,
+          lastMessage: lastMessage
+            ? {
+                text: lastMessage.message,
+                author: lastMessage.affiliate?.avatar_name || 'Unknown',
+                time: lastMessage.created_at,
+              }
+            : null,
         }
       })
     )

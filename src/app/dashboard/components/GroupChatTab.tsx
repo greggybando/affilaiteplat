@@ -23,16 +23,103 @@ interface GroupChatMessage {
   created_at: string
 }
 
+interface GroupChatMemberPreview {
+  id: string
+  name: string
+  avatarUrl: string | null
+}
+
 interface GroupChat {
   id: string
   name: string
   muted: boolean
   participantCount: number
+  memberPreview?: GroupChatMemberPreview[]
   lastMessage: {
     text: string
     author: string
     time: string
   } | null
+}
+
+function ChatAvatarStack({
+  members,
+  participantCount,
+}: {
+  members?: GroupChatMemberPreview[]
+  participantCount: number
+}) {
+  const previews = (members || []).slice(0, 3)
+  const extra = Math.max(0, participantCount - previews.length)
+
+  if (previews.length === 0) {
+    return (
+      <div
+        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-2"
+        style={{
+          background: 'linear-gradient(135deg, rgba(34,211,238,0.8), rgba(6,182,212,0.8))',
+          borderColor: 'rgba(34,211,238,0.3)',
+          boxShadow: '0 0 8px rgba(34,211,238,0.2)',
+        }}
+      >
+        <Users className="w-5 h-5 text-white" />
+      </div>
+    )
+  }
+
+  if (previews.length === 1) {
+    const m = previews[0]
+    return (
+      <div
+        className="w-10 h-10 rounded-full overflow-hidden shrink-0 border-2"
+        style={{ borderColor: 'rgba(34,211,238,0.35)' }}
+        title={m.name}
+      >
+        {m.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={m.avatarUrl} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white bg-cyan-700/80">
+            {m.name.slice(0, 2).toUpperCase()}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative w-10 h-10 shrink-0" title={previews.map((m) => m.name).join(', ')}>
+      {previews.map((m, i) => (
+        <div
+          key={m.id || `${m.name}-${i}`}
+          className="absolute w-6 h-6 rounded-full overflow-hidden border border-[#0f0f1a]"
+          style={{
+            left: i * 10,
+            top: i === 0 ? 0 : i === 1 ? 14 : 4,
+            zIndex: 3 - i,
+            boxShadow: '0 0 0 1px rgba(34,211,238,0.25)',
+          }}
+        >
+          {m.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={m.avatarUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[9px] font-bold text-white bg-cyan-700/90">
+              {m.name.slice(0, 1).toUpperCase()}
+            </div>
+          )}
+        </div>
+      ))}
+      {extra > 0 && (
+        <div
+          className="absolute -bottom-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 rounded-full text-[8px] font-bold flex items-center justify-center text-white"
+          style={{ background: 'rgba(6,182,212,0.95)', zIndex: 5 }}
+        >
+          +{extra}
+        </div>
+      )}
+    </div>
+  )
 }
 
 interface User {
@@ -1414,15 +1501,10 @@ export function GroupChatTab({ affiliate, setIsDMModalOpen, glowIntensity = 50 }
                     className="w-full p-3 text-left"
                   >
                     <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-2"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(34,211,238,0.8), rgba(6,182,212,0.8))',
-                          borderColor: 'rgba(34,211,238,0.3)',
-                          boxShadow: '0 0 8px rgba(34,211,238,0.2)'
-                        }}
-                      >
-                        <Users className="w-5 h-5 text-white" />
-                      </div>
+                      <ChatAvatarStack
+                        members={chat.memberPreview}
+                        participantCount={chat.participantCount}
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <div className="font-semibold text-sm truncate" style={{ color: 'rgba(255,255,255,0.95)' }}>{chat.name}</div>
